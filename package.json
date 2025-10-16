@@ -4,8 +4,10 @@
   "main": "build/WireAppSdk.js",
   "types": "build/WireAppSdk.d.ts",
   "scripts": {
-    "build": "tsc"
-  },
+    "build": "tsc -p tsconfig.json",
+    "build:sample": "tsc -p tsconfig.sample.json",
+    "sample": "node build/sample/app.js"
+  },  
   "files": [
     "build/**/*"
   ],
