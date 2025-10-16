@@ -5,13 +5,11 @@
 
 version: 2
 updates:
-  # Maven updates
-  - package-ecosystem: "gradle"
+  - package-ecosystem: "npm"
     directory: "/"
     schedule:
       interval: "weekly"
 
-  # Maintain dependencies for GitHub Actions
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
