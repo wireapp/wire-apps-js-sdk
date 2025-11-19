@@ -48,7 +48,6 @@ export default [
         }
       ],
 
-      // Add this specific rule for parameter properties
       "@typescript-eslint/no-unused-private-class-members": "warn",
 
       "no-redeclare": "off",
@@ -67,8 +66,6 @@ export default [
       "jsx-a11y/media-has-caption": "off"
     }
   },
-
-  // Test overrides
   {
     files: ["**/*.test.ts", "**/*.test.tsx", "**/test/**/*", "**/mocks/**/*"],
     rules: {

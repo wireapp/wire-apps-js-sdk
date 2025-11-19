@@ -84,7 +84,6 @@ export interface TextMessage extends WireMessageBase, Item, Ephemeral, Replyable
   expiresAfterMillis?: number | null
 }
 
-// Add the factory as a const with the same name
 export const TextMessage = {
   create(
     params: {

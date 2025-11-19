@@ -14,7 +14,6 @@
 * along with this program. If not, see http://www.gnu.org/licenses/.
 */
 
-// Ciphersuite
 import { Ciphersuite, ClientId, ConversationId, CoreCrypto, CredentialType, DatabaseKey, initWasmModule, Welcome } from "@wireapp/core-crypto";
 import { Container, Service } from "typedi";
 import { encodeBase64 } from "./../utils/Base64Util.js"
@@ -111,7 +110,7 @@ export class CoreCryptoClient {
     await this.uploadClientWithMlsPublicKey()
     await this.uploadMlsKeyPackages()
 
-    // TODO: setShouldRejoinConverastions(true) // only if its new client
+    // TODO: setShouldRejoinConverastions(true) when its a new client
   }
 
   private async initMlsClient(appClientId: AppClientId) {
@@ -240,19 +239,17 @@ export class CoreCryptoClient {
     conversationId: QualifiedId,
     encryptedMessage: string
   ): Promise<Uint8Array | undefined> {
-    // Decode base64 string to bytes
-    const encryptedMessageBytes = Buffer.from(encryptedMessage, 'base64');
+    const encryptedMessageBytes = Buffer.from(encryptedMessage, 'base64')
     const convId = qualifiedIdToConversationId(conversationId)
     
-    // Decrypt the message using coreCrypto
     const decryptedMessage = await this.coreCrypto.transaction(async (it) => {
       return await it.decryptMessage(
         convId,
         encryptedMessageBytes
-      );
-    });
+      )
+    })
     
-    return decryptedMessage.message;
+    return decryptedMessage.message
   }
 
   public async encryptMls(

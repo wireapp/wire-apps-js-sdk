@@ -33,7 +33,6 @@ export const ProtobufSerializer = {
    * @throws Error if the message type is not supported
    */
   toGenericMessageByteArray: (wireMessage: WireMessage): Uint8Array => {
-    // Create a new GenericMessage builder
     const genericMessage: Partial<IGenericMessage> = {
       messageId: wireMessage.id,
     };
@@ -76,7 +75,6 @@ function packTextMessage(
     legalHoldStatus: null
   };
 
-  // Handle quoted messages if present
   if (wireMessage.quotedMessageId) {
     textContent.quote = {
       quotedMessageId: wireMessage.quotedMessageId!,

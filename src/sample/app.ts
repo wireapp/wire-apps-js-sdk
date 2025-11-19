@@ -81,5 +81,3 @@ const sdk = await WireAppSdk.create(
 )
 
 sdk.startListening()
-
-// apply prettier or something
