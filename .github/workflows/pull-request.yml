@@ -19,6 +19,9 @@ jobs:
 
       - name: Lint
         run: npm run lint
+      
+      - name: Typescript Build Setup
+        run: npm run build:setup
 
       - name: TypeScript Build
         run: npm run build

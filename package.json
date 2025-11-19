@@ -1,12 +1,21 @@
 {
   "name": "wire-app-js-sdk",
   "version": "0.0.1",
-  "main": "build/WireAppSdk.js",
-  "types": "build/WireAppSdk.d.ts",
+  "main": "build/index.js",
+  "types": "build/index.d.ts",
   "scripts": {
-    "build": "tsc -p tsconfig.json",
-    "build:sample": "tsc -p tsconfig.sample.json",
-    "sample": "node build/sample/app.js",
+    "proto:mkdir": "mkdir -p src/generated",
+    "proto:package": "node scripts/create-generated-package-json.js",
+    "proto:js": "pbjs -t static-module -w commonjs -o src/generated/messages.js messages.proto",
+    "proto:ts": "pbts -t static-module -w commonjs -o src/generated/messages.d.ts src/generated/messages.js",
+    "proto:copy": "cpy 'src/generated/*' build/generated/",
+    "proto:generate": "npm run proto:mkdir && npm run proto:package && npm run proto:js && npm run proto:ts",
+    "corecrypto:fix-main": "node scripts/fix-core-crypto-main.js",
+    "build:setup": "npm install && npm run corecrypto:fix-main && npm run proto:generate",
+    "build": "tsc -p tsconfig.json && npm run proto:copy",
+    "build:sample": "tsc -p tsconfig.sample.json && npm run proto:copy",
+    "sample": "npm run build:sample && node --trace-warnings build/sample/app.js",
+    "clean": "rm -rf build",
     "lint": "eslint src --ext .ts"
   },
   "files": [
@@ -25,13 +34,25 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.37.0",
-    "@types/node": "^24.7.2",
-    "@typescript-eslint/eslint-plugin": "^8.46.1",
-    "@typescript-eslint/parser": "^8.46.1",
-    "@wireapp/eslint-config": "^3.1.3",
+    "@types/long": "^5.0.0",
+    "@types/node": "^24.10.1",
+    "@types/ws": "^8.18.1",
+    "@typescript-eslint/eslint-plugin": "^8.47.0",
+    "@typescript-eslint/parser": "^8.47.0",
+    "cpy-cli": "^6.0.0",
     "eslint": "^9.37.0",
+    "fake-indexeddb": "^6.2.4",
     "globals": "^16.4.0",
+    "protobufjs-cli": "^1.1.3",
     "typescript": "^5.9.3",
-    "typescript-eslint": "^8.46.1"
+    "typescript-eslint": "^8.47.0"
+  },
+  "dependencies": {
+    "@wireapp/core-crypto": "^9.1.1",
+    "dotenv": "^17.2.3",
+    "protobufjs": "^7.5.4",
+    "reflect-metadata": "^0.2.2",
+    "typedi": "^0.10.0",
+    "ws": "^8.18.3"
   }
 }
