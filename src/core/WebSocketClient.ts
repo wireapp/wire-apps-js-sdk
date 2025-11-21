@@ -106,10 +106,29 @@ export class WebSocketClient {
       }
 
       webSocket.onmessage = async (event: MessageEvent) => {
-        if (Buffer.isBuffer(event.data)) {
-          await this.handleEvent(event.data)
+        // Check if it's binary data (equivalent to Frame.Binary)
+        if (event.data instanceof Blob || 
+          event.data instanceof ArrayBuffer || 
+          event.data instanceof Uint8Array ||
+          Buffer.isBuffer(event.data)) {
+        
+          // Convert to Buffer
+          let buffer: Buffer;
+          if (event.data instanceof Blob) {
+            const arrayBuffer = await event.data.arrayBuffer();
+            buffer = Buffer.from(arrayBuffer);
+          } else if (Buffer.isBuffer(event.data)) {
+            buffer = event.data;
+          } else if (event.data instanceof ArrayBuffer) {
+            buffer = Buffer.from(event.data);
+          } else {
+            buffer = Buffer.from(event.data);
+          }
+          
+          await this.handleEvent(buffer);
         } else {
           console.error("[WebSocket] Unsupported frame type:", typeof event.data)
+          return
         }
       }
 

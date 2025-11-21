@@ -23,7 +23,7 @@
   ],
   "type": "module",
   "engines": {
-    "node": ">=21"
+    "node": ">=22"
   },
   "repository": {
     "type": "git",

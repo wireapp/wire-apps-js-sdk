@@ -42,7 +42,7 @@ To be done
 
 ## Requirements
 
-- Node 21+
+- Node v22
 - Access to the file system to store cryptographic keys and data
 
 ## Import with
