@@ -30,8 +30,6 @@ export class WireAppSdk {
   private apiHost: string
   private cryptographyStoragePassword: string
 
-  private coreCryptoService!: CoreCryptoService
-
   private isWebSocketRunning: boolean = false
   private webSocketClient!: WebSocketClient
 
@@ -97,9 +95,9 @@ export class WireAppSdk {
   }
 
   private async initCryptoClient() {
-    this.coreCryptoService = Container.get(CoreCryptoService)
-    await this.coreCryptoService.initCoreCryptoClient()
-    await this.coreCryptoService.initOrRegisterClient()
+    const coreCryptoService = Container.get(CoreCryptoService)
+    await coreCryptoService.initCoreCryptoClient()
+    await coreCryptoService.initOrRegisterClient()
 
     console.log(`CoreCrypto initialized.`)
   }

@@ -41,6 +41,7 @@ export class CoreCryptoService {
 
   constructor(
     @Inject(WIRE_USER_ID) private userId: string,
+    @Inject(WIRE_USER_DOMAIN) private userDomain: string,
     @Inject(WIRE_CRYPTO_STORAGE_PASSWORD) private cryptographyStoragePassword: string,
     private featureConfigsService: FeatureConfigsService,
     private clientsService: ClientsService,
@@ -96,9 +97,9 @@ export class CoreCryptoService {
     }
 
     const appClientId = AppClientId.create(
-      Container.get<string>(WIRE_USER_ID),
+      this.userId,
       clientResponse.id,
-      Container.get<string>(WIRE_USER_DOMAIN)
+      this.userDomain
     )
     Container.set(APP_CLIENT_ID, appClientId)
 
