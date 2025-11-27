@@ -14,14 +14,14 @@
 * along with this program. If not, see http://www.gnu.org/licenses/.
 */
 
-import { Container, Service } from "typedi"
+import { Container, Inject, Service } from "typedi"
 import type { AccessResponse } from "../api/response/AccessResponse.js"
-import { WIRE_USER_EMAIL, WIRE_USER_PASSWORD } from "../utils/DependencyInjectionTokens.js"
+import { WIRE_API_HOST, WIRE_USER_EMAIL, WIRE_USER_PASSWORD } from "../utils/DependencyInjectionTokens.js"
 import type { WireApiError } from "../model/exception/WireApiError.js"
 
 @Service()
 export class HttpClient {
-  private apiHost: string
+
   private tokenTimestamp: number | null = null
   private cachedAccessToken: string | null = null
   private cachedDeviceId: string | null = null
@@ -29,9 +29,7 @@ export class HttpClient {
     "Content-Type": "application/json"
   }
 
-  constructor(apiHost: string) {
-    this.apiHost = `${apiHost}/${this.API_HOST_VERSION}/`
-  }
+  constructor(@Inject(WIRE_API_HOST) private apiHost: string) {}
   
   private setAuthorizationToken(token: string) {
     this.headers["Authorization"] = `Bearer ${token}`
@@ -130,7 +128,7 @@ export class HttpClient {
         ...(options.headers || {})
       }
     }
-    const response = await fetch(`${this.apiHost}${path}`, optionsAndHeaders)
+    const response = await fetch(`${this.apiHost}/${this.API_HOST_VERSION}/${path}`, optionsAndHeaders)
 
     if (!response.ok) {
       let errorDetails = ''

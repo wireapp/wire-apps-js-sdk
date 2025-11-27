@@ -20,9 +20,7 @@ import type { FeatureConfigsResponse } from "./response/FeatureConfigsResponse.j
 
 @Service()
 export class FeatureConfigsService {
-  constructor(
-    private httpClient: HttpClient
-  ) {}
+  constructor(private httpClient: HttpClient) {}
 
   async getFeatureConfigs(): Promise<FeatureConfigsResponse> {
     return await this.httpClient.getRequest<FeatureConfigsResponse>("feature-configs")

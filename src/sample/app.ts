@@ -71,13 +71,13 @@ class SampleEventsHandler extends WireEventsHandler {
 
 const sampleEventsHandler = new SampleEventsHandler()
 const sdk = await WireAppSdk.create(
-    userEmail,
-    userPassword,
-    userId,
-    userDomain,
-    apiHost,
-    cryptographyStoragePassword,
-    sampleEventsHandler
+  userEmail,
+  userPassword,
+  userId,
+  userDomain,
+  apiHost,
+  cryptographyStoragePassword,
+  sampleEventsHandler
 )
 
 sdk.startListening()

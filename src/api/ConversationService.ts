@@ -18,6 +18,8 @@ import { Service } from "typedi";
 import { HttpClient } from "../core/HttpClient.js";
 import type { QualifiedId } from "../model/QualifiedId.js";
 import type { ConversationResponse } from "./response/ConversationResponse.js";
+import { decodeBase64Bytes } from "../utils/Base64Util.js";
+import type { MLSGroupId } from "../model/mls/MLSGroupId.js";
 
 @Service()
 export class ConversationService {
@@ -29,5 +31,15 @@ export class ConversationService {
     return {
       groupId: response["group_id"] as string
     }
+  }
+
+  getDecodedMlsGroupId(conversation: ConversationResponse): MLSGroupId {
+    if (!conversation.groupId) {
+      // TODO: Map to WireException
+      throw new Error("MLSGroupId should not be empty or null.")
+    }
+    
+    const decodedBytes = decodeBase64Bytes(conversation.groupId)
+    return decodedBytes
   }
 }

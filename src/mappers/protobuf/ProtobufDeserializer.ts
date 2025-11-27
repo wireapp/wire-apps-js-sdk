@@ -15,9 +15,9 @@
 */
 
 import rootMessage, { type IGenericMessage } from "../../generated/messages.js";
-import type { QualifiedId } from "../QualifiedId.js";
+import type { QualifiedId } from "../../model/QualifiedId.js";
 const { GenericMessage } = rootMessage;
-import { type WireMessage, TextMessage, Unknown } from '../WireMessage.js';
+import { type WireMessage, TextMessage, Unknown } from '../../model/WireMessage.js';
 
 /**
  * Utility object responsible for mapping a GenericMessage to WireMessage

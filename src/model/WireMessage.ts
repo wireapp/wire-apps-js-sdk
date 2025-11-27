@@ -15,7 +15,7 @@
 */
 
 import type { QualifiedId } from "./QualifiedId.js";
-  
+
 type Item = object
   
 interface Ephemeral {

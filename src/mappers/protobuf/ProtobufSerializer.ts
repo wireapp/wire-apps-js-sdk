@@ -19,7 +19,7 @@ import rootMessage, {
   type IGenericMessage
 } from "../../generated/messages.js";
 const { GenericMessage } = rootMessage;
-import { type WireMessage, TextMessage } from '../WireMessage.js';
+import { type WireMessage, TextMessage } from '../../model/WireMessage.js';
 
 /**
  * Utility object responsible for serializing WireMessage to GenericMessage

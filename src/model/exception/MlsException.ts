@@ -20,3 +20,7 @@ export class MlsException extends Error {
     this.name = 'MlsException';
   }
 }
+
+export function isMlsException(error: unknown): error is MlsException {
+  return error instanceof Error && error.name === 'MlsException';
+}

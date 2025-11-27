@@ -20,3 +20,7 @@ export class CoreCryptoMlsException extends Error {
     this.name = 'CoreCryptoMlsException';
   }
 }
+
+export function isCoreCryptoMlsException(error: unknown): error is CoreCryptoMlsException {
+  return error instanceof Error && error.name === 'CoreCryptoMlsException';
+}

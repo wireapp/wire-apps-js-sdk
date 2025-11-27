@@ -14,7 +14,31 @@
 * along with this program. If not, see http://www.gnu.org/licenses/.
 */
 
-import type { MLSWelcomeDTO } from "./mls/MLSWelcomeDTO.js";
-import type { NewMLSMessageDTO } from "./mls/NewMLSMessageDTO.js";
+import type { QualifiedId } from "./QualifiedId.js"
+
+export interface MLSWelcomeDTO {
+  type: string
+  data: string
+  qualified_conversation: QualifiedId
+  qualified_from: QualifiedId
+  time: Date
+}
+
+export interface NewMLSMessageDTO {
+  type: string
+  data: string
+  qualified_conversation: QualifiedId
+  qualified_from: QualifiedId
+  time: Date
+}
 
 export type EventContentDTO = MLSWelcomeDTO | NewMLSMessageDTO
+
+// Type Guards
+export function isNewMLSMessageEvent(event: EventContentDTO): event is NewMLSMessageDTO {
+  return (event as NewMLSMessageDTO).type === "conversation.mls-message-add"
+}
+
+export function isMLSWelcomeEvent(event: EventContentDTO): event is MLSWelcomeDTO {
+  return (event as MLSWelcomeDTO).type === "conversation.mls-welcome"
+}

@@ -6,7 +6,7 @@
   "scripts": {
     "proto:mkdir": "mkdir -p src/generated",
     "proto:package": "node scripts/create-generated-package-json.js",
-    "proto:js": "pbjs -t static-module -w commonjs -o src/generated/messages.js messages.proto",
+    "proto:js": "pbjs -t static-module -w commonjs -o src/generated/messages.js src/proto/messages.proto",
     "proto:ts": "pbts -t static-module -w commonjs -o src/generated/messages.d.ts src/generated/messages.js",
     "proto:copy": "cpy 'src/generated/*' build/generated/",
     "proto:generate": "npm run proto:mkdir && npm run proto:package && npm run proto:js && npm run proto:ts",

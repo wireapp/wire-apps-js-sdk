@@ -14,26 +14,23 @@
 * along with this program. If not, see http://www.gnu.org/licenses/.
 */
 
-import type { MlsService } from "../api/MlsService.js";
-import { ProtobufSerializer } from "../model/protobuf/ProtobufSerializer.js";
+import { Service } from "typedi";
+import { MlsService } from "../api/MlsService.js";
+import { ProtobufSerializer } from "../mappers/protobuf/ProtobufSerializer.js";
 import type { WireMessage } from "../model/WireMessage.js";
-import type { CoreCryptoClient } from "./CoreCryptoClient.js";
+import { CoreCryptoService } from "./CoreCryptoService.js";
 
+@Service()
 export class WireApplicationManager {
-  private coreCryptoClient: CoreCryptoClient
-  private mlsService: MlsService
-
+  
   constructor(
-    coreCryptoClient: CoreCryptoClient,
-    mlsService: MlsService
-  ) {
-    this.coreCryptoClient = coreCryptoClient
-    this.mlsService = mlsService
-  }
+    private coreCryptoService: CoreCryptoService,
+    private mlsService: MlsService
+  ) {}
 
   async sendMessage(message: WireMessage): Promise<string> {
     const protobufMessage = ProtobufSerializer.toGenericMessageByteArray(message)
-    const encryptedMessage = await this.coreCryptoClient.encryptMls(
+    const encryptedMessage = await this.coreCryptoService.encryptMls(
       message.conversationId,
       protobufMessage
     )

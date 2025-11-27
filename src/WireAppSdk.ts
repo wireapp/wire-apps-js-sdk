@@ -16,16 +16,11 @@
 
 import "reflect-metadata";
 import { Container } from "typedi"
-import { HttpClient } from "./core/HttpClient.js"
-import { FeatureConfigsService } from "./api/FeatureConfigsService.js";
-import { CoreCryptoClient } from "./core/CoreCryptoClient.js";
+import { CoreCryptoService } from "./core/CoreCryptoService.js";
 import 'fake-indexeddb/auto';
-import { WIRE_API_HOST, WIRE_EVENTS_HANDLER, WIRE_USER_DOMAIN, WIRE_USER_EMAIL, WIRE_USER_ID, WIRE_USER_PASSWORD } from "./utils/DependencyInjectionTokens.js";
+import { WIRE_API_HOST, WIRE_CRYPTO_STORAGE_PASSWORD, WIRE_EVENTS_HANDLER, WIRE_USER_DOMAIN, WIRE_USER_EMAIL, WIRE_USER_ID, WIRE_USER_PASSWORD } from "./utils/DependencyInjectionTokens.js";
 import { WebSocketClient } from "./core/WebSocketClient.js";
-import { ConversationService } from "./api/ConversationService.js";
-import { MlsService } from "./api/MlsService.js";
-import type { WireEventsHandler } from "./core/WireEventsHandler.js";
-import { WireApplicationManager } from "./core/WireApplicationManager.js";
+import { WireEventsHandler } from "./core/WireEventsHandler.js";
 
 export class WireAppSdk {
   private userEmail: string
@@ -35,9 +30,7 @@ export class WireAppSdk {
   private apiHost: string
   private cryptographyStoragePassword: string
 
-  private coreCryptoClient!: CoreCryptoClient
-
-  private featureConfigsService!: FeatureConfigsService
+  private coreCryptoService!: CoreCryptoService
 
   private isWebSocketRunning: boolean = false
   private webSocketClient!: WebSocketClient
@@ -86,60 +79,29 @@ export class WireAppSdk {
     return wireAppSdk
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-private-class-members
   private async init() {
-    this.initDependencyInjection()
+    this.configureDependencies()
     await this.initCryptoClient()
-    this.initApplicationManager()
-    this.initWebSocketClient()
   }
 
-  private initDependencyInjection() {
+  private configureDependencies() {
     Container.set(WIRE_API_HOST, this.apiHost)
     Container.set(WIRE_USER_EMAIL, this.userEmail)
     Container.set(WIRE_USER_PASSWORD, this.userPassword)
     Container.set(WIRE_USER_ID, this.userId)
     Container.set(WIRE_USER_DOMAIN, this.userDomain)
-    
-    const httpClient = new HttpClient(this.apiHost)
-    Container.set(HttpClient, httpClient)
+    Container.set(WIRE_CRYPTO_STORAGE_PASSWORD, this.cryptographyStoragePassword)
 
     Container.set(WIRE_EVENTS_HANDLER, this.wireEventsHandler)
-
-    this.featureConfigsService = Container.get(FeatureConfigsService)
-  }
-
-  private initApplicationManager() {
-    const applicationManager = new WireApplicationManager(
-      this.coreCryptoClient,
-      Container.get(MlsService)
-    )
-    Container.set(WireApplicationManager, applicationManager)
-  }
-
-  private initWebSocketClient() {
-    this.webSocketClient = new WebSocketClient(
-      Container.get(HttpClient),
-      this.coreCryptoClient,
-      Container.get(ConversationService),
-      Container.get(MlsService)
-    )
+    this.webSocketClient = Container.get(WebSocketClient)
   }
 
   private async initCryptoClient() {
-    const defaultCipherSuite =  (await this.featureConfigsService.getFeatureConfigs()).mls.config.defaultCipherSuite
-    
-    const coreCryptoClient = await CoreCryptoClient.create(
-      this.userId,
-      defaultCipherSuite,
-      this.cryptographyStoragePassword
-    )
-
-    await coreCryptoClient.initOrRegisterClient()
+    this.coreCryptoService = Container.get(CoreCryptoService)
+    await this.coreCryptoService.initCoreCryptoClient()
+    await this.coreCryptoService.initOrRegisterClient()
 
     console.log(`CoreCrypto initialized.`)
-
-    this.coreCryptoClient = coreCryptoClient
   }
 
   async startListening() {

@@ -15,7 +15,6 @@
 */
 
 import type { CommitBundle, HistorySecret, MlsTransport, MlsTransportData, MlsTransportResponse } from "@wireapp/core-crypto";
-import { todo } from "node:test";
 import { Service } from "typedi";
 import { MlsService } from "../api/MlsService.js";
 
@@ -36,7 +35,7 @@ export class CoreCryptoMlsTransport implements MlsTransport {
   }
 
   async prepareForTransport(__: HistorySecret): Promise<MlsTransportData> {
-    throw todo("Not yet implemented.")
+    throw new Error("Not yet implemented.")
   }
   
   /**
