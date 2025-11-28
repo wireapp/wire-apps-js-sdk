@@ -8,7 +8,7 @@ You can find the published source code at [github.com/wireapp/wire](https://gith
 
 For licensing information, see the attached LICENSE file and the list of third-party licenses at [wire.com/legal/licenses/](https://wire.com/legal/licenses/).
 
-If you compile the open source software that we make available from time to time to develop your own mobile, desktop or web application, and cause that application to connect to our servers for any purposes, we refer to that resulting application as an “Open Source App”.  All Open Source Apps are subject to, and may only be used and/or commercialized in accordance with, the Terms of Use applicable to the Wire Application, which can be found at https://wire.com/legal/#terms.  Additionally, if you choose to build an Open Source App, certain restrictions apply, as follows:
+If you compile the open source software that we make available from time to time to develop your own mobile, desktop or web application, and cause that application to connect to our servers for any purposes, we refer to that resulting application as an “Open Source App”. All Open Source Apps are subject to, and may only be used and/or commercialized in accordance with, the Terms of Use applicable to the Wire Application, which can be found at https://wire.com/legal/#terms. Additionally, if you choose to build an Open Source App, certain restrictions apply, as follows:
 
 a. You agree not to change the way the Open Source App connects and interacts with our servers;
 
@@ -37,29 +37,44 @@ Deploying the application and initializing the SDK will enable it to receive inv
 messages to it.
 
 ## How to use it
+
 To be done
 
 ## Requirements
 
-* Node 21+
-* Access to the file system to store cryptographic keys and data
+- Node v22
+- Access to the file system to store cryptographic keys and data
 
 ## Import with
+
 To be done
 
 ## Environment Variables
-To be done
 
-## Build the project
+Environment Variables can be checked from: `.env.example` file
+
+```
+WIRE_SDK_USER_EMAIL=youremail@yourdomain.com
+WIRE_SDK_USER_PASSWORD=YourP@ssw0rd
+WIRE_SDK_USER_ID=your-user-ID-UUID-format
+WIRE_SDK_USER_DOMAIN=yourdomain
+WIRE_SDK_API_HOST=https://your-api.host
+WIRE_SDK_CRYPTO_PASSWORD=YourCryptographyStoragePassword
+```
+
+## Running the sample App
 
 ```shell
-npx tsc
+// If it's the first time running the project
+npm run build:setup
+
+// Then
+npm run sample
 ```
 
 ## Troubleshooting
 
-If you have started using the SDK targeting one Wire environment,
-and later you want to switch to another, you may need to move/delete the `storage/apps.db` directory
+To be done
 
 ### Testing the SDK
 

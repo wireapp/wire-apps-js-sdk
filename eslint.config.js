@@ -1,11 +1,21 @@
-import js from "@eslint/js"
-import globals from "globals"
-import tseslint from "typescript-eslint"
+import js from "@eslint/js";
+import globals from "globals";
+import tseslint from "typescript-eslint";
 
 export default [
-  js.configs.recommended,
   ...tseslint.configs.recommended,
+  js.configs.recommended,
+  
   {
+    ignores: [
+      "build/**",
+      "node_modules/**",
+      "src/sample/**",
+      "src/generated/**"
+    ]
+  },
+  {
+    files: ["**/*.ts", "**/*.tsx"],
     languageOptions: {
       parser: tseslint.parser,
       parserOptions: {
@@ -21,13 +31,27 @@ export default [
     linterOptions: {
       reportUnusedDisableDirectives: true
     },
-    ignores: [
-      "build/**",
-      "node_modules/**",
-      "src/sample/**",
-      "*.js"
-    ],
     rules: {
+      "indent": ["error", 2, { "SwitchCase": 1 }],
+
+      "no-unused-vars": "off",
+      "@typescript-eslint/no-unused-vars": [
+        "warn",
+        {
+          "args": "all",
+          "argsIgnorePattern": "^_",
+          "varsIgnorePattern": "^_",
+          "caughtErrors": "all",
+          "caughtErrorsIgnorePattern": "^_",
+          "destructuredArrayIgnorePattern": "^_",
+          "ignoreRestSiblings": true
+        }
+      ],
+
+      "@typescript-eslint/no-unused-private-class-members": "warn",
+
+      "no-redeclare": "off",
+      "@typescript-eslint/no-redeclare": "off",
       "id-length": "warn",
       "@typescript-eslint/explicit-module-boundary-types": "off",
       "@typescript-eslint/ban-ts-comment": "off",

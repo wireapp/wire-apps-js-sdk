@@ -14,8 +14,70 @@
 * along with this program. If not, see http://www.gnu.org/licenses/.
 */
 
-import { WireAppSdk } from "../WireAppSdk.js"
+/* eslint-disable no-undef */
 
-const sdk = new WireAppSdk("Hello from TS SDK!")
+import "reflect-metadata";
+import dotenv from 'dotenv';
+import {
+    WireAppSdk,
+    WireEventsHandler,
+    TextMessage
+} from '../index.js' // This will be imported from the SDK when used outside of this repository
 
-sdk.showValue()
+dotenv.config()
+
+const userEmail = process.env['WIRE_SDK_USER_EMAIL'];
+const userPassword = process.env['WIRE_SDK_USER_PASSWORD'];
+const userId = process.env['WIRE_SDK_USER_ID'];
+const userDomain = process.env['WIRE_SDK_USER_DOMAIN'];
+const apiHost = process.env['WIRE_SDK_API_HOST'];
+const cryptographyStoragePassword = process.env['WIRE_SDK_CRYPTO_PASSWORD'];
+
+if (!userEmail) {
+    throw new Error('WIRE_SDK_USER_EMAIL must be set in .env file');
+}
+
+if (!userPassword) {
+    throw new Error('WIRE_SDK_USER_PASSWORD must be set in .env file');
+}
+
+if (!userId) {
+    throw new Error('WIRE_SDK_USER_ID must be set in .env file');
+}
+
+if (!userDomain) {
+    throw new Error('WIRE_SDK_USER_DOMAIN must be set in .env file');
+}
+
+if (!apiHost) {
+    throw new Error('WIRE_SDK_API_HOST must be set in .env file');
+}
+
+if (!cryptographyStoragePassword) {
+    throw new Error('WIRE_SDK_CRYPTO_PASSWORD must be set in .env file');
+}
+
+class SampleEventsHandler extends WireEventsHandler {
+  public override async onTextMessageReceived(wireMessage: TextMessage): Promise<void> {
+    console.log(`[SampleEventsHandler] Received message: ${wireMessage.text}`)
+    const textMessage = TextMessage.create({
+      conversationId: wireMessage.conversationId,
+      text: `Sent from SampleEventsHandler: ${wireMessage.text}`
+    })
+
+    this.manager.sendMessage(textMessage)
+  }
+}
+
+const sampleEventsHandler = new SampleEventsHandler()
+const sdk = await WireAppSdk.create(
+  userEmail,
+  userPassword,
+  userId,
+  userDomain,
+  apiHost,
+  cryptographyStoragePassword,
+  sampleEventsHandler
+)
+
+sdk.startListening()

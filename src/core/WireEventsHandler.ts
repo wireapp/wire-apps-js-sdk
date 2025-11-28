@@ -1,0 +1,43 @@
+/*
+ * Wire
+ * Copyright (C) 2025 Wire Swiss GmbH
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see http://www.gnu.org/licenses/.
+ */
+
+import { Container } from "typedi";
+import type { TextMessage } from "../model/WireMessage.js";
+import { WireApplicationManager } from "./WireApplicationManager.js";
+
+/**
+ * Abstract class exposed by the SDK to handle events.
+ */
+export abstract class WireEventsHandler {
+  private _manager?: WireApplicationManager
+
+  /**
+   * The WireApplicationManager is used to manage the Wire application lifecycle and
+   * communication with the backend.
+   * NOTE: Do not use manager in the constructor of this class, as it will be null at that time.
+   * Use it only inside the event handling methods.
+   */
+  public get manager(): WireApplicationManager {
+    if (!this._manager) {
+      this._manager = Container.get(WireApplicationManager)
+    }
+    return this._manager
+  }
+
+  public async onTextMessageReceived(wireMessage: TextMessage): Promise<void> {
+    console.log(`[WireEventsHandler] Received onTextMessageReceived, ID: ${wireMessage.id}`)
+  }
+}
