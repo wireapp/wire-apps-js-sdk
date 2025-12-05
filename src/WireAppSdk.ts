@@ -21,6 +21,7 @@ import 'fake-indexeddb/auto';
 import { WIRE_API_HOST, WIRE_CRYPTO_STORAGE_PASSWORD, WIRE_EVENTS_HANDLER, WIRE_USER_DOMAIN, WIRE_USER_EMAIL, WIRE_USER_ID, WIRE_USER_PASSWORD } from "./utils/DependencyInjectionTokens.js";
 import { WebSocketClient } from "./core/WebSocketClient.js";
 import { WireEventsHandler } from "./core/WireEventsHandler.js";
+import { DatabaseService } from "./db/DatabaseService.js";
 
 export class WireAppSdk {
   private userEmail: string
@@ -120,5 +121,15 @@ export class WireAppSdk {
     this.isWebSocketRunning = false
     
     this.webSocketClient.close()
+  }
+
+  close() {
+    this.stopListening()
+    
+    const coreCryptoService = Container.get(CoreCryptoService)
+    coreCryptoService.close()
+
+    const databaseService = Container.get(DatabaseService)
+    databaseService.close()
   }
 }

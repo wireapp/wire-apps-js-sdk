@@ -79,6 +79,15 @@ export class ConversationMemberRepository {
     )
   }
 
+  saveMany(members: ConversationMemberEntity[]) {
+    const insertMany = this.database.db.transaction((members) => {
+      for (const member of members) {
+        this.save(member)
+      }
+    })
+    insertMany(members)
+  }
+
   delete(
     userId: string,
     userDomain: string,

@@ -155,4 +155,8 @@ export class CoreCryptoService {
       encryptedMessageBytes
     )
   }
+
+  close() {
+    this.coreCryptoClient!.close()
+  }
 }

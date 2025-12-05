@@ -58,4 +58,8 @@ export class DatabaseService {
       );       
     `)
   }
+
+  close() {
+    this.db.close()
+  }
 }

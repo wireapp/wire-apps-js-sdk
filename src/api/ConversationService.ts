@@ -25,6 +25,7 @@ import type { ConversationEntity } from "../db/model/ConversationEntity.js";
 import type { ConversationMember } from "../model/conversation/ConversationMember.js";
 import type { UserResponse } from "./model/UserResponse.js";
 import { ConversationTypeMapper } from "../mappers/conversation/ConversationTypeMapper.js";
+import type { ConversationMemberEntity } from "../db/model/ConversationMemberEntity.js";
 
 @Service()
 export class ConversationService {
@@ -68,16 +69,18 @@ export class ConversationService {
       }
     })
 
-    members.forEach((member) => {
-      this.conversationMemberRepository.save({
+    const membersToSave: ConversationMemberEntity[] = members.map((member) => {
+      return {
         user_id: member.userId.id,
         user_domain: member.userId.domain,
         conversation_id: conversationId.id,
         conversation_domain: conversationId.domain,
         role: member.role,
         creation_date: null
-      })
+      }
     })
+
+    this.conversationMemberRepository.saveMany(membersToSave)
 
     return {
       conversation: conversationEntity,
