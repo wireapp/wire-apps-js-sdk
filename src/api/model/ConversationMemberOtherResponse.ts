@@ -14,11 +14,10 @@
 * along with this program. If not, see http://www.gnu.org/licenses/.
 */
 
-export function encodeBase64(bytes: Uint8Array): string {
-  return Buffer.from(bytes).toString("base64")
-}
+import type { ConversationRole } from "../../model/conversation/ConversationRole.js";
+import type { QualifiedId } from "../../model/QualifiedId.js";
 
-export function decodeBase64Bytes(base64String: string): Uint8Array {
-  const buffer = Buffer.from(base64String, 'base64')
-  return new Uint8Array(buffer)
+export interface ConversationMemberOtherResponse {
+  qualified_id: QualifiedId
+  conversation_role: ConversationRole
 }

@@ -4,6 +4,7 @@
   "main": "build/index.js",
   "types": "build/index.d.ts",
   "scripts": {
+    "storage:mkdir": "mkdir -p storage",
     "proto:mkdir": "mkdir -p src/generated",
     "proto:package": "node scripts/create-generated-package-json.js",
     "proto:js": "pbjs -t static-module -w commonjs -o src/generated/messages.js src/proto/messages.proto",
@@ -11,7 +12,7 @@
     "proto:copy": "cpy 'src/generated/*' build/generated/",
     "proto:generate": "npm run proto:mkdir && npm run proto:package && npm run proto:js && npm run proto:ts",
     "corecrypto:fix-main": "node scripts/fix-core-crypto-main.js",
-    "build:setup": "npm install && npm run corecrypto:fix-main && npm run proto:generate",
+    "build:setup": "npm install && npm run storage:mkdir && npm run corecrypto:fix-main && npm run proto:generate",
     "build": "tsc -p tsconfig.json && npm run proto:copy",
     "build:sample": "tsc -p tsconfig.sample.json && npm run proto:copy",
     "sample": "npm run build:sample && node --trace-warnings build/sample/app.js",
@@ -33,8 +34,8 @@
     "url": "https://github.com/wireapp/wire-apps-js-sdk/issues"
   },
   "devDependencies": {
-
     "@eslint/js": "^9.39.0",
+    "@types/better-sqlite3": "^7.6.13",
     "@types/long": "^5.0.0",
     "@types/node": "^24.10.1",
     "@types/ws": "^8.18.1",
@@ -50,6 +51,8 @@
   },
   "dependencies": {
     "@wireapp/core-crypto": "^9.1.1",
+    "bazinga64": "^6.5.8",
+    "better-sqlite3": "^12.5.0",
     "dotenv": "^17.2.3",
     "protobufjs": "^7.5.4",
     "reflect-metadata": "^0.2.2",

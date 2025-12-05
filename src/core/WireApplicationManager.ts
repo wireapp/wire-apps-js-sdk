@@ -19,19 +19,24 @@ import { MlsService } from "../api/MlsService.js";
 import { ProtobufSerializer } from "../mappers/protobuf/ProtobufSerializer.js";
 import type { WireMessage } from "../model/WireMessage.js";
 import { CoreCryptoService } from "./CoreCryptoService.js";
+import { ConversationService } from "../api/ConversationService.js";
 
 @Service()
 export class WireApplicationManager {
   
   constructor(
     private coreCryptoService: CoreCryptoService,
+    private conversationService: ConversationService,
     private mlsService: MlsService
   ) {}
 
   async sendMessage(message: WireMessage): Promise<string> {
+    const conversationGroupId =
+      await this.conversationService.getConversationGroupId(message.conversationId)
+
     const protobufMessage = ProtobufSerializer.toGenericMessageByteArray(message)
     const encryptedMessage = await this.coreCryptoService.encryptMls(
-      message.conversationId,
+      conversationGroupId,
       protobufMessage
     )
 

@@ -25,9 +25,7 @@ import { MlsService } from "../api/MlsService.js";
 import { CoreCryptoClient } from "./CoreCryptoClient.js";
 import { CoreCryptoMlsTransport } from "./CoreCryptoMlsTransport.js";
 import { FeatureConfigsService } from "../api/FeatureConfigsService.js";
-import type { QualifiedId } from "../model/QualifiedId.js";
-import type { MLSGroupId } from "../model/mls/MLSGroupId.js";
-import { ConversationService } from "../api/ConversationService.js";
+import { Decoder } from "bazinga64";
 
 /**
  * Service that handles initialization of CoreCrypto and provides a high-level API for:
@@ -45,7 +43,6 @@ export class CoreCryptoService {
     @Inject(WIRE_CRYPTO_STORAGE_PASSWORD) private cryptographyStoragePassword: string,
     private featureConfigsService: FeatureConfigsService,
     private clientsService: ClientsService,
-    private conversationService: ConversationService,
     private mlsService: MlsService,
     private mlsTransport: CoreCryptoMlsTransport
   ) {}
@@ -121,49 +118,41 @@ export class CoreCryptoService {
     await this.mlsService.uploadMlsKeyPackages(keyPackages)
   }
 
-  async processWelcomeMessage(welcomeMessageBytes: Uint8Array): Promise<ConversationId> {
-    return await this.coreCryptoClient!.processWelcomeMessage(welcomeMessageBytes)
+  async processWelcomeMessage(welcomeMessageBytes: Uint8Array) {
+    await this.coreCryptoClient!.processWelcomeMessage(welcomeMessageBytes)
+    // TODO: Handle MlsException.OrphanWelcome in try/catch
+    // TODO: Request to join conversation by external commit
   }
 
-  async handleJoiningConversation(
-    qualifiedConversation: QualifiedId,
-    groupId: MLSGroupId | null
-  ): Promise<MLSGroupId> {
-    const conversation = await this.conversationService.getConversation(qualifiedConversation)
-    const mlsGroupId = groupId ?? this.conversationService.getDecodedMlsGroupId(conversation)
-    
-    // TODO: Save Conversation to storage
-    
-    if (await this.coreCryptoClient!.hasTooFewKeyPackageCount()) {
-      // TODO: Change getAppClientId to appStorage/DB request
-      const appClientId = Container.get<AppClientId>(APP_CLIENT_ID)
-      if (appClientId) {
-        const keyPackages = await this.coreCryptoClient!.mlsGenerateKeyPackages()
-        await this.mlsService.uploadMlsKeyPackages(keyPackages)
-      }
-    }
-    
-    return mlsGroupId
+  async hasTooFewKeyPackageCount() {
+    return this.coreCryptoClient!.hasTooFewKeyPackageCount()
+  }
+
+  async mlsGenerateKeyPackages(): Promise<Uint8Array[]> {
+    return await this.coreCryptoClient!.mlsGenerateKeyPackages()
   }
 
   async encryptMls(
-    conversationId: QualifiedId,
+    groupId: string,
     message: Uint8Array
   ): Promise<Uint8Array> {
+    const groupIdBytes = Decoder.fromBase64(groupId).asBytes
     return await this.coreCryptoClient!.encryptMls(
-      conversationId,
+      new ConversationId(groupIdBytes),
       message
     )
   }
 
   async decryptMls(
-    conversationId: QualifiedId,
+    groupId: string,
     encryptedMessage: string
   ): Promise<Uint8Array | undefined> {
+    const groupIdBytes = Decoder.fromBase64(groupId).asBytes
+    const encryptedMessageBytes = Decoder.fromBase64(encryptedMessage).asBytes
+
     return await this.coreCryptoClient?.decryptMls(
-      conversationId,
-      encryptedMessage
+      new ConversationId(groupIdBytes),
+      encryptedMessageBytes
     )
   }
-
 }

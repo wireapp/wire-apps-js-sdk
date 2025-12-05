@@ -14,4 +14,19 @@
 * along with this program. If not, see http://www.gnu.org/licenses/.
 */
 
-export type MLSGroupId = Uint8Array
+import { ConversationType } from "../../model/conversation/ConversationType.js"
+
+export class ConversationTypeMapper {
+  static toModel(value: string): ConversationType {
+    switch (value) {
+      case ConversationType.GROUP:
+        return ConversationType.GROUP
+      case ConversationType.SELF:
+        return ConversationType.SELF
+      case ConversationType.ONE_TO_ONE:
+        return ConversationType.ONE_TO_ONE
+      default:
+        return ConversationType.GROUP
+    }
+  }
+}

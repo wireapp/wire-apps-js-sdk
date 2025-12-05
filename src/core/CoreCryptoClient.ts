@@ -18,9 +18,8 @@ import { Ciphersuite, ClientId, ConversationId, CoreCrypto, CredentialType, Data
 import type { AppClientId } from "../model/AppClientId.js";
 import { CoreCryptoMlsTransport } from "./CoreCryptoMlsTransport.js";
 import type { MlsPublicKeys } from "../model/MlsPublicKeys.js";
-import { encodeBase64 } from "../utils/Base64Util.js";
 import { PreKeyCrypto } from "../model/PreKeyCrypto.js";
-import { qualifiedIdToConversationId, type QualifiedId } from "../model/QualifiedId.js";
+import { Encoder } from "bazinga64";
 
 export class CoreCryptoClient {
   private ciphersuite: Ciphersuite
@@ -110,7 +109,7 @@ export class CoreCryptoClient {
       )
     })
 
-    const encodedKey = encodeBase64(key)
+    const encodedKey = Encoder.toBase64(key).asString
 
     switch (this.ciphersuite) {
       case Ciphersuite.MLS_128_DHKEMP256_AES128GCM_SHA256_P256:
@@ -154,7 +153,7 @@ export class CoreCryptoClient {
           const id = updatedIndex & 0xffff;
           const data = await context.proteusNewPrekey(id)
           
-          return new PreKeyCrypto(id, encodeBase64(data));
+          return new PreKeyCrypto(id, Encoder.toBase64(data).asString);
         })
       )
 
@@ -167,32 +166,29 @@ export class CoreCryptoClient {
       const id = CoreCrypto.proteusLastResortPrekeyId()
       const data = await context.proteusLastResortPrekey()
 
-      return new PreKeyCrypto(id, encodeBase64(data))
+      return new PreKeyCrypto(id, Encoder.toBase64(data).asString)
     })
   }
 
   async encryptMls(
-    conversationId: QualifiedId,
+    groupId: ConversationId,
     message: Uint8Array
   ): Promise<Uint8Array> {
     return await this.coreCrypto.transaction(async (context) => {
       return await context.encryptMessage(
-        qualifiedIdToConversationId(conversationId),
+        groupId,
         message
       )
     })
   }
   
   async decryptMls(
-    conversationId: QualifiedId,
-    encryptedMessage: string
+    groupId: ConversationId,
+    encryptedMessageBytes: Uint8Array
   ): Promise<Uint8Array | undefined> {
-    const encryptedMessageBytes = Buffer.from(encryptedMessage, 'base64')
-    const convId = qualifiedIdToConversationId(conversationId)
-    
-    const decryptedMessage = await this.coreCrypto.transaction(async (it) => {
-      return await it.decryptMessage(
-        convId,
+    const decryptedMessage = await this.coreCrypto.transaction(async (context) => {
+      return await context.decryptMessage(
+        groupId,
         encryptedMessageBytes
       )
     })
@@ -200,15 +196,12 @@ export class CoreCryptoClient {
     return decryptedMessage.message
   }
 
-  async processWelcomeMessage(welcomeMessageBytes: Uint8Array): Promise<ConversationId> {
-    // TODO: re-join conversation if failed
-    const welcomeBundle = await this.coreCrypto.transaction(async (context) => {
-      return await context.processWelcomeMessage(
+  async processWelcomeMessage(welcomeMessageBytes: Uint8Array) {
+    await this.coreCrypto.transaction(async (context) => {
+      await context.processWelcomeMessage(
         new Welcome(welcomeMessageBytes)
       )
     })
-
-    return welcomeBundle.id
   }
 
   async hasTooFewKeyPackageCount(): Promise<boolean> {

@@ -83,13 +83,11 @@ export class WebSocketClient {
       }
 
       webSocket.onmessage = async (event: MessageEvent) => {
-        // Check if it's binary data (equivalent to Frame.Binary)
         if (event.data instanceof Blob || 
           event.data instanceof ArrayBuffer || 
           event.data instanceof Uint8Array ||
           Buffer.isBuffer(event.data)) {
         
-          // Convert to Buffer
           let buffer: Buffer;
           if (event.data instanceof Blob) {
             const arrayBuffer = await event.data.arrayBuffer();
