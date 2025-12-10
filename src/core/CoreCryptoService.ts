@@ -133,25 +133,25 @@ export class CoreCryptoService {
   }
 
   async encryptMls(
-    groupId: string,
+    mlsGroupId: string,
     message: Uint8Array
   ): Promise<Uint8Array> {
-    const groupIdBytes = Decoder.fromBase64(groupId).asBytes
+    const mlsGroupIdBytes = Decoder.fromBase64(mlsGroupId).asBytes
     return await this.coreCryptoClient!.encryptMls(
-      new ConversationId(groupIdBytes),
+      new ConversationId(mlsGroupIdBytes),
       message
     )
   }
 
   async decryptMls(
-    groupId: string,
+    mlsGroupId: string,
     encryptedMessage: string
   ): Promise<Uint8Array | undefined> {
-    const groupIdBytes = Decoder.fromBase64(groupId).asBytes
+    const mlsGroupIdBytes = Decoder.fromBase64(mlsGroupId).asBytes
     const encryptedMessageBytes = Decoder.fromBase64(encryptedMessage).asBytes
 
     return await this.coreCryptoClient?.decryptMls(
-      new ConversationId(groupIdBytes),
+      new ConversationId(mlsGroupIdBytes),
       encryptedMessageBytes
     )
   }

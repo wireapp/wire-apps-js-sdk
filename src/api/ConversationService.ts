@@ -35,20 +35,24 @@ export class ConversationService {
     private conversationMemberRepository: ConversationMemberRepository,
   ) {}
 
-  async saveConversationWithMembers(
-    conversationId: QualifiedId,
-    conversation: ConversationResponse
-  ): Promise<{conversation: ConversationEntity, members: ConversationMember[]}> {
-    let conversationName: string
+  private async getConversationName(conversation: ConversationResponse) {
     if (conversation.type === ConversationType.ONE_TO_ONE && conversation.members.others.length > 0) {
+      console.debug("Fetching User from remote to populate Conversation name")
       const firstUserId = conversation.members.others[0]!
       const getUserPath = `users/${firstUserId.qualified_id.domain}/${firstUserId.qualified_id.id}`
       const user = await this.httpClient.getRequest<UserResponse>(getUserPath)
 
-      conversationName = user.name
+      return user.name
     } else {
-      conversationName = conversation.name ?? ""
+      return conversation.name ?? ""
     }
+  }
+
+  async saveConversationWithMembers(
+    conversationId: QualifiedId,
+    conversation: ConversationResponse
+  ): Promise<{conversation: ConversationEntity, members: ConversationMember[]}> {
+    const conversationName = await this.getConversationName(conversation)
     
     const conversationEntity: ConversationEntity = {
       id: conversationId.id,
@@ -92,8 +96,10 @@ export class ConversationService {
     const conversationEntity = this.conversationRepository.findByIdAndDomain(conversationId.id, conversationId.domain)
 
     if (conversationEntity) {
+      console.debug("Returning Conversation from the Database")
       return conversationEntity
     } else {
+      console.debug("Fetching Conversation from remote")
       const conversationResponse = await this.fetchConversationById(conversationId)
       const { conversation } = await this.saveConversationWithMembers(
         conversationId,
@@ -110,7 +116,7 @@ export class ConversationService {
     )
   }
 
-  async getConversationGroupId(conversationId: QualifiedId): Promise<string> {
+  async getConversationMLSGroupId(conversationId: QualifiedId): Promise<string> {
     const conversation = await this.getConversationById(conversationId)
 
     return conversation.mls_group_id

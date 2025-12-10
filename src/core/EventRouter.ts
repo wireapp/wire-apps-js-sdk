@@ -54,12 +54,12 @@ export class EventRouter {
         )
       } else if (isNewMLSMessageEvent(event)) {
         const textEvent = (event as NewMLSMessageDTO)
-        const conversationGroupId =
-          (await this.conversationService.getConversationGroupId(textEvent.qualified_conversation))
+        const mlsGroupId =
+          (await this.conversationService.getConversationMLSGroupId(textEvent.qualified_conversation))
 
         try {
           const message = await this.coreCryptoService.decryptMls(
-            conversationGroupId,
+            mlsGroupId,
             textEvent.data
           )
           

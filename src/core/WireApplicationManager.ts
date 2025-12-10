@@ -31,12 +31,12 @@ export class WireApplicationManager {
   ) {}
 
   async sendMessage(message: WireMessage): Promise<string> {
-    const conversationGroupId =
-      await this.conversationService.getConversationGroupId(message.conversationId)
+    const mlsGroupId =
+      await this.conversationService.getConversationMLSGroupId(message.conversationId)
 
     const protobufMessage = ProtobufSerializer.toGenericMessageByteArray(message)
     const encryptedMessage = await this.coreCryptoService.encryptMls(
-      conversationGroupId,
+      mlsGroupId,
       protobufMessage
     )
 

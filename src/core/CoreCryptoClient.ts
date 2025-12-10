@@ -171,24 +171,24 @@ export class CoreCryptoClient {
   }
 
   async encryptMls(
-    groupId: ConversationId,
+    mlsGroupId: ConversationId,
     message: Uint8Array
   ): Promise<Uint8Array> {
     return await this.coreCrypto.transaction(async (context) => {
       return await context.encryptMessage(
-        groupId,
+        mlsGroupId,
         message
       )
     })
   }
   
   async decryptMls(
-    groupId: ConversationId,
+    mlsGroupId: ConversationId,
     encryptedMessageBytes: Uint8Array
   ): Promise<Uint8Array | undefined> {
     const decryptedMessage = await this.coreCrypto.transaction(async (context) => {
       return await context.decryptMessage(
-        groupId,
+        mlsGroupId,
         encryptedMessageBytes
       )
     })

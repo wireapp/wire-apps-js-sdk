@@ -17,5 +17,5 @@
 import type { ConversationMemberOtherResponse } from "./ConversationMemberOtherResponse.js";
 
 export interface ConversationMembersResponse {
-  others: ConversationMemberOtherResponse[];
+  others: ConversationMemberOtherResponse[]
 }
