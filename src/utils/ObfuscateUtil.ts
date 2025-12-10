@@ -14,22 +14,18 @@
 * along with this program. If not, see http://www.gnu.org/licenses/.
 */
 
-import { obfuscateClientId } from "../utils/ObfuscateUtil.js"
+const START_INDEX = 0
+const END_INDEX_ID = 7
+const END_INDEX_CLIENT_ID = 3
 
-export class AppClientId {
-  readonly value: string
-  
-  private constructor(value: string) {
-    this.value = value
-  }
-  
-  toString(): string {
-    return obfuscateClientId(this.value)
-  }
-
-  static create(userId: string, deviceId: string, userDomain: string): AppClientId {
-    const value = `${userId}:${deviceId}@${userDomain}`
-    return new AppClientId(value)
+export function obfuscateId(value: string, lastChar: number = END_INDEX_ID): string {
+  if (value.length < END_INDEX_ID) {
+    return value
+  } else {
+    return value.substring(START_INDEX, lastChar) + "***"
   }
 }
 
+export function obfuscateClientId(value: string): string {
+  return obfuscateId(value, END_INDEX_CLIENT_ID)
+}

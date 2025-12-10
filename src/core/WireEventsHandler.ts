@@ -19,6 +19,7 @@ import { WireApplicationManager } from "./WireApplicationManager.js";
 import type { TextMessage } from "../model/WireMessage.js";
 import type { Conversation } from "../model/conversation/Conversation.js";
 import type { ConversationMember } from "../model/conversation/ConversationMember.js";
+import { obfuscateId } from "../utils/ObfuscateUtil.js";
 
 /**
  * Abstract class exposed by the SDK to handle events.
@@ -48,6 +49,6 @@ export abstract class WireEventsHandler {
     conversation: Conversation,
     members: ConversationMember[]
   ): Promise<void> {
-    console.log(`[${this.TAG}] Received onAppAddedToConversation, ID: ${conversation.id} - length: ${members.length}`)
+    console.log(`[${this.TAG}] Received onAppAddedToConversation, ID: ${obfuscateId(conversation.id)} - length: ${members.length}`)
   }
 }

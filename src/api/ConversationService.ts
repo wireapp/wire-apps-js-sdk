@@ -26,6 +26,7 @@ import type { ConversationMember } from "../model/conversation/ConversationMembe
 import type { UserResponse } from "./model/UserResponse.js";
 import { ConversationTypeMapper } from "../mappers/conversation/ConversationTypeMapper.js";
 import type { ConversationMemberEntity } from "../db/model/ConversationMemberEntity.js";
+import { obfuscateId } from "../utils/ObfuscateUtil.js";
 
 @Service()
 export class ConversationService {
@@ -93,6 +94,7 @@ export class ConversationService {
   }
 
   async getConversationById(conversationId: QualifiedId): Promise<ConversationEntity> {
+    console.debug(`Getting Conversation by Id: ${obfuscateId(conversationId.id)}`)
     const conversationEntity = this.conversationRepository.findByIdAndDomain(conversationId.id, conversationId.domain)
 
     if (conversationEntity) {
