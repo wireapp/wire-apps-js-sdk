@@ -14,15 +14,15 @@
 * along with this program. If not, see http://www.gnu.org/licenses/.
 */
 
-import type { ConversationType } from "../../model/conversation/ConversationType.js"
+import type { CryptoProtocol } from "../../model/CryptoProtocol.js"
 import type { QualifiedId } from "../../model/QualifiedId.js"
-import type { ConversationMembersResponse } from "../model/ConversationMembersResponse.js"
 
-export interface ConversationResponse {
+export interface UserResponse {
   qualified_id: QualifiedId
-  name: string | null
-  type: ConversationType
-  group_id: string
-  team: string
-  members: ConversationMembersResponse
+  team?: string
+  email?: string
+  name: string
+  handle?: string
+  supported_protocols: CryptoProtocol[]
+  deleted: boolean
 }

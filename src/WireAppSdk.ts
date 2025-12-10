@@ -21,6 +21,7 @@ import 'fake-indexeddb/auto';
 import { WIRE_API_HOST, WIRE_CRYPTO_STORAGE_PASSWORD, WIRE_EVENTS_HANDLER, WIRE_USER_DOMAIN, WIRE_USER_EMAIL, WIRE_USER_ID, WIRE_USER_PASSWORD } from "./utils/DependencyInjectionTokens.js";
 import { WebSocketClient } from "./core/WebSocketClient.js";
 import { WireEventsHandler } from "./core/WireEventsHandler.js";
+import { DatabaseService } from "./db/DatabaseService.js";
 
 export class WireAppSdk {
   private userEmail: string
@@ -29,6 +30,8 @@ export class WireAppSdk {
   private userDomain: string
   private apiHost: string
   private cryptographyStoragePassword: string
+
+  private isShuttingDown = false;
 
   private isWebSocketRunning: boolean = false
   private webSocketClient!: WebSocketClient
@@ -72,6 +75,7 @@ export class WireAppSdk {
       wireEventsHandler
     )
 
+    wireAppSdk.registerExitHandlers()
     await wireAppSdk.init()
 
     return wireAppSdk
@@ -120,5 +124,54 @@ export class WireAppSdk {
     this.isWebSocketRunning = false
     
     this.webSocketClient.close()
+  }
+
+  async close() {
+    console.debug("Closing Websocket connections.")
+    this.stopListening()
+    
+    console.debug("Closing CoreCrypto connections.")
+    const coreCryptoService = Container.get(CoreCryptoService)
+    coreCryptoService.close()
+
+    console.debug("Closing Database connections.")
+    const databaseService = Container.get(DatabaseService)
+    databaseService.close()
+  }
+
+  private registerExitHandlers(): void {
+    // SIGINT: Ctrl+C in terminal
+    process.on('SIGINT', () => this.handleExit('SIGINT'));
+    
+    // SIGTERM: Termination signal (e.g., from Docker, Kubernetes)
+    process.on('SIGTERM', () => this.handleExit('SIGTERM'));
+    
+    process.on('uncaughtException', (error) => {
+      console.error('Uncaught exception:', error);
+      this.handleExit('uncaughtException');
+    });
+    
+    process.on('unhandledRejection', (reason) => {
+      console.error('Unhandled rejection:', reason);
+      this.handleExit('unhandledRejection');
+    });
+  }
+
+  private async handleExit(signal: string): Promise<void> {
+    if (this.isShuttingDown) {
+      return;
+    }
+    
+    this.isShuttingDown = true;
+    console.log(`Received ${signal}, cleaning up...`);
+    
+    try {
+      await this.close();
+      console.log('Cleanup completed successfully');
+      process.exit(0);
+    } catch (error) {
+      console.error('Error during cleanup:', error);
+      process.exit(1);
+    }
   }
 }

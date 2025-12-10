@@ -14,15 +14,18 @@
 * along with this program. If not, see http://www.gnu.org/licenses/.
 */
 
-import type { ConversationType } from "../../model/conversation/ConversationType.js"
-import type { QualifiedId } from "../../model/QualifiedId.js"
-import type { ConversationMembersResponse } from "../model/ConversationMembersResponse.js"
+const START_INDEX = 0
+const END_INDEX_ID = 7
+const END_INDEX_CLIENT_ID = 3
 
-export interface ConversationResponse {
-  qualified_id: QualifiedId
-  name: string | null
-  type: ConversationType
-  group_id: string
-  team: string
-  members: ConversationMembersResponse
+export function obfuscateId(value: string, lastChar: number = END_INDEX_ID): string {
+  if (value.length < END_INDEX_ID) {
+    return value
+  } else {
+    return value.substring(START_INDEX, lastChar) + "***"
+  }
+}
+
+export function obfuscateClientId(value: string): string {
+  return obfuscateId(value, END_INDEX_CLIENT_ID)
 }

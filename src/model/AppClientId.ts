@@ -14,6 +14,8 @@
 * along with this program. If not, see http://www.gnu.org/licenses/.
 */
 
+import { obfuscateClientId } from "../utils/ObfuscateUtil.js"
+
 export class AppClientId {
   readonly value: string
   
@@ -22,11 +24,7 @@ export class AppClientId {
   }
   
   toString(): string {
-    return this.obfuscateClientId(this.value)
-  }
-  
-  private obfuscateClientId(value: string): string {
-    return value.replace(/(.{3}).+(@.*)/, "$1***$2")
+    return obfuscateClientId(this.value)
   }
 
   static create(userId: string, deviceId: string, userDomain: string): AppClientId {

@@ -16,8 +16,8 @@
 
 import { Service } from "typedi";
 import { HttpClient } from "../core/HttpClient.js";
-import { encodeBase64 } from "../utils/Base64Util.js";
 import type { MlsKeyPackagesRequest } from "./request/MlsKeyPackagesRequest.js";
+import { Encoder } from "bazinga64";
 
 @Service()
 export class MlsService {
@@ -42,7 +42,7 @@ export class MlsService {
   async uploadMlsKeyPackages(mlsKeyPackages: Uint8Array[]): Promise<void> {
     const mlsKeyPackagesRequest: MlsKeyPackagesRequest = {
       key_packages: mlsKeyPackages.map((keyPackage) => {
-        return encodeBase64(keyPackage)
+        return Encoder.toBase64(keyPackage).asString
       })
     }
     await this.httpClient.postRequest<void>(

@@ -14,15 +14,17 @@
 * along with this program. If not, see http://www.gnu.org/licenses/.
 */
 
-import type { ConversationType } from "../../model/conversation/ConversationType.js"
-import type { QualifiedId } from "../../model/QualifiedId.js"
-import type { ConversationMembersResponse } from "../model/ConversationMembersResponse.js"
+import type { ConversationEntity } from "../../db/model/ConversationEntity.js";
+import type { Conversation } from "../../model/conversation/Conversation.js";
+import { ConversationTypeMapper } from "./ConversationTypeMapper.js";
 
-export interface ConversationResponse {
-  qualified_id: QualifiedId
-  name: string | null
-  type: ConversationType
-  group_id: string
-  team: string
-  members: ConversationMembersResponse
+export class ConversationMapper {
+  static fromEntity(conversationEntity: ConversationEntity): Conversation {
+    return {
+      id: conversationEntity.id,
+      name: conversationEntity.name,
+      type: ConversationTypeMapper.toModel(conversationEntity.type),
+      teamId: conversationEntity.team_id
+    }
+  }
 }

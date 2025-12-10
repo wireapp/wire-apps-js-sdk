@@ -15,13 +15,17 @@
  */
 
 import { Container } from "typedi";
-import type { TextMessage } from "../model/WireMessage.js";
 import { WireApplicationManager } from "./WireApplicationManager.js";
+import type { TextMessage } from "../model/WireMessage.js";
+import type { Conversation } from "../model/conversation/Conversation.js";
+import type { ConversationMember } from "../model/conversation/ConversationMember.js";
+import { obfuscateId } from "../utils/ObfuscateUtil.js";
 
 /**
  * Abstract class exposed by the SDK to handle events.
  */
 export abstract class WireEventsHandler {
+  private TAG: string = "WireEventsHandler"
   private _manager?: WireApplicationManager
 
   /**
@@ -38,6 +42,13 @@ export abstract class WireEventsHandler {
   }
 
   public async onTextMessageReceived(wireMessage: TextMessage): Promise<void> {
-    console.log(`[WireEventsHandler] Received onTextMessageReceived, ID: ${wireMessage.id}`)
+    console.log(`[${this.TAG}] Received onTextMessageReceived, ID: ${wireMessage.id}`)
+  }
+
+  public async onAppAddedToConversation(
+    conversation: Conversation,
+    members: ConversationMember[]
+  ): Promise<void> {
+    console.log(`[${this.TAG}] Received onAppAddedToConversation, ID: ${obfuscateId(conversation.id)} - length: ${members.length}`)
   }
 }
