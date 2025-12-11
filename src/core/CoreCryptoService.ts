@@ -48,7 +48,8 @@ export class CoreCryptoService {
     private clientsService: ClientsService,
     private mlsService: MlsService,
     private mlsTransport: CoreCryptoMlsTransport
-  ) {}
+  ) {
+  }
 
   /**
    * Initializes the CoreCryptoClient.
@@ -56,7 +57,7 @@ export class CoreCryptoService {
    * Must be called before anything else.
    */
   async initCoreCryptoClient(): Promise<void> {
-    const defaultCiphersuite =  (await this.featureConfigsService.getFeatureConfigs()).mls.config.defaultCipherSuite
+    const defaultCiphersuite: number = await this.featureConfigsService.getDefaultCipherSuite()
 
     this.coreCryptoClient = await CoreCryptoClient.create(
       this.userId,

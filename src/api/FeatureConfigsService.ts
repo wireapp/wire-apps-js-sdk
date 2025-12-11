@@ -1,7 +1,7 @@
 /*
 * Wire
 * Copyright (C) 2025 Wire Swiss GmbH
-* 
+*
 * This program is free software: you can redistribute it and/or modify
 * it under the terms of the GNU General Public License as published by
 * the Free Software Foundation, either version 3 of the License, or
@@ -14,15 +14,21 @@
 * along with this program. If not, see http://www.gnu.org/licenses/.
 */
 
-import { Service } from "typedi"
-import { HttpClient } from "./../core/HttpClient.js"
-import type { FeatureConfigsResponse } from "./response/FeatureConfigsResponse.js"
+import {Service} from "typedi"
+import type {FeatureConfigsResponse} from "./response/FeatureConfigsResponse.js"
+import {FeatureConfigsApiClient} from "./FeatureConfigsApiClient.js";
 
 @Service()
 export class FeatureConfigsService {
-  constructor(private httpClient: HttpClient) {}
+  constructor(private featureConfigsApiClient: FeatureConfigsApiClient) {
+  }
 
-  async getFeatureConfigs(): Promise<FeatureConfigsResponse> {
-    return await this.httpClient.getRequest<FeatureConfigsResponse>("feature-configs")
+  async getDefaultCipherSuite() {
+    const featureConfigs = await this.getFeatureConfigs()
+    return featureConfigs.mls.config.defaultCipherSuite
+  }
+
+  private async getFeatureConfigs(): Promise<FeatureConfigsResponse> {
+    return await this.featureConfigsApiClient.getFeatureConfigs()
   }
 }
