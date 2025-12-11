@@ -1,0 +1,65 @@
+/*
+ * Wire
+ * Copyright (C) 2025 Wire Swiss GmbH
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see http://www.gnu.org/licenses/.
+ */
+
+import {Container, Service} from "typedi";
+import type {HttpClient} from "../core/HttpClient.js";
+import type {RegisterClientResponse} from "./response/RegisterClientResponse.js";
+import {RegisterClientRequest} from "./request/RegisterClientRequest.js";
+import type {MlsPublicKeys} from "../model/MlsPublicKeys.js";
+import type {ClientUpdateRequest} from "./request/ClientUpdateRequest.js";
+import {WIRE_USER_PASSWORD} from "../utils/DependencyInjectionTokens.js";
+import {mapToPreKeyRequest} from "../mappers/PreKeyMapper.js";
+import type {PreKeyCrypto} from "../model/PreKeyCrypto.js";
+
+@Service()
+export class ClientsApiClient {
+  constructor(private httpClient: HttpClient) {
+  }
+
+  async registerClient(
+    proteusPreKeys: PreKeyCrypto[],
+    proteusLastPreKey: PreKeyCrypto
+  ): Promise<string> {
+
+    const requestPayload = new RegisterClientRequest(
+      Container.get<string>(WIRE_USER_PASSWORD),
+      mapToPreKeyRequest(proteusLastPreKey),
+      proteusPreKeys.map((preKey) =>
+        mapToPreKeyRequest(preKey)
+      )
+    )
+
+    const response = await this.httpClient.postRequest<RegisterClientResponse>(
+      "clients",
+      requestPayload
+    )
+
+    this.httpClient.setDeviceId(response.id)
+    return response.id
+  }
+
+  async updateClientWithMlsPublicKey(mlsPublicKeys: MlsPublicKeys) {
+    const requestPayload: ClientUpdateRequest = {
+      mls_public_keys: mlsPublicKeys,
+    }
+
+    await this.httpClient.putRequest<void>(
+      `clients/${this.httpClient.getCachedDeviceId()}`,
+      requestPayload
+    )
+  }
+
+}

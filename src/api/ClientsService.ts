@@ -14,39 +14,27 @@
  * along with this program. If not, see http://www.gnu.org/licenses/.
  */
 
-import { Service } from "typedi";
-import { HttpClient } from "../core/HttpClient.js";
-import { RegisterClientRequest } from "./request/RegisterClientRequest.js";
-import type { RegisterClientResponse } from "./response/RegisterClientResponse.js";
-import type { MlsPublicKeys } from "../model/MlsPublicKeys.js";
-import type { ClientUpdateRequest } from "./request/ClientUpdateRequest.js";
+import {Service} from "typedi";
+import type {MlsPublicKeys} from "../model/MlsPublicKeys.js";
+import {ClientsApiClient} from "./ClientsApiClient.js";
+import {PreKeyCrypto} from "../model/PreKeyCrypto.js";
 
 @Service()
 export class ClientsService {
-  constructor(private httpClient: HttpClient) {}
+  constructor(
+    private clientsApiClient: ClientsApiClient) {
+  }
 
   async registerClient(
-    registerClientRequest: RegisterClientRequest
-  ): Promise<RegisterClientResponse> {
-    const response = await this.httpClient.postRequest<RegisterClientResponse>(
-      "clients",
-      registerClientRequest
-    );
-
-    this.httpClient.setDeviceId(response.id);
-
-    return response;
+    proteusPreKeys: PreKeyCrypto[],
+    proteusLastPreKey: PreKeyCrypto
+  ): Promise<string> {
+    return await this.clientsApiClient.registerClient(proteusPreKeys, proteusLastPreKey)
   }
 
   async updateClientWithMlsPublicKey(
     mlsPublicKeys: MlsPublicKeys
   ): Promise<void> {
-    const clientUpdateRequest: ClientUpdateRequest = {
-      mls_public_keys: mlsPublicKeys,
-    };
-    await this.httpClient.putRequest<void>(
-      `clients/${this.httpClient.getCachedDeviceId()}`,
-      clientUpdateRequest
-    );
+    await this.clientsApiClient.updateClientWithMlsPublicKey(mlsPublicKeys)
   }
 }
