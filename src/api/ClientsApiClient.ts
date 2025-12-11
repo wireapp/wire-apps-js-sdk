@@ -29,6 +29,8 @@ export class ClientsApiClient {
   constructor(private httpClient: HttpClient) {
   }
 
+  private readonly basePath = "clients";
+
   async registerClient(
     proteusPreKeys: PreKeyCrypto[],
     proteusLastPreKey: PreKeyCrypto
@@ -43,7 +45,7 @@ export class ClientsApiClient {
     )
 
     const response = await this.httpClient.postRequest<RegisterClientResponse>(
-      "clients",
+      this.basePath,
       requestPayload
     )
 
@@ -57,7 +59,7 @@ export class ClientsApiClient {
     }
 
     await this.httpClient.putRequest<void>(
-      `clients/${this.httpClient.getCachedDeviceId()}`,
+      `${this.basePath}/${this.httpClient.getCachedDeviceId()}`,
       requestPayload
     )
   }
