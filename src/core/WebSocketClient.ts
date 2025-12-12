@@ -24,7 +24,7 @@ import type { MissedNotification } from "../model/notification/MissedNotificatio
 import type { SynchronizationNotification } from "../model/notification/SynchronizationNotification.js";
 import { EventAcknowledgeRequest } from "../api/request/EventAcknowledgeRequest.js";
 import { EventRouter } from "./EventRouter.js";
-import { container, singleton } from "tsyringe";
+import { inject, singleton } from "tsyringe";
 
 const WebSocketImpl = (globalThis.WebSocket ?? NodeWebSocket) as typeof WebSocket;
 
@@ -39,6 +39,7 @@ export class WebSocketClient {
   private syncMarker?: string | null
 
   constructor(
+    @inject(WIRE_API_HOST) private apiHost: string,
     private httpClient: HttpClient,
     private eventRouter: EventRouter
   ) {}
@@ -60,8 +61,7 @@ export class WebSocketClient {
   }
 
   private buildUrl(): string {
-    const baseUrl = container.resolve<string>(WIRE_API_HOST)
-    const webSocketBaseUrl = baseUrl
+    const webSocketBaseUrl = this.apiHost
       .replace(/^https/, "wss")
       .replace(/-https/, "-ssl")
 

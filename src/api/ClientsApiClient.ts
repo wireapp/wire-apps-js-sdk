@@ -14,7 +14,6 @@
  * along with this program. If not, see http://www.gnu.org/licenses/.
  */
 
-import {Inject, Service} from "typedi";
 import type {HttpClient} from "../core/HttpClient.js";
 import type {RegisterClientResponse} from "./response/RegisterClientResponse.js";
 import {RegisterClientRequest} from "./request/RegisterClientRequest.js";
@@ -23,12 +22,13 @@ import type {ClientUpdateRequest} from "./request/ClientUpdateRequest.js";
 import {WIRE_USER_PASSWORD} from "../utils/DependencyInjectionTokens.js";
 import {mapToPreKeyRequest} from "../mappers/PreKeyMapper.js";
 import type {PreKeyCrypto} from "../model/PreKeyCrypto.js";
+import { inject, singleton } from "tsyringe";
 
-@Service()
+@singleton()
 export class ClientsApiClient {
   constructor(
     private httpClient: HttpClient,
-    @Inject(WIRE_USER_PASSWORD) private userPassword: string) {
+    @inject(WIRE_USER_PASSWORD) private wireUserPassword: string) {
   }
 
   private readonly basePath = "clients";
@@ -39,7 +39,7 @@ export class ClientsApiClient {
   ): Promise<string> {
 
     const requestPayload = new RegisterClientRequest(
-      this.userPassword,
+      this.wireUserPassword,
       mapToPreKeyRequest(proteusLastPreKey),
       proteusPreKeys.map((preKey) =>
         mapToPreKeyRequest(preKey)

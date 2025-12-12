@@ -137,6 +137,9 @@ export class WireAppSdk {
     console.debug("Closing Database connections.")
     const databaseService = container.resolve(DatabaseService)
     databaseService.close()
+
+    // Clear container to prevent memory leaks
+    container.clearInstances()
   }
 
   private registerExitHandlers(): void {

@@ -17,7 +17,7 @@
 import type { AccessResponse } from "../api/response/AccessResponse.js"
 import { WIRE_API_HOST, WIRE_USER_EMAIL, WIRE_USER_PASSWORD } from "../utils/DependencyInjectionTokens.js"
 import type { WireApiError } from "../model/exception/WireApiError.js"
-import { container, inject, singleton } from "tsyringe"
+import { inject, singleton } from "tsyringe"
 
 @singleton()
 export class HttpClient {
@@ -29,7 +29,11 @@ export class HttpClient {
     "Content-Type": "application/json"
   }
 
-  constructor(@inject(WIRE_API_HOST) private apiHost: string) {}
+  constructor(
+    @inject(WIRE_API_HOST) private apiHost: string,
+    @inject(WIRE_USER_EMAIL) private wireUserEmail: string,
+    @inject(WIRE_USER_PASSWORD) private wireUserPassword: string
+  ) {}
   
   private setAuthorizationToken(token: string) {
     this.headers["Authorization"] = `Bearer ${token}`
@@ -79,8 +83,8 @@ export class HttpClient {
     const loginResponse = (await this.request<Record<string, unknown>>("login", {
       method: "POST",
       body: JSON.stringify({
-        email: container.resolve<string>(WIRE_USER_EMAIL),
-        password: container.resolve<string>(WIRE_USER_PASSWORD)
+        email: this.wireUserEmail,
+        password: this.wireUserPassword
       }),
       headers: {
         "Content-Type": this.HEADER_DEFAULT_CONTENT_TYPE,

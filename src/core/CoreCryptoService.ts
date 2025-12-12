@@ -41,8 +41,8 @@ export class CoreCryptoService {
   private coreCryptoClient: CoreCryptoClient | undefined
 
   constructor(
-    @inject(WIRE_USER_ID) private userId: string,
-    @inject(WIRE_USER_DOMAIN) private userDomain: string,
+    @inject(WIRE_USER_ID) private wireUserId: string,
+    @inject(WIRE_USER_DOMAIN) private wireUserDomain: string,
     @inject(WIRE_CRYPTO_STORAGE_PASSWORD) private cryptographyStoragePassword: string,
     private featureConfigsService: FeatureConfigsService,
     private clientsService: ClientsService,
@@ -60,7 +60,7 @@ export class CoreCryptoService {
     const defaultCiphersuite: number = await this.featureConfigsService.getDefaultCipherSuite()
 
     this.coreCryptoClient = await CoreCryptoClient.create(
-      this.userId,
+      this.wireUserId,
       defaultCiphersuite,
       this.cryptographyStoragePassword,
       this.mlsTransport
@@ -91,9 +91,9 @@ export class CoreCryptoService {
     }
 
     const appClientId = AppClientId.create(
-      this.userId,
+      this.wireUserId,
       registeredDeviceId,
-      this.userDomain
+      this.wireUserDomain
     )
     container.registerInstance(APP_CLIENT_ID, appClientId)
 
