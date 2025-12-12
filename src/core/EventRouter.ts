@@ -14,7 +14,6 @@
 * along with this program. If not, see http://www.gnu.org/licenses/.
 */
 
-import { Container, Inject, Service } from "typedi";
 import type { EventResponse } from "../api/response/EventResponse.js";
 import { ProtobufDeserializer } from "../mappers/protobuf/ProtobufDeserializer.js";
 import { isMLSWelcomeEvent, isNewMLSMessageEvent, type EventContentDTO, type NewMLSMessageDTO } from "../model/EventContentDTO.js";
@@ -29,15 +28,16 @@ import type { AppClientId } from "../model/AppClientId.js";
 import { MlsService } from "../api/MlsService.js";
 import { Decoder } from "bazinga64";
 import { ConversationMapper } from "../mappers/conversation/ConversationMapper.js";
+import { container, inject, singleton } from "tsyringe";
 
-@Service()
+@singleton()
 export class EventRouter {
 
   constructor(
     private coreCryptoService: CoreCryptoService,
     private conversationService: ConversationService,
     private mlsService: MlsService,
-    @Inject(WIRE_EVENTS_HANDLER) private wireEventsHandler: WireEventsHandler
+    @inject(WIRE_EVENTS_HANDLER) private wireEventsHandler: WireEventsHandler
   ) {}
   
   async route(eventResponse: EventResponse): Promise<void> {
@@ -102,7 +102,7 @@ export class EventRouter {
     )
 
     if (await this.coreCryptoService.hasTooFewKeyPackageCount()) {
-      const appClientId = Container.get<AppClientId>(APP_CLIENT_ID)
+      const appClientId = container.resolve<AppClientId>(APP_CLIENT_ID)
       if (appClientId) {
         const keyPackages = await this.coreCryptoService.mlsGenerateKeyPackages()
         await this.mlsService.uploadMlsKeyPackages(keyPackages)

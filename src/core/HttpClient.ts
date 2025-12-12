@@ -14,12 +14,12 @@
 * along with this program. If not, see http://www.gnu.org/licenses/.
 */
 
-import { Container, Inject, Service } from "typedi"
 import type { AccessResponse } from "../api/response/AccessResponse.js"
 import { WIRE_API_HOST, WIRE_USER_EMAIL, WIRE_USER_PASSWORD } from "../utils/DependencyInjectionTokens.js"
 import type { WireApiError } from "../model/exception/WireApiError.js"
+import { container, inject, singleton } from "tsyringe"
 
-@Service()
+@singleton()
 export class HttpClient {
 
   private tokenTimestamp: number | null = null
@@ -29,8 +29,8 @@ export class HttpClient {
     "Content-Type": "application/json"
   }
 
-  constructor(@Inject(WIRE_API_HOST) private apiHost: string) {}
-
+  constructor(@inject(WIRE_API_HOST) private apiHost: string) {}
+  
   private setAuthorizationToken(token: string) {
     this.headers["Authorization"] = `Bearer ${token}`
   }
@@ -79,8 +79,8 @@ export class HttpClient {
     const loginResponse = (await this.request<Record<string, unknown>>("login", {
       method: "POST",
       body: JSON.stringify({
-        email: Container.get<string>(WIRE_USER_EMAIL),
-        password: Container.get<string>(WIRE_USER_PASSWORD)
+        email: container.resolve<string>(WIRE_USER_EMAIL),
+        password: container.resolve<string>(WIRE_USER_PASSWORD)
       }),
       headers: {
         "Content-Type": this.HEADER_DEFAULT_CONTENT_TYPE,

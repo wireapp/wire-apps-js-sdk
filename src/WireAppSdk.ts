@@ -15,13 +15,13 @@
 */
 
 import "reflect-metadata";
-import { Container } from "typedi"
 import { CoreCryptoService } from "./core/CoreCryptoService.js";
 import 'fake-indexeddb/auto';
 import { WIRE_API_HOST, WIRE_CRYPTO_STORAGE_PASSWORD, WIRE_EVENTS_HANDLER, WIRE_USER_DOMAIN, WIRE_USER_EMAIL, WIRE_USER_ID, WIRE_USER_PASSWORD } from "./utils/DependencyInjectionTokens.js";
 import { WebSocketClient } from "./core/WebSocketClient.js";
 import { WireEventsHandler } from "./core/WireEventsHandler.js";
 import { DatabaseService } from "./db/DatabaseService.js";
+import { container } from "tsyringe";
 
 export class WireAppSdk {
   private userEmail: string
@@ -31,7 +31,7 @@ export class WireAppSdk {
   private apiHost: string
   private cryptographyStoragePassword: string
 
-  private isShuttingDown = false;
+  private isShuttingDown = false
 
   private isWebSocketRunning: boolean = false
   private webSocketClient!: WebSocketClient
@@ -87,19 +87,19 @@ export class WireAppSdk {
   }
 
   private configureDependencies() {
-    Container.set(WIRE_API_HOST, this.apiHost)
-    Container.set(WIRE_USER_EMAIL, this.userEmail)
-    Container.set(WIRE_USER_PASSWORD, this.userPassword)
-    Container.set(WIRE_USER_ID, this.userId)
-    Container.set(WIRE_USER_DOMAIN, this.userDomain)
-    Container.set(WIRE_CRYPTO_STORAGE_PASSWORD, this.cryptographyStoragePassword)
+    container.registerInstance(WIRE_API_HOST, this.apiHost)
+    container.registerInstance(WIRE_USER_EMAIL, this.userEmail)
+    container.registerInstance(WIRE_USER_PASSWORD, this.userPassword)
+    container.registerInstance(WIRE_USER_ID, this.userId)
+    container.registerInstance(WIRE_USER_DOMAIN, this.userDomain)
+    container.registerInstance(WIRE_CRYPTO_STORAGE_PASSWORD, this.cryptographyStoragePassword)
 
-    Container.set(WIRE_EVENTS_HANDLER, this.wireEventsHandler)
-    this.webSocketClient = Container.get(WebSocketClient)
+    container.registerInstance(WIRE_EVENTS_HANDLER, this.wireEventsHandler)
+    this.webSocketClient = container.resolve(WebSocketClient)
   }
 
   private async initCryptoClient() {
-    const coreCryptoService = Container.get(CoreCryptoService)
+    const coreCryptoService = container.resolve(CoreCryptoService)
     await coreCryptoService.initCoreCryptoClient()
     await coreCryptoService.initOrRegisterClient()
 
@@ -131,47 +131,47 @@ export class WireAppSdk {
     this.stopListening()
     
     console.debug("Closing CoreCrypto connections.")
-    const coreCryptoService = Container.get(CoreCryptoService)
+    const coreCryptoService = container.resolve(CoreCryptoService)
     coreCryptoService.close()
 
     console.debug("Closing Database connections.")
-    const databaseService = Container.get(DatabaseService)
+    const databaseService = container.resolve(DatabaseService)
     databaseService.close()
   }
 
   private registerExitHandlers(): void {
     // SIGINT: Ctrl+C in terminal
-    process.on('SIGINT', () => this.handleExit('SIGINT'));
+    process.on('SIGINT', () => this.handleExit('SIGINT'))
     
     // SIGTERM: Termination signal (e.g., from Docker, Kubernetes)
-    process.on('SIGTERM', () => this.handleExit('SIGTERM'));
+    process.on('SIGTERM', () => this.handleExit('SIGTERM'))
     
     process.on('uncaughtException', (error) => {
-      console.error('Uncaught exception:', error);
-      this.handleExit('uncaughtException');
-    });
+      console.error('Uncaught exception:', error)
+      this.handleExit('uncaughtException')
+    })
     
     process.on('unhandledRejection', (reason) => {
-      console.error('Unhandled rejection:', reason);
-      this.handleExit('unhandledRejection');
-    });
+      console.error('Unhandled rejection:', reason)
+      this.handleExit('unhandledRejection')
+    })
   }
 
   private async handleExit(signal: string): Promise<void> {
     if (this.isShuttingDown) {
-      return;
+      return
     }
     
-    this.isShuttingDown = true;
-    console.log(`Received ${signal}, cleaning up...`);
+    this.isShuttingDown = true
+    console.log(`Received ${signal}, cleaning up...`)
     
     try {
-      await this.close();
-      console.log('Cleanup completed successfully');
-      process.exit(0);
+      await this.close()
+      console.log('Cleanup completed successfully')
+      process.exit(0)
     } catch (error) {
-      console.error('Error during cleanup:', error);
-      process.exit(1);
+      console.error('Error during cleanup:', error)
+      process.exit(1)
     }
   }
 }

@@ -14,12 +14,12 @@
  * along with this program. If not, see http://www.gnu.org/licenses/.
  */
 
-import {Service} from "typedi";
 import type {MlsPublicKeys} from "../model/MlsPublicKeys.js";
 import {ClientsApiClient} from "./ClientsApiClient.js";
 import {PreKeyCrypto} from "../model/PreKeyCrypto.js";
+import { singleton } from "tsyringe";
 
-@Service()
+@singleton()
 export class ClientsService {
   constructor(
     private clientsApiClient: ClientsApiClient) {

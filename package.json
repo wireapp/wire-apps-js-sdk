@@ -54,7 +54,7 @@
     "dotenv": "^17.2.3",
     "protobufjs": "^7.5.4",
     "reflect-metadata": "^0.2.2",
-    "typedi": "^0.10.0",
+    "tsyringe": "^4.10.0",
     "ws": "^8.18.3"
   }
 }

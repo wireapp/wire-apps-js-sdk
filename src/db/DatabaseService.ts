@@ -14,10 +14,10 @@
 * along with this program. If not, see http://www.gnu.org/licenses/.
 */
 
-import { Service } from "typedi";
 import Database, { type Database as DB } from "better-sqlite3";
+import { singleton } from "tsyringe";
 
-@Service()
+@singleton()
 export class DatabaseService {
   public readonly db: DB;
 

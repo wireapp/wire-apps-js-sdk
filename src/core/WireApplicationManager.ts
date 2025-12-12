@@ -14,14 +14,14 @@
 * along with this program. If not, see http://www.gnu.org/licenses/.
 */
 
-import { Service } from "typedi";
 import { MlsService } from "../api/MlsService.js";
 import { ProtobufSerializer } from "../mappers/protobuf/ProtobufSerializer.js";
 import type { WireMessage } from "../model/WireMessage.js";
 import { CoreCryptoService } from "./CoreCryptoService.js";
 import { ConversationService } from "../api/ConversationService.js";
+import { singleton } from "tsyringe";
 
-@Service()
+@singleton()
 export class WireApplicationManager {
   
   constructor(

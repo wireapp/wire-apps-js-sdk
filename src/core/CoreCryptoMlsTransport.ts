@@ -15,10 +15,10 @@
 */
 
 import type { CommitBundle, HistorySecret, MlsTransport, MlsTransportData, MlsTransportResponse } from "@wireapp/core-crypto";
-import { Service } from "typedi";
 import { MlsService } from "../api/MlsService.js";
+import { singleton } from "tsyringe";
 
-@Service()
+@singleton()
 export class CoreCryptoMlsTransport implements MlsTransport {
   constructor(private mlsService: MlsService) {}
 

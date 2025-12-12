@@ -14,10 +14,10 @@
 * along with this program. If not, see http://www.gnu.org/licenses/.
 */
 
-import {Service} from "typedi";
+import { singleton } from "tsyringe";
 import {MlsApiClient} from "./MlsApiClient.js";
 
-@Service()
+@singleton()
 export class MlsService {
   constructor(private mlsApiClient: MlsApiClient) {
   }
