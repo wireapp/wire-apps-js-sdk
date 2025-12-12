@@ -20,8 +20,7 @@ import { singleton } from "tsyringe";
 
 @singleton()
 export class FeatureConfigsService {
-  constructor(private featureConfigsApiClient: FeatureConfigsApiClient) {
-  }
+  constructor(private featureConfigsApiClient: FeatureConfigsApiClient) {}
 
   async getDefaultCipherSuite() {
     const featureConfigs = await this.getFeatureConfigs()

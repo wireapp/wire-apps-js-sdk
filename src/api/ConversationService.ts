@@ -24,8 +24,8 @@ import type {ConversationMember} from "../model/conversation/ConversationMember.
 import {ConversationTypeMapper} from "../mappers/conversation/ConversationTypeMapper.js";
 import type {ConversationMemberEntity} from "../db/model/ConversationMemberEntity.js";
 import {obfuscateId} from "../utils/ObfuscateUtil.js";
-import type {UsersApiClient} from "./UsersApiClient.js";
-import type {ConversationsApiClient} from "./ConversationsApiClient.js";
+import {UsersApiClient} from "./UsersApiClient.js";
+import {ConversationsApiClient} from "./ConversationsApiClient.js";
 import { singleton } from "tsyringe";
 
 @singleton()

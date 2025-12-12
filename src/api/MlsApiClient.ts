@@ -14,12 +14,12 @@
  * along with this program. If not, see http://www.gnu.org/licenses/.
  */
 
-import {Service} from "typedi";
-import type {HttpClient} from "../core/HttpClient.js";
+import {HttpClient} from "../core/HttpClient.js";
 import {Encoder} from "bazinga64";
 import type {MlsKeyPackagesRequest} from "./request/MlsKeyPackagesRequest.js";
+import { singleton } from "tsyringe";
 
-@Service()
+@singleton()
 export class MlsApiClient {
   constructor(private httpClient: HttpClient) {
   }
@@ -53,5 +53,4 @@ export class MlsApiClient {
 
     await this.httpClient.postRequest<void>(path, requestPayload)
   }
-
 }

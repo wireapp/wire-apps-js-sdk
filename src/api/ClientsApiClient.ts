@@ -14,7 +14,7 @@
  * along with this program. If not, see http://www.gnu.org/licenses/.
  */
 
-import type {HttpClient} from "../core/HttpClient.js";
+import {HttpClient} from "../core/HttpClient.js";
 import type {RegisterClientResponse} from "./response/RegisterClientResponse.js";
 import {RegisterClientRequest} from "./request/RegisterClientRequest.js";
 import type {MlsPublicKeys} from "../model/MlsPublicKeys.js";

@@ -14,12 +14,12 @@
  * along with this program. If not, see http://www.gnu.org/licenses/.
  */
 
-import {Service} from "typedi";
-import type {HttpClient} from "../core/HttpClient.js";
+import {HttpClient} from "../core/HttpClient.js";
 import type {ConversationResponse} from "./response/ConversationResponse.js";
 import type {QualifiedId} from "../model/QualifiedId.js";
+import { singleton } from "tsyringe";
 
-@Service()
+@singleton()
 export class ConversationsApiClient {
   constructor(private httpClient: HttpClient) {
   }
@@ -31,5 +31,4 @@ export class ConversationsApiClient {
       `${this.basePath}/${conversationQualifiedId.domain}/${conversationQualifiedId.id}`
     )
   }
-
 }
