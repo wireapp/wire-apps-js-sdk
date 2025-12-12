@@ -43,7 +43,7 @@ export class CoreCryptoService {
   constructor(
     @inject(WIRE_USER_ID) private wireUserId: string,
     @inject(WIRE_USER_DOMAIN) private wireUserDomain: string,
-    @inject(WIRE_CRYPTO_STORAGE_PASSWORD) private cryptographyStoragePassword: string,
+    @inject(WIRE_CRYPTO_STORAGE_PASSWORD) private wireCryptoStoragePassword: string,
     private featureConfigsService: FeatureConfigsService,
     private clientsService: ClientsService,
     private mlsService: MlsService,
@@ -62,7 +62,7 @@ export class CoreCryptoService {
     this.coreCryptoClient = await CoreCryptoClient.create(
       this.wireUserId,
       defaultCiphersuite,
-      this.cryptographyStoragePassword,
+      this.wireCryptoStoragePassword,
       this.mlsTransport
     )
   }
