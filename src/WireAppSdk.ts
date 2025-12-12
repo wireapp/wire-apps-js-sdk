@@ -21,7 +21,7 @@ import { WIRE_API_HOST, WIRE_CRYPTO_STORAGE_PASSWORD, WIRE_EVENTS_HANDLER, WIRE_
 import { WebSocketClient } from "./core/WebSocketClient.js";
 import { WireEventsHandler } from "./core/WireEventsHandler.js";
 import { DatabaseService } from "./db/DatabaseService.js";
-import { container, type DependencyContainer } from "tsyringe";
+import { container } from "tsyringe";
 
 export class WireAppSdk {
   private userEmail: string
@@ -37,8 +37,6 @@ export class WireAppSdk {
   private webSocketClient!: WebSocketClient
 
   private wireEventsHandler: WireEventsHandler
-
-  private instanceContainer: DependencyContainer
 
   private constructor(
     userEmail: string,
@@ -56,8 +54,6 @@ export class WireAppSdk {
     this.apiHost = apiHost
     this.cryptographyStoragePassword = cryptographyStoragePassword
     this.wireEventsHandler = wireEventsHandler
-
-    this.instanceContainer = container.createChildContainer()
   }
 
   static async create(
@@ -91,19 +87,19 @@ export class WireAppSdk {
   }
 
   private configureDependencies() {
-    this.instanceContainer.registerInstance(WIRE_API_HOST, this.apiHost)
-    this.instanceContainer.registerInstance(WIRE_USER_EMAIL, this.userEmail)
-    this.instanceContainer.registerInstance(WIRE_USER_PASSWORD, this.userPassword)
-    this.instanceContainer.registerInstance(WIRE_USER_ID, this.userId)
-    this.instanceContainer.registerInstance(WIRE_USER_DOMAIN, this.userDomain)
-    this.instanceContainer.registerInstance(WIRE_CRYPTO_STORAGE_PASSWORD, this.cryptographyStoragePassword)
+    container.registerInstance(WIRE_API_HOST, this.apiHost)
+    container.registerInstance(WIRE_USER_EMAIL, this.userEmail)
+    container.registerInstance(WIRE_USER_PASSWORD, this.userPassword)
+    container.registerInstance(WIRE_USER_ID, this.userId)
+    container.registerInstance(WIRE_USER_DOMAIN, this.userDomain)
+    container.registerInstance(WIRE_CRYPTO_STORAGE_PASSWORD, this.cryptographyStoragePassword)
 
-    this.instanceContainer.registerInstance(WIRE_EVENTS_HANDLER, this.wireEventsHandler)
-    this.webSocketClient = this.instanceContainer.resolve(WebSocketClient)
+    container.registerInstance(WIRE_EVENTS_HANDLER, this.wireEventsHandler)
+    this.webSocketClient = container.resolve(WebSocketClient)
   }
 
   private async initCryptoClient() {
-    const coreCryptoService = this.instanceContainer.resolve(CoreCryptoService)
+    const coreCryptoService = container.resolve(CoreCryptoService)
     await coreCryptoService.initCoreCryptoClient()
     await coreCryptoService.initOrRegisterClient()
 
@@ -143,7 +139,7 @@ export class WireAppSdk {
     databaseService.close()
 
     // Clear container to prevent memory leaks
-    this.instanceContainer.clearInstances()
+    container.clearInstances()
   }
 
   private registerExitHandlers(): void {
