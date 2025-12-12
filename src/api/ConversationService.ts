@@ -46,8 +46,8 @@ export class ConversationService {
       );
 
       const firstUser = conversation.members.others[0]!
-      return await this.userApiClient.getUserName(firstUser.qualified_id.domain, firstUser.qualified_id.id)
-      // TODO :: Introduce UserService class, move few lines there under getUserName() method
+      return await this.userApiClient.getUserName(firstUser.qualified_id)
+      // TODO: Introduce UserService class, move few lines there under getUserName() method
     } else {
       return conversation.name ?? ""
     }
@@ -99,7 +99,7 @@ export class ConversationService {
 
   async getConversationById(conversationId: QualifiedId): Promise<ConversationEntity> {
     console.info("Getting Conversation.", "conversationId:", obfuscateId(conversationId.id))
-    const conversationEntity = this.conversationRepository.findByIdAndDomain(conversationId.id, conversationId.domain)
+    const conversationEntity = this.conversationRepository.findByIdAndDomain(conversationId)
 
     if (conversationEntity) {
       console.info("Returning Conversation from the Database.", "conversationId:", obfuscateId(conversationId.id))
@@ -111,7 +111,7 @@ export class ConversationService {
         conversationId,
         conversationResponse
       )
-      // TODO :: If we're passing ConversationResponse object to different layer,
+      // TODO: If we're passing ConversationResponse object to different layer,
       //  why do we have Conversation class as well?
       //  We can re-consider this (and similar cases with domain classes) separately for simplification in the code base.
 
@@ -120,7 +120,7 @@ export class ConversationService {
   }
 
   async fetchConversationById(conversationId: QualifiedId): Promise<ConversationResponse> {
-    return await this.conversationsApiClient.getConversation(conversationId.domain, conversationId.id)
+    return await this.conversationsApiClient.getConversation(conversationId)
   }
 
   async getConversationMLSGroupId(conversationId: QualifiedId): Promise<string> {

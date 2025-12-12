@@ -14,7 +14,7 @@
  * along with this program. If not, see http://www.gnu.org/licenses/.
  */
 
-import {Container, Service} from "typedi";
+import {Inject, Service} from "typedi";
 import type {HttpClient} from "../core/HttpClient.js";
 import type {RegisterClientResponse} from "./response/RegisterClientResponse.js";
 import {RegisterClientRequest} from "./request/RegisterClientRequest.js";
@@ -26,7 +26,9 @@ import type {PreKeyCrypto} from "../model/PreKeyCrypto.js";
 
 @Service()
 export class ClientsApiClient {
-  constructor(private httpClient: HttpClient) {
+  constructor(
+    private httpClient: HttpClient,
+    @Inject(WIRE_USER_PASSWORD) private userPassword: string) {
   }
 
   private readonly basePath = "clients";
@@ -37,7 +39,7 @@ export class ClientsApiClient {
   ): Promise<string> {
 
     const requestPayload = new RegisterClientRequest(
-      Container.get<string>(WIRE_USER_PASSWORD),
+      this.userPassword,
       mapToPreKeyRequest(proteusLastPreKey),
       proteusPreKeys.map((preKey) =>
         mapToPreKeyRequest(preKey)
@@ -53,7 +55,7 @@ export class ClientsApiClient {
     return response.id
   }
 
-  async updateClientWithMlsPublicKey(mlsPublicKeys: MlsPublicKeys) {
+  async updateClientWithMlsPublicKey(mlsPublicKeys: MlsPublicKeys): Promise<void> {
     const requestPayload: ClientUpdateRequest = {
       mls_public_keys: mlsPublicKeys,
     }

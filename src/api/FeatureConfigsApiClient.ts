@@ -25,7 +25,7 @@ export class FeatureConfigsApiClient {
 
   private readonly basePath = "feature-configs";
 
-  async getFeatureConfigs() {
+  async getFeatureConfigs(): Promise<FeatureConfigsResponse> {
     return await this.httpClient.getRequest<FeatureConfigsResponse>(this.basePath)
   }
 

@@ -30,19 +30,19 @@ export class MlsApiClient {
   private readonly sendMessagePath = this.basePath + "/messages"
   private readonly uploadMlsKeyPackagesPath = this.basePath + "/key-packages/self/"
 
-  async uploadCommitBundle(commitBundle: Uint8Array) {
+  async uploadCommitBundle(commitBundle: Uint8Array): Promise<void> {
     await this.httpClient.postRequest<void>(
       this.commitBundlesPath, commitBundle, this.HEADER_MLS_CONTENT_TYPE
     )
   }
 
-  async sendMessage(message: Uint8Array) {
+  async sendMessage(message: Uint8Array): Promise<void> {
     await this.httpClient.postRequest<void>(
       this.sendMessagePath, message, this.HEADER_MLS_CONTENT_TYPE
     )
   }
 
-  async uploadMlsKeyPackages(mlsKeyPackages: Uint8Array[]) {
+  async uploadMlsKeyPackages(mlsKeyPackages: Uint8Array[]): Promise<void> {
     const path = `${this.uploadMlsKeyPackagesPath}${this.httpClient.getCachedDeviceId()}`
 
     const requestPayload: MlsKeyPackagesRequest = {

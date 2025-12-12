@@ -17,6 +17,7 @@
 import {Service} from "typedi";
 import type {HttpClient} from "../core/HttpClient.js";
 import type {ConversationResponse} from "./response/ConversationResponse.js";
+import type {QualifiedId} from "../model/QualifiedId.js";
 
 @Service()
 export class ConversationsApiClient {
@@ -25,9 +26,9 @@ export class ConversationsApiClient {
 
   private readonly basePath = "conversations";
 
-  async getConversation(conversationDomain: string, conversationId: string) {
+  async getConversation(conversationQualifiedId: QualifiedId): Promise<ConversationResponse> {
     return await this.httpClient.getRequest<ConversationResponse>(
-      `${this.basePath}/${conversationDomain}/${conversationId}`
+      `${this.basePath}/${conversationQualifiedId.domain}/${conversationQualifiedId.id}`
     )
   }
 

@@ -215,5 +215,4 @@ export class HttpClient {
   private TOKEN_EXPIRATION_MS = 14 * 60 * 1000 // 14 minutes in milliseconds
   private HEADER_DEFAULT_CONTENT_TYPE = "application/json"
   private HEADER_DEFAULT_ACCEPT = "application/json"
-  static HEADER_MLS_ACCEPT = "message/mls"
 }

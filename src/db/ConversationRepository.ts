@@ -1,7 +1,7 @@
 /*
 * Wire
 * Copyright (C) 2025 Wire Swiss GmbH
-* 
+*
 * This program is free software: you can redistribute it and/or modify
 * it under the terms of the GNU General Public License as published by
 * the Free Software Foundation, either version 3 of the License, or
@@ -17,6 +17,7 @@
 import { Service } from "typedi";
 import { DatabaseService } from "./DatabaseService.js";
 import type { ConversationEntity } from "./model/ConversationEntity.js";
+import type {QualifiedId} from "../model/QualifiedId.js";
 
 @Service()
 export class ConversationRepository {
@@ -32,19 +33,19 @@ export class ConversationRepository {
       FROM conversation
     `)
 
-    this.selectByIdAndDomainStmt = 
+    this.selectByIdAndDomainStmt =
     this.database.db.prepare<[string, string], ConversationEntity>(`
       SELECT *
       FROM conversation
       WHERE id = ? AND domain = ?
     `)
 
-    this.insertStmt = 
+    this.insertStmt =
     this.database.db.prepare<[string, string, string | null, string | null, string, string], void>(`
       INSERT INTO conversation(id, domain, name, team_id, mls_group_id, type)
       VALUES (?, ?, ?, ?, ?, ?)
       ON CONFLICT(id, domain)
-      DO UPDATE SET 
+      DO UPDATE SET
         name = excluded.name,
         team_id = excluded.team_id,
         mls_group_id = excluded.mls_group_id,
@@ -57,13 +58,13 @@ export class ConversationRepository {
       WHERE id = ? AND domain = ?
     `)
   }
-  
+
   getAll(): ConversationEntity[] {
     return this.selectAllStmt.all();
   }
 
-  findByIdAndDomain(id: string, domain: string): ConversationEntity | null {
-    return this.selectByIdAndDomainStmt.get(id, domain) ?? null;
+  findByIdAndDomain(conversationQualifiedId: QualifiedId): ConversationEntity | null {
+    return this.selectByIdAndDomainStmt.get(conversationQualifiedId.id, conversationQualifiedId.domain) ?? null;
   }
 
   save(conv: ConversationEntity): void {

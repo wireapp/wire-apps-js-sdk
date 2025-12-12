@@ -17,6 +17,7 @@
 import {Service} from "typedi";
 import type {HttpClient} from "../core/HttpClient.js";
 import type {UserResponse} from "./model/UserResponse.js";
+import type {QualifiedId} from "../model/QualifiedId.js";
 
 @Service()
 export class UsersApiClient {
@@ -25,8 +26,8 @@ export class UsersApiClient {
 
   private readonly basePath = "users";
 
-  async getUserName(userDomain: string, userId: string) {
-    const user = await this.getUser(userDomain, userId)
+  async getUserName(userQualifiedId: QualifiedId): Promise<string> {
+    const user = await this.getUser(userQualifiedId.domain, userQualifiedId.id)
     return user.name
   }
 
