@@ -14,7 +14,6 @@
 * along with this program. If not, see http://www.gnu.org/licenses/.
 */
 
-import { Container, Service } from "typedi";
 import { HttpClient } from "./HttpClient.js";
 import { randomUUID } from "crypto";
 import { WIRE_API_HOST } from "../utils/DependencyInjectionTokens.js";
@@ -25,6 +24,7 @@ import type { MissedNotification } from "../model/notification/MissedNotificatio
 import type { SynchronizationNotification } from "../model/notification/SynchronizationNotification.js";
 import { EventAcknowledgeRequest } from "../api/request/EventAcknowledgeRequest.js";
 import { EventRouter } from "./EventRouter.js";
+import { inject, singleton } from "tsyringe";
 
 const WebSocketImpl = (globalThis.WebSocket ?? NodeWebSocket) as typeof WebSocket;
 
@@ -33,12 +33,13 @@ const WebSocketImpl = (globalThis.WebSocket ?? NodeWebSocket) as typeof WebSocke
  * 
  * Receives binary events and routes them to the appropriate handlers.
  */
-@Service()
+@singleton()
 export class WebSocketClient {
   private webSocket?: InstanceType<typeof WebSocketImpl> | undefined
   private syncMarker?: string | null
 
   constructor(
+    @inject(WIRE_API_HOST) private wireApiHost: string,
     private httpClient: HttpClient,
     private eventRouter: EventRouter
   ) {}
@@ -60,8 +61,7 @@ export class WebSocketClient {
   }
 
   private buildUrl(): string {
-    const baseUrl = Container.get<string>(WIRE_API_HOST)
-    const webSocketBaseUrl = baseUrl
+    const webSocketBaseUrl = this.wireApiHost
       .replace(/^https/, "wss")
       .replace(/-https/, "-ssl")
 

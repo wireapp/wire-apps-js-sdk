@@ -14,7 +14,6 @@
 * along with this program. If not, see http://www.gnu.org/licenses/.
 */
 
-import {Service} from "typedi";
 import type {QualifiedId} from "../model/QualifiedId.js";
 import type {ConversationResponse} from "./response/ConversationResponse.js";
 import {ConversationRepository} from "../db/ConversationRepository.js";
@@ -25,10 +24,11 @@ import type {ConversationMember} from "../model/conversation/ConversationMember.
 import {ConversationTypeMapper} from "../mappers/conversation/ConversationTypeMapper.js";
 import type {ConversationMemberEntity} from "../db/model/ConversationMemberEntity.js";
 import {obfuscateId} from "../utils/ObfuscateUtil.js";
-import type {UsersApiClient} from "./UsersApiClient.js";
-import type {ConversationsApiClient} from "./ConversationsApiClient.js";
+import {UsersApiClient} from "./UsersApiClient.js";
+import {ConversationsApiClient} from "./ConversationsApiClient.js";
+import { singleton } from "tsyringe";
 
-@Service()
+@singleton()
 export class ConversationService {
   constructor(
     private userApiClient: UsersApiClient,

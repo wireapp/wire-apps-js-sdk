@@ -14,14 +14,13 @@
 * along with this program. If not, see http://www.gnu.org/licenses/.
 */
 
-import {Service} from "typedi"
 import type {FeatureConfigsResponse} from "./response/FeatureConfigsResponse.js"
 import {FeatureConfigsApiClient} from "./FeatureConfigsApiClient.js";
+import { singleton } from "tsyringe";
 
-@Service()
+@singleton()
 export class FeatureConfigsService {
-  constructor(private featureConfigsApiClient: FeatureConfigsApiClient) {
-  }
+  constructor(private featureConfigsApiClient: FeatureConfigsApiClient) {}
 
   async getDefaultCipherSuite() {
     const featureConfigs = await this.getFeatureConfigs()

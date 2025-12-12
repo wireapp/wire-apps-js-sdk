@@ -15,7 +15,6 @@
 */
 
 import {ConversationId} from "@wireapp/core-crypto";
-import {Container, Inject, Service} from "typedi";
 import {ClientsService} from "../api/ClientsService.js";
 import {AppClientId} from "../model/AppClientId.js";
 import {
@@ -29,6 +28,7 @@ import {CoreCryptoClient} from "./CoreCryptoClient.js";
 import {CoreCryptoMlsTransport} from "./CoreCryptoMlsTransport.js";
 import {FeatureConfigsService} from "../api/FeatureConfigsService.js";
 import {Decoder} from "bazinga64";
+import { container, inject, singleton } from "tsyringe";
 
 /**
  * Service that handles initialization of CoreCrypto and provides a high-level API for:
@@ -36,14 +36,14 @@ import {Decoder} from "bazinga64";
  * - Key management
  * - Message encryption and decryption
  */
-@Service()
+@singleton()
 export class CoreCryptoService {
   private coreCryptoClient: CoreCryptoClient | undefined
 
   constructor(
-    @Inject(WIRE_USER_ID) private userId: string,
-    @Inject(WIRE_USER_DOMAIN) private userDomain: string,
-    @Inject(WIRE_CRYPTO_STORAGE_PASSWORD) private cryptographyStoragePassword: string,
+    @inject(WIRE_USER_ID) private wireUserId: string,
+    @inject(WIRE_USER_DOMAIN) private wireUserDomain: string,
+    @inject(WIRE_CRYPTO_STORAGE_PASSWORD) private wireCryptoStoragePassword: string,
     private featureConfigsService: FeatureConfigsService,
     private clientsService: ClientsService,
     private mlsService: MlsService,
@@ -60,9 +60,9 @@ export class CoreCryptoService {
     const defaultCiphersuite: number = await this.featureConfigsService.getDefaultCipherSuite()
 
     this.coreCryptoClient = await CoreCryptoClient.create(
-      this.userId,
+      this.wireUserId,
       defaultCiphersuite,
-      this.cryptographyStoragePassword,
+      this.wireCryptoStoragePassword,
       this.mlsTransport
     )
   }
@@ -71,6 +71,8 @@ export class CoreCryptoService {
    * Initializes existing client device or register a new client device.
    *
    * Must be called only after [this.initCoreCryptoClient] was called first.
+   * 
+   * @note Registers APP_CLIENT_ID token in the container after successful client registration
    */
   async initOrRegisterClient() {
     if (!this.coreCryptoClient) {
@@ -91,11 +93,11 @@ export class CoreCryptoService {
     }
 
     const appClientId = AppClientId.create(
-      this.userId,
+      this.wireUserId,
       registeredDeviceId,
-      this.userDomain
+      this.wireUserDomain
     )
-    Container.set(APP_CLIENT_ID, appClientId)
+    container.registerInstance(APP_CLIENT_ID, appClientId)
 
     console.log("Initializing MLS Client")
     await this.coreCryptoClient?.initMlsClient(appClientId)

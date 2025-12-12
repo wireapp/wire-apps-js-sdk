@@ -14,12 +14,12 @@
 * along with this program. If not, see http://www.gnu.org/licenses/.
 */
 
-import { Service } from "typedi";
 import { DatabaseService } from "./DatabaseService.js";
 import type { ConversationEntity } from "./model/ConversationEntity.js";
 import type {QualifiedId} from "../model/QualifiedId.js";
+import { singleton } from "tsyringe";
 
-@Service()
+@singleton()
 export class ConversationRepository {
   private selectAllStmt
   private selectByIdAndDomainStmt

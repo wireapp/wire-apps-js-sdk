@@ -14,12 +14,12 @@
  * along with this program. If not, see http://www.gnu.org/licenses/.
  */
 
-import {Service} from "typedi";
-import type {HttpClient} from "../core/HttpClient.js";
+import {HttpClient} from "../core/HttpClient.js";
 import type {UserResponse} from "./model/UserResponse.js";
 import type {QualifiedId} from "../model/QualifiedId.js";
+import { singleton } from "tsyringe";
 
-@Service()
+@singleton()
 export class UsersApiClient {
   constructor(private httpClient: HttpClient) {
   }
@@ -35,5 +35,4 @@ export class UsersApiClient {
     const path = `${this.basePath}/${userDomain}/${userId}`
     return await this.httpClient.getRequest<UserResponse>(path)
   }
-
 }

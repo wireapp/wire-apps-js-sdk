@@ -14,19 +14,17 @@
  * along with this program. If not, see http://www.gnu.org/licenses/.
  */
 
-import {Service} from "typedi";
-import type {HttpClient} from "../core/HttpClient.js";
+import {HttpClient} from "../core/HttpClient.js";
 import type {FeatureConfigsResponse} from "./response/FeatureConfigsResponse.js";
+import { singleton } from "tsyringe";
 
-@Service()
+@singleton()
 export class FeatureConfigsApiClient {
-  constructor(private httpClient: HttpClient) {
-  }
+  constructor(private httpClient: HttpClient) {}
 
   private readonly basePath = "feature-configs";
 
   async getFeatureConfigs(): Promise<FeatureConfigsResponse> {
     return await this.httpClient.getRequest<FeatureConfigsResponse>(this.basePath)
   }
-
 }

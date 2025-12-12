@@ -14,12 +14,12 @@
  * along with this program. If not, see http://www.gnu.org/licenses/.
  */
 
-import { Container } from "typedi";
 import { WireApplicationManager } from "./WireApplicationManager.js";
 import type { TextMessage } from "../model/WireMessage.js";
 import type { Conversation } from "../model/conversation/Conversation.js";
 import type { ConversationMember } from "../model/conversation/ConversationMember.js";
 import { obfuscateId } from "../utils/ObfuscateUtil.js";
+import { container } from "tsyringe";
 
 /**
  * Abstract class exposed by the SDK to handle events.
@@ -36,7 +36,7 @@ export abstract class WireEventsHandler {
    */
   public get manager(): WireApplicationManager {
     if (!this._manager) {
-      this._manager = Container.get(WireApplicationManager)
+      this._manager = container.resolve(WireApplicationManager)
     }
     return this._manager
   }
