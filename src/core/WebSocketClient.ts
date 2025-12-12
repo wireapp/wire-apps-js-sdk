@@ -39,7 +39,7 @@ export class WebSocketClient {
   private syncMarker?: string | null
 
   constructor(
-    @inject(WIRE_API_HOST) private apiHost: string,
+    @inject(WIRE_API_HOST) private wireApiHost: string,
     private httpClient: HttpClient,
     private eventRouter: EventRouter
   ) {}
@@ -61,7 +61,7 @@ export class WebSocketClient {
   }
 
   private buildUrl(): string {
-    const webSocketBaseUrl = this.apiHost
+    const webSocketBaseUrl = this.wireApiHost
       .replace(/^https/, "wss")
       .replace(/-https/, "-ssl")
 

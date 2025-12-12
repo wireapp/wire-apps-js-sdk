@@ -71,6 +71,8 @@ export class CoreCryptoService {
    * Initializes existing client device or register a new client device.
    *
    * Must be called only after [this.initCoreCryptoClient] was called first.
+   * 
+   * @note Registers APP_CLIENT_ID token in the container after successful client registration
    */
   async initOrRegisterClient() {
     if (!this.coreCryptoClient) {

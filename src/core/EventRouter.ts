@@ -24,7 +24,6 @@ import { CoreCryptoService } from "./CoreCryptoService.js";
 import { WireEventsHandler } from "./WireEventsHandler.js";
 import { APP_CLIENT_ID, WIRE_EVENTS_HANDLER } from "../utils/DependencyInjectionTokens.js";
 import { ConversationService } from "../api/ConversationService.js";
-import type { AppClientId } from "../model/AppClientId.js";
 import { MlsService } from "../api/MlsService.js";
 import { Decoder } from "bazinga64";
 import { ConversationMapper } from "../mappers/conversation/ConversationMapper.js";
@@ -102,8 +101,7 @@ export class EventRouter {
     )
 
     if (await this.coreCryptoService.hasTooFewKeyPackageCount()) {
-      const appClientId = container.resolve<AppClientId>(APP_CLIENT_ID)
-      if (appClientId) {
+      if (container.isRegistered(APP_CLIENT_ID)) {
         const keyPackages = await this.coreCryptoService.mlsGenerateKeyPackages()
         await this.mlsService.uploadMlsKeyPackages(keyPackages)
       }

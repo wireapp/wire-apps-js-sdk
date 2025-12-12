@@ -30,7 +30,7 @@ export class HttpClient {
   }
 
   constructor(
-    @inject(WIRE_API_HOST) private apiHost: string,
+    @inject(WIRE_API_HOST) private wireApiHost: string,
     @inject(WIRE_USER_EMAIL) private wireUserEmail: string,
     @inject(WIRE_USER_PASSWORD) private wireUserPassword: string
   ) {}
@@ -132,7 +132,7 @@ export class HttpClient {
         ...(options.headers || {})
       }
     }
-    const response = await fetch(`${this.apiHost}/${this.API_HOST_VERSION}/${path}`, optionsAndHeaders)
+    const response = await fetch(`${this.wireApiHost}/${this.API_HOST_VERSION}/${path}`, optionsAndHeaders)
 
     if (!response.ok) {
       let errorDetails = ''
