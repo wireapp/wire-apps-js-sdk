@@ -1,7 +1,7 @@
 /*
 * Wire
 * Copyright (C) 2025 Wire Swiss GmbH
-* 
+*
 * This program is free software: you can redistribute it and/or modify
 * it under the terms of the GNU General Public License as published by
 * the Free Software Foundation, either version 3 of the License, or
@@ -30,7 +30,7 @@ export class HttpClient {
   }
 
   constructor(@Inject(WIRE_API_HOST) private apiHost: string) {}
-  
+
   private setAuthorizationToken(token: string) {
     this.headers["Authorization"] = `Bearer ${token}`
   }
@@ -63,7 +63,7 @@ export class HttpClient {
 
   async verifyAuthorizationToken() {
     const currentTime = Date.now()
-    
+
     // Check if token is valid (not null and not expired)
     if (this.cachedAccessToken != null && this.tokenTimestamp != null) {
       const timeSinceTokenIssued = currentTime - this.tokenTimestamp
@@ -132,7 +132,7 @@ export class HttpClient {
 
     if (!response.ok) {
       let errorDetails = ''
-      
+
       try {
         const contentType = response.headers.get("content-type")
         if (contentType?.includes("application/json")) {
@@ -145,7 +145,7 @@ export class HttpClient {
       } catch (exception) {
         console.error(`Could not parse error response: ${exception}`)
       }
-      
+
       // TODO: Map to WireException
       throw new Error(`HTTP ${response.status} for ${path}${errorDetails || ': ' + response.statusText}`)
     }
@@ -180,7 +180,7 @@ export class HttpClient {
     headerAccept: string = this.HEADER_DEFAULT_ACCEPT
   ): Promise<T> {
     await this.verifyAuthorizationToken()
-    
+
     const isBinary = body instanceof Uint8Array || body instanceof ArrayBuffer;
     const requestBody = isBinary ? body as BodyInit : JSON.stringify(body);
 
@@ -215,6 +215,4 @@ export class HttpClient {
   private TOKEN_EXPIRATION_MS = 14 * 60 * 1000 // 14 minutes in milliseconds
   private HEADER_DEFAULT_CONTENT_TYPE = "application/json"
   private HEADER_DEFAULT_ACCEPT = "application/json"
-  static HEADER_MLS_CONTENT_TYPE = "message/mls"
-  static HEADER_MLS_ACCEPT = "message/mls"
 }

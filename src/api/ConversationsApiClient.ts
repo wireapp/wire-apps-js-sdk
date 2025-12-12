@@ -15,26 +15,21 @@
  */
 
 import {Service} from "typedi";
-import type {MlsPublicKeys} from "../model/MlsPublicKeys.js";
-import {ClientsApiClient} from "./ClientsApiClient.js";
-import {PreKeyCrypto} from "../model/PreKeyCrypto.js";
+import type {HttpClient} from "../core/HttpClient.js";
+import type {ConversationResponse} from "./response/ConversationResponse.js";
+import type {QualifiedId} from "../model/QualifiedId.js";
 
 @Service()
-export class ClientsService {
-  constructor(
-    private clientsApiClient: ClientsApiClient) {
+export class ConversationsApiClient {
+  constructor(private httpClient: HttpClient) {
   }
 
-  async registerClient(
-    proteusPreKeys: PreKeyCrypto[],
-    proteusLastPreKey: PreKeyCrypto
-  ): Promise<string> {
-    return await this.clientsApiClient.registerClient(proteusPreKeys, proteusLastPreKey)
+  private readonly basePath = "conversations";
+
+  async getConversation(conversationQualifiedId: QualifiedId): Promise<ConversationResponse> {
+    return await this.httpClient.getRequest<ConversationResponse>(
+      `${this.basePath}/${conversationQualifiedId.domain}/${conversationQualifiedId.id}`
+    )
   }
 
-  async updateClientWithMlsPublicKey(
-    mlsPublicKeys: MlsPublicKeys
-  ): Promise<void> {
-    await this.clientsApiClient.updateClientWithMlsPublicKey(mlsPublicKeys)
-  }
 }

@@ -1,7 +1,7 @@
 /*
 * Wire
 * Copyright (C) 2025 Wire Swiss GmbH
-* 
+*
 * This program is free software: you can redistribute it and/or modify
 * it under the terms of the GNU General Public License as published by
 * the Free Software Foundation, either version 3 of the License, or
@@ -14,18 +14,21 @@
 * along with this program. If not, see http://www.gnu.org/licenses/.
 */
 
-import { ConversationId } from "@wireapp/core-crypto";
-import { Container, Inject, Service } from "typedi";
-import { ClientsService } from "../api/ClientsService.js";
-import { RegisterClientRequest } from "../api/request/RegisterClientRequest.js";
-import { mapToPreKeyRequest } from "../mappers/PreKeyMapper.js";
-import { AppClientId } from "../model/AppClientId.js";
-import { APP_CLIENT_ID, WIRE_CRYPTO_STORAGE_PASSWORD, WIRE_USER_DOMAIN, WIRE_USER_ID, WIRE_USER_PASSWORD } from "../utils/DependencyInjectionTokens.js";
-import { MlsService } from "../api/MlsService.js";
-import { CoreCryptoClient } from "./CoreCryptoClient.js";
-import { CoreCryptoMlsTransport } from "./CoreCryptoMlsTransport.js";
-import { FeatureConfigsService } from "../api/FeatureConfigsService.js";
-import { Decoder } from "bazinga64";
+import {ConversationId} from "@wireapp/core-crypto";
+import {Container, Inject, Service} from "typedi";
+import {ClientsService} from "../api/ClientsService.js";
+import {AppClientId} from "../model/AppClientId.js";
+import {
+  APP_CLIENT_ID,
+  WIRE_CRYPTO_STORAGE_PASSWORD,
+  WIRE_USER_DOMAIN,
+  WIRE_USER_ID
+} from "../utils/DependencyInjectionTokens.js";
+import {MlsService} from "../api/MlsService.js";
+import {CoreCryptoClient} from "./CoreCryptoClient.js";
+import {CoreCryptoMlsTransport} from "./CoreCryptoMlsTransport.js";
+import {FeatureConfigsService} from "../api/FeatureConfigsService.js";
+import {Decoder} from "bazinga64";
 
 /**
  * Service that handles initialization of CoreCrypto and provides a high-level API for:
@@ -45,15 +48,16 @@ export class CoreCryptoService {
     private clientsService: ClientsService,
     private mlsService: MlsService,
     private mlsTransport: CoreCryptoMlsTransport
-  ) {}
+  ) {
+  }
 
   /**
    * Initializes the CoreCryptoClient.
-   * 
+   *
    * Must be called before anything else.
    */
   async initCoreCryptoClient(): Promise<void> {
-    const defaultCiphersuite =  (await this.featureConfigsService.getFeatureConfigs()).mls.config.defaultCipherSuite
+    const defaultCiphersuite: number = await this.featureConfigsService.getDefaultCipherSuite()
 
     this.coreCryptoClient = await CoreCryptoClient.create(
       this.userId,
@@ -62,10 +66,10 @@ export class CoreCryptoService {
       this.mlsTransport
     )
   }
-  
+
   /**
    * Initializes existing client device or register a new client device.
-   * 
+   *
    * Must be called only after [this.initCoreCryptoClient] was called first.
    */
   async initOrRegisterClient() {
@@ -76,26 +80,19 @@ export class CoreCryptoService {
     // TODO: Once moved out of in-memory database, then verify for existing deviceId
     console.log("Initializing Proteus Client")
     await this.coreCryptoClient.initProteusClient()
-    const preKeys = await this.coreCryptoClient.generateProteusPreKeys()
-    const lastPreKey = await this.coreCryptoClient.generateProteusLastPreKey()
+    const proteusPreKeys = await this.coreCryptoClient.generateProteusPreKeys()
+    const proteusLastPreKey = await this.coreCryptoClient.generateProteusLastPreKey()
 
-    let clientResponse;
+    let registeredDeviceId;
     try {
-      const registerClientRequest = new RegisterClientRequest(
-        Container.get<string>(WIRE_USER_PASSWORD),
-        mapToPreKeyRequest(lastPreKey),
-        preKeys.map((preKey) =>
-          mapToPreKeyRequest(preKey)
-        )
-      )
-      clientResponse = await this.clientsService.registerClient(registerClientRequest)
+      registeredDeviceId = await this.clientsService.registerClient(proteusPreKeys, proteusLastPreKey)
     } catch (error) {
       throw new Error(`Error when registering client: ${(error as Error).message}`);
     }
 
     const appClientId = AppClientId.create(
       this.userId,
-      clientResponse.id,
+      registeredDeviceId,
       this.userDomain
     )
     Container.set(APP_CLIENT_ID, appClientId)

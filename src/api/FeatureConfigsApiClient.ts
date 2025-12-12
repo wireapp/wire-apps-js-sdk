@@ -15,26 +15,18 @@
  */
 
 import {Service} from "typedi";
-import type {MlsPublicKeys} from "../model/MlsPublicKeys.js";
-import {ClientsApiClient} from "./ClientsApiClient.js";
-import {PreKeyCrypto} from "../model/PreKeyCrypto.js";
+import type {HttpClient} from "../core/HttpClient.js";
+import type {FeatureConfigsResponse} from "./response/FeatureConfigsResponse.js";
 
 @Service()
-export class ClientsService {
-  constructor(
-    private clientsApiClient: ClientsApiClient) {
+export class FeatureConfigsApiClient {
+  constructor(private httpClient: HttpClient) {
   }
 
-  async registerClient(
-    proteusPreKeys: PreKeyCrypto[],
-    proteusLastPreKey: PreKeyCrypto
-  ): Promise<string> {
-    return await this.clientsApiClient.registerClient(proteusPreKeys, proteusLastPreKey)
+  private readonly basePath = "feature-configs";
+
+  async getFeatureConfigs(): Promise<FeatureConfigsResponse> {
+    return await this.httpClient.getRequest<FeatureConfigsResponse>(this.basePath)
   }
 
-  async updateClientWithMlsPublicKey(
-    mlsPublicKeys: MlsPublicKeys
-  ): Promise<void> {
-    await this.clientsApiClient.updateClientWithMlsPublicKey(mlsPublicKeys)
-  }
 }

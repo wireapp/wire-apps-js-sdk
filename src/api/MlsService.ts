@@ -1,7 +1,7 @@
 /*
 * Wire
 * Copyright (C) 2025 Wire Swiss GmbH
-* 
+*
 * This program is free software: you can redistribute it and/or modify
 * it under the terms of the GNU General Public License as published by
 * the Free Software Foundation, either version 3 of the License, or
@@ -14,40 +14,23 @@
 * along with this program. If not, see http://www.gnu.org/licenses/.
 */
 
-import { Service } from "typedi";
-import { HttpClient } from "../core/HttpClient.js";
-import type { MlsKeyPackagesRequest } from "./request/MlsKeyPackagesRequest.js";
-import { Encoder } from "bazinga64";
+import {Service} from "typedi";
+import {MlsApiClient} from "./MlsApiClient.js";
 
 @Service()
 export class MlsService {
-  constructor(private httpClient: HttpClient) {}
+  constructor(private mlsApiClient: MlsApiClient) {
+  }
 
   async uploadCommitBundle(commitBundle: Uint8Array): Promise<void> {
-    await this.httpClient.postRequest<void>(
-      "mls/commit-bundles",
-      commitBundle,
-      HttpClient.HEADER_MLS_CONTENT_TYPE
-    )
+    await this.mlsApiClient.uploadCommitBundle(commitBundle)
   }
 
   async sendMessage(message: Uint8Array): Promise<void> {
-    await this.httpClient.postRequest<void>(
-      "mls/messages",
-      message,
-      HttpClient.HEADER_MLS_CONTENT_TYPE
-    )
+    await this.mlsApiClient.sendMessage(message)
   }
 
   async uploadMlsKeyPackages(mlsKeyPackages: Uint8Array[]): Promise<void> {
-    const mlsKeyPackagesRequest: MlsKeyPackagesRequest = {
-      key_packages: mlsKeyPackages.map((keyPackage) => {
-        return Encoder.toBase64(keyPackage).asString
-      })
-    }
-    await this.httpClient.postRequest<void>(
-      `mls/key-packages/self/${this.httpClient.getCachedDeviceId()}`,
-      mlsKeyPackagesRequest
-    )
+    await this.mlsApiClient.uploadMlsKeyPackages(mlsKeyPackages)
   }
 }

@@ -15,26 +15,25 @@
  */
 
 import {Service} from "typedi";
-import type {MlsPublicKeys} from "../model/MlsPublicKeys.js";
-import {ClientsApiClient} from "./ClientsApiClient.js";
-import {PreKeyCrypto} from "../model/PreKeyCrypto.js";
+import type {HttpClient} from "../core/HttpClient.js";
+import type {UserResponse} from "./model/UserResponse.js";
+import type {QualifiedId} from "../model/QualifiedId.js";
 
 @Service()
-export class ClientsService {
-  constructor(
-    private clientsApiClient: ClientsApiClient) {
+export class UsersApiClient {
+  constructor(private httpClient: HttpClient) {
   }
 
-  async registerClient(
-    proteusPreKeys: PreKeyCrypto[],
-    proteusLastPreKey: PreKeyCrypto
-  ): Promise<string> {
-    return await this.clientsApiClient.registerClient(proteusPreKeys, proteusLastPreKey)
+  private readonly basePath = "users";
+
+  async getUserName(userQualifiedId: QualifiedId): Promise<string> {
+    const user = await this.getUser(userQualifiedId.domain, userQualifiedId.id)
+    return user.name
   }
 
-  async updateClientWithMlsPublicKey(
-    mlsPublicKeys: MlsPublicKeys
-  ): Promise<void> {
-    await this.clientsApiClient.updateClientWithMlsPublicKey(mlsPublicKeys)
+  private async getUser(userDomain: string, userId: string) {
+    const path = `${this.basePath}/${userDomain}/${userId}`
+    return await this.httpClient.getRequest<UserResponse>(path)
   }
+
 }
