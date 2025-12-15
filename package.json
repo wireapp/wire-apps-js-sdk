@@ -40,7 +40,7 @@
     "@types/node": "^24.10.1",
     "@types/ws": "^8.18.1",
     "cpy-cli": "^6.0.0",
-    "eslint": "^9.39.1",
+    "eslint": "^9.39.2",
     "fake-indexeddb": "^6.2.4",
     "globals": "^16.4.0",
     "protobufjs-cli": "^1.1.3",
