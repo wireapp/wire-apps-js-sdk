@@ -128,4 +128,11 @@ export class ConversationService {
 
     return conversation.mls_group_id
   }
+
+  getMembersByConversationId(conversationId: QualifiedId): ConversationMemberEntity[] {
+    return this.conversationMemberRepository.getMembersByConversationId(
+      conversationId.id,
+      conversationId.domain
+    )
+  }
 }

@@ -17,7 +17,7 @@
 import "reflect-metadata";
 import { CoreCryptoService } from "./core/CoreCryptoService.js";
 import 'fake-indexeddb/auto';
-import { WIRE_API_HOST, WIRE_CRYPTO_STORAGE_PASSWORD, WIRE_EVENTS_HANDLER, WIRE_USER_DOMAIN, WIRE_USER_EMAIL, WIRE_USER_ID, WIRE_USER_PASSWORD } from "./utils/DependencyInjectionTokens.js";
+import { WIRE_API_HOST, WIRE_CRYPTO_STORAGE_PASSWORD, WIRE_DATABASE_PATH, WIRE_EVENTS_HANDLER, WIRE_USER_DOMAIN, WIRE_USER_EMAIL, WIRE_USER_ID, WIRE_USER_PASSWORD } from "./utils/DependencyInjectionTokens.js";
 import { WebSocketClient } from "./core/WebSocketClient.js";
 import { WireEventsHandler } from "./core/WireEventsHandler.js";
 import { DatabaseService } from "./db/DatabaseService.js";
@@ -93,6 +93,7 @@ export class WireAppSdk {
     container.registerInstance(WIRE_USER_ID, this.userId)
     container.registerInstance(WIRE_USER_DOMAIN, this.userDomain)
     container.registerInstance(WIRE_CRYPTO_STORAGE_PASSWORD, this.cryptographyStoragePassword)
+    container.registerInstance(WIRE_DATABASE_PATH, DatabaseService.DEFAULT_DATABASE_PATH)
 
     container.registerInstance(WIRE_EVENTS_HANDLER, this.wireEventsHandler)
     this.webSocketClient = container.resolve(WebSocketClient)
@@ -132,7 +133,7 @@ export class WireAppSdk {
     
     console.debug("Closing CoreCrypto connections.")
     const coreCryptoService = container.resolve(CoreCryptoService)
-    coreCryptoService.close()
+    await coreCryptoService.close()
 
     console.debug("Closing Database connections.")
     const databaseService = container.resolve(DatabaseService)

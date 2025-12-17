@@ -65,7 +65,7 @@ export class ConversationMemberRepository {
     return this.selectAllStmt.all()
   }
 
-  findByIdAndDomain(id: string, domain: string): ConversationMemberEntity[] {
+  getMembersByConversationId(id: string, domain: string): ConversationMemberEntity[] {
     return this.selectByIdAndDomainStmt.all(id, domain)
   }
 

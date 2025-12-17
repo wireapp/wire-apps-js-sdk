@@ -22,6 +22,7 @@ export class ConversationMapper {
   static fromEntity(conversationEntity: ConversationEntity): Conversation {
     return {
       id: conversationEntity.id,
+      domain: conversationEntity.domain,
       name: conversationEntity.name,
       type: ConversationTypeMapper.toModel(conversationEntity.type),
       teamId: conversationEntity.team_id

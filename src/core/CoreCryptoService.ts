@@ -155,7 +155,7 @@ export class CoreCryptoService {
     )
   }
 
-  close() {
-    this.coreCryptoClient!.close()
+  async close() {
+    await this.coreCryptoClient!.close()
   }
 }

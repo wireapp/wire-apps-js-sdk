@@ -14,54 +14,43 @@
 * along with this program. If not, see http://www.gnu.org/licenses/.
 */
 
-import Database, { type Database as DB } from "better-sqlite3";
-import { inject, singleton } from "tsyringe";
-import { WIRE_DATABASE_PATH } from "../utils/DependencyInjectionTokens.js";
+import { DatabaseService } from '../../src/db/DatabaseService.js'
 
-@singleton()
-export class DatabaseService {
-  public readonly db: DB;
-  static readonly DEFAULT_DATABASE_PATH = "storage/apps.db";
-
-  constructor(@inject(WIRE_DATABASE_PATH) path: string) {
-    console.log("DatabaseService being created")
-    this.db = new Database(path)
-    this.db.pragma("foreign_keys = ON")
-
-    this.runMigrations()
+export class TestDatabaseService extends DatabaseService {
+  constructor() {
+    super(':memory:')
+    this.setupTestSchema()
   }
 
-  private runMigrations() {
-    // TODO: Handle migration version
+  private setupTestSchema() {
     this.db.exec(`
-      -- Conversation table
-      CREATE TABLE IF NOT EXISTS conversation (
+      CREATE TABLE IF NOT EXISTS conversations (
         id TEXT NOT NULL,
         domain TEXT NOT NULL,
-        name TEXT,
+        name TEXT NOT NULL,
         team_id TEXT,
         mls_group_id TEXT NOT NULL,
-        creation_date TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        type TEXT NOT NULL,
+        creation_date TEXT,
+        type INTEGER NOT NULL,
         PRIMARY KEY (id, domain)
       );
 
-      -- Conversation Members table
-      CREATE TABLE IF NOT EXISTS conversation_member (
+      CREATE TABLE IF NOT EXISTS conversation_members (
         user_id TEXT NOT NULL,
         user_domain TEXT NOT NULL,
         conversation_id TEXT NOT NULL,
         conversation_domain TEXT NOT NULL,
         role TEXT NOT NULL,
-        creation_date TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        creation_date TEXT,
         PRIMARY KEY (user_id, user_domain, conversation_id, conversation_domain),
-        FOREIGN KEY(conversation_id, conversation_domain) 
-          REFERENCES conversation(id, domain)
-      );       
+        FOREIGN KEY (conversation_id, conversation_domain) 
+          REFERENCES conversations(id, domain)
+      );
     `)
   }
 
-  close() {
-    this.db.close()
+  clearData() {
+    this.db.exec('DELETE FROM conversation_members')
+    this.db.exec('DELETE FROM conversations')
   }
 }

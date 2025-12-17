@@ -18,6 +18,7 @@ import { ConversationType } from "./ConversationType.js"
 
 export interface Conversation {
   id: string
+  domain: string
   name: string | null
   type: ConversationType
   teamId: string | null
