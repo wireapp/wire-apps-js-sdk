@@ -24,33 +24,35 @@ export class TestDatabaseService extends DatabaseService {
 
   private setupTestSchema() {
     this.db.exec(`
-      CREATE TABLE IF NOT EXISTS conversations (
-        id TEXT NOT NULL,
-        domain TEXT NOT NULL,
-        name TEXT NOT NULL,
-        team_id TEXT,
-        mls_group_id TEXT NOT NULL,
-        creation_date TEXT,
-        type INTEGER NOT NULL,
-        PRIMARY KEY (id, domain)
-      );
+    -- Conversation table
+    CREATE TABLE IF NOT EXISTS conversation (
+      id TEXT NOT NULL,
+      domain TEXT NOT NULL,
+      name TEXT,
+      team_id TEXT,
+      mls_group_id TEXT NOT NULL,
+      creation_date TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      type TEXT NOT NULL,
+      PRIMARY KEY (id, domain)
+    );
 
-      CREATE TABLE IF NOT EXISTS conversation_members (
-        user_id TEXT NOT NULL,
-        user_domain TEXT NOT NULL,
-        conversation_id TEXT NOT NULL,
-        conversation_domain TEXT NOT NULL,
-        role TEXT NOT NULL,
-        creation_date TEXT,
-        PRIMARY KEY (user_id, user_domain, conversation_id, conversation_domain),
-        FOREIGN KEY (conversation_id, conversation_domain) 
-          REFERENCES conversations(id, domain)
-      );
+    -- Conversation Members table
+    CREATE TABLE IF NOT EXISTS conversation_member (
+      user_id TEXT NOT NULL,
+      user_domain TEXT NOT NULL,
+      conversation_id TEXT NOT NULL,
+      conversation_domain TEXT NOT NULL,
+      role TEXT NOT NULL,
+      creation_date TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY (user_id, user_domain, conversation_id, conversation_domain),
+      FOREIGN KEY(conversation_id, conversation_domain) 
+        REFERENCES conversation(id, domain)
+    );     
     `)
   }
 
   clearData() {
-    this.db.exec('DELETE FROM conversation_members')
-    this.db.exec('DELETE FROM conversations')
+    this.db.exec('DELETE FROM conversation_member')
+    this.db.exec('DELETE FROM conversation')
   }
 }

@@ -41,7 +41,11 @@ describe('ConversationService Integration', () => {
   })
 
   afterAll(() => {
-    testDbService.close()
+    try {
+      testDbService.close()
+    } catch (error) {
+      console.error('Failed to close test database:', error)
+    }
   })
 
   beforeEach(() => {
@@ -124,10 +128,10 @@ describe('ConversationService Integration', () => {
       await conversationService.saveConversationWithMembers(CONVERSATION_ID, CONVERSATION_RESPONSE)
       await conversationService.saveConversationWithMembers(OTHER_CONVERSATION_ID, OTHER_CONVERSATION_RESPONSE)
 
-      const firstConversation = conversationService.getConversationById(CONVERSATION_ID)
+      const firstConversation = await conversationService.getConversationById(CONVERSATION_ID)
       expect(firstConversation).toBeDefined()
 
-      const secondConversation = conversationService.getConversationById(CONVERSATION_ID)
+      const secondConversation = await conversationService.getConversationById(CONVERSATION_ID)
       expect(secondConversation).toBeDefined()
 
       const firstConversationMembers = conversationService.getMembersByConversationId(CONVERSATION_ID)
@@ -135,6 +139,12 @@ describe('ConversationService Integration', () => {
 
       const secondConversationMembers = conversationService.getMembersByConversationId(OTHER_CONVERSATION_ID)
       expect(secondConversationMembers).toHaveLength(1)
+    })
+
+    it('should throw error when conversation not found in API', async () => {
+      vi.mocked(mockConversationsApiClient.getConversation).mockRejectedValue(new Error('Not found'))
+      
+      await expect(conversationService.getConversationById(CONVERSATION_ID)).rejects.toThrow()
     })
   })
 
