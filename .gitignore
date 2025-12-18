@@ -76,3 +76,5 @@ examples/node_modules/
 *.bak
 *.tmp
 *.log
+
+CLAUDE.md
