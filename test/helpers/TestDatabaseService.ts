@@ -19,36 +19,6 @@ import { DatabaseService } from '../../src/db/DatabaseService.js'
 export class TestDatabaseService extends DatabaseService {
   constructor() {
     super(':memory:')
-    this.setupTestSchema()
-  }
-
-  private setupTestSchema() {
-    this.db.exec(`
-    -- Conversation table
-    CREATE TABLE IF NOT EXISTS conversation (
-      id TEXT NOT NULL,
-      domain TEXT NOT NULL,
-      name TEXT,
-      team_id TEXT,
-      mls_group_id TEXT NOT NULL,
-      creation_date TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      type TEXT NOT NULL,
-      PRIMARY KEY (id, domain)
-    );
-
-    -- Conversation Members table
-    CREATE TABLE IF NOT EXISTS conversation_member (
-      user_id TEXT NOT NULL,
-      user_domain TEXT NOT NULL,
-      conversation_id TEXT NOT NULL,
-      conversation_domain TEXT NOT NULL,
-      role TEXT NOT NULL,
-      creation_date TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      PRIMARY KEY (user_id, user_domain, conversation_id, conversation_domain),
-      FOREIGN KEY(conversation_id, conversation_domain) 
-        REFERENCES conversation(id, domain)
-    );     
-    `)
   }
 
   clearData() {
