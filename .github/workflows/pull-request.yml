@@ -7,6 +7,9 @@ on:
 jobs:
   build:
     runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      pull-requests: write
 
     steps:
       - uses: actions/checkout@v6
@@ -25,6 +28,16 @@ jobs:
 
       - name: TypeScript Build
         run: npm run build
+
+      - name: Tests with Coverage
+        run: npm run test:coverage
+
+      - name: Report Coverage
+        if: always()
+        uses: davelosert/vitest-coverage-report-action@v2
+        with:
+          json-summary-path: ./coverage/coverage-summary.json
+          json-final-path: ./coverage/coverage-final.json
 
       - name: Store reports
         if: failure()

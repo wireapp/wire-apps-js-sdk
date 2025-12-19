@@ -211,8 +211,8 @@ export class CoreCryptoClient {
     return packageCount < this.MLS_DEFAULT_KEYPACKAGE_COUNT / 2
   }
 
-  async close() {
-    await this.coreCrypto.close()
+  close() {
+    return this.coreCrypto.close()
   }
 
   private PROTEUS_PREKEYS_FROM_COUNT: number = 0

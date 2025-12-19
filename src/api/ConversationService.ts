@@ -27,6 +27,7 @@ import {obfuscateId} from "../utils/ObfuscateUtil.js";
 import {UsersApiClient} from "./UsersApiClient.js";
 import {ConversationsApiClient} from "./ConversationsApiClient.js";
 import { singleton } from "tsyringe";
+import type { ConversationMemberOtherResponse } from "./model/ConversationMemberOtherResponse.js";
 
 @singleton()
 export class ConversationService {
@@ -45,7 +46,7 @@ export class ConversationService {
         "conversationId:", obfuscateId(conversation.qualified_id.id)
       );
 
-      const firstUser = conversation.members.others[0]!
+      const firstUser = conversation.members.others[0] as ConversationMemberOtherResponse
       return await this.userApiClient.getUserName(firstUser.qualified_id)
       // TODO: Introduce UserService class, move few lines there under getUserName() method
     } else {
@@ -127,5 +128,12 @@ export class ConversationService {
     const conversation = await this.getConversationById(conversationId)
 
     return conversation.mls_group_id
+  }
+
+  getMembersByConversationId(conversationId: QualifiedId): ConversationMemberEntity[] {
+    return this.conversationMemberRepository.getMembersByConversationId(
+      conversationId.id,
+      conversationId.domain
+    )
   }
 }

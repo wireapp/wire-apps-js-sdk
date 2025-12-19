@@ -31,7 +31,7 @@ export class UsersApiClient {
     return user.name
   }
 
-  private async getUser(userDomain: string, userId: string) {
+  private async getUser(userDomain: string, userId: string): Promise<UserResponse> {
     const path = `${this.basePath}/${userDomain}/${userId}`
     return await this.httpClient.getRequest<UserResponse>(path)
   }

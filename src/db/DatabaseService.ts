@@ -15,15 +15,17 @@
 */
 
 import Database, { type Database as DB } from "better-sqlite3";
-import { singleton } from "tsyringe";
+import { inject, singleton } from "tsyringe";
+import { WIRE_DATABASE_PATH } from "../utils/DependencyInjectionTokens.js";
 
 @singleton()
 export class DatabaseService {
   public readonly db: DB;
+  static readonly DEFAULT_DATABASE_PATH = "storage/apps.db";
 
-  constructor() {
+  constructor(@inject(WIRE_DATABASE_PATH) path: string) {
     console.log("DatabaseService being created")
-    this.db = new Database("storage/apps.db")
+    this.db = new Database(path)
     this.db.pragma("foreign_keys = ON")
 
     this.runMigrations()
