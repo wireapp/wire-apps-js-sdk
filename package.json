@@ -56,7 +56,7 @@
     "bazinga64": "^6.5.8",
     "better-sqlite3": "^12.5.0",
     "dotenv": "^17.2.3",
-    "protobufjs": "^7.5.4",
+    "protobufjs": "^8.0.0",
     "reflect-metadata": "^0.2.2",
     "tsyringe": "^4.10.0",
     "ws": "^8.18.3"
