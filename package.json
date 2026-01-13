@@ -59,6 +59,6 @@
     "protobufjs": "^7.5.4",
     "reflect-metadata": "^0.2.2",
     "tsyringe": "^4.10.0",
-    "ws": "^8.18.3"
+    "ws": "^8.19.0"
   }
 }
