@@ -41,7 +41,7 @@
     "@types/express": "^5.0.6",
     "@types/node": "^25.0.6",
     "@types/ws": "^8.18.1",
-    "@vitest/coverage-v8": "^4.0.15",
+    "@vitest/coverage-v8": "^4.0.17",
     "cpy-cli": "^6.0.0",
     "eslint": "^9.39.2",
     "fake-indexeddb": "^6.2.4",
