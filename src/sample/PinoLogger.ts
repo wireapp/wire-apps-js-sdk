@@ -18,7 +18,7 @@ export class PinoLogger implements Logger {
   }
 
   info(message: string, ...meta: unknown[]): void {
-    this.pinoLogger.info(meta[0] || {}, "PINOOOO ::: "+message);
+    this.pinoLogger.info(meta[0] || {}, message);
   }
 
   warn(message: string, ...meta: unknown[]): void {
