@@ -51,14 +51,14 @@ export class WebSocketClient {
 
     try {
       const webSocketUrl = this.buildUrl()
-      this.logger.info(`[WebSocket] Connecting`)
+      this.logger.info(`Connecting`)
 
       await this.connectWebSocket(webSocketUrl)
     } catch (err) {
-      this.logger.error("[WebSocket] Error connecting:", err)
+      this.logger.error("Error connecting:", err)
       throw err
     } finally {
-      this.logger.warn("[WebSocket] Connection closed, stopping event listener")
+      this.logger.warn("Connection closed, stopping event listener")
     }
   }
 
@@ -81,7 +81,7 @@ export class WebSocketClient {
 
     return new Promise((resolve, reject) => {
       webSocket.onopen = () => {
-        this.logger.info("[WebSocket] Connected")
+        this.logger.info("Websocket Connected")
       }
 
       webSocket.onmessage = async (event: MessageEvent) => {
@@ -104,25 +104,25 @@ export class WebSocketClient {
 
           await this.handleEvent(buffer);
         } else {
-          this.logger.error("[WebSocket] Unsupported frame type:", typeof event.data)
+          this.logger.error("Unsupported frame type:", typeof event.data)
           return
         }
       }
 
       webSocket.onerror = (error) => {
-        this.logger.error("[WebSocket] Error:", error)
+        this.logger.error("Websocket Error:", error)
         reject(error)
       }
 
       webSocket.onclose = () => {
-        this.logger.warn("[WebSocket] Closed")
+        this.logger.warn("WebSocket Closed")
         resolve()
       }
     })
   }
 
   private async handleEventNotification(notification: EventNotification) {
-    this.logger.info("[WebSocket] Received EventNotification")
+    this.logger.info("Received EventNotification")
     try {
       await this.eventRouter.route(notification.data.event);
       const ackRequest = EventAcknowledgeRequest.basicAck(notification.data.delivery_tag);
@@ -133,7 +133,7 @@ export class WebSocketClient {
   }
 
   private async handleMissedNotification() {
-    this.logger.warn("[WebSocket] App was offline for too long, missed some notifications")
+    this.logger.warn("App was offline for too long, missed some notifications")
     const ackRequest = EventAcknowledgeRequest.notificationMissedAck();
     this.ackEvent(ackRequest);
   }

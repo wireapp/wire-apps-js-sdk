@@ -85,7 +85,7 @@ export class EventRouter {
           }
         }
       } else {
-        this.logger.info(`[Websocket] Received an unmapped event: ${(event as EventContentDTO).type}`)
+        this.logger.info(`Received an unmapped event: ${(event as EventContentDTO).type}`)
       }
     }
   }

@@ -59,7 +59,7 @@ export class WireAppSdk {
     this.cryptographyStoragePassword = cryptographyStoragePassword
     this.wireEventsHandler = wireEventsHandler
     LoggerFactory.setRootLogger(logger)
-    this.logger = LoggerFactory.getLogger("WireAppSdk")
+    this.logger = LoggerFactory.getLogger(this.constructor.name)
   }
 
   static async create(
