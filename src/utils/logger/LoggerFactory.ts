@@ -1,5 +1,5 @@
 import type {Logger} from "./Logger.js";
-import {DefaultLogger} from "./DefaultLogger.js";
+import {ConsoleLogger} from "./ConsoleLogger.js";
 
 export class LoggerFactory {
   private static rootLogger: Logger;
@@ -10,7 +10,7 @@ export class LoggerFactory {
 
   static getLogger(namespace: string): Logger {
     if (!LoggerFactory.rootLogger) {
-      LoggerFactory.rootLogger = new DefaultLogger()
+      LoggerFactory.rootLogger = new ConsoleLogger()
     }
 
     return {

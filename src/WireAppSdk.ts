@@ -24,6 +24,7 @@ import { DatabaseService } from "./db/DatabaseService.js";
 import { container } from "tsyringe";
 import type {Logger} from "./utils/logger/Logger.js";
 import {LoggerFactory} from "./utils/logger/LoggerFactory.js";
+import {ConsoleLogger} from "./utils/logger/ConsoleLogger.js";
 
 export class WireAppSdk {
   private userEmail: string
@@ -49,7 +50,7 @@ export class WireAppSdk {
     apiHost: string,
     cryptographyStoragePassword: string,
     wireEventsHandler: WireEventsHandler,
-    logger: Logger
+    logger?: Logger
   ) {
     this.userEmail = userEmail
     this.userPassword = userPassword
@@ -58,7 +59,7 @@ export class WireAppSdk {
     this.apiHost = apiHost
     this.cryptographyStoragePassword = cryptographyStoragePassword
     this.wireEventsHandler = wireEventsHandler
-    LoggerFactory.setRootLogger(logger)
+    LoggerFactory.setRootLogger(logger ?? new ConsoleLogger())
     this.logger = LoggerFactory.getLogger(this.constructor.name)
   }
 
@@ -70,7 +71,7 @@ export class WireAppSdk {
     apiHost: string,
     cryptographyStoragePassword: string,
     wireEventsHandler: WireEventsHandler,
-    logger: Logger,
+    logger?: Logger,
   ): Promise<WireAppSdk> {
     const wireAppSdk = new WireAppSdk(
       userEmail,

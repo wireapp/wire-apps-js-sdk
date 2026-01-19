@@ -1,7 +1,7 @@
 import {LogLevel} from "./LogLevel.js";
 import type {Logger} from "./Logger.js";
 
-export class DefaultLogger implements Logger {
+export class ConsoleLogger implements Logger {
   constructor(private minLevel: LogLevel = LogLevel.INFO) {
   }
 
