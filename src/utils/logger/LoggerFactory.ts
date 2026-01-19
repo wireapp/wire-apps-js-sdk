@@ -14,13 +14,13 @@ export class LoggerFactory {
     }
 
     return {
-      debug: (message: string, ...meta: any[]) =>
+      debug: (message: string, ...meta: unknown[]) =>
         LoggerFactory.rootLogger.debug(`[${namespace}] ${message}`, ...meta),
-      info: (message: string, ...meta: any[]) =>
+      info: (message: string, ...meta: unknown[]) =>
         LoggerFactory.rootLogger.info(`[${namespace}] ${message}`, ...meta),
-      warn: (message: string, ...meta: any[]) =>
+      warn: (message: string, ...meta: unknown[]) =>
         LoggerFactory.rootLogger.warn(`[${namespace}] ${message}`, ...meta),
-      error: (message: string, ...meta: any[]) =>
+      error: (message: string, ...meta: unknown[]) =>
         LoggerFactory.rootLogger.error(`[${namespace}] ${message}`, ...meta),
     };
   }
