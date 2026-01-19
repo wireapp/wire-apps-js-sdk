@@ -20,12 +20,13 @@ import type { Conversation } from "../model/conversation/Conversation.js";
 import type { ConversationMember } from "../model/conversation/ConversationMember.js";
 import { obfuscateId } from "../utils/ObfuscateUtil.js";
 import { container } from "tsyringe";
+import {LoggerFactory} from "../utils/logger/LoggerFactory.js";
 
 /**
  * Abstract class exposed by the SDK to handle events.
  */
 export abstract class WireEventsHandler {
-  private TAG: string = "WireEventsHandler"
+  private logger = LoggerFactory.getLogger(this.constructor.name)
   private _manager?: WireApplicationManager
 
   /**
@@ -42,13 +43,13 @@ export abstract class WireEventsHandler {
   }
 
   public async onTextMessageReceived(wireMessage: TextMessage): Promise<void> {
-    console.log(`[${this.TAG}] Received onTextMessageReceived, ID: ${wireMessage.id}`)
+    this.logger.info(`Received onTextMessageReceived, ID: ${wireMessage.id}`)
   }
 
   public async onAppAddedToConversation(
     conversation: Conversation,
     members: ConversationMember[]
   ): Promise<void> {
-    console.log(`[${this.TAG}] Received onAppAddedToConversation, ID: ${obfuscateId(conversation.id)} - length: ${members.length}`)
+    this.logger.info(`Received onAppAddedToConversation, ID: ${obfuscateId(conversation.id)} - length: ${members.length}`)
   }
 }

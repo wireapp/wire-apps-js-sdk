@@ -1,7 +1,7 @@
 /*
 * Wire
 * Copyright (C) 2025 Wire Swiss GmbH
-* 
+*
 * This program is free software: you can redistribute it and/or modify
 * it under the terms of the GNU General Public License as published by
 * the Free Software Foundation, either version 3 of the License, or
@@ -25,16 +25,18 @@ import type { SynchronizationNotification } from "../model/notification/Synchron
 import { EventAcknowledgeRequest } from "../api/request/EventAcknowledgeRequest.js";
 import { EventRouter } from "./EventRouter.js";
 import { inject, singleton } from "tsyringe";
+import {LoggerFactory} from "../utils/logger/LoggerFactory.js";
 
 const WebSocketImpl = (globalThis.WebSocket ?? NodeWebSocket) as typeof WebSocket;
 
 /**
  * Handles the WebSocket connection to the backend.
- * 
+ *
  * Receives binary events and routes them to the appropriate handlers.
  */
 @singleton()
 export class WebSocketClient {
+  private logger = LoggerFactory.getLogger(this.constructor.name)
   private webSocket?: InstanceType<typeof WebSocketImpl> | undefined
   private syncMarker?: string | null
 
@@ -49,14 +51,14 @@ export class WebSocketClient {
 
     try {
       const webSocketUrl = this.buildUrl()
-      console.info(`[WebSocket] Connecting`)
+      this.logger.info(`[WebSocket] Connecting`)
 
       await this.connectWebSocket(webSocketUrl)
     } catch (err) {
-      console.error("[WebSocket] Error connecting:", err)
+      this.logger.error("[WebSocket] Error connecting:", err)
       throw err
     } finally {
-      console.warn("[WebSocket] Connection closed, stopping event listener")
+      this.logger.warn("[WebSocket] Connection closed, stopping event listener")
     }
   }
 
@@ -79,15 +81,15 @@ export class WebSocketClient {
 
     return new Promise((resolve, reject) => {
       webSocket.onopen = () => {
-        console.info("[WebSocket] Connected")
+        this.logger.info("[WebSocket] Connected")
       }
 
       webSocket.onmessage = async (event: MessageEvent) => {
-        if (event.data instanceof Blob || 
-          event.data instanceof ArrayBuffer || 
+        if (event.data instanceof Blob ||
+          event.data instanceof ArrayBuffer ||
           event.data instanceof Uint8Array ||
           Buffer.isBuffer(event.data)) {
-        
+
           let buffer: Buffer;
           if (event.data instanceof Blob) {
             const arrayBuffer = await event.data.arrayBuffer();
@@ -99,39 +101,39 @@ export class WebSocketClient {
           } else {
             buffer = Buffer.from(event.data);
           }
-          
+
           await this.handleEvent(buffer);
         } else {
-          console.error("[WebSocket] Unsupported frame type:", typeof event.data)
+          this.logger.error("[WebSocket] Unsupported frame type:", typeof event.data)
           return
         }
       }
 
       webSocket.onerror = (error) => {
-        console.error("[WebSocket] Error:", error)
+        this.logger.error("[WebSocket] Error:", error)
         reject(error)
       }
 
       webSocket.onclose = () => {
-        console.warn("[WebSocket] Closed")
+        this.logger.warn("[WebSocket] Closed")
         resolve()
       }
     })
   }
 
   private async handleEventNotification(notification: EventNotification) {
-    console.log("[WebSocket] Received EventNotification")
+    this.logger.info("[WebSocket] Received EventNotification")
     try {
       await this.eventRouter.route(notification.data.event);
       const ackRequest = EventAcknowledgeRequest.basicAck(notification.data.delivery_tag);
       this.ackEvent(ackRequest);
     } catch (exception) {
-      console.error("Error processing event:", notification, exception);
+      this.logger.error("Error processing event:", notification, exception);
     }
   }
 
   private async handleMissedNotification() {
-    console.warn("[WebSocket] App was offline for too long, missed some notifications")
+    this.logger.warn("[WebSocket] App was offline for too long, missed some notifications")
     const ackRequest = EventAcknowledgeRequest.notificationMissedAck();
     this.ackEvent(ackRequest);
   }
@@ -141,11 +143,11 @@ export class WebSocketClient {
       const ackRequest = EventAcknowledgeRequest.basicAck((notification as SynchronizationNotification).data.delivery_tag);
       this.ackEvent(ackRequest);
     }
-    
+
     if ((notification as SynchronizationNotification).data.marker_id === this.syncMarker) {
-      console.info("Notifications are up to date since last sync marker.");
+      this.logger.info("Notifications are up to date since last sync marker.");
     } else {
-      console.info(
+      this.logger.info(
         `Skipping sync marker [${(notification as SynchronizationNotification).data.marker_id}], ` +
         `as it is not valid for this session.`
       );
@@ -155,9 +157,9 @@ export class WebSocketClient {
   private async handleEvent(data: Buffer) {
     try {
       const jsonString = data.toString('utf-8');
-      
+
       const notification = JSON.parse(jsonString) as ConsumableNotificationResponse;
-      
+
       if (this.isEventNotification(notification)) {
         await this.handleEventNotification(notification)
       } else if (this.isMissedNotification(notification)) {
@@ -166,29 +168,29 @@ export class WebSocketClient {
         await this.handleSyncNotification(notification)
       }
     } catch (exception) {
-      console.error("Error handling event:", exception);
+      this.logger.error("Error handling event:", exception);
     }
   }
 
   private ackEvent(ackRequest: EventAcknowledgeRequest): boolean {
     try {
       const json = JSON.stringify(ackRequest)
-      
+
       if (!this.webSocket) {
-        console.error("Failed to send acknowledge event: WebSocket not initialized", json)
+        this.logger.error("Failed to send acknowledge event: WebSocket not initialized", json)
         return false
       }
-      
+
       if (this.webSocket.readyState !== WebSocketImpl.OPEN) {
-        console.error(`Failed to send acknowledge event: WebSocket state is ${this.webSocket.readyState}`, json)
+        this.logger.error(`Failed to send acknowledge event: WebSocket state is ${this.webSocket.readyState}`, json)
         return false
       }
-      
+
       this.webSocket.send(json)
-      console.debug("Acknowledge event sent successfully", json)
+      this.logger.debug("Acknowledge event sent successfully", json)
       return true
     } catch (error) {
-      console.error("Failed to send acknowledge event", ackRequest, error)
+      this.logger.error("Failed to send acknowledge event", ackRequest, error)
       return false
     }
   }

@@ -1,7 +1,7 @@
 /*
 * Wire
 * Copyright (C) 2025 Wire Swiss GmbH
-* 
+*
 * This program is free software: you can redistribute it and/or modify
 * it under the terms of the GNU General Public License as published by
 * the Free Software Foundation, either version 3 of the License, or
@@ -17,14 +17,16 @@
 import Database, { type Database as DB } from "better-sqlite3";
 import { inject, singleton } from "tsyringe";
 import { WIRE_DATABASE_PATH } from "../utils/DependencyInjectionTokens.js";
+import {LoggerFactory} from "../utils/logger/LoggerFactory.js";
 
 @singleton()
 export class DatabaseService {
+  private logger = LoggerFactory.getLogger(this.constructor.name)
   public readonly db: DB;
   static readonly DEFAULT_DATABASE_PATH = "storage/apps.db";
 
   constructor(@inject(WIRE_DATABASE_PATH) path: string) {
-    console.log("DatabaseService being created")
+    this.logger.info("DatabaseService being created")
     this.db = new Database(path)
     this.db.pragma("foreign_keys = ON")
 
@@ -55,9 +57,9 @@ export class DatabaseService {
         role TEXT NOT NULL,
         creation_date TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
         PRIMARY KEY (user_id, user_domain, conversation_id, conversation_domain),
-        FOREIGN KEY(conversation_id, conversation_domain) 
+        FOREIGN KEY(conversation_id, conversation_domain)
           REFERENCES conversation(id, domain)
-      );       
+      );
     `)
   }
 
