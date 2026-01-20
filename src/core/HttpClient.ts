@@ -18,10 +18,11 @@ import type { AccessResponse } from "../api/response/AccessResponse.js"
 import { WIRE_API_HOST, WIRE_USER_EMAIL, WIRE_USER_PASSWORD } from "../utils/DependencyInjectionTokens.js"
 import type { WireApiError } from "../model/exception/WireApiError.js"
 import { inject, singleton } from "tsyringe"
+import {LoggerFactory} from "../utils/logger/LoggerFactory.js";
 
 @singleton()
 export class HttpClient {
-
+  private logger = LoggerFactory.getLogger(this.constructor.name)
   private tokenTimestamp: number | null = null
   private cachedAccessToken: string | null = null
   private cachedDeviceId: string | null = null
@@ -34,7 +35,7 @@ export class HttpClient {
     @inject(WIRE_USER_EMAIL) private wireUserEmail: string,
     @inject(WIRE_USER_PASSWORD) private wireUserPassword: string
   ) {}
-  
+
   private setAuthorizationToken(token: string) {
     this.headers["Authorization"] = `Bearer ${token}`
   }
@@ -45,7 +46,7 @@ export class HttpClient {
 
   getCachedAccessToken(): string {
     if (!this.cachedAccessToken) {
-      console.error("No cached access token found.")
+      this.logger.error("No cached access token found.")
       // TODO: Map to WireException
       throw new Error("No cached access token found.")
     }
@@ -58,7 +59,7 @@ export class HttpClient {
 
   getCachedDeviceId(): string {
     if (!this.cachedDeviceId) {
-      console.error("No cached deviceId found.")
+      this.logger.error("No cached deviceId found.")
       // TODO: Map to WireException
       throw new Error("No cached deviceId found.")
     }
@@ -76,7 +77,7 @@ export class HttpClient {
         return
       }
 
-      console.log("Access token expired, getting a new one.")
+      this.logger.info("Access token expired, getting a new one.")
     }
 
     // TODO: Move to Token retrieval once backend tickets are done.
@@ -142,12 +143,12 @@ export class HttpClient {
         if (contentType?.includes("application/json")) {
           const errorBody = await response.json() as Partial<WireApiError>
           if (errorBody.label && errorBody.message) {
-            console.error(`API Error - Label: ${errorBody.label}, Message: ${errorBody.message}`)
+            this.logger.error(`API Error - Label: ${errorBody.label}, Message: ${errorBody.message}`)
             errorDetails = ` [${errorBody.label}]: ${errorBody.message}`
           }
         }
       } catch (exception) {
-        console.error(`Could not parse error response: ${exception}`)
+        this.logger.error(`Could not parse error response: ${exception}`)
       }
 
       // TODO: Map to WireException

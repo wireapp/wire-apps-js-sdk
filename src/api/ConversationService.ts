@@ -28,9 +28,12 @@ import {UsersApiClient} from "./UsersApiClient.js";
 import {ConversationsApiClient} from "./ConversationsApiClient.js";
 import { singleton } from "tsyringe";
 import type { ConversationMemberOtherResponse } from "./model/ConversationMemberOtherResponse.js";
+import {LoggerFactory} from "../utils/logger/LoggerFactory.js";
 
 @singleton()
 export class ConversationService {
+  private logger = LoggerFactory.getLogger(this.constructor.name)
+
   constructor(
     private userApiClient: UsersApiClient,
     private conversationsApiClient: ConversationsApiClient,
@@ -41,7 +44,7 @@ export class ConversationService {
 
   private async getConversationName(conversation: ConversationResponse) {
     if (conversation.type === ConversationType.ONE_TO_ONE && conversation.members.others.length > 0) {
-      console.info(
+      this.logger.info(
         "Fetching User from remote to populate Conversation name.",
         "conversationId:", obfuscateId(conversation.qualified_id.id)
       );
@@ -99,14 +102,14 @@ export class ConversationService {
   }
 
   async getConversationById(conversationId: QualifiedId): Promise<ConversationEntity> {
-    console.info("Getting Conversation.", "conversationId:", obfuscateId(conversationId.id))
+    this.logger.info("Getting Conversation.", "conversationId:", obfuscateId(conversationId.id))
     const conversationEntity = this.conversationRepository.findByIdAndDomain(conversationId)
 
     if (conversationEntity) {
-      console.info("Returning Conversation from the Database.", "conversationId:", obfuscateId(conversationId.id))
+      this.logger.info("Returning Conversation from the Database.", "conversationId:", obfuscateId(conversationId.id))
       return conversationEntity
     } else {
-      console.info("Fetching Conversation from remote.", "conversationId:", obfuscateId(conversationId.id))
+      this.logger.info("Fetching Conversation from remote.", "conversationId:", obfuscateId(conversationId.id))
       const conversationResponse = await this.fetchConversationById(conversationId)
       const {conversation} = await this.saveConversationWithMembers(
         conversationId,

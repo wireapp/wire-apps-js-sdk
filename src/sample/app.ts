@@ -1,7 +1,7 @@
 /*
 * Wire
 * Copyright (C) 2025 Wire Swiss GmbH
-* 
+*
 * This program is free software: you can redistribute it and/or modify
 * it under the terms of the GNU General Public License as published by
 * the Free Software Foundation, either version 3 of the License, or
@@ -18,6 +18,7 @@
 
 import "reflect-metadata";
 import dotenv from 'dotenv';
+import {PinoLogger} from './PinoLogger.js'
 import {
     WireAppSdk,
     WireEventsHandler,
@@ -77,7 +78,8 @@ const sdk = await WireAppSdk.create(
   userDomain,
   apiHost,
   cryptographyStoragePassword,
-  sampleEventsHandler
+  sampleEventsHandler,
+  new PinoLogger()
 )
 
 sdk.startListening()

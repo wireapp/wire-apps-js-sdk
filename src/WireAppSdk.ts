@@ -1,7 +1,7 @@
 /*
 * Wire
 * Copyright (C) 2025 Wire Swiss GmbH
-* 
+*
 * This program is free software: you can redistribute it and/or modify
 * it under the terms of the GNU General Public License as published by
 * the Free Software Foundation, either version 3 of the License, or
@@ -22,6 +22,9 @@ import { WebSocketClient } from "./core/WebSocketClient.js";
 import { WireEventsHandler } from "./core/WireEventsHandler.js";
 import { DatabaseService } from "./db/DatabaseService.js";
 import { container } from "tsyringe";
+import type {Logger} from "./utils/logger/Logger.js";
+import {LoggerFactory} from "./utils/logger/LoggerFactory.js";
+import {ConsoleLogger} from "./utils/logger/ConsoleLogger.js";
 
 export class WireAppSdk {
   private userEmail: string
@@ -37,6 +40,7 @@ export class WireAppSdk {
   private webSocketClient!: WebSocketClient
 
   private wireEventsHandler: WireEventsHandler
+  private logger: Logger
 
   private constructor(
     userEmail: string,
@@ -45,7 +49,8 @@ export class WireAppSdk {
     userDomain: string,
     apiHost: string,
     cryptographyStoragePassword: string,
-    wireEventsHandler: WireEventsHandler
+    wireEventsHandler: WireEventsHandler,
+    logger?: Logger
   ) {
     this.userEmail = userEmail
     this.userPassword = userPassword
@@ -54,6 +59,8 @@ export class WireAppSdk {
     this.apiHost = apiHost
     this.cryptographyStoragePassword = cryptographyStoragePassword
     this.wireEventsHandler = wireEventsHandler
+    LoggerFactory.setRootLogger(logger ?? new ConsoleLogger())
+    this.logger = LoggerFactory.getLogger(this.constructor.name)
   }
 
   static async create(
@@ -63,7 +70,8 @@ export class WireAppSdk {
     userDomain: string,
     apiHost: string,
     cryptographyStoragePassword: string,
-    wireEventsHandler: WireEventsHandler
+    wireEventsHandler: WireEventsHandler,
+    logger?: Logger,
   ): Promise<WireAppSdk> {
     const wireAppSdk = new WireAppSdk(
       userEmail,
@@ -72,7 +80,8 @@ export class WireAppSdk {
       userDomain,
       apiHost,
       cryptographyStoragePassword,
-      wireEventsHandler
+      wireEventsHandler,
+      logger
     )
 
     wireAppSdk.registerExitHandlers()
@@ -104,12 +113,12 @@ export class WireAppSdk {
     await coreCryptoService.initCoreCryptoClient()
     await coreCryptoService.initOrRegisterClient()
 
-    console.log(`CoreCrypto initialized.`)
+    this.logger.info(`CoreCrypto initialized.`)
   }
 
   async startListening() {
     if (this.isWebSocketRunning) {
-      console.info("Wire Apps SDK is already running.")
+      this.logger.info("Wire Apps SDK is already running.")
       return
     }
     this.isWebSocketRunning = true
@@ -119,23 +128,23 @@ export class WireAppSdk {
 
   stopListening() {
     if (!this.isWebSocketRunning) {
-      console.info("Wire Apps SDK is not running.")
+      this.logger.info("Wire Apps SDK is not running.")
     }
-    console.info("Wire Apps SDK shutting down.")
+    this.logger.info("Wire Apps SDK shutting down.")
     this.isWebSocketRunning = false
-    
+
     this.webSocketClient.close()
   }
 
   async close() {
-    console.debug("Closing Websocket connections.")
+    this.logger.debug("Closing Websocket connections.")
     this.stopListening()
-    
-    console.debug("Closing CoreCrypto connections.")
+
+    this.logger.debug("Closing CoreCrypto connections.")
     const coreCryptoService = container.resolve(CoreCryptoService)
     await coreCryptoService.close()
 
-    console.debug("Closing Database connections.")
+    this.logger.debug("Closing Database connections.")
     const databaseService = container.resolve(DatabaseService)
     databaseService.close()
 
@@ -146,17 +155,17 @@ export class WireAppSdk {
   private registerExitHandlers(): void {
     // SIGINT: Ctrl+C in terminal
     process.on('SIGINT', () => this.handleExit('SIGINT'))
-    
+
     // SIGTERM: Termination signal (e.g., from Docker, Kubernetes)
     process.on('SIGTERM', () => this.handleExit('SIGTERM'))
-    
+
     process.on('uncaughtException', (error) => {
-      console.error('Uncaught exception:', error)
+      this.logger.error('Uncaught exception:', error)
       this.handleExit('uncaughtException')
     })
-    
+
     process.on('unhandledRejection', (reason) => {
-      console.error('Unhandled rejection:', reason)
+      this.logger.error('Unhandled rejection:', reason)
       this.handleExit('unhandledRejection')
     })
   }
@@ -165,16 +174,16 @@ export class WireAppSdk {
     if (this.isShuttingDown) {
       return
     }
-    
+
     this.isShuttingDown = true
-    console.log(`Received ${signal}, cleaning up...`)
-    
+    this.logger.info(`Received ${signal}, cleaning up...`)
+
     try {
       await this.close()
-      console.log('Cleanup completed successfully')
+      this.logger.info('Cleanup completed successfully')
       process.exit(0)
     } catch (error) {
-      console.error('Error during cleanup:', error)
+      this.logger.error('Error during cleanup:', error)
       process.exit(1)
     }
   }

@@ -29,6 +29,7 @@ import {CoreCryptoMlsTransport} from "./CoreCryptoMlsTransport.js";
 import {FeatureConfigsService} from "../api/FeatureConfigsService.js";
 import {Decoder} from "bazinga64";
 import { container, inject, singleton } from "tsyringe";
+import {LoggerFactory} from "../utils/logger/LoggerFactory.js";
 
 /**
  * Service that handles initialization of CoreCrypto and provides a high-level API for:
@@ -39,6 +40,7 @@ import { container, inject, singleton } from "tsyringe";
 @singleton()
 export class CoreCryptoService {
   private coreCryptoClient: CoreCryptoClient | undefined
+  private logger = LoggerFactory.getLogger(this.constructor.name)
 
   constructor(
     @inject(WIRE_USER_ID) private wireUserId: string,
@@ -71,7 +73,7 @@ export class CoreCryptoService {
    * Initializes existing client device or register a new client device.
    *
    * Must be called only after [this.initCoreCryptoClient] was called first.
-   * 
+   *
    * @note Registers APP_CLIENT_ID token in the container after successful client registration
    */
   async initOrRegisterClient() {
@@ -80,7 +82,7 @@ export class CoreCryptoService {
     }
 
     // TODO: Once moved out of in-memory database, then verify for existing deviceId
-    console.log("Initializing Proteus Client")
+    this.logger.info("Initializing Proteus Client")
     await this.coreCryptoClient.initProteusClient()
     const proteusPreKeys = await this.coreCryptoClient.generateProteusPreKeys()
     const proteusLastPreKey = await this.coreCryptoClient.generateProteusLastPreKey()
@@ -99,7 +101,7 @@ export class CoreCryptoService {
     )
     container.registerInstance(APP_CLIENT_ID, appClientId)
 
-    console.log("Initializing MLS Client")
+    this.logger.info("Initializing MLS Client")
     await this.coreCryptoClient?.initMlsClient(appClientId)
     await this.uploadClientWithMlsPublicKey()
     await this.uploadMlsKeyPackages()

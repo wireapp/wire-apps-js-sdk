@@ -1,7 +1,7 @@
 /*
 * Wire
 * Copyright (C) 2025 Wire Swiss GmbH
-* 
+*
 * This program is free software: you can redistribute it and/or modify
 * it under the terms of the GNU General Public License as published by
 * the Free Software Foundation, either version 3 of the License, or
@@ -28,9 +28,11 @@ import { MlsService } from "../api/MlsService.js";
 import { Decoder } from "bazinga64";
 import { ConversationMapper } from "../mappers/conversation/ConversationMapper.js";
 import { container, inject, singleton } from "tsyringe";
+import {LoggerFactory} from "../utils/logger/LoggerFactory.js";
 
 @singleton()
 export class EventRouter {
+  private logger = LoggerFactory.getLogger(this.constructor.name)
 
   constructor(
     private coreCryptoService: CoreCryptoService,
@@ -38,12 +40,12 @@ export class EventRouter {
     private mlsService: MlsService,
     @inject(WIRE_EVENTS_HANDLER) private wireEventsHandler: WireEventsHandler
   ) {}
-  
+
   async route(eventResponse: EventResponse): Promise<void> {
     if (!eventResponse.payload) {
       return;
     }
-    
+
     for (const event of eventResponse.payload) {
       if (isMLSWelcomeEvent(event)) {
         const welcomeEventInBytes = Decoder.fromBase64(event.data).asBytes
@@ -61,9 +63,9 @@ export class EventRouter {
             mlsGroupId,
             textEvent.data
           )
-          
+
           if (message == null) {
-            console.debug("Decryption success but no message, probably epoch update")
+            this.logger.debug("Decryption success but no message, probably epoch update")
             return
           }
 
@@ -73,17 +75,17 @@ export class EventRouter {
           )
         } catch (exception) {
           if (isMlsException(exception)) {
-            console.debug("Message decryption failed, MlsException:", exception)
+            this.logger.debug("Message decryption failed, MlsException:", exception)
             // TODO: Verify if convesation is out of sync
           } else if (isCoreCryptoMlsException(exception)) {
-            console.debug("Message decryption failed, CoreCryptoException.Mls:", exception)
+            this.logger.debug("Message decryption failed, CoreCryptoException.Mls:", exception)
             // TODO: Verify if convesation is out of sync
           } else {
             throw exception
           }
         }
       } else {
-        console.log(`[Websocket] Received an unmapped event: ${(event as EventContentDTO).type}`)
+        this.logger.info(`Received an unmapped event: ${(event as EventContentDTO).type}`)
       }
     }
   }
@@ -93,7 +95,7 @@ export class EventRouter {
     conversationId: QualifiedId
   ) {
     await this.coreCryptoService.processWelcomeMessage(welcomeMessageBytes)
-    
+
     const conversationResponse = await this.conversationService.fetchConversationById(conversationId)
     const { conversation, members } = await this.conversationService.saveConversationWithMembers(
       conversationId,
@@ -121,16 +123,16 @@ export class EventRouter {
       message,
       qualifiedConversation
     )
-    
+
     switch (wireMessage.type) {
       case 'text':
         await this.wireEventsHandler.onTextMessageReceived(wireMessage)
         break;
-      
+
       // TODO: Add other WireMessage types
       case 'unknown':
       default:
-        console.log("Unknown event received.")
+        this.logger.info("Unknown event received.")
     }
   }
 }
