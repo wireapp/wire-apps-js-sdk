@@ -28,6 +28,8 @@ export { WireEventsHandler } from "./core/WireEventsHandler.js"
 // Logger Interface
 // ============================================
 export type { Logger } from "./utils/logger/Logger.js"
+export { LogLevel } from "./utils/logger/LogLevel.js"
+export { ConsoleLogger } from "./utils/logger/ConsoleLogger.js"
 
 // ============================================
 // Model Classes
