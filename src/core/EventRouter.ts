@@ -16,7 +16,14 @@
 
 import type { EventResponse } from "../api/response/EventResponse.js";
 import { ProtobufDeserializer } from "../mappers/protobuf/ProtobufDeserializer.js";
-import { isMLSWelcomeEvent, isNewMLSMessageEvent, type EventContentDTO, type NewMLSMessageDTO } from "../model/EventContentDTO.js";
+import {
+  isMLSWelcomeEvent,
+  isNewMLSMessageEvent,
+  type EventContentDTO,
+  type NewMLSMessageDTO,
+  isTypingEvent, isNewConversationEvent, type NewConversationDTO, isDeleteConversationEvent, isMemberJoinEvent,
+  isMemberUpdateEvent, isMemberLeaveEvent, isTeamInviteEvent
+} from "../model/EventContentDTO.js";
 import { isCoreCryptoMlsException } from "../model/exception/CoreCryptoMlsException.js";
 import { isMlsException } from "../model/exception/MlsException.js";
 import type { QualifiedId } from "../model/QualifiedId.js";
@@ -84,6 +91,21 @@ export class EventRouter {
             throw exception
           }
         }
+      } else if (isTypingEvent(event)) {
+        // Ignore silently
+      } else if (isNewConversationEvent(event)) {
+        const newConversationEvent = (event as NewConversationDTO)
+        this.processNewConversationEvent(newConversationEvent)
+      } else if (isDeleteConversationEvent(event)) {
+
+      } else if (isMemberJoinEvent(event)) {
+
+      } else if (isMemberUpdateEvent(event)) {
+
+      } else if (isMemberLeaveEvent(event)) {
+
+      } else if (isTeamInviteEvent(event)) {
+
       } else {
         this.logger.info(`Received an unmapped event: ${(event as EventContentDTO).type}`)
       }
@@ -134,5 +156,12 @@ export class EventRouter {
       default:
         this.logger.info("Unknown event received.")
     }
+  }
+
+  private async processNewConversationEvent(event: NewConversationDTO) {
+    await this.conversationService.saveConversationWithMembers(
+      event.qualified_conversation,
+      event.data
+    )
   }
 }

@@ -16,6 +16,7 @@
 
 import type {QualifiedId} from "./QualifiedId.js"
 import type {UUID} from "node:crypto";
+import type {ConversationResponse} from "../api/response/ConversationResponse.js";
 
 // TODO: [Question from Baris] -> Do we have to use DTO suffix for some of these class names?
 //  If not, we better remove for naming consistency
@@ -39,7 +40,7 @@ export interface NewMLSMessageDTO {
 export interface NewConversationDTO {
   type: string
   time: Date
-  data: string
+  data: ConversationResponse
   qualified_conversation: QualifiedId
   qualified_from: QualifiedId
 }
