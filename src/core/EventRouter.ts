@@ -16,7 +16,13 @@
 
 import type { EventResponse } from "../api/response/EventResponse.js";
 import { ProtobufDeserializer } from "../mappers/protobuf/ProtobufDeserializer.js";
-import { isMLSWelcomeEvent, isNewMLSMessageEvent, type EventContentDTO, type NewMLSMessageDTO } from "../model/EventContentDTO.js";
+import {
+  isMLSWelcomeEvent,
+  isNewMLSMessageEvent,
+  type EventContentDTO,
+  type NewMLSMessageDTO,
+  isTypingEvent
+} from "../model/EventContentDTO.js";
 import { isCoreCryptoMlsException } from "../model/exception/CoreCryptoMlsException.js";
 import { isMlsException } from "../model/exception/MlsException.js";
 import type { QualifiedId } from "../model/QualifiedId.js";
@@ -84,6 +90,8 @@ export class EventRouter {
             throw exception
           }
         }
+      }else if (isTypingEvent(event)) {
+        // Ignore silently
       } else {
         this.logger.info(`Received an unmapped event: ${(event as EventContentDTO).type}`)
       }

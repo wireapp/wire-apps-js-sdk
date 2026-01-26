@@ -1,7 +1,7 @@
 /*
 * Wire
 * Copyright (C) 2025 Wire Swiss GmbH
-* 
+*
 * This program is free software: you can redistribute it and/or modify
 * it under the terms of the GNU General Public License as published by
 * the Free Software Foundation, either version 3 of the License, or
@@ -32,7 +32,12 @@ export interface NewMLSMessageDTO {
   time: Date
 }
 
-export type EventContentDTO = MLSWelcomeDTO | NewMLSMessageDTO
+export interface Typing {
+  type: string
+  qualified_conversation: QualifiedId
+}
+
+export type EventContentDTO = MLSWelcomeDTO | NewMLSMessageDTO | Typing
 
 // Type Guards
 export function isNewMLSMessageEvent(event: EventContentDTO): event is NewMLSMessageDTO {
@@ -41,4 +46,8 @@ export function isNewMLSMessageEvent(event: EventContentDTO): event is NewMLSMes
 
 export function isMLSWelcomeEvent(event: EventContentDTO): event is MLSWelcomeDTO {
   return (event as MLSWelcomeDTO).type === "conversation.mls-welcome"
+}
+
+export function isTypingEvent(event: EventContentDTO): event is Typing {
+  return (event as Typing).type === "conversation.typing"
 }
