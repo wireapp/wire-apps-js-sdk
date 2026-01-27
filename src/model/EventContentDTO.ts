@@ -14,7 +14,7 @@
 * along with this program. If not, see http://www.gnu.org/licenses/.
 */
 
-import type { QualifiedId } from "./QualifiedId.js"
+import type {QualifiedId} from "./QualifiedId.js"
 import type {ConversationResponse} from "../api/response/ConversationResponse.js";
 
 export interface MLSWelcomeDTO {
