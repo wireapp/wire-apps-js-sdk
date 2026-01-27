@@ -15,6 +15,7 @@
 */
 
 import type { QualifiedId } from "./QualifiedId.js"
+import type {ConversationResponse} from "../api/response/ConversationResponse.js";
 
 export interface MLSWelcomeDTO {
   type: string
@@ -32,12 +33,20 @@ export interface NewMLSMessageDTO {
   time: Date
 }
 
+export interface NewConversationDTO {
+  type: string
+  time: Date
+  data: ConversationResponse
+  qualified_conversation: QualifiedId
+  qualified_from: QualifiedId
+}
+
 export interface Typing {
   type: string
   qualified_conversation: QualifiedId
 }
 
-export type EventContentDTO = MLSWelcomeDTO | NewMLSMessageDTO | Typing
+export type EventContentDTO = MLSWelcomeDTO | NewMLSMessageDTO | NewConversationDTO | Typing
 
 // Type Guards
 export function isNewMLSMessageEvent(event: EventContentDTO): event is NewMLSMessageDTO {
@@ -46,6 +55,10 @@ export function isNewMLSMessageEvent(event: EventContentDTO): event is NewMLSMes
 
 export function isMLSWelcomeEvent(event: EventContentDTO): event is MLSWelcomeDTO {
   return (event as MLSWelcomeDTO).type === "conversation.mls-welcome"
+}
+
+export function isNewConversationEvent(event: EventContentDTO): event is NewConversationDTO {
+  return (event as NewConversationDTO).type === "conversation.create"
 }
 
 export function isTypingEvent(event: EventContentDTO): event is Typing {

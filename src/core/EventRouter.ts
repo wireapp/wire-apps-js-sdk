@@ -21,7 +21,7 @@ import {
   isNewMLSMessageEvent,
   type EventContentDTO,
   type NewMLSMessageDTO,
-  isTypingEvent
+  isTypingEvent, type NewConversationDTO, isNewConversationEvent
 } from "../model/EventContentDTO.js";
 import { isCoreCryptoMlsException } from "../model/exception/CoreCryptoMlsException.js";
 import { isMlsException } from "../model/exception/MlsException.js";
@@ -90,8 +90,11 @@ export class EventRouter {
             throw exception
           }
         }
-      }else if (isTypingEvent(event)) {
+      } else if (isTypingEvent(event)) {
         // Ignore silently
+      } else if (isNewConversationEvent(event)) {
+        const newConversationEvent = (event as NewConversationDTO)
+        this.processNewConversationEvent(newConversationEvent)
       } else {
         this.logger.info(`Received an unmapped event: ${(event as EventContentDTO).type}`)
       }
@@ -143,4 +146,12 @@ export class EventRouter {
         this.logger.info("Unknown event received.")
     }
   }
+
+  private async processNewConversationEvent(event: NewConversationDTO) {
+    await this.conversationService.saveConversationWithMembers(
+      event.qualified_conversation,
+      event.data
+    )
+  }
+
 }
