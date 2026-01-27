@@ -14,10 +14,10 @@
 * along with this program. If not, see http://www.gnu.org/licenses/.
 */
 
-import type { ConversationMemberOtherResponse } from "./ConversationMemberOtherResponse.js";
-import type {ConversationMemberSelfResponse} from "./ConversationMemberSelfResponse.js";
+import type { ConversationRole } from "../../model/conversation/ConversationRole.js";
+import type { QualifiedId } from "../../model/QualifiedId.js";
 
-export interface ConversationMembersResponse {
-  others: ConversationMemberOtherResponse[],
-  self: ConversationMemberSelfResponse
+export interface ConversationMemberSelfResponse {
+  qualified_id: QualifiedId
+  conversation_role: ConversationRole
 }
