@@ -1,7 +1,7 @@
 /*
 * Wire
 * Copyright (C) 2025 Wire Swiss GmbH
-* 
+*
 * This program is free software: you can redistribute it and/or modify
 * it under the terms of the GNU General Public License as published by
 * the Free Software Foundation, either version 3 of the License, or
@@ -82,7 +82,7 @@ describe('ConversationService Integration', () => {
       )
 
       expect(result.conversation.name).toBe(CONVERSATION_NAME)
-      expect(result.members).toHaveLength(1)
+      expect(result.members).toHaveLength(2)
 
       const savedConversation = await conversationService.getConversationById(CONVERSATION_ID)
 
@@ -93,7 +93,7 @@ describe('ConversationService Integration', () => {
 
       const savedMembers = conversationService.getMembersByConversationId(CONVERSATION_ID)
 
-      expect(savedMembers).toHaveLength(1)
+      expect(savedMembers).toHaveLength(2)
       expect(savedMembers.map((m: ConversationMemberEntity) => m.user_id)).toContain(USER_ID.id)
       expect(savedMembers.map((m: ConversationMemberEntity) => m.user_domain)).toContain(USER_ID.domain)
       expect(savedMembers.map((m: ConversationMemberEntity) => m.conversation_id)).toContain(CONVERSATION_ID.id)
@@ -113,7 +113,7 @@ describe('ConversationService Integration', () => {
         CONVERSATION_ID,
         ONE_TO_ONE_CONVERSATION_RESPONSE
       )
-      
+
       expect(userNameRequested).toBe(true)
       expect(result.conversation.name).toBe(ONE_TO_ONE_CONVERSATION_NAME)
 
@@ -135,15 +135,15 @@ describe('ConversationService Integration', () => {
       expect(secondConversation).toBeDefined()
 
       const firstConversationMembers = conversationService.getMembersByConversationId(CONVERSATION_ID)
-      expect(firstConversationMembers).toHaveLength(1)
+      expect(firstConversationMembers).toHaveLength(2)
 
       const secondConversationMembers = conversationService.getMembersByConversationId(OTHER_CONVERSATION_ID)
-      expect(secondConversationMembers).toHaveLength(1)
+      expect(secondConversationMembers).toHaveLength(2)
     })
 
     it('should throw error when conversation not found in API', async () => {
       vi.mocked(mockConversationsApiClient.getConversation).mockRejectedValue(new Error('Not found'))
-      
+
       await expect(conversationService.getConversationById(CONVERSATION_ID)).rejects.toThrow()
     })
   })

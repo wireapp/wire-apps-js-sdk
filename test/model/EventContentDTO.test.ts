@@ -3,6 +3,7 @@ import {describe, it, expect} from 'vitest';
 import {
   isNewMLSMessageEvent,
   isMLSWelcomeEvent,
+  isNewConversationEvent,
   isTypingEvent,
 } from '../../src/model/EventContentDTO.js';
 
@@ -37,6 +38,22 @@ describe('EventContentDTO type guards', () => {
     expect(isMLSWelcomeEvent(positive)).toBe(true);
     expect(isMLSWelcomeEvent(negative)).toBe(false);
     expect(isMLSWelcomeEvent(missing)).toBe(false);
+  });
+
+  it('isNewConversationEvent returns true for conversation.create and false otherwise', () => {
+    const positive = {
+      type: 'conversation.create',
+      time: new Date(),
+      data: {id: 'conv-1'} as any,
+      qualified_conversation: {id: '1'},
+      qualified_from: {id: '2'},
+    } as any;
+    const negative = {type: 'conversation.mls-message-add'} as any;
+    const missing = {} as any;
+
+    expect(isNewConversationEvent(positive)).toBe(true);
+    expect(isNewConversationEvent(negative)).toBe(false);
+    expect(isNewConversationEvent(missing)).toBe(false);
   });
 
   it('isTypingEvent returns true for conversation.typing and false otherwise', () => {

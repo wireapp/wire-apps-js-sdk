@@ -75,12 +75,10 @@ export class ConversationService {
 
     this.conversationRepository.save(conversationEntity)
 
-    const members = conversation.members.others.map((member) => {
-      return {
-        userId: member.qualified_id,
-        role: member.conversation_role
-      }
-    })
+    const members = [conversation.members.self, ...conversation.members.others].map((member) => ({
+      userId: member.qualified_id,
+      role: member.conversation_role
+    }));
 
     const membersToSave: ConversationMemberEntity[] = members.map((member) => {
       return {

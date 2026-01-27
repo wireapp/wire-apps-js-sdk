@@ -1,7 +1,7 @@
 /*
 * Wire
 * Copyright (C) 2025 Wire Swiss GmbH
-* 
+*
 * This program is free software: you can redistribute it and/or modify
 * it under the terms of the GNU General Public License as published by
 * the Free Software Foundation, either version 3 of the License, or
@@ -35,7 +35,7 @@ describe('ConversationService', () => {
 
   beforeEach(() => {
     container.clearInstances()
-    
+
     mockUsersApiClient = {
       getUserName: vi.fn()
     } as any
@@ -108,6 +108,14 @@ describe('ConversationService', () => {
 
       expect(mockConversationMemberRepository.saveMany).toHaveBeenCalledWith([
         {
+          user_id: SELF_USER_ID.id,
+          user_domain: SELF_USER_ID.domain,
+          conversation_id: CONVERSATION_ID.id,
+          conversation_domain: CONVERSATION_ID.domain,
+          role: 'wire_admin',
+          creation_date: null
+        },
+        {
           user_id: USER_ID.id,
           user_domain: USER_ID.domain,
           conversation_id: CONVERSATION_ID.id,
@@ -118,7 +126,7 @@ describe('ConversationService', () => {
       ])
 
       expect(result.conversation.name).toBe('Dummy User')
-      expect(result.members).toHaveLength(1)
+      expect(result.members).toHaveLength(2)
     })
 
     it('should save GROUP conversation with conversation name', async () => {
@@ -149,7 +157,7 @@ describe('ConversationService', () => {
 
       expect(mockUsersApiClient.getUserName).not.toHaveBeenCalled()
       expect(result.conversation.name).toBe('Test Conversation')
-      expect(result.members).toHaveLength(1)
+      expect(result.members).toHaveLength(2)
     })
 
     it('should use empty string when group conversation has no name', async () => {

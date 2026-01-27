@@ -14,26 +14,28 @@
 * along with this program. If not, see http://www.gnu.org/licenses/.
 */
 
-import type { EventResponse } from "../api/response/EventResponse.js";
-import { ProtobufDeserializer } from "../mappers/protobuf/ProtobufDeserializer.js";
+import type {EventResponse} from "../api/response/EventResponse.js";
+import {ProtobufDeserializer} from "../mappers/protobuf/ProtobufDeserializer.js";
 import {
   isMLSWelcomeEvent,
   isNewMLSMessageEvent,
+  isTypingEvent,
+  isNewConversationEvent,
   type EventContentDTO,
   type NewMLSMessageDTO,
-  isTypingEvent
+  type NewConversationDTO
 } from "../model/EventContentDTO.js";
-import { isCoreCryptoMlsException } from "../model/exception/CoreCryptoMlsException.js";
-import { isMlsException } from "../model/exception/MlsException.js";
-import type { QualifiedId } from "../model/QualifiedId.js";
-import { CoreCryptoService } from "./CoreCryptoService.js";
-import { WireEventsHandler } from "./WireEventsHandler.js";
-import { APP_CLIENT_ID, WIRE_EVENTS_HANDLER } from "../utils/DependencyInjectionTokens.js";
-import { ConversationService } from "../api/ConversationService.js";
-import { MlsService } from "../api/MlsService.js";
-import { Decoder } from "bazinga64";
-import { ConversationMapper } from "../mappers/conversation/ConversationMapper.js";
-import { container, inject, singleton } from "tsyringe";
+import {isCoreCryptoMlsException} from "../model/exception/CoreCryptoMlsException.js";
+import {isMlsException} from "../model/exception/MlsException.js";
+import type {QualifiedId} from "../model/QualifiedId.js";
+import {CoreCryptoService} from "./CoreCryptoService.js";
+import {WireEventsHandler} from "./WireEventsHandler.js";
+import {APP_CLIENT_ID, WIRE_EVENTS_HANDLER} from "../utils/DependencyInjectionTokens.js";
+import {ConversationService} from "../api/ConversationService.js";
+import {MlsService} from "../api/MlsService.js";
+import {Decoder} from "bazinga64";
+import {ConversationMapper} from "../mappers/conversation/ConversationMapper.js";
+import {container, inject, singleton} from "tsyringe";
 import {LoggerFactory} from "../utils/logger/LoggerFactory.js";
 
 @singleton()
@@ -45,7 +47,8 @@ export class EventRouter {
     private conversationService: ConversationService,
     private mlsService: MlsService,
     @inject(WIRE_EVENTS_HANDLER) private wireEventsHandler: WireEventsHandler
-  ) {}
+  ) {
+  }
 
   async route(eventResponse: EventResponse): Promise<void> {
     if (!eventResponse.payload) {
@@ -90,8 +93,11 @@ export class EventRouter {
             throw exception
           }
         }
-      }else if (isTypingEvent(event)) {
+      } else if (isTypingEvent(event)) {
         // Ignore silently
+      } else if (isNewConversationEvent(event)) {
+        const newConversationEvent = (event as NewConversationDTO)
+        await this.processNewConversationEvent(newConversationEvent)
       } else {
         this.logger.info(`Received an unmapped event: ${(event as EventContentDTO).type}`)
       }
@@ -105,7 +111,7 @@ export class EventRouter {
     await this.coreCryptoService.processWelcomeMessage(welcomeMessageBytes)
 
     const conversationResponse = await this.conversationService.fetchConversationById(conversationId)
-    const { conversation, members } = await this.conversationService.saveConversationWithMembers(
+    const {conversation, members} = await this.conversationService.saveConversationWithMembers(
       conversationId,
       conversationResponse
     )
@@ -143,4 +149,12 @@ export class EventRouter {
         this.logger.info("Unknown event received.")
     }
   }
+
+  private async processNewConversationEvent(event: NewConversationDTO) {
+    await this.conversationService.saveConversationWithMembers(
+      event.qualified_conversation,
+      event.data
+    )
+  }
+
 }
