@@ -1,7 +1,7 @@
 /*
 * Wire
 * Copyright (C) 2025 Wire Swiss GmbH
-* 
+*
 * This program is free software: you can redistribute it and/or modify
 * it under the terms of the GNU General Public License as published by
 * the Free Software Foundation, either version 3 of the License, or
@@ -14,14 +14,30 @@
 * along with this program. If not, see http://www.gnu.org/licenses/.
 */
 
-import { Ciphersuite, ClientId, ConversationId, CoreCrypto, CoreCryptoContext, CredentialType, DatabaseKey, GroupInfo, initWasmModule, Welcome } from "@wireapp/core-crypto";
-import type { AppClientId } from "../model/AppClientId.js";
-import { CoreCryptoMlsTransport } from "./CoreCryptoMlsTransport.js";
-import type { MlsPublicKeys } from "../model/MlsPublicKeys.js";
-import { PreKeyCrypto } from "../model/PreKeyCrypto.js";
-import { Encoder } from "bazinga64";
+import {
+  Ciphersuite,
+  ClientId,
+  ConversationId,
+  CoreCrypto,
+  CoreCryptoContext,
+  CredentialType,
+  DatabaseKey,
+  GroupInfo,
+  initWasmModule,
+  Welcome
+} from "@wireapp/core-crypto";
+import type {AppClientId} from "../model/AppClientId.js";
+import {CoreCryptoMlsTransport} from "./CoreCryptoMlsTransport.js";
+import type {MlsPublicKeys} from "../model/MlsPublicKeys.js";
+import {PreKeyCrypto} from "../model/PreKeyCrypto.js";
+import {Encoder} from "bazinga64";
+import {LoggerFactory} from "../utils/logger/LoggerFactory.js";
+
+// TODO: Baris: If we can find a way to make this class only reachable from CoreCryptoService, that will be awesome.
 
 export class CoreCryptoClient {
+  private logger = LoggerFactory.getLogger(this.constructor.name)
+
   private ciphersuite: Ciphersuite
   private mlsTransport: CoreCryptoMlsTransport
   private coreCrypto: CoreCrypto
@@ -113,23 +129,23 @@ export class CoreCryptoClient {
 
     switch (this.ciphersuite) {
       case Ciphersuite.MLS_128_DHKEMP256_AES128GCM_SHA256_P256:
-        return { ecdsa_secp256r1_sha256: encodedKey };
-  
+        return {ecdsa_secp256r1_sha256: encodedKey};
+
       case Ciphersuite.MLS_256_DHKEMP384_AES256GCM_SHA384_P384:
-        return { ecdsa_secp384r1_sha384: encodedKey };
-  
+        return {ecdsa_secp384r1_sha384: encodedKey};
+
       case Ciphersuite.MLS_256_DHKEMP521_AES256GCM_SHA512_P521:
-        return { ecdsa_secp521r1_sha512: encodedKey };
-  
+        return {ecdsa_secp521r1_sha512: encodedKey};
+
       case Ciphersuite.MLS_128_DHKEMX25519_CHACHA20POLY1305_SHA256_Ed25519:
       case Ciphersuite.MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519:
-        return { ed25519: encodedKey };
-  
+        return {ed25519: encodedKey};
+
       case Ciphersuite.MLS_256_DHKEMX448_AES256GCM_SHA512_Ed448:
       case Ciphersuite.MLS_256_DHKEMX448_CHACHA20POLY1305_SHA512_Ed448:
         // TODO: Map to WireException
         throw new Error("Unsupported ciphersuite")
-  
+
       default:
         // TODO: Map to WireException
         throw new Error("Unknown ciphersuite");
@@ -148,11 +164,11 @@ export class CoreCryptoClient {
   ): Promise<PreKeyCrypto[]> {
     return await this.coreCrypto.transaction(async (context) => {
       const preKeys: PreKeyCrypto[] = await Promise.all(
-        Array.from({ length: count }, async (__, index) => {
+        Array.from({length: count}, async (__, index) => {
           const updatedIndex = from + index;
           const id = updatedIndex & 0xffff;
           const data = await context.proteusNewPrekey(id)
-          
+
           return new PreKeyCrypto(id, Encoder.toBase64(data).asString);
         })
       )
@@ -181,7 +197,7 @@ export class CoreCryptoClient {
       )
     })
   }
-  
+
   async decryptMls(
     mlsGroupId: ConversationId,
     encryptedMessageBytes: Uint8Array
@@ -192,7 +208,7 @@ export class CoreCryptoClient {
         encryptedMessageBytes
       )
     })
-    
+
     return decryptedMessage.message
   }
 
@@ -209,6 +225,21 @@ export class CoreCryptoClient {
       return await context.clientValidKeypackagesCount(this.ciphersuite, CredentialType.Basic)
     })
     return packageCount < this.MLS_DEFAULT_KEYPACKAGE_COUNT / 2
+  }
+
+  // TODO: Baris: Delete this, use other
+  async isConversationExists(mlsGroupId: ConversationId): Promise<boolean> {
+    return this.coreCrypto.transaction(async (context): Promise<boolean> => {
+      return await context.conversationExists(mlsGroupId)
+    })
+  }
+
+  async wipeConversation(mlsGroupId: ConversationId) {
+    this.logger.debug("Conversation will be deleted from CoreCrypto. mlsGroupId: {}", mlsGroupId)
+    await this.coreCrypto.transaction(async (context) => {
+      await context.wipeConversation(mlsGroupId)
+      this.logger.debug("Conversation is deleted from CoreCrypto. mlsGroupId: {}", mlsGroupId)
+    })
   }
 
   async conversationExists(mlsGroupId: ConversationId): Promise<boolean> {
