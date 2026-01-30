@@ -169,7 +169,7 @@ export class CoreCryptoService {
 
   async wipeConversation(mlsGroupId: string) {
     const coreCryptoConversationId = this.getCoreCryptoConversationId(mlsGroupId)
-    this.coreCryptoClient!.wipeConversation(coreCryptoConversationId)
+    await this.coreCryptoClient!.wipeConversation(coreCryptoConversationId)
   }
 
   close() {

@@ -29,7 +29,7 @@ import {ConversationsApiClient} from "./ConversationsApiClient.js";
 import {singleton} from "tsyringe";
 import type {ConversationMemberOtherResponse} from "./model/ConversationMemberOtherResponse.js";
 import {LoggerFactory} from "../utils/logger/LoggerFactory.js";
-import type {CoreCryptoService} from "../core/CoreCryptoService.js";
+import {CoreCryptoService} from "../core/CoreCryptoService.js";
 
 @singleton()
 export class ConversationService {
