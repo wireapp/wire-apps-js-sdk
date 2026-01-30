@@ -21,9 +21,11 @@ import {
   isNewMLSMessageEvent,
   isTypingEvent,
   isNewConversationEvent,
+  isDeleteConversationEvent,
   type EventContentDTO,
   type NewMLSMessageDTO,
-  type NewConversationDTO
+  type NewConversationDTO,
+  type DeleteConversationDTO
 } from "../model/EventContentDTO.js";
 import {isCoreCryptoMlsException} from "../model/exception/CoreCryptoMlsException.js";
 import {isMlsException} from "../model/exception/MlsException.js";
@@ -106,12 +108,17 @@ export class EventRouter {
       } else if (isNewConversationEvent(event)) {
         const newConversationEvent = (event as NewConversationDTO)
         await this.processNewConversationEvent(newConversationEvent)
+      } else if (isDeleteConversationEvent(event)) {
+        const deleteConversationEvent = (event as DeleteConversationDTO)
+        await this.processDeleteConversationEvent(deleteConversationEvent)
       } else {
         this.logger.info(`Received an unmapped event: ${(event as EventContentDTO).type}`)
       }
     }
   }
 
+  // TODO: Baris: Move these processing methods to dedicated classes (...EventProcesspr)
+  //  to follow Single Responsibility Principle
   private async handleWelcomeEvent(
     welcomeMessageBytes: Uint8Array,
     conversationId: QualifiedId
@@ -159,10 +166,18 @@ export class EventRouter {
   }
 
   private async processNewConversationEvent(event: NewConversationDTO) {
+    this.logger.info('Processing NewConversation event for conversationId:', event.qualified_conversation)
     await this.conversationService.saveConversationWithMembers(
       event.qualified_conversation,
       event.data
     )
+    this.logger.info('Processed NewConversation event for conversationId:', event.qualified_conversation)
   }
 
+  private async processDeleteConversationEvent(event: DeleteConversationDTO) {
+    this.logger.info("Processing DeleteConversation event for conversationId:", event.qualified_conversation)
+    await this.conversationService.deleteAllConversationDataFromLocalStorages(event.qualified_conversation)
+    await this.wireEventsHandler.onConversationDeleted(event.qualified_conversation)
+    this.logger.info("Processed DeleteConversation event for conversationId:", event.qualified_conversation)
+  }
 }
