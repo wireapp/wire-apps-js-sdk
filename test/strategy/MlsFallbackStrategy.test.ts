@@ -15,12 +15,16 @@
 */
 
 import {describe, it, expect, beforeEach, vi} from 'vitest'
-import {CoreCryptoService} from '../../src/core/CoreCryptoService.js'
+import type {CoreCryptoService} from '../../src/core/CoreCryptoService.js'
 import {MlsFallbackStrategy} from '../../src/strategy/MlsFallbackStrategy.js'
-import {ConversationService} from '../../src/api/ConversationService.js'
+import type {ConversationService} from '../../src/api/ConversationService.js'
 import type {QualifiedId} from '../../src/model/QualifiedId.js'
 import type {ConversationResponse} from '../../src/api/response/ConversationResponse.js'
 import {container} from 'tsyringe'
+
+vi.mock('../../src/core/CoreCryptoService.js', () => ({
+  CoreCryptoService: vi.fn()
+}))
 
 describe('MlsFallbackStrategy', () => {
   let mlsFallbackStrategy: MlsFallbackStrategy
