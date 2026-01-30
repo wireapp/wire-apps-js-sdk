@@ -25,10 +25,20 @@ export class ConversationsApiClient {
   }
 
   private readonly basePath = "conversations";
+  private readonly HEADER_MLS_ACCEPT = "message/mls"
+  private readonly HEADER_MLS_CONTENT_TYPE = "message/mls"
 
   async getConversation(conversationQualifiedId: QualifiedId): Promise<ConversationResponse> {
     return await this.httpClient.getRequest<ConversationResponse>(
       `${this.basePath}/${conversationQualifiedId.domain}/${conversationQualifiedId.id}`
+    )
+  }
+
+  async getConversationGroupInfo(conversationQualifiedId: QualifiedId): Promise<Uint8Array> {
+    return await this.httpClient.getRequest<Uint8Array>(
+      `${this.basePath}/${conversationQualifiedId.domain}/${conversationQualifiedId.id}/groupinfo`,
+      this.HEADER_MLS_CONTENT_TYPE,
+      this.HEADER_MLS_ACCEPT
     )
   }
 }

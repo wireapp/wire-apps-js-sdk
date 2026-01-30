@@ -15,6 +15,7 @@
 */
 
 import type { ConversationType } from "../../model/conversation/ConversationType.js"
+import type {CryptoProtocol} from "../../model/CryptoProtocol.js"
 import type { QualifiedId } from "../../model/QualifiedId.js"
 import type { ConversationMembersResponse } from "../model/ConversationMembersResponse.js"
 
@@ -23,6 +24,8 @@ export interface ConversationResponse {
   name: string | null
   type: ConversationType
   group_id: string
+  epoch: number | null
+  protocol: CryptoProtocol
   team: string
   members: ConversationMembersResponse
 }

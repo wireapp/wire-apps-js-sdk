@@ -14,7 +14,7 @@
 * along with this program. If not, see http://www.gnu.org/licenses/.
 */
 
-import {ConversationId} from "@wireapp/core-crypto";
+import {ConversationId, GroupInfo} from "@wireapp/core-crypto";
 import {ClientsService} from "../api/ClientsService.js";
 import {AppClientId} from "../model/AppClientId.js";
 import {
@@ -154,6 +154,26 @@ export class CoreCryptoService {
     return await this.coreCryptoClient?.decryptMls(
       new ConversationId(mlsGroupIdBytes),
       encryptedMessageBytes
+    )
+  }
+
+  async conversationExists(mlsGroupId: string) {
+    const mlsGroupIdBytes = Decoder.fromBase64(mlsGroupId).asBytes
+    return await this.coreCryptoClient?.conversationExists(
+      new ConversationId(mlsGroupIdBytes)
+    )
+  }
+
+  async conversationEpoch(mlsGroupId: string) {
+    const mlsGroupIdBytes = Decoder.fromBase64(mlsGroupId).asBytes
+    return await this.coreCryptoClient!.conversationEpoch(
+      new ConversationId(mlsGroupIdBytes)
+    )
+  }
+
+  async joinMlsConversationRequest(groupInfoBytes: Uint8Array) {
+    return await this.coreCryptoClient?.joinMlsConversationRequest(
+      new GroupInfo(groupInfoBytes)
     )
   }
 

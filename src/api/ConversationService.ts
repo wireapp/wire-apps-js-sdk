@@ -100,7 +100,7 @@ export class ConversationService {
   }
 
   async getConversationById(conversationId: QualifiedId): Promise<ConversationEntity> {
-    this.logger.info("Getting Conversation.", "conversationId:", obfuscateId(conversationId.id))
+    this.logger.info("Getting Conversation. conversationId:", obfuscateId(conversationId.id))
     const conversationEntity = this.conversationRepository.findByIdAndDomain(conversationId)
 
     if (conversationEntity) {
@@ -129,6 +129,10 @@ export class ConversationService {
     const conversation = await this.getConversationById(conversationId)
 
     return conversation.mls_group_id
+  }
+
+  async getConversationGroupInfo(conversationId: QualifiedId): Promise<Uint8Array> {
+    return await this.conversationsApiClient.getConversationGroupInfo(conversationId)
   }
 
   getMembersByConversationId(conversationId: QualifiedId): ConversationMemberEntity[] {
