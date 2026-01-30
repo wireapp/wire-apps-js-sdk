@@ -68,6 +68,8 @@ class SampleEventsHandler extends WireEventsHandler {
 
     this.manager.sendMessage(textMessage)
   }
+
+  // TODO: Baris: Implement other callbacks as well
 }
 
 const sampleEventsHandler = new SampleEventsHandler()

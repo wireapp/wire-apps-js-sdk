@@ -18,13 +18,18 @@ import {DatabaseService} from "./DatabaseService.js";
 import type {ConversationEntity} from "./model/ConversationEntity.js";
 import type {QualifiedId} from "../model/QualifiedId.js";
 import {singleton} from "tsyringe";
+import {LoggerFactory} from "../utils/logger/LoggerFactory.js";
 
 @singleton()
 export class ConversationRepository {
+  private logger = LoggerFactory.getLogger(this.constructor.name)
+
   private selectAllStmt
   private selectByIdAndDomainStmt
   private insertStmt
   private deleteStmt
+  private deleteAllMembersInConversationStmt
+
 
   constructor(private readonly database: DatabaseService) {
     this.selectAllStmt =
@@ -57,6 +62,14 @@ export class ConversationRepository {
       DELETE FROM conversation
       WHERE id = ? AND domain = ?
     `)
+
+    this.deleteAllMembersInConversationStmt =
+      this.database.db.prepare<[string, string], void>(`
+        DELETE
+        FROM conversation_member
+        WHERE conversation_id = ?
+          AND conversation_domain = ?
+      `)
   }
 
   getAll(): ConversationEntity[] {
@@ -84,10 +97,9 @@ export class ConversationRepository {
     this.deleteStmt.run(id, domain);
   }
 
-  /**
-   * TODO : Implement deleteMembersFromConversation
-   */
   deleteAllMembersInConversation(conversationId: string, conversationDomain: string) {
-    console.error("Not implemented: deleteAllMembersInConversation");
+    this.logger.debug(`All members in the conversation will be deleted from database. conversation_domain = ${conversationDomain} WHERE id = ${conversationId}`);
+    this.deleteAllMembersInConversationStmt.run(conversationId, conversationDomain);
+    this.logger.debug(`All members in the conversation are deleted from database. conversation_domain = ${conversationDomain} WHERE id = ${conversationId}`);
   }
 }
