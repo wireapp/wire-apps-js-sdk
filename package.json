@@ -41,7 +41,7 @@
     "@types/express": "^5.0.6",
     "@types/node": "^25.0.9",
     "@types/ws": "^8.18.1",
-    "@vitest/coverage-v8": "^4.0.18",
+    "@vitest/coverage-v8": "^4.0.17",
     "cpy-cli": "^6.0.0",
     "eslint": "^9.39.2",
     "fake-indexeddb": "^6.2.4",
@@ -51,7 +51,7 @@
     "protobufjs-cli": "^2.0.0",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.53.1",
-    "vitest": "^4.0.18"
+    "vitest": "^4.0.17"
   },
   "dependencies": {
     "@wireapp/core-crypto": "^9.1.1",
