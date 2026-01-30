@@ -41,12 +41,26 @@ export interface NewConversationDTO {
   qualified_from: QualifiedId
 }
 
+export interface DeleteConversationDTO {
+  type: string
+  time: Date
+  qualified_conversation: QualifiedId
+  qualified_from: QualifiedId
+}
+
+// TODO: Rename to TypingDTO in a separate PR for consistency
 export interface Typing {
   type: string
   qualified_conversation: QualifiedId
 }
 
-export type EventContentDTO = MLSWelcomeDTO | NewMLSMessageDTO | NewConversationDTO | Typing
+export type EventContentDTO = MLSWelcomeDTO | NewMLSMessageDTO | NewConversationDTO | DeleteConversationDTO | Typing
+
+// TODO: [Note from Baris] -> I think the following methods should be in the Router.
+//  We don't need to pass "event" object to this class just to check 'type'.
+//  I don't think it is this class' responsibility to check the type of the event.
+//  This class should just provide the types and their schema.
+//  I prefer making the refactoring after set of current tasks
 
 // Type Guards
 export function isNewMLSMessageEvent(event: EventContentDTO): event is NewMLSMessageDTO {
@@ -59,6 +73,10 @@ export function isMLSWelcomeEvent(event: EventContentDTO): event is MLSWelcomeDT
 
 export function isNewConversationEvent(event: EventContentDTO): event is NewConversationDTO {
   return (event as NewConversationDTO).type === "conversation.create"
+}
+
+export function isDeleteConversationEvent(event: EventContentDTO): event is DeleteConversationDTO {
+  return (event as DeleteConversationDTO).type === "conversation.delete"
 }
 
 export function isTypingEvent(event: EventContentDTO): event is Typing {
