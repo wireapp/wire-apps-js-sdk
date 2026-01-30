@@ -25,7 +25,7 @@ import type {QualifiedId} from '../../src/model/QualifiedId.js'
 import type {ConversationResponse} from '../../src/api/response/ConversationResponse.js'
 import type {ConversationEntity} from '../../src/db/model/ConversationEntity.js'
 import {container} from 'tsyringe'
-import {CoreCryptoService} from "../../src/core/CoreCryptoService";
+import {CoreCryptoService} from "../../src/core/CoreCryptoService.js";
 
 describe('ConversationService', () => {
   let conversationService: ConversationService
