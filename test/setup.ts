@@ -15,16 +15,16 @@
 */
 
 import 'reflect-metadata'
-import {readFileSync, writeFileSync, existsSync} from 'fs'
+// import {readFileSync, writeFileSync, existsSync} from 'fs'
 
-// Fix @wireapp/core-crypto package.json before any imports
-const filePath = 'node_modules/@wireapp/core-crypto/package.json'
-
-if (existsSync(filePath)) {
-  let content = readFileSync(filePath, 'utf8');
-  // content = content.replace(
-  //   '"main": "src/CoreCrypto.ts"',
-  //   '"main": "src/corecrypto.js"'  // Use the actual module file
-  // );
-  writeFileSync(filePath, content, 'utf8');
-}
+// // Fix @wireapp/core-crypto package.json before any imports
+// const filePath = 'node_modules/@wireapp/core-crypto/package.json'
+//
+// if (existsSync(filePath)) {
+//   let content = readFileSync(filePath, 'utf8');
+//   // content = content.replace(
+//   //   '"main": "src/CoreCrypto.ts"',
+//   //   '"main": "src/corecrypto.js"'  // Use the actual module file
+//   // );
+//   writeFileSync(filePath, content, 'utf8');
+// }
