@@ -59,7 +59,7 @@ describe('ConversationService', () => {
     } as any
 
     mockCoreCryptoService = {
-      isConversationExists: vi.fn(),
+      conversationExists: vi.fn(),
       wipeConversation: vi.fn()
     } as any
 
@@ -334,13 +334,13 @@ describe('ConversationService', () => {
       }
 
       vi.mocked(mockConversationRepository.findByIdAndDomain).mockReturnValue(mockConversationEntity)
-      vi.mocked(mockCoreCryptoService.isConversationExists).mockResolvedValue(true)
+      vi.mocked(mockCoreCryptoService.conversationExists).mockResolvedValue(true)
       vi.mocked(mockCoreCryptoService.wipeConversation).mockResolvedValue(undefined)
 
       await conversationService.deleteAllConversationDataFromLocalStorages(CONVERSATION_ID)
 
       expect(mockConversationRepository.findByIdAndDomain).toHaveBeenCalledWith(CONVERSATION_ID)
-      expect(mockCoreCryptoService.isConversationExists).toHaveBeenCalledWith(MLS_GROUP_ID)
+      expect(mockCoreCryptoService.conversationExists).toHaveBeenCalledWith(MLS_GROUP_ID)
       expect(mockCoreCryptoService.wipeConversation).toHaveBeenCalledWith(MLS_GROUP_ID)
       expect(mockConversationMemberRepository.deleteAllMembersInConversation).toHaveBeenCalledWith(CONVERSATION_ID.id, CONVERSATION_ID.domain)
       expect(mockConversationRepository.delete).toHaveBeenCalledWith(CONVERSATION_ID.id, CONVERSATION_ID.domain)
@@ -358,11 +358,11 @@ describe('ConversationService', () => {
       }
 
       vi.mocked(mockConversationRepository.findByIdAndDomain).mockReturnValue(mockConversationEntity)
-      vi.mocked(mockCoreCryptoService.isConversationExists).mockResolvedValue(false)
+      vi.mocked(mockCoreCryptoService.conversationExists).mockResolvedValue(false)
 
       await conversationService.deleteAllConversationDataFromLocalStorages(CONVERSATION_ID)
 
-      expect(mockCoreCryptoService.isConversationExists).toHaveBeenCalledWith(MLS_GROUP_ID)
+      expect(mockCoreCryptoService.conversationExists).toHaveBeenCalledWith(MLS_GROUP_ID)
       expect(mockCoreCryptoService.wipeConversation).not.toHaveBeenCalled()
       expect(mockConversationMemberRepository.deleteAllMembersInConversation).toHaveBeenCalledWith(CONVERSATION_ID.id, CONVERSATION_ID.domain)
       expect(mockConversationRepository.delete).toHaveBeenCalledWith(CONVERSATION_ID.id, CONVERSATION_ID.domain)
@@ -380,7 +380,7 @@ describe('ConversationService', () => {
       }
 
       vi.mocked(mockConversationRepository.findByIdAndDomain).mockReturnValue(mockConversationEntity)
-      vi.mocked(mockCoreCryptoService.isConversationExists).mockResolvedValue(true)
+      vi.mocked(mockCoreCryptoService.conversationExists).mockResolvedValue(true)
       vi.mocked(mockCoreCryptoService.wipeConversation).mockRejectedValue(new Error('wipe failed'))
 
       await expect(conversationService.deleteAllConversationDataFromLocalStorages(CONVERSATION_ID)).rejects.toThrow('wipe failed')
