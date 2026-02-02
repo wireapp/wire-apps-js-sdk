@@ -19,6 +19,7 @@ import {LoggerFactory} from "../utils/logger/LoggerFactory.js";
 import type {QualifiedId} from "../model/QualifiedId.js";
 import {CoreCryptoService} from "../core/CoreCryptoService.js";
 import {ConversationService} from "../api/ConversationService.js";
+import {obfuscateId} from "../utils/ObfuscateUtil.js";
 
 @singleton()
 export class MlsFallbackStrategy {
@@ -37,21 +38,17 @@ export class MlsFallbackStrategy {
     const fetchedConversation = await this.conversationService.fetchConversationById(conversationId)
     const conversationEpoch = fetchedConversation.epoch
     const currentConversationEpoch = await this.coreCryptoService.conversationEpoch(mlsGroupId)
-    const isEpochBehind = conversationEpoch != null && currentConversationEpoch < conversationEpoch
+    const isEpochBehind = currentConversationEpoch < conversationEpoch
 
     this.logger.info(
-      "Verifying Fallback Strategy for conversationId: {}, " +
-        "exists: {} " +
-        "epoch: local[{}] < remote[{}]",
-      conversationId,
-      conversationExists,
-      currentConversationEpoch,
-      conversationEpoch
+      `Verifying Fallback Strategy for conversationId: ${obfuscateId(conversationId.id)}, ` +
+        `exists: ${conversationExists} ` +
+        `epoch: local[${currentConversationEpoch}] < remote[${conversationEpoch}]`
     )
 
     if (!conversationExists || isEpochBehind) {
       const groupInfoBytes = await this.conversationService.getConversationGroupInfo(conversationId)
-      this.coreCryptoService.joinMlsConversationRequest(groupInfoBytes)
+      await this.coreCryptoService.joinMlsConversationRequest(groupInfoBytes)
     }
   }
 }

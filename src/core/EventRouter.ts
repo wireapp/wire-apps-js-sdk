@@ -87,13 +87,13 @@ export class EventRouter {
         } catch (exception) {
           if (isMlsException(exception)) {
             this.logger.debug("Message decryption failed, MlsException:", exception)
-            this.mlsFallbackStrategy.verifyConversationOutOfSync(
+            await this.mlsFallbackStrategy.verifyConversationOutOfSync(
               mlsGroupId,
               event.qualified_conversation
             )
           } else if (isCoreCryptoMlsException(exception)) {
             this.logger.debug("Message decryption failed, CoreCryptoException.Mls:", exception)
-            this.mlsFallbackStrategy.verifyConversationOutOfSync(
+            await this.mlsFallbackStrategy.verifyConversationOutOfSync(
               mlsGroupId,
               event.qualified_conversation
             )

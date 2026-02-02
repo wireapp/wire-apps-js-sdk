@@ -211,19 +211,19 @@ export class CoreCryptoClient {
     return packageCount < this.MLS_DEFAULT_KEYPACKAGE_COUNT / 2
   }
 
-  async conversationExists(mlsGroupId: ConversationId) {
+  async conversationExists(mlsGroupId: ConversationId): Promise<boolean> {
     return await this.coreCrypto.transaction(async (context) => {
       return await context.conversationExists(mlsGroupId)
     })
   }
 
-  async conversationEpoch(mlsGroupId: ConversationId) {
+  async conversationEpoch(mlsGroupId: ConversationId): Promise<number> {
     return await this.coreCrypto.transaction(async (context) => {
       return await context.conversationEpoch(mlsGroupId)
     })
   }
 
-  private async getCredentialType(context: CoreCryptoContext) {
+  private async getCredentialType(context: CoreCryptoContext): Promise<CredentialType> {
     if (await context.e2eiIsEnabled(this.ciphersuite)) {
       return CredentialType.X509
     } else {
@@ -231,10 +231,10 @@ export class CoreCryptoClient {
     }
   }
 
-  async joinMlsConversationRequest(groupInfo: GroupInfo) {
-    return await this.coreCrypto.transaction(async (context) => {
+  async joinMlsConversationRequest(groupInfo: GroupInfo): Promise<void> {
+    await this.coreCrypto.transaction(async (context) => {
       const mlsCredentialType = await this.getCredentialType(context)
-      return await context.joinByExternalCommit(
+      await context.joinByExternalCommit(
         groupInfo,
         mlsCredentialType
       )
