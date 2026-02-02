@@ -49,13 +49,13 @@ describe('ConversationService', () => {
     mockConversationRepository = {
       save: vi.fn(),
       findByIdAndDomain: vi.fn(),
-      deleteAllMembersInConversation: vi.fn(),
       delete: vi.fn()
     } as any
 
     mockConversationMemberRepository = {
       saveMany: vi.fn(),
-      getMembersByConversationId: vi.fn()
+      getMembersByConversationId: vi.fn(),
+      deleteAllMembersInConversation: vi.fn(),
     } as any
 
     mockCoreCryptoService = {
@@ -342,7 +342,7 @@ describe('ConversationService', () => {
       expect(mockConversationRepository.findByIdAndDomain).toHaveBeenCalledWith(CONVERSATION_ID)
       expect(mockCoreCryptoService.isConversationExists).toHaveBeenCalledWith(MLS_GROUP_ID)
       expect(mockCoreCryptoService.wipeConversation).toHaveBeenCalledWith(MLS_GROUP_ID)
-      expect(mockConversationRepository.deleteAllMembersInConversation).toHaveBeenCalledWith(CONVERSATION_ID.id, CONVERSATION_ID.domain)
+      expect(mockConversationMemberRepository.deleteAllMembersInConversation).toHaveBeenCalledWith(CONVERSATION_ID.id, CONVERSATION_ID.domain)
       expect(mockConversationRepository.delete).toHaveBeenCalledWith(CONVERSATION_ID.id, CONVERSATION_ID.domain)
     })
 
@@ -364,7 +364,7 @@ describe('ConversationService', () => {
 
       expect(mockCoreCryptoService.isConversationExists).toHaveBeenCalledWith(MLS_GROUP_ID)
       expect(mockCoreCryptoService.wipeConversation).not.toHaveBeenCalled()
-      expect(mockConversationRepository.deleteAllMembersInConversation).toHaveBeenCalledWith(CONVERSATION_ID.id, CONVERSATION_ID.domain)
+      expect(mockConversationMemberRepository.deleteAllMembersInConversation).toHaveBeenCalledWith(CONVERSATION_ID.id, CONVERSATION_ID.domain)
       expect(mockConversationRepository.delete).toHaveBeenCalledWith(CONVERSATION_ID.id, CONVERSATION_ID.domain)
     })
 
@@ -385,7 +385,7 @@ describe('ConversationService', () => {
 
       await expect(conversationService.deleteAllConversationDataFromLocalStorages(CONVERSATION_ID)).rejects.toThrow('wipe failed')
 
-      expect(mockConversationRepository.deleteAllMembersInConversation).not.toHaveBeenCalled()
+      expect(mockConversationMemberRepository.deleteAllMembersInConversation).not.toHaveBeenCalled()
       expect(mockConversationRepository.delete).not.toHaveBeenCalled()
     })
   })

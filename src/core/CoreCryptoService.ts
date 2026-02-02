@@ -109,15 +109,15 @@ export class CoreCryptoService {
     // TODO: setShouldRejoinConverastions(true) when its a new client
   }
 
-  private getCoreCryptoConversationId(mlsGroupId: string): ConversationId {
+  private conversationIdFromMlsGroupId(mlsGroupId: string): ConversationId {
     const mlsGroupIdBytes = Decoder.fromBase64(mlsGroupId).asBytes
     return new ConversationId(mlsGroupIdBytes)
   }
 
   //TODO: Baris delete this method
   async isConversationExists(mlsGroupId: string): Promise<boolean> {
-    const coreCryptoConversationId = this.getCoreCryptoConversationId(mlsGroupId)
-    return this.coreCryptoClient!.isConversationExists(coreCryptoConversationId)
+    const conversationId = this.conversationIdFromMlsGroupId(mlsGroupId)
+    return this.coreCryptoClient!.isConversationExists(conversationId)
   }
 
   private async uploadClientWithMlsPublicKey() {
@@ -169,8 +169,8 @@ export class CoreCryptoService {
   }
 
   async wipeConversation(mlsGroupId: string) {
-    const coreCryptoConversationId = this.getCoreCryptoConversationId(mlsGroupId)
-    await this.coreCryptoClient!.wipeConversation(coreCryptoConversationId)
+    const conversationId = this.conversationIdFromMlsGroupId(mlsGroupId)
+    await this.coreCryptoClient!.wipeConversation(conversationId)
   }
 
   async conversationExists(mlsGroupId: string) {

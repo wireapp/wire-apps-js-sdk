@@ -39,6 +39,7 @@ import {Decoder} from "bazinga64";
 import {ConversationMapper} from "../mappers/conversation/ConversationMapper.js";
 import {container, inject, singleton} from "tsyringe";
 import {LoggerFactory} from "../utils/logger/LoggerFactory.js";
+import {obfuscateId} from "../utils/ObfuscateUtil.js";
 import {MlsFallbackStrategy} from "../service/MlsFallbackStrategy.js";
 
 @singleton()
@@ -166,18 +167,18 @@ export class EventRouter {
   }
 
   private async processNewConversationEvent(event: NewConversationDTO) {
-    this.logger.info('Processing NewConversation event for conversationId:', event.qualified_conversation)
+    this.logger.info('Processing NewConversation event for conversationId:', obfuscateId(event.qualified_conversation.id))
     await this.conversationService.saveConversationWithMembers(
       event.qualified_conversation,
       event.data
     )
-    this.logger.info('Processed NewConversation event for conversationId:', event.qualified_conversation)
+    this.logger.info('Processed NewConversation event for conversationId:', obfuscateId(event.qualified_conversation.id))
   }
 
   private async processDeleteConversationEvent(event: DeleteConversationDTO) {
-    this.logger.info("Processing DeleteConversation event for conversationId:", event.qualified_conversation)
+    this.logger.info("Processing DeleteConversation event for conversationId:", obfuscateId(event.qualified_conversation.id))
     await this.conversationService.deleteAllConversationDataFromLocalStorages(event.qualified_conversation)
     await this.wireEventsHandler.onConversationDeleted(event.qualified_conversation)
-    this.logger.info("Processed DeleteConversation event for conversationId:", event.qualified_conversation)
+    this.logger.info("Processed DeleteConversation event for conversationId:", obfuscateId(event.qualified_conversation.id))
   }
 }

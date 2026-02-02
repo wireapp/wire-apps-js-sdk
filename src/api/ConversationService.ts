@@ -148,13 +148,13 @@ export class ConversationService {
 
   async deleteAllConversationDataFromLocalStorages(conversationId: QualifiedId): Promise<void> {
     this.logger.info("Deleting all conversation data.", "conversationId:", obfuscateId(conversationId.id))
-    const mlsGroupId = (await this.getConversationMLSGroupId(conversationId))
+    const mlsGroupId = await this.getConversationMLSGroupId(conversationId)
 
     if (await this.coreCryptoService.isConversationExists(mlsGroupId)) {
       await this.coreCryptoService.wipeConversation(mlsGroupId)
     }
 
-    this.conversationRepository.deleteAllMembersInConversation(conversationId.id, conversationId.domain)
+    this.conversationMemberRepository.deleteAllMembersInConversation(conversationId.id, conversationId.domain)
     this.conversationRepository.delete(conversationId.id, conversationId.domain)
 
     this.logger.info("Deleted all conversation data.", "conversationId:", obfuscateId(conversationId.id))
