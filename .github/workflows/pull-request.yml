@@ -22,7 +22,7 @@ jobs:
 
       - name: Lint
         run: npm run lint
-      
+
       - name: Typescript Build Setup
         run: npm run build:setup
 
@@ -30,7 +30,7 @@ jobs:
         run: npm run build
 
       - name: Tests with Coverage
-        run: npm run test:coverage
+        run: npm run test:coverage -- --no-cache
 
       - name: Report Coverage
         if: always()
