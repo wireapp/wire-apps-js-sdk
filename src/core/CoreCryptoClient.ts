@@ -227,13 +227,6 @@ export class CoreCryptoClient {
     return packageCount < this.MLS_DEFAULT_KEYPACKAGE_COUNT / 2
   }
 
-  // TODO: Baris: Delete this, use other
-  async isConversationExists(mlsGroupId: ConversationId): Promise<boolean> {
-    return this.coreCrypto.transaction(async (context): Promise<boolean> => {
-      return await context.conversationExists(mlsGroupId)
-    })
-  }
-
   async wipeConversation(mlsGroupId: ConversationId) {
     this.logger.debug("Conversation will be deleted from CoreCrypto. mlsGroupId: {}", mlsGroupId)
     await this.coreCrypto.transaction(async (context) => {

@@ -114,12 +114,6 @@ export class CoreCryptoService {
     return new ConversationId(mlsGroupIdBytes)
   }
 
-  //TODO: Baris delete this method
-  async isConversationExists(mlsGroupId: string): Promise<boolean> {
-    const conversationId = this.conversationIdFromMlsGroupId(mlsGroupId)
-    return this.coreCryptoClient!.isConversationExists(conversationId)
-  }
-
   private async uploadClientWithMlsPublicKey() {
     const mlsPublicKeys = await this.coreCryptoClient!.getMlsPublicKey()
     await this.clientsService.updateClientWithMlsPublicKey(mlsPublicKeys)

@@ -151,7 +151,7 @@ export class ConversationService {
     const conversationEntity = this.conversationRepository.findByIdAndDomain(conversationId);
 
     if (conversationEntity?.mls_group_id) {
-      if (await this.coreCryptoService.isConversationExists(conversationEntity.mls_group_id)) {
+      if (await this.coreCryptoService.conversationExists(conversationEntity.mls_group_id)) {
         await this.coreCryptoService.wipeConversation(conversationEntity.mls_group_id)
       }
     }
