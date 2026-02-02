@@ -37,7 +37,7 @@ import {Decoder} from "bazinga64";
 import {ConversationMapper} from "../mappers/conversation/ConversationMapper.js";
 import {container, inject, singleton} from "tsyringe";
 import {LoggerFactory} from "../utils/logger/LoggerFactory.js";
-import {MlsFallbackStrategy} from "../strategy/MlsFallbackStrategy.js";
+import {MlsFallbackStrategy} from "../service/MlsFallbackStrategy.js";
 
 @singleton()
 export class EventRouter {
