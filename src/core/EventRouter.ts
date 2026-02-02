@@ -176,6 +176,10 @@ export class EventRouter {
         await this.wireEventsHandler.onTextMessageReceived(wireMessage)
         break;
 
+      case 'asset':
+        await this.wireEventsHandler.onAssetMessageReceived(wireMessage)
+        break;
+
       // TODO: Add other WireMessage types
       case 'unknown':
       default:

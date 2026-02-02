@@ -47,6 +47,10 @@ export abstract class WireEventsHandler {
     this.logger.info(`Received onTextMessageReceived, ID: ${wireMessage.id}`)
   }
 
+  public async onAssetMessageReceived(wireMessage: AssetMessage): Promise<void> {
+    this.logger.info(`Received onAssetMessageReceived, ID: ${wireMessage.id}`)
+  }
+
   public async onAppAddedToConversation(
     conversation: Conversation,
     members: ConversationMember[]
@@ -73,5 +77,4 @@ export abstract class WireEventsHandler {
   ): Promise<void> {
     this.logger.info(`Received onUserLeftConversation, ID: ${obfuscateId(conversationId.id)} - length: ${members.length}`)
   }
-
 }
