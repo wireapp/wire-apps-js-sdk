@@ -98,8 +98,8 @@ export class ConversationRepository {
   }
 
   deleteAllMembersInConversation(conversationId: string, conversationDomain: string) {
-    this.logger.debug(`All members in the conversation will be deleted from database. conversation_domain = ${conversationDomain} WHERE id = ${conversationId}`);
+    this.logger.debug(`All members in the conversation will be deleted from database. conversationId: ${conversationId}, conversationDomain: ${conversationDomain}`);
     this.deleteAllMembersInConversationStmt.run(conversationId, conversationDomain);
-    this.logger.debug(`All members in the conversation are deleted from database. conversation_domain = ${conversationDomain} WHERE id = ${conversationId}`);
+    this.logger.debug(`All members in the conversation are deleted from database. conversationId: ${conversationId}, conversationDomain: ${conversationDomain}`);
   }
 }
