@@ -28,10 +28,8 @@ if (existsSync(filePath)) {
   console.log('Original main field:', content.match(/"main":\s*"[^"]+"/)?.[0]);
 
   const originalContent = content;
-  content = content.replace(
-    '"main": "src/CoreCrypto.ts"',
-    '"main": "src/corecrypto.js"'
-  );
+  content = content.replace('"main": "src/CoreCrypto.ts"', '"main": "src/corecrypto.js"');
+  content = content.replace('"main": "src/CoreCrypto.js"', '"main": "src/corecrypto.js"');
 
   writeFileSync(filePath, content, 'utf8');
 
