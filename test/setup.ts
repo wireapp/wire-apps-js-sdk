@@ -29,7 +29,7 @@ if (existsSync(filePath)) {
 
   const originalContent = content;
   content = content.replace('"main": "src/CoreCrypto.ts"', '"main": "src/corecrypto.js"');
-  content = content.replace('"main": "src/CoreCrypto.js"', '"main": "src/corecrypto.js"');
+  // content = content.replace('"main": "src/CoreCrypto.js"', '"main": "src/corecrypto.js"');
 
   writeFileSync(filePath, content, 'utf8');
 
