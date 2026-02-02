@@ -27,7 +27,7 @@ import type { ConversationResponse } from '../../src/api/response/ConversationRe
 import { TestDatabaseService } from '../helpers/TestDatabaseService.js'
 import { ConversationEntity } from '../../src/db/model/ConversationEntity.js'
 import { ConversationMemberEntity } from '../../src/db/model/ConversationMemberEntity.js'
-import {CoreCryptoService} from "../../src/core/CoreCryptoService";
+import {CoreCryptoService} from "../../src/core/CoreCryptoService.js";
 
 describe('ConversationService Integration', () => {
   let testDbService: TestDatabaseService
