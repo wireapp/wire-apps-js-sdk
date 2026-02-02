@@ -27,10 +27,10 @@ if (!existsSync(filePath)) {
 let content = readFileSync(filePath, 'utf8');
 
 // Fix CoreCrypto main usged file
-content = content.replace(
-  '"main": "src/CoreCrypto.ts"',
-  '"main": "src/CoreCrypto.js"'
-);
+// content = content.replace(
+//   '"main": "src/CoreCrypto.ts"',
+//   '"main": "src/CoreCrypto.js"'
+// );
 
 writeFileSync(filePath, content, 'utf8');
 console.log('✓ Fixed CoreCrypto main in package.json');
