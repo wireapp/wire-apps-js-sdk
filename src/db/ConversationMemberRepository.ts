@@ -46,8 +46,9 @@ export class ConversationMemberRepository {
 
     this.insertStmt =
     this.database.db.prepare<[string, string, string, string, string], void>(`
-      INSERT INTO conversation_member(user_id, user_domain,
-                                      conversation_id, conversation_domain,
+      INSERT INTO conversation_member(
+        user_id, user_domain,
+        conversation_id, conversation_domain,
         role
       )
       VALUES (?, ?, ?, ?, ?)
