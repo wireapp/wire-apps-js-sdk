@@ -14,7 +14,6 @@
 * along with this program. If not, see http://www.gnu.org/licenses/.
 */
 
-import 'reflect-metadata'
 import { readFileSync, writeFileSync, existsSync } from 'fs';
 
 const filePath = 'node_modules/@wireapp/core-crypto/package.json';
