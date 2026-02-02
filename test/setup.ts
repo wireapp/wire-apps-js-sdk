@@ -14,7 +14,7 @@
 * along with this program. If not, see http://www.gnu.org/licenses/.
 */
 
-import 'reflect-metadata'
+// import 'reflect-metadata'
 // import {readFileSync, writeFileSync, existsSync} from 'fs'
 
 // // Fix @wireapp/core-crypto package.json before any imports
