@@ -14,13 +14,14 @@
  * along with this program. If not, see http://www.gnu.org/licenses/.
  */
 
-import { WireApplicationManager } from "./WireApplicationManager.js";
-import type { TextMessage } from "../model/WireMessage.js";
-import type { Conversation } from "../model/conversation/Conversation.js";
-import type { ConversationMember } from "../model/conversation/ConversationMember.js";
-import { obfuscateId } from "../utils/ObfuscateUtil.js";
-import { container } from "tsyringe";
+import {WireApplicationManager} from "./WireApplicationManager.js";
+import type {TextMessage} from "../model/WireMessage.js";
+import type {Conversation} from "../model/conversation/Conversation.js";
+import type {ConversationMember} from "../model/conversation/ConversationMember.js";
+import {obfuscateId} from "../utils/ObfuscateUtil.js";
+import {container} from "tsyringe";
 import {LoggerFactory} from "../utils/logger/LoggerFactory.js";
+import type {QualifiedId} from "../model/QualifiedId.js";
 
 /**
  * Abstract class exposed by the SDK to handle events.
@@ -52,4 +53,12 @@ export abstract class WireEventsHandler {
   ): Promise<void> {
     this.logger.info(`Received onAppAddedToConversation, ID: ${obfuscateId(conversation.id)} - length: ${members.length}`)
   }
+
+  public async onConversationDeleted(
+    conversationId: QualifiedId
+  ): Promise<void> {
+    this.logger.info(`Received onConversationDeleted, ID: ${obfuscateId(conversationId.id)}`)
+  }
+
+  //TODO: Baris: Add callback for NewConversation event
 }

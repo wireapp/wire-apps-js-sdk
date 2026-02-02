@@ -26,9 +26,10 @@ import type {ConversationMemberEntity} from "../db/model/ConversationMemberEntit
 import {obfuscateId} from "../utils/ObfuscateUtil.js";
 import {UsersApiClient} from "./UsersApiClient.js";
 import {ConversationsApiClient} from "./ConversationsApiClient.js";
-import { singleton } from "tsyringe";
-import type { ConversationMemberOtherResponse } from "./model/ConversationMemberOtherResponse.js";
+import {singleton} from "tsyringe";
+import type {ConversationMemberOtherResponse} from "./model/ConversationMemberOtherResponse.js";
 import {LoggerFactory} from "../utils/logger/LoggerFactory.js";
+import {CoreCryptoService} from "../core/CoreCryptoService.js";
 
 @singleton()
 export class ConversationService {
@@ -39,6 +40,7 @@ export class ConversationService {
     private conversationsApiClient: ConversationsApiClient,
     private conversationRepository: ConversationRepository,
     private conversationMemberRepository: ConversationMemberRepository,
+    private coreCryptoService: CoreCryptoService,
   ) {
   }
 
@@ -121,6 +123,8 @@ export class ConversationService {
     }
   }
 
+  //TODO: Baris: Imo, this method should be private.
+  // We can call getConversationById() method from outside. That will call this method IF NEEDED.
   async fetchConversationById(conversationId: QualifiedId): Promise<ConversationResponse> {
     return await this.conversationsApiClient.getConversation(conversationId)
   }
@@ -140,5 +144,21 @@ export class ConversationService {
       conversationId.id,
       conversationId.domain
     )
+  }
+
+  async deleteAllConversationDataFromLocalStorages(conversationId: QualifiedId): Promise<void> {
+    this.logger.info("Deleting all conversation data.", "conversationId:", obfuscateId(conversationId.id))
+    const conversationEntity = this.conversationRepository.findByIdAndDomain(conversationId);
+
+    if (conversationEntity?.mls_group_id) {
+      if (await this.coreCryptoService.conversationExists(conversationEntity.mls_group_id)) {
+        await this.coreCryptoService.wipeConversation(conversationEntity.mls_group_id)
+      }
+    }
+
+    this.conversationMemberRepository.deleteAllMembersInConversation(conversationId.id, conversationId.domain)
+    this.conversationRepository.delete(conversationId.id, conversationId.domain)
+
+    this.logger.info("Deleted all conversation data.", "conversationId:", obfuscateId(conversationId.id))
   }
 }

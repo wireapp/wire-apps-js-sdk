@@ -27,6 +27,7 @@ import type { ConversationResponse } from '../../src/api/response/ConversationRe
 import { TestDatabaseService } from '../helpers/TestDatabaseService.js'
 import { ConversationEntity } from '../../src/db/model/ConversationEntity.js'
 import { ConversationMemberEntity } from '../../src/db/model/ConversationMemberEntity.js'
+import {CoreCryptoService} from "../../src/core/CoreCryptoService.js";
 
 describe('ConversationService Integration', () => {
   let testDbService: TestDatabaseService
@@ -35,6 +36,7 @@ describe('ConversationService Integration', () => {
   let conversationMemberRepository: ConversationMemberRepository
   let mockUsersApiClient: UsersApiClient
   let mockConversationsApiClient: ConversationsApiClient
+  let mockCoreCryptoService: CoreCryptoService
 
   beforeAll(() => {
     testDbService = new TestDatabaseService()
@@ -62,11 +64,17 @@ describe('ConversationService Integration', () => {
       getConversation: vi.fn()
     } as any
 
+    mockCoreCryptoService = {
+      conversationExists: vi.fn(),
+      wipeConversation: vi.fn()
+    } as any
+
     conversationService = new ConversationService(
       mockUsersApiClient,
       mockConversationsApiClient,
       conversationRepository,
-      conversationMemberRepository
+      conversationMemberRepository,
+      mockCoreCryptoService
     )
 
     // TODO: Can remove/replace this once we have implemented a proper logger lib

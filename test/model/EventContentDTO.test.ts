@@ -1,9 +1,9 @@
-// File: `test/model/EventContentDTO.test.ts`
-import {describe, it, expect} from 'vitest';
+import {describe, expect, it} from 'vitest';
 import {
-  isNewMLSMessageEvent,
+  isDeleteConversationEvent,
   isMLSWelcomeEvent,
   isNewConversationEvent,
+  isNewMLSMessageEvent,
   isTypingEvent,
 } from '../../src/model/EventContentDTO.js';
 
@@ -54,6 +54,21 @@ describe('EventContentDTO type guards', () => {
     expect(isNewConversationEvent(positive)).toBe(true);
     expect(isNewConversationEvent(negative)).toBe(false);
     expect(isNewConversationEvent(missing)).toBe(false);
+  });
+
+  it('isDeleteConversationEvent returns true for conversation.delete and false otherwise', () => {
+    const positive = {
+      type: 'conversation.delete',
+      time: new Date(),
+      qualified_conversation: {id: '1'},
+      qualified_from: {id: '2'},
+    } as any;
+    const negative = {type: 'conversation.mls-message-add'} as any;
+    const missing = {} as any;
+
+    expect(isDeleteConversationEvent(positive)).toBe(true);
+    expect(isDeleteConversationEvent(negative)).toBe(false);
+    expect(isDeleteConversationEvent(missing)).toBe(false);
   });
 
   it('isTypingEvent returns true for conversation.typing and false otherwise', () => {

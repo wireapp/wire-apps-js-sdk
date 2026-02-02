@@ -1,7 +1,7 @@
 /*
 * Wire
 * Copyright (C) 2025 Wire Swiss GmbH
-* 
+*
 * This program is free software: you can redistribute it and/or modify
 * it under the terms of the GNU General Public License as published by
 * the Free Software Foundation, either version 3 of the License, or
@@ -14,16 +14,21 @@
 * along with this program. If not, see http://www.gnu.org/licenses/.
 */
 
-import type { ConversationMemberEntity } from "./model/ConversationMemberEntity.js";
-import { DatabaseService } from "./DatabaseService.js";
-import { singleton } from "tsyringe";
+import type {ConversationMemberEntity} from "./model/ConversationMemberEntity.js";
+import {DatabaseService} from "./DatabaseService.js";
+import {singleton} from "tsyringe";
+import {LoggerFactory} from "../utils/logger/LoggerFactory.js";
+import {obfuscateId} from "../utils/ObfuscateUtil.js";
 
 @singleton()
 export class ConversationMemberRepository {
+  private logger = LoggerFactory.getLogger(this.constructor.name)
+
   private selectAllStmt
   private selectByIdAndDomainStmt
   private insertStmt
   private deleteStmt
+  private deleteAllMembersInConversationStmt
 
   constructor(private readonly database: DatabaseService) {
     this.selectAllStmt =
@@ -42,8 +47,8 @@ export class ConversationMemberRepository {
     this.insertStmt =
     this.database.db.prepare<[string, string, string, string, string], void>(`
       INSERT INTO conversation_member(
-        user_id, user_domain, 
-        conversation_id, conversation_domain, 
+        user_id, user_domain,
+        conversation_id, conversation_domain,
         role
       )
       VALUES (?, ?, ?, ?, ?)
@@ -54,11 +59,19 @@ export class ConversationMemberRepository {
     this.deleteStmt =
     this.database.db.prepare<[string, string, string, string], void>(`
       DELETE FROM conversation_member
-      WHERE user_id = ? 
-        AND user_domain = ? 
-        AND conversation_id = ? 
+      WHERE user_id = ?
+        AND user_domain = ?
+        AND conversation_id = ?
         AND conversation_domain = ?
     `)
+
+    this.deleteAllMembersInConversationStmt =
+      this.database.db.prepare<[string, string], void>(`
+        DELETE
+        FROM conversation_member
+        WHERE conversation_id = ?
+          AND conversation_domain = ?
+      `)
   }
 
   getAll(): ConversationMemberEntity[] {
@@ -100,5 +113,11 @@ export class ConversationMemberRepository {
       conversationId,
       conversationDomain
     )
+  }
+
+  deleteAllMembersInConversation(conversationId: string, conversationDomain: string) {
+    this.logger.debug(`All members in the conversation will be deleted from database. conversationId: ${obfuscateId(conversationId)}, conversationDomain: ${conversationDomain}`);
+    this.deleteAllMembersInConversationStmt.run(conversationId, conversationDomain);
+    this.logger.debug(`All members in the conversation are deleted from database. conversationId: ${obfuscateId(conversationId)}, conversationDomain: ${conversationDomain}`);
   }
 }

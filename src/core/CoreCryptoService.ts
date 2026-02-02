@@ -28,7 +28,7 @@ import {CoreCryptoClient} from "./CoreCryptoClient.js";
 import {CoreCryptoMlsTransport} from "./CoreCryptoMlsTransport.js";
 import {FeatureConfigsService} from "../api/FeatureConfigsService.js";
 import {Decoder} from "bazinga64";
-import { container, inject, singleton } from "tsyringe";
+import {container, inject, singleton} from "tsyringe";
 import {LoggerFactory} from "../utils/logger/LoggerFactory.js";
 
 /**
@@ -109,6 +109,11 @@ export class CoreCryptoService {
     // TODO: setShouldRejoinConverastions(true) when its a new client
   }
 
+  private conversationIdFromMlsGroupId(mlsGroupId: string): ConversationId {
+    const mlsGroupIdBytes = Decoder.fromBase64(mlsGroupId).asBytes
+    return new ConversationId(mlsGroupIdBytes)
+  }
+
   private async uploadClientWithMlsPublicKey() {
     const mlsPublicKeys = await this.coreCryptoClient!.getMlsPublicKey()
     await this.clientsService.updateClientWithMlsPublicKey(mlsPublicKeys)
@@ -155,6 +160,11 @@ export class CoreCryptoService {
       new ConversationId(mlsGroupIdBytes),
       encryptedMessageBytes
     )
+  }
+
+  async wipeConversation(mlsGroupId: string) {
+    const conversationId = this.conversationIdFromMlsGroupId(mlsGroupId)
+    await this.coreCryptoClient!.wipeConversation(conversationId)
   }
 
   async conversationExists(mlsGroupId: string) {

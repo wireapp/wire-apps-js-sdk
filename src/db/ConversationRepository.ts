@@ -14,17 +14,19 @@
 * along with this program. If not, see http://www.gnu.org/licenses/.
 */
 
-import { DatabaseService } from "./DatabaseService.js";
-import type { ConversationEntity } from "./model/ConversationEntity.js";
+import {DatabaseService} from "./DatabaseService.js";
+import type {ConversationEntity} from "./model/ConversationEntity.js";
 import type {QualifiedId} from "../model/QualifiedId.js";
-import { singleton } from "tsyringe";
+import {singleton} from "tsyringe";
 
 @singleton()
 export class ConversationRepository {
+
   private selectAllStmt
   private selectByIdAndDomainStmt
   private insertStmt
   private deleteStmt
+
 
   constructor(private readonly database: DatabaseService) {
     this.selectAllStmt =
@@ -63,6 +65,8 @@ export class ConversationRepository {
     return this.selectAllStmt.all();
   }
 
+  // TODO: Baris: It will be better to be consistent and pass id and domain separately.
+  //  So this class will not know about the QualifiedId structure.
   findByIdAndDomain(conversationQualifiedId: QualifiedId): ConversationEntity | null {
     return this.selectByIdAndDomainStmt.get(conversationQualifiedId.id, conversationQualifiedId.domain) ?? null;
   }

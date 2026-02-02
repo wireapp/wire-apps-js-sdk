@@ -19,11 +19,8 @@
 import "reflect-metadata";
 import dotenv from 'dotenv';
 import {PinoLogger} from './PinoLogger.js'
-import {
-    WireAppSdk,
-    WireEventsHandler,
-    TextMessage
-} from '../index.js' // This will be imported from the SDK when used outside of this repository
+import {TextMessage, WireAppSdk, WireEventsHandler} from '../index.js'
+import type {QualifiedId} from "../model/QualifiedId.js"; // This will be imported from the SDK when used outside of this repository
 
 dotenv.config()
 
@@ -35,27 +32,27 @@ const apiHost = process.env['WIRE_SDK_API_HOST'];
 const cryptographyStoragePassword = process.env['WIRE_SDK_CRYPTO_PASSWORD'];
 
 if (!userEmail) {
-    throw new Error('WIRE_SDK_USER_EMAIL must be set in .env file');
+  throw new Error('WIRE_SDK_USER_EMAIL must be set in .env file');
 }
 
 if (!userPassword) {
-    throw new Error('WIRE_SDK_USER_PASSWORD must be set in .env file');
+  throw new Error('WIRE_SDK_USER_PASSWORD must be set in .env file');
 }
 
 if (!userId) {
-    throw new Error('WIRE_SDK_USER_ID must be set in .env file');
+  throw new Error('WIRE_SDK_USER_ID must be set in .env file');
 }
 
 if (!userDomain) {
-    throw new Error('WIRE_SDK_USER_DOMAIN must be set in .env file');
+  throw new Error('WIRE_SDK_USER_DOMAIN must be set in .env file');
 }
 
 if (!apiHost) {
-    throw new Error('WIRE_SDK_API_HOST must be set in .env file');
+  throw new Error('WIRE_SDK_API_HOST must be set in .env file');
 }
 
 if (!cryptographyStoragePassword) {
-    throw new Error('WIRE_SDK_CRYPTO_PASSWORD must be set in .env file');
+  throw new Error('WIRE_SDK_CRYPTO_PASSWORD must be set in .env file');
 }
 
 class SampleEventsHandler extends WireEventsHandler {
@@ -68,6 +65,12 @@ class SampleEventsHandler extends WireEventsHandler {
 
     this.manager.sendMessage(textMessage)
   }
+
+  public override async onConversationDeleted(conversationId: QualifiedId): Promise<void> {
+    console.log(`[Sample App] A conversation was deleted: ${conversationId.id}@${conversationId.domain}`)
+  }
+
+  // TODO: Baris: Implement other callbacks as well
 }
 
 const sampleEventsHandler = new SampleEventsHandler()

@@ -14,17 +14,18 @@
 * along with this program. If not, see http://www.gnu.org/licenses/.
 */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { ConversationService } from '../../src/api/ConversationService.js'
-import { UsersApiClient } from '../../src/api/UsersApiClient.js'
-import { ConversationsApiClient } from '../../src/api/ConversationsApiClient.js'
-import { ConversationRepository } from '../../src/db/ConversationRepository.js'
-import { ConversationMemberRepository } from '../../src/db/ConversationMemberRepository.js'
-import { ConversationType } from '../../src/model/conversation/ConversationType.js'
-import type { QualifiedId } from '../../src/model/QualifiedId.js'
-import type { ConversationResponse } from '../../src/api/response/ConversationResponse.js'
-import type { ConversationEntity } from '../../src/db/model/ConversationEntity.js'
-import { container } from 'tsyringe'
+import {beforeEach, describe, expect, it, vi} from 'vitest'
+import {ConversationService} from '../../src/api/ConversationService.js'
+import {UsersApiClient} from '../../src/api/UsersApiClient.js'
+import {ConversationsApiClient} from '../../src/api/ConversationsApiClient.js'
+import {ConversationRepository} from '../../src/db/ConversationRepository.js'
+import {ConversationMemberRepository} from '../../src/db/ConversationMemberRepository.js'
+import {ConversationType} from '../../src/model/conversation/ConversationType.js'
+import type {QualifiedId} from '../../src/model/QualifiedId.js'
+import type {ConversationResponse} from '../../src/api/response/ConversationResponse.js'
+import type {ConversationEntity} from '../../src/db/model/ConversationEntity.js'
+import {container} from 'tsyringe'
+import {CoreCryptoService} from "../../src/core/CoreCryptoService.js";
 
 describe('ConversationService', () => {
   let conversationService: ConversationService
@@ -32,6 +33,7 @@ describe('ConversationService', () => {
   let mockConversationsApiClient: ConversationsApiClient
   let mockConversationRepository: ConversationRepository
   let mockConversationMemberRepository: ConversationMemberRepository
+  let mockCoreCryptoService: CoreCryptoService
 
   beforeEach(() => {
     container.clearInstances()
@@ -46,23 +48,33 @@ describe('ConversationService', () => {
 
     mockConversationRepository = {
       save: vi.fn(),
-      findByIdAndDomain: vi.fn()
+      findByIdAndDomain: vi.fn(),
+      delete: vi.fn()
     } as any
 
     mockConversationMemberRepository = {
-      saveMany: vi.fn()
+      saveMany: vi.fn(),
+      getMembersByConversationId: vi.fn(),
+      deleteAllMembersInConversation: vi.fn(),
+    } as any
+
+    mockCoreCryptoService = {
+      conversationExists: vi.fn(),
+      wipeConversation: vi.fn()
     } as any
 
     conversationService = new ConversationService(
       mockUsersApiClient,
       mockConversationsApiClient,
       mockConversationRepository,
-      mockConversationMemberRepository
+      mockConversationMemberRepository,
+      mockCoreCryptoService
     )
 
     // TODO: Can remove/replace this once we have implemented a proper logger lib
     // Suppress console.info for cleaner test output
-    vi.spyOn(console, 'info').mockImplementation(() => {})
+    vi.spyOn(console, 'info').mockImplementation(() => {
+    })
   })
 
   describe('saveConversationWithMembers', () => {
@@ -284,6 +296,97 @@ describe('ConversationService', () => {
       const result = await conversationService.getConversationMLSGroupId(CONVERSATION_ID)
 
       expect(result).toBe(MLS_GROUP_ID)
+    })
+  })
+
+  describe('getMembersByConversationId', () => {
+    it('returns members from repository', () => {
+      const members = [
+        {
+          user_id: 'a',
+          user_domain: 'wire.com',
+          conversation_id: 'c',
+          conversation_domain: 'wire.com',
+          role: 'wire_member',
+          creation_date: null
+        }
+      ]
+
+      vi.mocked(mockConversationMemberRepository.getMembersByConversationId).mockReturnValue(members)
+
+      const result = conversationService.getMembersByConversationId(CONVERSATION_ID)
+
+      expect(mockConversationMemberRepository.getMembersByConversationId).toHaveBeenCalledWith(CONVERSATION_ID.id, CONVERSATION_ID.domain)
+      expect(result).toEqual(members)
+    })
+  })
+
+  describe('deleteAllConversationDataFromLocalStorages', () => {
+    it('wipes crypto when exists then deletes members and conversation', async () => {
+      const mockConversationEntity: ConversationEntity = {
+        id: CONVERSATION_ID.id,
+        domain: CONVERSATION_ID.domain,
+        name: 'Test Conversation',
+        team_id: TEAM_ID,
+        mls_group_id: MLS_GROUP_ID,
+        creation_date: null,
+        type: ConversationType.GROUP
+      }
+
+      vi.mocked(mockConversationRepository.findByIdAndDomain).mockReturnValue(mockConversationEntity)
+      vi.mocked(mockCoreCryptoService.conversationExists).mockResolvedValue(true)
+      vi.mocked(mockCoreCryptoService.wipeConversation).mockResolvedValue(undefined)
+
+      await conversationService.deleteAllConversationDataFromLocalStorages(CONVERSATION_ID)
+
+      expect(mockConversationRepository.findByIdAndDomain).toHaveBeenCalledWith(CONVERSATION_ID)
+      expect(mockCoreCryptoService.conversationExists).toHaveBeenCalledWith(MLS_GROUP_ID)
+      expect(mockCoreCryptoService.wipeConversation).toHaveBeenCalledWith(MLS_GROUP_ID)
+      expect(mockConversationMemberRepository.deleteAllMembersInConversation).toHaveBeenCalledWith(CONVERSATION_ID.id, CONVERSATION_ID.domain)
+      expect(mockConversationRepository.delete).toHaveBeenCalledWith(CONVERSATION_ID.id, CONVERSATION_ID.domain)
+    })
+
+    it('skips crypto wipe when conversation does not exist and still deletes DB data', async () => {
+      const mockConversationEntity: ConversationEntity = {
+        id: CONVERSATION_ID.id,
+        domain: CONVERSATION_ID.domain,
+        name: 'Test Conversation',
+        team_id: TEAM_ID,
+        mls_group_id: MLS_GROUP_ID,
+        creation_date: null,
+        type: ConversationType.GROUP
+      }
+
+      vi.mocked(mockConversationRepository.findByIdAndDomain).mockReturnValue(mockConversationEntity)
+      vi.mocked(mockCoreCryptoService.conversationExists).mockResolvedValue(false)
+
+      await conversationService.deleteAllConversationDataFromLocalStorages(CONVERSATION_ID)
+
+      expect(mockCoreCryptoService.conversationExists).toHaveBeenCalledWith(MLS_GROUP_ID)
+      expect(mockCoreCryptoService.wipeConversation).not.toHaveBeenCalled()
+      expect(mockConversationMemberRepository.deleteAllMembersInConversation).toHaveBeenCalledWith(CONVERSATION_ID.id, CONVERSATION_ID.domain)
+      expect(mockConversationRepository.delete).toHaveBeenCalledWith(CONVERSATION_ID.id, CONVERSATION_ID.domain)
+    })
+
+    it('propagates error when wipeConversation fails and does not perform DB deletes', async () => {
+      const mockConversationEntity: ConversationEntity = {
+        id: CONVERSATION_ID.id,
+        domain: CONVERSATION_ID.domain,
+        name: 'Test Conversation',
+        team_id: TEAM_ID,
+        mls_group_id: MLS_GROUP_ID,
+        creation_date: null,
+        type: ConversationType.GROUP
+      }
+
+      vi.mocked(mockConversationRepository.findByIdAndDomain).mockReturnValue(mockConversationEntity)
+      vi.mocked(mockCoreCryptoService.conversationExists).mockResolvedValue(true)
+      vi.mocked(mockCoreCryptoService.wipeConversation).mockRejectedValue(new Error('wipe failed'))
+
+      await expect(conversationService.deleteAllConversationDataFromLocalStorages(CONVERSATION_ID)).rejects.toThrow('wipe failed')
+
+      expect(mockConversationMemberRepository.deleteAllMembersInConversation).not.toHaveBeenCalled()
+      expect(mockConversationRepository.delete).not.toHaveBeenCalled()
     })
   })
 
