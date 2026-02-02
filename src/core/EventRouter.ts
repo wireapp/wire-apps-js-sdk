@@ -37,6 +37,7 @@ import {Decoder} from "bazinga64";
 import {ConversationMapper} from "../mappers/conversation/ConversationMapper.js";
 import {container, inject, singleton} from "tsyringe";
 import {LoggerFactory} from "../utils/logger/LoggerFactory.js";
+import {MlsFallbackStrategy} from "../service/MlsFallbackStrategy.js";
 
 @singleton()
 export class EventRouter {
@@ -46,6 +47,7 @@ export class EventRouter {
     private coreCryptoService: CoreCryptoService,
     private conversationService: ConversationService,
     private mlsService: MlsService,
+    private mlsFallbackStrategy: MlsFallbackStrategy,
     @inject(WIRE_EVENTS_HANDLER) private wireEventsHandler: WireEventsHandler
   ) {
   }
@@ -85,10 +87,16 @@ export class EventRouter {
         } catch (exception) {
           if (isMlsException(exception)) {
             this.logger.debug("Message decryption failed, MlsException:", exception)
-            // TODO: Verify if convesation is out of sync
+            await this.mlsFallbackStrategy.verifyConversationOutOfSync(
+              mlsGroupId,
+              event.qualified_conversation
+            )
           } else if (isCoreCryptoMlsException(exception)) {
             this.logger.debug("Message decryption failed, CoreCryptoException.Mls:", exception)
-            // TODO: Verify if convesation is out of sync
+            await this.mlsFallbackStrategy.verifyConversationOutOfSync(
+              mlsGroupId,
+              event.qualified_conversation
+            )
           } else {
             throw exception
           }

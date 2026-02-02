@@ -14,7 +14,7 @@
 * along with this program. If not, see http://www.gnu.org/licenses/.
 */
 
-import { Ciphersuite, ClientId, ConversationId, CoreCrypto, CredentialType, DatabaseKey, initWasmModule, Welcome } from "@wireapp/core-crypto";
+import { Ciphersuite, ClientId, ConversationId, CoreCrypto, CoreCryptoContext, CredentialType, DatabaseKey, GroupInfo, initWasmModule, Welcome } from "@wireapp/core-crypto";
 import type { AppClientId } from "../model/AppClientId.js";
 import { CoreCryptoMlsTransport } from "./CoreCryptoMlsTransport.js";
 import type { MlsPublicKeys } from "../model/MlsPublicKeys.js";
@@ -209,6 +209,36 @@ export class CoreCryptoClient {
       return await context.clientValidKeypackagesCount(this.ciphersuite, CredentialType.Basic)
     })
     return packageCount < this.MLS_DEFAULT_KEYPACKAGE_COUNT / 2
+  }
+
+  async conversationExists(mlsGroupId: ConversationId): Promise<boolean> {
+    return await this.coreCrypto.transaction(async (context) => {
+      return await context.conversationExists(mlsGroupId)
+    })
+  }
+
+  async conversationEpoch(mlsGroupId: ConversationId): Promise<number> {
+    return await this.coreCrypto.transaction(async (context) => {
+      return await context.conversationEpoch(mlsGroupId)
+    })
+  }
+
+  private async getCredentialType(context: CoreCryptoContext): Promise<CredentialType> {
+    if (await context.e2eiIsEnabled(this.ciphersuite)) {
+      return CredentialType.X509
+    } else {
+      return CredentialType.Basic
+    }
+  }
+
+  async joinMlsConversationRequest(groupInfo: GroupInfo): Promise<void> {
+    await this.coreCrypto.transaction(async (context) => {
+      const mlsCredentialType = await this.getCredentialType(context)
+      await context.joinByExternalCommit(
+        groupInfo,
+        mlsCredentialType
+      )
+    })
   }
 
   close() {
