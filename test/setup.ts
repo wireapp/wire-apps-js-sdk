@@ -1,7 +1,7 @@
 /*
 * Wire
 * Copyright (C) 2025 Wire Swiss GmbH
-* 
+*
 * This program is free software: you can redistribute it and/or modify
 * it under the terms of the GNU General Public License as published by
 * the Free Software Foundation, either version 3 of the License, or
@@ -18,13 +18,28 @@ import 'reflect-metadata'
 import {readFileSync, writeFileSync, existsSync} from 'fs'
 
 // Fix @wireapp/core-crypto package.json before any imports
-const filePath = 'node_modules/@wireapp/core-crypto/package.json'
+const filePath = 'node_modules/@wireapp/core-crypto/package.json';
+
+console.log('=== Core Crypto Fix Debug ===');
+console.log('File exists:', existsSync(filePath));
 
 if (existsSync(filePath)) {
   let content = readFileSync(filePath, 'utf8');
+  console.log('Original main field:', content.match(/"main":\s*"[^"]+"/)?.[0]);
+
+  const originalContent = content;
   content = content.replace(
     '"main": "src/CoreCrypto.ts"',
-    '"main": "src/corecrypto.js"'  // Use the actual module file
+    '"main": "src/corecrypto.js"'
   );
+
   writeFileSync(filePath, content, 'utf8');
+
+  // Verify the fix was applied
+  const verifyContent = readFileSync(filePath, 'utf8');
+  console.log('Updated main field:', verifyContent.match(/"main":\s*"[^"]+"/)?.[0]);
+  console.log('Fix applied:', originalContent !== verifyContent);
+} else {
+  console.log('WARNING: @wireapp/core-crypto package.json not found!');
 }
+console.log('=== End Debug ===');
