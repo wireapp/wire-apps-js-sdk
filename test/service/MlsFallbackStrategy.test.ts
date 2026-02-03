@@ -36,7 +36,7 @@ describe('MlsFallbackStrategy', () => {
     } as any
 
     mockConversationService = {
-      getEpoch: vi.fn(),
+      fetchEpoch: vi.fn(),
       getConversationGroupInfo: vi.fn()
     } as any
 
@@ -54,14 +54,14 @@ describe('MlsFallbackStrategy', () => {
       const mockGroupInfoBytes = new Uint8Array([1, 2, 3, 4])
 
       vi.mocked(mockCoreCryptoService.conversationExists).mockResolvedValue(false)
-      vi.mocked(mockConversationService.getEpoch).mockResolvedValue(remoteEpoch)
+      vi.mocked(mockConversationService.fetchEpoch).mockResolvedValue(remoteEpoch)
       vi.mocked(mockCoreCryptoService.conversationEpoch).mockResolvedValue(5)
       vi.mocked(mockConversationService.getConversationGroupInfo).mockResolvedValue(mockGroupInfoBytes)
 
       await mlsFallbackStrategy.verifyConversationOutOfSync(MLS_GROUP_ID, CONVERSATION_ID)
 
       expect(mockCoreCryptoService.conversationExists).toHaveBeenCalledWith(MLS_GROUP_ID)
-      expect(mockConversationService.getEpoch).toHaveBeenCalledWith(CONVERSATION_ID)
+      expect(mockConversationService.fetchEpoch).toHaveBeenCalledWith(CONVERSATION_ID)
       expect(mockConversationService.getConversationGroupInfo).toHaveBeenCalledWith(CONVERSATION_ID)
       expect(mockCoreCryptoService.joinMlsConversationRequest).toHaveBeenCalledWith(mockGroupInfoBytes)
     })
@@ -71,14 +71,14 @@ describe('MlsFallbackStrategy', () => {
       const mockGroupInfoBytes = new Uint8Array([1, 2, 3, 4])
 
       vi.mocked(mockCoreCryptoService.conversationExists).mockResolvedValue(true)
-      vi.mocked(mockConversationService.getEpoch).mockResolvedValue(remoteEpoch)
+      vi.mocked(mockConversationService.fetchEpoch).mockResolvedValue(remoteEpoch)
       vi.mocked(mockCoreCryptoService.conversationEpoch).mockResolvedValue(5)
       vi.mocked(mockConversationService.getConversationGroupInfo).mockResolvedValue(mockGroupInfoBytes)
 
       await mlsFallbackStrategy.verifyConversationOutOfSync(MLS_GROUP_ID, CONVERSATION_ID)
 
       expect(mockCoreCryptoService.conversationExists).toHaveBeenCalledWith(MLS_GROUP_ID)
-      expect(mockConversationService.getEpoch).toHaveBeenCalledWith(CONVERSATION_ID)
+      expect(mockConversationService.fetchEpoch).toHaveBeenCalledWith(CONVERSATION_ID)
       expect(mockCoreCryptoService.conversationEpoch).toHaveBeenCalledWith(MLS_GROUP_ID)
       expect(mockConversationService.getConversationGroupInfo).toHaveBeenCalledWith(CONVERSATION_ID)
       expect(mockCoreCryptoService.joinMlsConversationRequest).toHaveBeenCalledWith(mockGroupInfoBytes)
@@ -88,13 +88,13 @@ describe('MlsFallbackStrategy', () => {
       const remoteEpoch = 5
 
       vi.mocked(mockCoreCryptoService.conversationExists).mockResolvedValue(true)
-      vi.mocked(mockConversationService.getEpoch).mockResolvedValue(remoteEpoch)
+      vi.mocked(mockConversationService.fetchEpoch).mockResolvedValue(remoteEpoch)
       vi.mocked(mockCoreCryptoService.conversationEpoch).mockResolvedValue(5)
 
       await mlsFallbackStrategy.verifyConversationOutOfSync(MLS_GROUP_ID, CONVERSATION_ID)
 
       expect(mockCoreCryptoService.conversationExists).toHaveBeenCalledWith(MLS_GROUP_ID)
-      expect(mockConversationService.getEpoch).toHaveBeenCalledWith(CONVERSATION_ID)
+      expect(mockConversationService.fetchEpoch).toHaveBeenCalledWith(CONVERSATION_ID)
       expect(mockCoreCryptoService.conversationEpoch).toHaveBeenCalledWith(MLS_GROUP_ID)
       expect(mockConversationService.getConversationGroupInfo).not.toHaveBeenCalled()
       expect(mockCoreCryptoService.joinMlsConversationRequest).not.toHaveBeenCalled()
@@ -104,13 +104,13 @@ describe('MlsFallbackStrategy', () => {
       const remoteEpoch = 5
 
       vi.mocked(mockCoreCryptoService.conversationExists).mockResolvedValue(true)
-      vi.mocked(mockConversationService.getEpoch).mockResolvedValue(remoteEpoch)
+      vi.mocked(mockConversationService.fetchEpoch).mockResolvedValue(remoteEpoch)
       vi.mocked(mockCoreCryptoService.conversationEpoch).mockResolvedValue(10)
 
       await mlsFallbackStrategy.verifyConversationOutOfSync(MLS_GROUP_ID, CONVERSATION_ID)
 
       expect(mockCoreCryptoService.conversationExists).toHaveBeenCalledWith(MLS_GROUP_ID)
-      expect(mockConversationService.getEpoch).toHaveBeenCalledWith(CONVERSATION_ID)
+      expect(mockConversationService.fetchEpoch).toHaveBeenCalledWith(CONVERSATION_ID)
       expect(mockCoreCryptoService.conversationEpoch).toHaveBeenCalledWith(MLS_GROUP_ID)
       expect(mockConversationService.getConversationGroupInfo).not.toHaveBeenCalled()
       expect(mockCoreCryptoService.joinMlsConversationRequest).not.toHaveBeenCalled()
@@ -120,13 +120,13 @@ describe('MlsFallbackStrategy', () => {
       const remoteEpoch = null
 
       vi.mocked(mockCoreCryptoService.conversationExists).mockResolvedValue(true)
-      vi.mocked(mockConversationService.getEpoch).mockResolvedValue(remoteEpoch)
+      vi.mocked(mockConversationService.fetchEpoch).mockResolvedValue(remoteEpoch)
       vi.mocked(mockCoreCryptoService.conversationEpoch).mockResolvedValue(5)
 
       await mlsFallbackStrategy.verifyConversationOutOfSync(MLS_GROUP_ID, CONVERSATION_ID)
 
       expect(mockCoreCryptoService.conversationExists).toHaveBeenCalledWith(MLS_GROUP_ID)
-      expect(mockConversationService.getEpoch).toHaveBeenCalledWith(CONVERSATION_ID)
+      expect(mockConversationService.fetchEpoch).toHaveBeenCalledWith(CONVERSATION_ID)
       expect(mockConversationService.getConversationGroupInfo).not.toHaveBeenCalled()
       expect(mockCoreCryptoService.joinMlsConversationRequest).not.toHaveBeenCalled()
     })
@@ -136,7 +136,7 @@ describe('MlsFallbackStrategy', () => {
       const mockGroupInfoBytes = new Uint8Array([5, 6, 7, 8])
 
       vi.mocked(mockCoreCryptoService.conversationExists).mockResolvedValue(false)
-      vi.mocked(mockConversationService.getEpoch).mockResolvedValue(remoteEpoch)
+      vi.mocked(mockConversationService.fetchEpoch).mockResolvedValue(remoteEpoch)
       vi.mocked(mockCoreCryptoService.conversationEpoch).mockResolvedValue(5)
       vi.mocked(mockConversationService.getConversationGroupInfo).mockResolvedValue(mockGroupInfoBytes)
 
@@ -151,7 +151,7 @@ describe('MlsFallbackStrategy', () => {
       const mockGroupInfoBytes = new Uint8Array([9, 10, 11, 12])
 
       vi.mocked(mockCoreCryptoService.conversationExists).mockResolvedValue(false)
-      vi.mocked(mockConversationService.getEpoch).mockResolvedValue(remoteEpoch)
+      vi.mocked(mockConversationService.fetchEpoch).mockResolvedValue(remoteEpoch)
       vi.mocked(mockCoreCryptoService.conversationEpoch).mockResolvedValue(5)
       vi.mocked(mockConversationService.getConversationGroupInfo).mockResolvedValue(mockGroupInfoBytes)
 

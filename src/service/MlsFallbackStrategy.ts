@@ -35,7 +35,7 @@ export class MlsFallbackStrategy {
     conversationId: QualifiedId
   ) {
     const conversationExists = await this.coreCryptoService.conversationExists(mlsGroupId)
-    const remoteConversationEpoch = await this.conversationService.getEpoch(conversationId)
+    const remoteConversationEpoch = await this.conversationService.fetchEpoch(conversationId)
     const localConversationEpoch = await this.coreCryptoService.conversationEpoch(mlsGroupId)
     const isEpochBehind = localConversationEpoch < remoteConversationEpoch
 

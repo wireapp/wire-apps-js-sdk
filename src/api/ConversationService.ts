@@ -127,7 +127,7 @@ export class ConversationService {
     return await this.conversationsApiClient.getConversation(conversationId)
   }
 
-  async getEpoch(conversationId: QualifiedId): Promise<number> {
+  async fetchEpoch(conversationId: QualifiedId): Promise<number> {
     const conversation = await this.fetchConversationById(conversationId)
     return conversation.epoch
   }
