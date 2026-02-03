@@ -48,13 +48,12 @@ export interface DeleteConversationDTO {
   qualified_from: QualifiedId
 }
 
-// TODO: Rename to TypingDTO in a separate PR for consistency
-export interface Typing {
+export interface TypingDTO {
   type: string
   qualified_conversation: QualifiedId
 }
 
-export type EventContentDTO = MLSWelcomeDTO | NewMLSMessageDTO | NewConversationDTO | DeleteConversationDTO | Typing
+export type EventContentDTO = MLSWelcomeDTO | NewMLSMessageDTO | NewConversationDTO | DeleteConversationDTO | TypingDTO
 
 // TODO: [Note from Baris] -> I think the following methods should be in the Router.
 //  We don't need to pass "event" object to this class just to check 'type'.
@@ -79,6 +78,6 @@ export function isDeleteConversationEvent(event: EventContentDTO): event is Dele
   return (event as DeleteConversationDTO).type === "conversation.delete"
 }
 
-export function isTypingEvent(event: EventContentDTO): event is Typing {
-  return (event as Typing).type === "conversation.typing"
+export function isTypingEvent(event: EventContentDTO): event is TypingDTO {
+  return (event as TypingDTO).type === "conversation.typing"
 }
