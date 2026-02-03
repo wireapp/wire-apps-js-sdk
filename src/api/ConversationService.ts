@@ -123,10 +123,13 @@ export class ConversationService {
     }
   }
 
-  //TODO: Baris: Imo, this method should be private.
-  // We can call getConversationById() method from outside. That will call this method IF NEEDED.
   async fetchConversationById(conversationId: QualifiedId): Promise<ConversationResponse> {
     return await this.conversationsApiClient.getConversation(conversationId)
+  }
+
+  async getEpoch(conversationId: QualifiedId): Promise<number> {
+    const conversation = await this.fetchConversationById(conversationId)
+    return conversation.epoch
   }
 
   async getConversationMLSGroupId(conversationId: QualifiedId): Promise<string> {

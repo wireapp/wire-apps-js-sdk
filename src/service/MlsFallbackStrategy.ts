@@ -1,7 +1,7 @@
 /*
 * Wire
 * Copyright (C) 2026 Wire Swiss GmbH
-* 
+*
 * This program is free software: you can redistribute it and/or modify
 * it under the terms of the GNU General Public License as published by
 * the Free Software Foundation, either version 3 of the License, or
@@ -35,15 +35,14 @@ export class MlsFallbackStrategy {
     conversationId: QualifiedId
   ) {
     const conversationExists = await this.coreCryptoService.conversationExists(mlsGroupId)
-    const fetchedConversation = await this.conversationService.fetchConversationById(conversationId)
-    const conversationEpoch = fetchedConversation.epoch
-    const currentConversationEpoch = await this.coreCryptoService.conversationEpoch(mlsGroupId)
-    const isEpochBehind = currentConversationEpoch < conversationEpoch
+    const remoteConversationEpoch = await this.conversationService.getEpoch(conversationId)
+    const localConversationEpoch = await this.coreCryptoService.conversationEpoch(mlsGroupId)
+    const isEpochBehind = localConversationEpoch < remoteConversationEpoch
 
     this.logger.info(
       `Verifying Fallback Strategy for conversationId: ${obfuscateId(conversationId.id)}, ` +
         `exists: ${conversationExists} ` +
-        `epoch: local[${currentConversationEpoch}] < remote[${conversationEpoch}]`
+        `epoch: local[${localConversationEpoch}] < remote[${remoteConversationEpoch}]`
     )
 
     if (!conversationExists || isEpochBehind) {
