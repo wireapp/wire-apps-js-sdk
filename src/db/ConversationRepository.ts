@@ -16,7 +16,6 @@
 
 import {DatabaseService} from "./DatabaseService.js";
 import type {ConversationEntity} from "./model/ConversationEntity.js";
-import type {QualifiedId} from "../model/QualifiedId.js";
 import {singleton} from "tsyringe";
 
 @singleton()
@@ -65,10 +64,8 @@ export class ConversationRepository {
     return this.selectAllStmt.all();
   }
 
-  // TODO: Baris: It will be better to be consistent and pass id and domain separately.
-  //  So this class will not know about the QualifiedId structure.
-  findByIdAndDomain(conversationQualifiedId: QualifiedId): ConversationEntity | null {
-    return this.selectByIdAndDomainStmt.get(conversationQualifiedId.id, conversationQualifiedId.domain) ?? null;
+  findByIdAndDomain(id: string, domain: string): ConversationEntity | null {
+    return this.selectByIdAndDomainStmt.get(id, domain) ?? null;
   }
 
   save(conv: ConversationEntity): void {
