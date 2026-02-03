@@ -1,7 +1,7 @@
 /*
 * Wire
 * Copyright (C) 2026 Wire Swiss GmbH
-* 
+*
 * This program is free software: you can redistribute it and/or modify
 * it under the terms of the GNU General Public License as published by
 * the Free Software Foundation, either version 3 of the License, or
@@ -19,7 +19,6 @@ import {CoreCryptoService} from '../../src/core/CoreCryptoService.js'
 import {MlsFallbackStrategy} from '../../src/service/MlsFallbackStrategy.js'
 import {ConversationService} from '../../src/api/ConversationService.js'
 import type {QualifiedId} from '../../src/model/QualifiedId.js'
-import type {ConversationResponse} from '../../src/api/response/ConversationResponse.js'
 import {container} from 'tsyringe'
 
 describe('MlsFallbackStrategy', () => {
@@ -37,7 +36,7 @@ describe('MlsFallbackStrategy', () => {
     } as any
 
     mockConversationService = {
-      fetchConversationById: vi.fn(),
+      fetchEpoch: vi.fn(),
       getConversationGroupInfo: vi.fn()
     } as any
 
@@ -51,114 +50,93 @@ describe('MlsFallbackStrategy', () => {
 
   describe('verifyConversationOutOfSync', () => {
     it('should join MLS conversation when conversation does not exist locally', async () => {
-      const mockConversationResponse: ConversationResponse = {
-        qualified_id: CONVERSATION_ID,
-        epoch: 10
-      } as ConversationResponse
-
+      const remoteEpoch = 10
       const mockGroupInfoBytes = new Uint8Array([1, 2, 3, 4])
 
       vi.mocked(mockCoreCryptoService.conversationExists).mockResolvedValue(false)
-      vi.mocked(mockConversationService.fetchConversationById).mockResolvedValue(mockConversationResponse)
+      vi.mocked(mockConversationService.fetchEpoch).mockResolvedValue(remoteEpoch)
       vi.mocked(mockCoreCryptoService.conversationEpoch).mockResolvedValue(5)
       vi.mocked(mockConversationService.getConversationGroupInfo).mockResolvedValue(mockGroupInfoBytes)
 
       await mlsFallbackStrategy.verifyConversationOutOfSync(MLS_GROUP_ID, CONVERSATION_ID)
 
       expect(mockCoreCryptoService.conversationExists).toHaveBeenCalledWith(MLS_GROUP_ID)
-      expect(mockConversationService.fetchConversationById).toHaveBeenCalledWith(CONVERSATION_ID)
+      expect(mockConversationService.fetchEpoch).toHaveBeenCalledWith(CONVERSATION_ID)
       expect(mockConversationService.getConversationGroupInfo).toHaveBeenCalledWith(CONVERSATION_ID)
       expect(mockCoreCryptoService.joinMlsConversationRequest).toHaveBeenCalledWith(mockGroupInfoBytes)
     })
 
     it('should join MLS conversation when local epoch is behind remote epoch', async () => {
-      const mockConversationResponse: ConversationResponse = {
-        qualified_id: CONVERSATION_ID,
-        epoch: 10
-      } as ConversationResponse
-
+      const remoteEpoch = 10
       const mockGroupInfoBytes = new Uint8Array([1, 2, 3, 4])
 
       vi.mocked(mockCoreCryptoService.conversationExists).mockResolvedValue(true)
-      vi.mocked(mockConversationService.fetchConversationById).mockResolvedValue(mockConversationResponse)
+      vi.mocked(mockConversationService.fetchEpoch).mockResolvedValue(remoteEpoch)
       vi.mocked(mockCoreCryptoService.conversationEpoch).mockResolvedValue(5)
       vi.mocked(mockConversationService.getConversationGroupInfo).mockResolvedValue(mockGroupInfoBytes)
 
       await mlsFallbackStrategy.verifyConversationOutOfSync(MLS_GROUP_ID, CONVERSATION_ID)
 
       expect(mockCoreCryptoService.conversationExists).toHaveBeenCalledWith(MLS_GROUP_ID)
-      expect(mockConversationService.fetchConversationById).toHaveBeenCalledWith(CONVERSATION_ID)
+      expect(mockConversationService.fetchEpoch).toHaveBeenCalledWith(CONVERSATION_ID)
       expect(mockCoreCryptoService.conversationEpoch).toHaveBeenCalledWith(MLS_GROUP_ID)
       expect(mockConversationService.getConversationGroupInfo).toHaveBeenCalledWith(CONVERSATION_ID)
       expect(mockCoreCryptoService.joinMlsConversationRequest).toHaveBeenCalledWith(mockGroupInfoBytes)
     })
 
     it('should NOT join MLS conversation when conversation exists and epoch is in sync', async () => {
-      const mockConversationResponse: ConversationResponse = {
-        qualified_id: CONVERSATION_ID,
-        epoch: 5
-      } as ConversationResponse
+      const remoteEpoch = 5
 
       vi.mocked(mockCoreCryptoService.conversationExists).mockResolvedValue(true)
-      vi.mocked(mockConversationService.fetchConversationById).mockResolvedValue(mockConversationResponse)
+      vi.mocked(mockConversationService.fetchEpoch).mockResolvedValue(remoteEpoch)
       vi.mocked(mockCoreCryptoService.conversationEpoch).mockResolvedValue(5)
 
       await mlsFallbackStrategy.verifyConversationOutOfSync(MLS_GROUP_ID, CONVERSATION_ID)
 
       expect(mockCoreCryptoService.conversationExists).toHaveBeenCalledWith(MLS_GROUP_ID)
-      expect(mockConversationService.fetchConversationById).toHaveBeenCalledWith(CONVERSATION_ID)
+      expect(mockConversationService.fetchEpoch).toHaveBeenCalledWith(CONVERSATION_ID)
       expect(mockCoreCryptoService.conversationEpoch).toHaveBeenCalledWith(MLS_GROUP_ID)
       expect(mockConversationService.getConversationGroupInfo).not.toHaveBeenCalled()
       expect(mockCoreCryptoService.joinMlsConversationRequest).not.toHaveBeenCalled()
     })
 
     it('should NOT join MLS conversation when conversation exists and local epoch is ahead of remote epoch', async () => {
-      const mockConversationResponse: ConversationResponse = {
-        qualified_id: CONVERSATION_ID,
-        epoch: 5
-      } as ConversationResponse
+      const remoteEpoch = 5
 
       vi.mocked(mockCoreCryptoService.conversationExists).mockResolvedValue(true)
-      vi.mocked(mockConversationService.fetchConversationById).mockResolvedValue(mockConversationResponse)
+      vi.mocked(mockConversationService.fetchEpoch).mockResolvedValue(remoteEpoch)
       vi.mocked(mockCoreCryptoService.conversationEpoch).mockResolvedValue(10)
 
       await mlsFallbackStrategy.verifyConversationOutOfSync(MLS_GROUP_ID, CONVERSATION_ID)
 
       expect(mockCoreCryptoService.conversationExists).toHaveBeenCalledWith(MLS_GROUP_ID)
-      expect(mockConversationService.fetchConversationById).toHaveBeenCalledWith(CONVERSATION_ID)
+      expect(mockConversationService.fetchEpoch).toHaveBeenCalledWith(CONVERSATION_ID)
       expect(mockCoreCryptoService.conversationEpoch).toHaveBeenCalledWith(MLS_GROUP_ID)
       expect(mockConversationService.getConversationGroupInfo).not.toHaveBeenCalled()
       expect(mockCoreCryptoService.joinMlsConversationRequest).not.toHaveBeenCalled()
     })
 
     it('should NOT join MLS conversation when remote epoch is null', async () => {
-      const mockConversationResponse: ConversationResponse = {
-        qualified_id: CONVERSATION_ID,
-        epoch: null
-      } as ConversationResponse
+      const remoteEpoch = null
 
       vi.mocked(mockCoreCryptoService.conversationExists).mockResolvedValue(true)
-      vi.mocked(mockConversationService.fetchConversationById).mockResolvedValue(mockConversationResponse)
+      vi.mocked(mockConversationService.fetchEpoch).mockResolvedValue(remoteEpoch)
       vi.mocked(mockCoreCryptoService.conversationEpoch).mockResolvedValue(5)
 
       await mlsFallbackStrategy.verifyConversationOutOfSync(MLS_GROUP_ID, CONVERSATION_ID)
 
       expect(mockCoreCryptoService.conversationExists).toHaveBeenCalledWith(MLS_GROUP_ID)
-      expect(mockConversationService.fetchConversationById).toHaveBeenCalledWith(CONVERSATION_ID)
+      expect(mockConversationService.fetchEpoch).toHaveBeenCalledWith(CONVERSATION_ID)
       expect(mockConversationService.getConversationGroupInfo).not.toHaveBeenCalled()
       expect(mockCoreCryptoService.joinMlsConversationRequest).not.toHaveBeenCalled()
     })
 
     it('should join MLS conversation when conversation does not exist even if epoch would be in sync', async () => {
-      const mockConversationResponse: ConversationResponse = {
-        qualified_id: CONVERSATION_ID,
-        epoch: 5
-      } as ConversationResponse
-
+      const remoteEpoch = 5
       const mockGroupInfoBytes = new Uint8Array([5, 6, 7, 8])
 
       vi.mocked(mockCoreCryptoService.conversationExists).mockResolvedValue(false)
-      vi.mocked(mockConversationService.fetchConversationById).mockResolvedValue(mockConversationResponse)
+      vi.mocked(mockConversationService.fetchEpoch).mockResolvedValue(remoteEpoch)
       vi.mocked(mockCoreCryptoService.conversationEpoch).mockResolvedValue(5)
       vi.mocked(mockConversationService.getConversationGroupInfo).mockResolvedValue(mockGroupInfoBytes)
 
@@ -169,15 +147,11 @@ describe('MlsFallbackStrategy', () => {
     })
 
     it('should join MLS conversation when both conditions are true (does not exist AND epoch behind)', async () => {
-      const mockConversationResponse: ConversationResponse = {
-        qualified_id: CONVERSATION_ID,
-        epoch: 10
-      } as ConversationResponse
-
+      const remoteEpoch = 10
       const mockGroupInfoBytes = new Uint8Array([9, 10, 11, 12])
 
       vi.mocked(mockCoreCryptoService.conversationExists).mockResolvedValue(false)
-      vi.mocked(mockConversationService.fetchConversationById).mockResolvedValue(mockConversationResponse)
+      vi.mocked(mockConversationService.fetchEpoch).mockResolvedValue(remoteEpoch)
       vi.mocked(mockCoreCryptoService.conversationEpoch).mockResolvedValue(5)
       vi.mocked(mockConversationService.getConversationGroupInfo).mockResolvedValue(mockGroupInfoBytes)
 
