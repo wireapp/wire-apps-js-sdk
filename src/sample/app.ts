@@ -20,7 +20,10 @@ import "reflect-metadata";
 import dotenv from 'dotenv';
 import {PinoLogger} from './PinoLogger.js'
 import {TextMessage, WireAppSdk, WireEventsHandler} from '../index.js'
-import type {QualifiedId} from "../model/QualifiedId.js"; // This will be imported from the SDK when used outside of this repository
+import type {QualifiedId} from "../model/QualifiedId.js";
+import type {Conversation} from "../model/conversation/Conversation.js";
+import type {ConversationMember} from "../model/conversation/ConversationMember.js";
+import {obfuscateId} from "../utils/ObfuscateUtil.js"; // This will be imported from the SDK when used outside of this repository
 
 dotenv.config()
 
@@ -70,7 +73,14 @@ class SampleEventsHandler extends WireEventsHandler {
     console.log(`[Sample App] A conversation was deleted: ${conversationId.id}@${conversationId.domain}`)
   }
 
-  // TODO: Baris: Implement other callbacks as well
+  public override async onAppAddedToConversation(conversation: Conversation, members: ConversationMember[]): Promise<void> {
+    console.log(`[Sample App] App was added to conversation: ${obfuscateId(conversation.id)} with ${members.length} members`)
+    const textMessage = TextMessage.create({
+      conversationId: { id: conversation.id, domain: conversation.domain },
+      text: `Hello! I'm the Sample App 🙂 I've just joined this conversation 👋`
+    })
+    await this.manager.sendMessage(textMessage)
+  }
 }
 
 const sampleEventsHandler = new SampleEventsHandler()
