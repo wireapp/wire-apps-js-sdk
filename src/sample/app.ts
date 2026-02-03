@@ -19,11 +19,15 @@
 import "reflect-metadata";
 import dotenv from 'dotenv';
 import {PinoLogger} from './PinoLogger.js'
-import {TextMessage, WireAppSdk, WireEventsHandler} from '../index.js'
-import type {QualifiedId} from "../model/QualifiedId.js";
-import type {Conversation} from "../model/conversation/Conversation.js";
-import type {ConversationMember} from "../model/conversation/ConversationMember.js";
-import {obfuscateId} from "../utils/ObfuscateUtil.js"; // This will be imported from the SDK when used outside of this repository
+import {
+  TextMessage,
+  WireAppSdk,
+  WireEventsHandler,
+  type QualifiedId,
+  type Conversation,
+  type ConversationMember,
+  obfuscateId
+} from '../index.js'
 
 dotenv.config()
 
@@ -66,7 +70,7 @@ class SampleEventsHandler extends WireEventsHandler {
       text: `Sent from SampleEventsHandler: ${wireMessage.text}`
     })
 
-    this.manager.sendMessage(textMessage)
+    await this.manager.sendMessage(textMessage)
   }
 
   public override async onConversationDeleted(conversationId: QualifiedId): Promise<void> {
