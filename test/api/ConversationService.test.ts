@@ -213,7 +213,7 @@ describe('ConversationService', () => {
 
       const result = await conversationService.getConversationById(CONVERSATION_ID)
 
-      expect(mockConversationRepository.findByIdAndDomain).toHaveBeenCalledWith(CONVERSATION_ID)
+      expect(mockConversationRepository.findByIdAndDomain).toHaveBeenCalledWith(CONVERSATION_ID.id, CONVERSATION_ID.domain)
       expect(mockConversationsApiClient.getConversation).not.toHaveBeenCalled()
       expect(result).toEqual(mockConversationEntity)
     })
@@ -245,7 +245,7 @@ describe('ConversationService', () => {
 
       const result = await conversationService.getConversationById(CONVERSATION_ID)
 
-      expect(mockConversationRepository.findByIdAndDomain).toHaveBeenCalledWith(CONVERSATION_ID)
+      expect(mockConversationRepository.findByIdAndDomain).toHaveBeenCalledWith(CONVERSATION_ID.id, CONVERSATION_ID.domain)
       expect(mockConversationsApiClient.getConversation).toHaveBeenCalledWith(CONVERSATION_ID)
       expect(mockConversationRepository.save).toHaveBeenCalled()
       expect(mockConversationMemberRepository.saveMany).toHaveBeenCalled()
@@ -339,7 +339,7 @@ describe('ConversationService', () => {
 
       await conversationService.deleteAllConversationDataFromLocalStorages(CONVERSATION_ID)
 
-      expect(mockConversationRepository.findByIdAndDomain).toHaveBeenCalledWith(CONVERSATION_ID)
+      expect(mockConversationRepository.findByIdAndDomain).toHaveBeenCalledWith(CONVERSATION_ID.id, CONVERSATION_ID.domain)
       expect(mockCoreCryptoService.conversationExists).toHaveBeenCalledWith(MLS_GROUP_ID)
       expect(mockCoreCryptoService.wipeConversation).toHaveBeenCalledWith(MLS_GROUP_ID)
       expect(mockConversationMemberRepository.deleteAllMembersInConversation).toHaveBeenCalledWith(CONVERSATION_ID.id, CONVERSATION_ID.domain)

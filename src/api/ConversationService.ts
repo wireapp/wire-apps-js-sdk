@@ -103,7 +103,7 @@ export class ConversationService {
 
   async getConversationById(conversationId: QualifiedId): Promise<ConversationEntity> {
     this.logger.info("Getting Conversation. conversationId:", obfuscateId(conversationId.id))
-    const conversationEntity = this.conversationRepository.findByIdAndDomain(conversationId)
+    const conversationEntity = this.conversationRepository.findByIdAndDomain(conversationId.id, conversationId.domain)
 
     if (conversationEntity) {
       this.logger.info("Returning Conversation from the Database.", "conversationId:", obfuscateId(conversationId.id))
@@ -151,7 +151,7 @@ export class ConversationService {
 
   async deleteAllConversationDataFromLocalStorages(conversationId: QualifiedId): Promise<void> {
     this.logger.info("Deleting all conversation data.", "conversationId:", obfuscateId(conversationId.id))
-    const conversationEntity = this.conversationRepository.findByIdAndDomain(conversationId);
+    const conversationEntity = this.conversationRepository.findByIdAndDomain(conversationId.id, conversationId.domain);
 
     if (conversationEntity?.mls_group_id) {
       if (await this.coreCryptoService.conversationExists(conversationEntity.mls_group_id)) {
