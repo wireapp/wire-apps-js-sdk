@@ -85,6 +85,17 @@ class SampleEventsHandler extends WireEventsHandler {
     })
     await this.manager.sendMessage(textMessage)
   }
+
+  public override async onUserJoinedConversation(conversationId: QualifiedId, members: ConversationMember[]): Promise<void> {
+    console.log(`[Sample App] App was added to conversation: ${obfuscateId(conversationId.id)} with ${members.length} members`)
+
+    const textMessage = TextMessage.create({
+      conversationId: conversationId,
+      text: `🎉 Welcome ${members.map(m => obfuscateId(m.userId.id)).join(', ')}! 🎉`
+    })
+    await this.manager.sendMessage(textMessage)
+  }
+
 }
 
 const sampleEventsHandler = new SampleEventsHandler()
