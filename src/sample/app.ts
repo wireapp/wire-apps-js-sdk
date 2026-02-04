@@ -20,13 +20,13 @@ import "reflect-metadata";
 import dotenv from 'dotenv';
 import {PinoLogger} from './PinoLogger.js'
 import {
-  TextMessage,
-  WireAppSdk,
-  WireEventsHandler,
-  type QualifiedId,
   type Conversation,
   type ConversationMember,
-  obfuscateId
+  obfuscateId,
+  type QualifiedId,
+  TextMessage,
+  WireAppSdk,
+  WireEventsHandler
 } from '../index.js'
 
 dotenv.config()
@@ -63,8 +63,10 @@ if (!cryptographyStoragePassword) {
 }
 
 class SampleEventsHandler extends WireEventsHandler {
+  public appLogger?: PinoLogger
+
   public override async onTextMessageReceived(wireMessage: TextMessage): Promise<void> {
-    console.log(`[SampleEventsHandler] Received message: ${wireMessage.text}`)
+    this.appLogger?.info(`[SampleEventsHandler] Received message: ${wireMessage.text}`)
     const textMessage = TextMessage.create({
       conversationId: wireMessage.conversationId,
       text: `Sent from SampleEventsHandler: ${wireMessage.text}`
@@ -74,20 +76,20 @@ class SampleEventsHandler extends WireEventsHandler {
   }
 
   public override async onConversationDeleted(conversationId: QualifiedId): Promise<void> {
-    console.log(`[Sample App] A conversation was deleted: ${conversationId.id}@${conversationId.domain}`)
+    this.appLogger?.info(`[Sample App] A conversation was deleted: ${conversationId.id}@${conversationId.domain}`)
   }
 
   public override async onAppAddedToConversation(conversation: Conversation, members: ConversationMember[]): Promise<void> {
-    console.log(`[Sample App] App was added to conversation: ${obfuscateId(conversation.id)} with ${members.length} members`)
+    this.appLogger?.info(`[Sample App] App was added to conversation: ${obfuscateId(conversation.id)} with ${members.length} members`)
     const textMessage = TextMessage.create({
-      conversationId: { id: conversation.id, domain: conversation.domain },
+      conversationId: {id: conversation.id, domain: conversation.domain},
       text: `Hello! I'm the Sample App 🙂 I've just joined this conversation 👋`
     })
     await this.manager.sendMessage(textMessage)
   }
 
   public override async onUserJoinedConversation(conversationId: QualifiedId, members: ConversationMember[]): Promise<void> {
-    console.log(`[Sample App] App was added to conversation: ${obfuscateId(conversationId.id)} with ${members.length} members`)
+    this.appLogger?.info(`[Sample App] App was added to conversation: ${obfuscateId(conversationId.id)} with ${members.length} members`)
 
     const textMessage = TextMessage.create({
       conversationId: conversationId,
@@ -99,6 +101,7 @@ class SampleEventsHandler extends WireEventsHandler {
 }
 
 const sampleEventsHandler = new SampleEventsHandler()
+sampleEventsHandler.appLogger = new PinoLogger()
 const sdk = await WireAppSdk.create(
   userEmail,
   userPassword,
@@ -107,7 +110,7 @@ const sdk = await WireAppSdk.create(
   apiHost,
   cryptographyStoragePassword,
   sampleEventsHandler,
-  new PinoLogger()
+  sampleEventsHandler.appLogger
 )
 
 sdk.startListening()
