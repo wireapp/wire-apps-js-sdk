@@ -5,6 +5,7 @@ import {
   isNewConversationEvent,
   isNewMLSMessageEvent,
   isTypingEvent,
+  isMemberJoinEvent,
 } from '../../src/model/EventContentDTO.js';
 
 describe('EventContentDTO type guards', () => {
@@ -79,5 +80,25 @@ describe('EventContentDTO type guards', () => {
     expect(isTypingEvent(positive)).toBe(true);
     expect(isTypingEvent(negative)).toBe(false);
     expect(isTypingEvent(missing)).toBe(false);
+  });
+
+  it('isMemberJoinEvent returns true for conversation.member-join and false otherwise', () => {
+    const positive = {
+      type: 'conversation.member-join',
+      time: new Date(),
+      data: {
+        users: [
+          { qualified_id: { id: 'user-1' }, conversation_role: 'member' }
+        ]
+      },
+      qualified_conversation: {id: '1'},
+      qualified_from: {id: '2'},
+    } as any;
+    const negative = {type: 'conversation.create'} as any;
+    const missing = {} as any;
+
+    expect(isMemberJoinEvent(positive)).toBe(true);
+    expect(isMemberJoinEvent(negative)).toBe(false);
+    expect(isMemberJoinEvent(missing)).toBe(false);
   });
 });
