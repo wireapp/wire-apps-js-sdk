@@ -60,5 +60,11 @@ export abstract class WireEventsHandler {
     this.logger.info(`Received onConversationDeleted, ID: ${obfuscateId(conversationId.id)}`)
   }
 
-  //TODO: Baris: Add callback for NewConversation event
+  public async onUserJoinedConversation(
+    conversationId: QualifiedId,
+    members: ConversationMember[]
+  ): Promise<void> {
+    this.logger.info(`Received onUserJoinedConversation, ID: ${obfuscateId(conversationId.id)} - length: ${members.length}`)
+  }
+
 }

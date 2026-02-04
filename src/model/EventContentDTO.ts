@@ -16,6 +16,7 @@
 
 import type {QualifiedId} from "./QualifiedId.js"
 import type {ConversationResponse} from "../api/response/ConversationResponse.js";
+import type {ConversationRole} from "./conversation/ConversationRole.js";
 
 export interface MLSWelcomeDTO {
   type: string
@@ -53,13 +54,37 @@ export interface TypingDTO {
   qualified_conversation: QualifiedId
 }
 
-export type EventContentDTO = MLSWelcomeDTO | NewMLSMessageDTO | NewConversationDTO | DeleteConversationDTO | TypingDTO
+export interface MemberJoinDTO {
+  type: string
+  time: Date
+  data: MemberJoinEventData
+  qualified_conversation: QualifiedId
+  qualified_from: QualifiedId
+}
+
+interface MemberJoinEventData {
+  users: MemberData[]
+}
+
+interface MemberData {
+  qualified_id: QualifiedId,
+  conversation_role: ConversationRole
+}
+
+export type EventContentDTO =
+  MLSWelcomeDTO
+  | NewMLSMessageDTO
+  | NewConversationDTO
+  | DeleteConversationDTO
+  | TypingDTO
+  | MemberJoinDTO
 
 // TODO: [Note from Baris] -> I think the following methods should be in the Router.
 //  We don't need to pass "event" object to this class just to check 'type'.
 //  I don't think it is this class' responsibility to check the type of the event.
 //  This class should just provide the types and their schema.
 //  I prefer making the refactoring after set of current tasks
+//  --> Task-created: WPB-23263
 
 // Type Guards
 export function isNewMLSMessageEvent(event: EventContentDTO): event is NewMLSMessageDTO {
@@ -80,4 +105,8 @@ export function isDeleteConversationEvent(event: EventContentDTO): event is Dele
 
 export function isTypingEvent(event: EventContentDTO): event is TypingDTO {
   return (event as TypingDTO).type === "conversation.typing"
+}
+
+export function isMemberJoinEvent(event: EventContentDTO): event is MemberJoinDTO {
+  return (event as MemberJoinDTO).type === "conversation.member-join"
 }

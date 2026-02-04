@@ -22,10 +22,12 @@ import {
   isTypingEvent,
   isNewConversationEvent,
   isDeleteConversationEvent,
+  isMemberJoinEvent,
   type EventContentDTO,
   type NewMLSMessageDTO,
   type NewConversationDTO,
-  type DeleteConversationDTO
+  type DeleteConversationDTO,
+  type MemberJoinDTO
 } from "../model/EventContentDTO.js";
 import {isCoreCryptoMlsException} from "../model/exception/CoreCryptoMlsException.js";
 import {isMlsException} from "../model/exception/MlsException.js";
@@ -41,6 +43,7 @@ import {container, inject, singleton} from "tsyringe";
 import {LoggerFactory} from "../utils/logger/LoggerFactory.js";
 import {obfuscateId} from "../utils/ObfuscateUtil.js";
 import {MlsFallbackStrategy} from "../service/MlsFallbackStrategy.js";
+import type {ConversationMember} from "../model/conversation/ConversationMember.js";
 
 @singleton()
 export class EventRouter {
@@ -56,6 +59,7 @@ export class EventRouter {
   }
 
   async route(eventResponse: EventResponse): Promise<void> {
+    this.logger.debug(`Routing event:`, eventResponse.payload)
     if (!eventResponse.payload) {
       return;
     }
@@ -112,6 +116,9 @@ export class EventRouter {
       } else if (isDeleteConversationEvent(event)) {
         const deleteConversationEvent = (event as DeleteConversationDTO)
         await this.processDeleteConversationEvent(deleteConversationEvent)
+      } else if (isMemberJoinEvent(event)) {
+        const memberJoinEvent = (event as MemberJoinDTO)
+        await this.processMemberJoinEvent(memberJoinEvent)
       } else {
         this.logger.info(`Received an unmapped event: ${(event as EventContentDTO).type}`)
       }
@@ -167,18 +174,32 @@ export class EventRouter {
   }
 
   private async processNewConversationEvent(event: NewConversationDTO) {
-    this.logger.info('Processing NewConversation event for conversationId:', obfuscateId(event.qualified_conversation.id))
+    this.logger.info(`Processing NewConversation event for conversationId: ${obfuscateId(event.qualified_conversation.id)}`)
     await this.conversationService.saveConversationWithMembers(
       event.qualified_conversation,
       event.data
     )
-    this.logger.info('Processed NewConversation event for conversationId:', obfuscateId(event.qualified_conversation.id))
+    this.logger.info(`Processed NewConversation event for conversationId: ${obfuscateId(event.qualified_conversation.id)}`)
   }
 
   private async processDeleteConversationEvent(event: DeleteConversationDTO) {
-    this.logger.info("Processing DeleteConversation event for conversationId:", obfuscateId(event.qualified_conversation.id))
+    this.logger.info(`Processing DeleteConversation event for conversationId: ${obfuscateId(event.qualified_conversation.id)}`)
     await this.conversationService.deleteAllConversationDataFromLocalStorages(event.qualified_conversation)
     await this.wireEventsHandler.onConversationDeleted(event.qualified_conversation)
-    this.logger.info("Processed DeleteConversation event for conversationId:", obfuscateId(event.qualified_conversation.id))
+    this.logger.info(`Processed DeleteConversation event for conversationId: ${obfuscateId(event.qualified_conversation.id)}`)
+  }
+
+  private async processMemberJoinEvent(event: MemberJoinDTO) {
+    this.logger.info(`Processing MemberJoin event for conversationId: ${obfuscateId(event.qualified_conversation.id)}`)
+
+    const members: ConversationMember[] = (event.data.users || []).map(user => ({
+      userId: user.qualified_id,
+      role: user.conversation_role
+    }))
+
+    this.logger.info(`New members to be added. ${members.map(member => obfuscateId(member.userId.id)).join()}`)
+    await this.conversationService.addMembers(members, event.qualified_conversation)
+    await this.wireEventsHandler.onUserJoinedConversation(event.qualified_conversation, members)
+    this.logger.info(`Processed MemberJoin event for conversationId: ${obfuscateId(event.qualified_conversation.id)}`)
   }
 }

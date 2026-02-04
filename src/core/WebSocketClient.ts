@@ -122,13 +122,13 @@ export class WebSocketClient {
   }
 
   private async handleEventNotification(notification: EventNotification) {
-    this.logger.info("Received EventNotification")
+    this.logger.info(`Received EventNotification`);
     try {
       await this.eventRouter.route(notification.data.event);
       const ackRequest = EventAcknowledgeRequest.basicAck(notification.data.delivery_tag);
       this.ackEvent(ackRequest);
     } catch (exception) {
-      this.logger.error("Error processing event:", notification, exception);
+      this.logger.error(`Error processing event:, ${exception}`);
     }
   }
 

@@ -390,6 +390,70 @@ describe('ConversationService', () => {
     })
   })
 
+  describe('fetchEpoch', () => {
+    it('should return epoch from conversationsApiClient', async () => {
+      const mockEpoch = 42
+      vi.mocked(mockConversationsApiClient.getConversation).mockResolvedValue({epoch: mockEpoch} as any)
+
+      const result = await conversationService.fetchEpoch(CONVERSATION_ID)
+
+      expect(mockConversationsApiClient.getConversation).toHaveBeenCalledWith(CONVERSATION_ID)
+      expect(result).toBe(mockEpoch)
+    })
+  })
+
+  describe('getConversationGroupInfo', () => {
+    it('should call api client and return bytes', async () => {
+      const mockBytes = new Uint8Array([1, 2, 3])
+      ;(mockConversationsApiClient as any).getConversationGroupInfo = vi.fn().mockResolvedValue(mockBytes)
+
+      const result = await conversationService.getConversationGroupInfo(CONVERSATION_ID)
+
+      expect((mockConversationsApiClient as any).getConversationGroupInfo).toHaveBeenCalledWith(CONVERSATION_ID)
+      expect(result).toEqual(mockBytes)
+    })
+  })
+
+  describe('addMembers', () => {
+    it('should map members and call saveMany on repository', async () => {
+      vi.mocked(mockConversationRepository.findByIdAndDomain).mockReturnValue({
+        id: CONVERSATION_ID.id,
+        domain: CONVERSATION_ID.domain,
+        name: 'Existing Conversation',
+        team_id: TEAM_ID,
+        mls_group_id: MLS_GROUP_ID,
+        creation_date: null,
+        type: ConversationType.GROUP
+      } as any)
+
+      const members = [
+        {userId: USER_ID, role: 'wire_member'},
+        {userId: SELF_USER_ID, role: 'wire_admin'}
+      ] as any
+
+      await conversationService.addMembers(members, CONVERSATION_ID)
+
+      expect(mockConversationMemberRepository.saveMany).toHaveBeenCalledWith([
+        {
+          user_id: USER_ID.id,
+          user_domain: USER_ID.domain,
+          conversation_id: CONVERSATION_ID.id,
+          conversation_domain: CONVERSATION_ID.domain,
+          role: 'wire_member',
+          creation_date: null
+        },
+        {
+          user_id: SELF_USER_ID.id,
+          user_domain: SELF_USER_ID.domain,
+          conversation_id: CONVERSATION_ID.id,
+          conversation_domain: CONVERSATION_ID.domain,
+          role: 'wire_admin',
+          creation_date: null
+        }
+      ])
+    })
+  })
+
   const TEAM_ID: string = "team-id"
   const SELF_USER_ID: QualifiedId = {
     id: "self-user-id",

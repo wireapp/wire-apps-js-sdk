@@ -59,6 +59,9 @@ export class ConversationService {
     }
   }
 
+  // TODO: Baris: We can still have this method but we better have "saving conversation" and "saving members"
+  //  as two separate methods that we call within this method just to have them together pactically.
+  //  We can have "saving members" methods accepting different type of arrays. (This can be thought further.)
   async saveConversationWithMembers(
     conversationId: QualifiedId,
     conversation: ConversationResponse
@@ -163,5 +166,29 @@ export class ConversationService {
     this.conversationRepository.delete(conversationId.id, conversationId.domain)
 
     this.logger.info("Deleted all conversation data.", "conversationId:", obfuscateId(conversationId.id))
+  }
+
+  async addMembers(members: ConversationMember[], conversationId: QualifiedId): Promise<void> {
+    this.logger.info(`Adding members to conversation. conversationId: ${obfuscateId(conversationId.id)}, members length: ${members.length}`)
+
+    if (await this.getConversationById(conversationId) == null) {
+      this.logger.info(`Conversation does not exist locally.
+      Skipping MemberJoin event for conversationId: ${obfuscateId(conversationId.id)}`)
+      return
+    }
+
+    const membersToSave: ConversationMemberEntity[] = members.map((member) => {
+      return {
+        user_id: member.userId.id,
+        user_domain: member.userId.domain,
+        conversation_id: conversationId.id,
+        conversation_domain: conversationId.domain,
+        role: member.role,
+        creation_date: null
+      }
+    })
+
+    this.conversationMemberRepository.saveMany(membersToSave)
+    this.logger.info(`Added members to conversation. conversationId: ${obfuscateId(conversationId.id)}, members length: ${members.length}`)
   }
 }
