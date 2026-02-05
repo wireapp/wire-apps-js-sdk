@@ -29,6 +29,8 @@ import {ConversationsApiClient} from "./ConversationsApiClient.js";
 import {singleton} from "tsyringe";
 import type {ConversationMemberOtherResponse} from "./model/ConversationMemberOtherResponse.js";
 import {LoggerFactory} from "../utils/logger/LoggerFactory.js";
+import {AppService} from "./AppService.js";
+import {CryptoProtocol} from "../model/CryptoProtocol.js";
 import {CoreCryptoService} from "../core/CoreCryptoService.js";
 
 @singleton()
@@ -40,7 +42,8 @@ export class ConversationService {
     private conversationsApiClient: ConversationsApiClient,
     private conversationRepository: ConversationRepository,
     private conversationMemberRepository: ConversationMemberRepository,
-    private coreCryptoService: CoreCryptoService,
+    private appService: AppService,
+    private coreCryptoService: CoreCryptoService
   ) {
   }
 
@@ -190,5 +193,52 @@ export class ConversationService {
 
     this.conversationMemberRepository.saveMany(membersToSave)
     this.logger.info(`Added members to conversation. conversationId: ${obfuscateId(conversationId.id)}, members length: ${members.length}`)
+  }
+
+  async establishOrRejoinConversations(): Promise<void> {
+    const shouldRejoinConversations = this.appService.getShouldRejoinConversations()
+    if (shouldRejoinConversations != undefined && !shouldRejoinConversations) {
+      this.logger.info("Skipping re-joining conversations as its not needed.")
+      return
+    }
+
+    const conversationIds = await this.conversationsApiClient.getConversationIds()
+    const conversations = await this.conversationsApiClient.getConversationsById(conversationIds)
+
+    const mlsConversations = conversations.filter(conversation =>
+      conversation.protocol === CryptoProtocol.MLS
+    )
+
+    for (const conversation of mlsConversations) {
+      await this.establishOrJoinMlsConversation(conversation)
+    }
+
+    this.appService.setShouldRejoinConversations(false)
+  }
+
+  private async establishOrJoinMlsConversation(conversation: ConversationResponse): Promise<void> {
+    if (await this.coreCryptoService.conversationExists(conversation.group_id)) {
+      this.logger.info(`Conversation ${obfuscateId(conversation.qualified_id.id)}  already exists, skipping it`)
+      return
+    }
+
+    if (conversation.epoch != null && conversation.epoch !== 0) {
+      const conversationGroupInfoBytes = await this.conversationsApiClient.getConversationGroupInfo(conversation.qualified_id)
+      await this.coreCryptoService.joinMlsConversationRequest(conversationGroupInfoBytes)
+    } else if (conversation.type === ConversationType.SELF) {
+      await this.coreCryptoService.establishMlsConversation([], conversation.group_id)
+    } else if (conversation.type === ConversationType.ONE_TO_ONE) {
+      const users = this.conversationMemberRepository.getMembersByConversationId(
+        conversation.qualified_id.id,
+        conversation.qualified_id.domain
+      ).map(member => {
+        return {
+          id: member.user_id,
+          domain: member.user_domain
+        } as QualifiedId
+      })
+
+      await this.coreCryptoService.establishMlsConversation(users, conversation.group_id)
+    }
   }
 }
