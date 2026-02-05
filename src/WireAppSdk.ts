@@ -20,7 +20,7 @@ import {CoreCryptoService} from "./core/CoreCryptoService.js";
 import {
   WIRE_API_HOST,
   WIRE_CRYPTO_STORAGE_PASSWORD,
-  WIRE_DATABASE_PATH, 
+  WIRE_DATABASE_PATH,
   WIRE_EVENTS_HANDLER,
   WIRE_USER_DOMAIN,
   WIRE_USER_EMAIL,

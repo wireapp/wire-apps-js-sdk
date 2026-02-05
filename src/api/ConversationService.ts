@@ -218,7 +218,7 @@ export class ConversationService {
 
   private async establishOrJoinMlsConversation(conversation: ConversationResponse): Promise<void> {
     if (await this.coreCryptoService.conversationExists(conversation.group_id)) {
-      this.logger.info(`Conversation ${obfuscateId(conversation.qualified_id.id)}  already exists, skipping it`)
+      this.logger.info(`Conversation ${obfuscateId(conversation.qualified_id.id)} already exists, skipping it`)
       return
     }
 

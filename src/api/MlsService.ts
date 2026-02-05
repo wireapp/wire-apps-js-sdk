@@ -58,7 +58,7 @@ export class MlsService {
     const successUsers: QualifiedId[] = []
     const failedUsers: QualifiedId[] = []
 
-    users.forEach(async user => {
+    for (const user of users) {
       try {
         const result = await this.mlsApiClient.claimKeyPackages(
           user.id,
@@ -68,7 +68,7 @@ export class MlsService {
 
         if (result.key_packages.length > 0) {
           successUsers.push(user)
-          claimedKeyPackages.concat(result.key_packages)
+          claimedKeyPackages.push(...result.key_packages)
         }
       } catch (exception) {
         // Ignoring when claiming key packages fails for a user
@@ -78,7 +78,7 @@ export class MlsService {
           `Error when claiming key packages for userId: ${obfuscateId(user.id)}: ${exception}`
         )
       }
-    })
+    }
 
     return {
       keyPackages: claimedKeyPackages.map(claimedKeyPackage => {
