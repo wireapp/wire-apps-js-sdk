@@ -25,6 +25,8 @@ import type { QualifiedId } from '../../src/model/QualifiedId.js'
 import type { ConversationResponse } from '../../src/api/response/ConversationResponse.js'
 import type { ConversationEntity } from '../../src/db/model/ConversationEntity.js'
 import { container } from 'tsyringe'
+import {AppService} from '../../src/api/AppService.js'
+import {CoreCryptoService} from '../../src/core/CoreCryptoService.js'
 
 describe('ConversationService', () => {
   let conversationService: ConversationService
@@ -32,6 +34,8 @@ describe('ConversationService', () => {
   let mockConversationsApiClient: ConversationsApiClient
   let mockConversationRepository: ConversationRepository
   let mockConversationMemberRepository: ConversationMemberRepository
+  let mockAppService: AppService
+  let mockCoreCryptoService: CoreCryptoService
 
   beforeEach(() => {
     container.clearInstances()
@@ -53,11 +57,24 @@ describe('ConversationService', () => {
       saveMany: vi.fn()
     } as any
 
+    mockAppService = {
+      getShouldRejoinConversations: vi.fn(),
+      setShouldRejoinConversations: vi.fn()
+    } as any
+
+    mockCoreCryptoService = {
+      conversationExists: vi.fn(),
+      joinMlsConversationRequest: vi.fn(),
+      establishMlsConversation: vi.fn()
+    } as any
+
     conversationService = new ConversationService(
       mockUsersApiClient,
       mockConversationsApiClient,
       mockConversationRepository,
-      mockConversationMemberRepository
+      mockConversationMemberRepository,
+      mockAppService,
+      mockCoreCryptoService
     )
 
     // TODO: Can remove/replace this once we have implemented a proper logger lib

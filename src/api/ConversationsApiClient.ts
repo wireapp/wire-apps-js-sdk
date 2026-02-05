@@ -17,7 +17,11 @@
 import {HttpClient} from "../core/HttpClient.js";
 import type {ConversationResponse} from "./response/ConversationResponse.js";
 import type {QualifiedId} from "../model/QualifiedId.js";
-import { singleton } from "tsyringe";
+import {singleton} from "tsyringe";
+import type {ConversationIdsPaginationConfig} from "./model/ConversationIdsPaginationConfig.js";
+import type {ConversationIdsResponse} from "./response/ConversationIdsResponse.js";
+import type {ConversationIdsRequest} from "./request/ConversationIdsRequest.js";
+import type {ConversationsResponse} from "./response/ConversationsResponse.js";
 
 @singleton()
 export class ConversationsApiClient {
@@ -26,7 +30,10 @@ export class ConversationsApiClient {
 
   private readonly basePath = "conversations";
   private readonly HEADER_MLS_ACCEPT = "message/mls"
-  private readonly HEADER_MLS_CONTENT_TYPE = "message/mls"
+  private readonly CONVERSATION_LIST_IDS_PAGING_SIZE = 100
+  private readonly FETCH_CONVERSATIONS_START_INDEX = 0
+  private readonly FETCH_CONVERSATIONS_END_INDEX = 1000
+  private readonly FETCH_CONVERSATIONS_INCREASE_INDEX = 1000
 
   async getConversation(conversationQualifiedId: QualifiedId): Promise<ConversationResponse> {
     return await this.httpClient.getRequest<ConversationResponse>(
@@ -37,8 +44,65 @@ export class ConversationsApiClient {
   async getConversationGroupInfo(conversationQualifiedId: QualifiedId): Promise<Uint8Array> {
     return await this.httpClient.getRequest<Uint8Array>(
       `${this.basePath}/${conversationQualifiedId.domain}/${conversationQualifiedId.id}/groupinfo`,
-      this.HEADER_MLS_CONTENT_TYPE,
-      this.HEADER_MLS_ACCEPT
+      { headerAccept: this.HEADER_MLS_ACCEPT }
     )
+  }
+
+  async getConversationIds(): Promise<QualifiedId[]> {
+    const conversationIds: QualifiedId[] = []
+    let paginationConfig: ConversationIdsPaginationConfig = {
+      paging_state: null,
+      size: this.CONVERSATION_LIST_IDS_PAGING_SIZE
+    }
+
+    let hasMorePages: boolean = false
+    do {
+      const conversationIdsResponse = await this.httpClient.postRequest<ConversationIdsResponse>(
+        `${this.basePath}/list-ids`,
+        paginationConfig
+      )
+
+      hasMorePages = conversationIdsResponse.has_more
+      paginationConfig = {
+        ...paginationConfig,
+        paging_state: conversationIdsResponse.paging_state
+      }
+      conversationIds.push(...conversationIdsResponse.qualified_conversations)
+    } while (hasMorePages)
+
+    return conversationIds
+  }
+
+  async getConversationsById(conversationIds: QualifiedId[]): Promise<ConversationResponse[]> {
+    const conversations: ConversationResponse[] = []
+
+    if (conversationIds.length === 0) {
+      // TODO: Map to WireException
+      throw new Error("List of conversations to fetch is empty")
+    }
+
+    let startIndex = this.FETCH_CONVERSATIONS_START_INDEX
+    let endIndex = this.FETCH_CONVERSATIONS_END_INDEX
+
+    do {
+      if (endIndex > conversationIds.length) {
+        endIndex = conversationIds.length
+      }
+
+      const conversationIdsRequest: ConversationIdsRequest = {
+        qualified_ids: conversationIds.slice(startIndex, endIndex)
+      }
+
+      const conversationListResponse = await this.httpClient.postRequest<ConversationsResponse>(
+        `${this.basePath}/list`,
+        conversationIdsRequest
+      )
+
+      conversations.push(...conversationListResponse.found)
+      startIndex += this.FETCH_CONVERSATIONS_INCREASE_INDEX
+      endIndex += this.FETCH_CONVERSATIONS_INCREASE_INDEX
+    } while (endIndex < conversationIds.length + this.FETCH_CONVERSATIONS_INCREASE_INDEX)
+
+    return conversations
   }
 }

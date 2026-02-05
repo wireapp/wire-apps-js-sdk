@@ -27,6 +27,8 @@ import type { ConversationResponse } from '../../src/api/response/ConversationRe
 import { TestDatabaseService } from '../helpers/TestDatabaseService.js'
 import { ConversationEntity } from '../../src/db/model/ConversationEntity.js'
 import { ConversationMemberEntity } from '../../src/db/model/ConversationMemberEntity.js'
+import {AppService} from '../../src/api/AppService.js'
+import {CoreCryptoService} from '../../src/core/CoreCryptoService.js'
 
 describe('ConversationService Integration', () => {
   let testDbService: TestDatabaseService
@@ -35,6 +37,8 @@ describe('ConversationService Integration', () => {
   let conversationMemberRepository: ConversationMemberRepository
   let mockUsersApiClient: UsersApiClient
   let mockConversationsApiClient: ConversationsApiClient
+  let mockAppService: AppService
+  let mockCoreCryptoService: CoreCryptoService
 
   beforeAll(() => {
     testDbService = new TestDatabaseService()
@@ -62,11 +66,24 @@ describe('ConversationService Integration', () => {
       getConversation: vi.fn()
     } as any
 
+    mockAppService = {
+      getShouldRejoinConversations: vi.fn(),
+      setShouldRejoinConversations: vi.fn()
+    } as any
+
+    mockCoreCryptoService = {
+      conversationExists: vi.fn(),
+      joinMlsConversationRequest: vi.fn(),
+      establishMlsConversation: vi.fn()
+    } as any
+
     conversationService = new ConversationService(
       mockUsersApiClient,
       mockConversationsApiClient,
       conversationRepository,
-      conversationMemberRepository
+      conversationMemberRepository,
+      mockAppService,
+      mockCoreCryptoService
     )
 
     // TODO: Can remove/replace this once we have implemented a proper logger lib

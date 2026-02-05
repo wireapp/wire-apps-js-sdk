@@ -14,10 +14,10 @@
 * along with this program. If not, see http://www.gnu.org/licenses/.
 */
 
-import type { AccessResponse } from "../api/response/AccessResponse.js"
-import { WIRE_API_HOST, WIRE_USER_EMAIL, WIRE_USER_PASSWORD } from "../utils/DependencyInjectionTokens.js"
-import type { WireApiError } from "../model/exception/WireApiError.js"
-import { inject, singleton } from "tsyringe"
+import type {AccessResponse} from "../api/response/AccessResponse.js"
+import {WIRE_API_HOST, WIRE_USER_EMAIL, WIRE_USER_PASSWORD} from "../utils/DependencyInjectionTokens.js"
+import type {WireApiError} from "../model/exception/WireApiError.js"
+import {inject, singleton} from "tsyringe"
 import {LoggerFactory} from "../utils/logger/LoggerFactory.js";
 
 @singleton()
@@ -156,19 +156,35 @@ export class HttpClient {
     }
 
     const contentType = response.headers.get("content-type")
+
     if (contentType?.includes("application/json")) {
       const data = await response.json() as T
       return { data, response };
     }
+
+    if (contentType?.includes("message/mls") || contentType?.includes("octet-stream")) {
+      const arrayBuffer = await response.arrayBuffer()
+      const data = new Uint8Array(arrayBuffer) as T
+      return { data, response };
+    }
+  
     return { data: undefined as unknown as T, response }
   }
 
   async getRequest<T>(
     path: string,
-    headerContentType: string = this.HEADER_DEFAULT_CONTENT_TYPE,
-    headerAccept: string = this.HEADER_DEFAULT_ACCEPT
+    options?: {
+      headerContentType?: string;
+      headerAccept?: string;
+    }
   ): Promise<T> {
     await this.verifyAuthorizationToken()
+
+    const {
+      headerContentType = this.HEADER_DEFAULT_CONTENT_TYPE,
+      headerAccept = this.HEADER_DEFAULT_ACCEPT
+    } = options ?? {}
+    
     return (await this.request<T>(path, {
       method: "GET",
       headers: {
@@ -180,16 +196,33 @@ export class HttpClient {
 
   async postRequest<T>(
     path: string,
-    body: unknown,
-    headerContentType: string = this.HEADER_DEFAULT_CONTENT_TYPE,
-    headerAccept: string = this.HEADER_DEFAULT_ACCEPT
+    body?: unknown,
+    options?: {
+      headerContentType?: string;
+      headerAccept?: string;
+      params?: Record<string, string>;
+    }
   ): Promise<T> {
     await this.verifyAuthorizationToken()
 
-    const isBinary = body instanceof Uint8Array || body instanceof ArrayBuffer;
-    const requestBody = isBinary ? body as BodyInit : JSON.stringify(body);
+    const {
+      headerContentType = this.HEADER_DEFAULT_CONTENT_TYPE,
+      headerAccept = this.HEADER_DEFAULT_ACCEPT,
+      params
+    } = options ?? {}
+    
+    let finalPath = path
+    if (params) {
+      const queryString = new URLSearchParams(params).toString()
+      finalPath = `${path}?${queryString}`
+    }
 
-    return (await this.request<T>(path, {
+    const isBinary = body instanceof Uint8Array || body instanceof ArrayBuffer
+    const requestBody = body 
+      ? (isBinary ? body as BodyInit : JSON.stringify(body))
+      : null
+
+    return (await this.request<T>(finalPath, {
       method: "POST",
       body: requestBody,
       headers: {

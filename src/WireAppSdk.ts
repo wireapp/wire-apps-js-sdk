@@ -15,16 +15,26 @@
 */
 
 import "reflect-metadata";
-import { CoreCryptoService } from "./core/CoreCryptoService.js";
 import 'fake-indexeddb/auto';
-import { WIRE_API_HOST, WIRE_CRYPTO_STORAGE_PASSWORD, WIRE_DATABASE_PATH, WIRE_EVENTS_HANDLER, WIRE_USER_DOMAIN, WIRE_USER_EMAIL, WIRE_USER_ID, WIRE_USER_PASSWORD } from "./utils/DependencyInjectionTokens.js";
-import { WebSocketClient } from "./core/WebSocketClient.js";
-import { WireEventsHandler } from "./core/WireEventsHandler.js";
-import { DatabaseService } from "./db/DatabaseService.js";
-import { container } from "tsyringe";
+import {CoreCryptoService} from "./core/CoreCryptoService.js";
+import {
+  WIRE_API_HOST,
+  WIRE_CRYPTO_STORAGE_PASSWORD,
+  WIRE_DATABASE_PATH, 
+  WIRE_EVENTS_HANDLER,
+  WIRE_USER_DOMAIN,
+  WIRE_USER_EMAIL,
+  WIRE_USER_ID,
+  WIRE_USER_PASSWORD
+} from "./utils/DependencyInjectionTokens.js";
+import {WebSocketClient} from "./core/WebSocketClient.js";
+import {WireEventsHandler} from "./core/WireEventsHandler.js";
+import {DatabaseService} from "./db/DatabaseService.js";
+import {container} from "tsyringe";
 import type {Logger} from "./utils/logger/Logger.js";
 import {LoggerFactory} from "./utils/logger/LoggerFactory.js";
 import {ConsoleLogger} from "./utils/logger/ConsoleLogger.js";
+import {ConversationService} from "./api/ConversationService.js";
 
 export class WireAppSdk {
   private userEmail: string
@@ -38,6 +48,7 @@ export class WireAppSdk {
 
   private isWebSocketRunning: boolean = false
   private webSocketClient!: WebSocketClient
+  private conversationService!: ConversationService
 
   private wireEventsHandler: WireEventsHandler
   private logger: Logger
@@ -106,6 +117,7 @@ export class WireAppSdk {
 
     container.registerInstance(WIRE_EVENTS_HANDLER, this.wireEventsHandler)
     this.webSocketClient = container.resolve(WebSocketClient)
+    this.conversationService = container.resolve(ConversationService)
   }
 
   private async initCryptoClient() {
@@ -123,7 +135,9 @@ export class WireAppSdk {
     }
     this.isWebSocketRunning = true
 
-    await this.webSocketClient.connect()
+    this.webSocketClient.connect()
+
+    await this.conversationService.establishOrRejoinConversations()
   }
 
   stopListening() {

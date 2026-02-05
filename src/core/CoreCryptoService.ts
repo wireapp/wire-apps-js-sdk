@@ -14,7 +14,7 @@
 * along with this program. If not, see http://www.gnu.org/licenses/.
 */
 
-import {ConversationId, GroupInfo} from "@wireapp/core-crypto";
+import {ConversationId, GroupInfo, isMlsConversationAlreadyExistsError} from "@wireapp/core-crypto";
 import {ClientsService} from "../api/ClientsService.js";
 import {AppClientId} from "../model/AppClientId.js";
 import {
@@ -28,8 +28,10 @@ import {CoreCryptoClient} from "./CoreCryptoClient.js";
 import {CoreCryptoMlsTransport} from "./CoreCryptoMlsTransport.js";
 import {FeatureConfigsService} from "../api/FeatureConfigsService.js";
 import {Decoder} from "bazinga64";
-import { container, inject, singleton } from "tsyringe";
+import {container, inject, singleton} from "tsyringe";
 import {LoggerFactory} from "../utils/logger/LoggerFactory.js";
+import type {QualifiedId} from "../model/QualifiedId.js";
+import {AppService} from "../api/AppService.js";
 
 /**
  * Service that handles initialization of CoreCrypto and provides a high-level API for:
@@ -41,6 +43,7 @@ import {LoggerFactory} from "../utils/logger/LoggerFactory.js";
 export class CoreCryptoService {
   private coreCryptoClient: CoreCryptoClient | undefined
   private logger = LoggerFactory.getLogger(this.constructor.name)
+  private defaultCiphersuiteCode: number | undefined
 
   constructor(
     @inject(WIRE_USER_ID) private wireUserId: string,
@@ -49,7 +52,8 @@ export class CoreCryptoService {
     private featureConfigsService: FeatureConfigsService,
     private clientsService: ClientsService,
     private mlsService: MlsService,
-    private mlsTransport: CoreCryptoMlsTransport
+    private mlsTransport: CoreCryptoMlsTransport,
+    private appService: AppService
   ) {
   }
 
@@ -59,11 +63,11 @@ export class CoreCryptoService {
    * Must be called before anything else.
    */
   async initCoreCryptoClient(): Promise<void> {
-    const defaultCiphersuite: number = await this.featureConfigsService.getDefaultCipherSuite()
+    this.defaultCiphersuiteCode = await this.featureConfigsService.getDefaultCipherSuite()
 
     this.coreCryptoClient = await CoreCryptoClient.create(
       this.wireUserId,
-      defaultCiphersuite,
+      this.defaultCiphersuiteCode,
       this.wireCryptoStoragePassword,
       this.mlsTransport
     )
@@ -106,7 +110,7 @@ export class CoreCryptoService {
     await this.uploadClientWithMlsPublicKey()
     await this.uploadMlsKeyPackages()
 
-    // TODO: setShouldRejoinConverastions(true) when its a new client
+    this.appService.setShouldRejoinConversations(true)
   }
 
   private async uploadClientWithMlsPublicKey() {
@@ -175,6 +179,56 @@ export class CoreCryptoService {
     await this.coreCryptoClient?.joinMlsConversationRequest(
       new GroupInfo(groupInfoBytes)
     )
+  }
+
+  async establishMlsConversation(
+    userIds: QualifiedId[],
+    mlsGroupId: string
+  ) {
+    const ciphersuite = CoreCryptoClient.getMlsCiphersuiteName(this.defaultCiphersuiteCode!)
+    const removalKey = await this.mlsService.getRemovalKey(ciphersuite)
+
+    if (removalKey != null) {
+      try {
+        await this.coreCryptoClient?.createConversation(
+          mlsGroupId,
+          removalKey
+        )
+      } catch (exception) {
+        if (isMlsConversationAlreadyExistsError(exception)) {
+          throw Error("Conversation already exists.")
+        }
+      }
+
+      const users = [
+        {
+          id: this.wireUserId,
+          domain: this.wireUserDomain
+        } as QualifiedId,
+        ...userIds
+      ]
+
+      const claimedKeyPackagesResult = await this.mlsService.claimKeyPackages(
+        users,
+        this.toHexString(this.defaultCiphersuiteCode!)
+      )
+
+      if (claimedKeyPackagesResult.keyPackages.length === 0) {
+        await this.coreCryptoClient!.updateKeyingMaterial(mlsGroupId)
+      } else {
+        await this.coreCryptoClient?.addMemberToMlsConversation(
+          mlsGroupId,
+          claimedKeyPackagesResult.keyPackages
+        )
+      }
+    } else {
+      // TODO: Map to WireException
+      throw Error("No Public Keys found, skipping creating a conversation.")
+    }
+  }
+
+  private toHexString(value: number, minDigits: number = 4): string {
+    return "0x" + value.toString(16).padStart(minDigits, '0')
   }
 
   close() {

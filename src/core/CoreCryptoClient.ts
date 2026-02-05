@@ -14,12 +14,24 @@
 * along with this program. If not, see http://www.gnu.org/licenses/.
 */
 
-import { Ciphersuite, ClientId, ConversationId, CoreCrypto, CoreCryptoContext, CredentialType, DatabaseKey, GroupInfo, initWasmModule, Welcome } from "@wireapp/core-crypto";
-import type { AppClientId } from "../model/AppClientId.js";
-import { CoreCryptoMlsTransport } from "./CoreCryptoMlsTransport.js";
-import type { MlsPublicKeys } from "../model/MlsPublicKeys.js";
-import { PreKeyCrypto } from "../model/PreKeyCrypto.js";
-import { Encoder } from "bazinga64";
+import {
+  Ciphersuite,
+  ClientId,
+  ConversationId,
+  CoreCrypto,
+  CoreCryptoContext,
+  CredentialType,
+  DatabaseKey,
+  ExternalSenderKey,
+  GroupInfo,
+  initWasmModule,
+  Welcome
+} from "@wireapp/core-crypto";
+import type {AppClientId} from "../model/AppClientId.js";
+import {CoreCryptoMlsTransport} from "./CoreCryptoMlsTransport.js";
+import type {MlsPublicKeys} from "../model/MlsPublicKeys.js";
+import {PreKeyCrypto} from "../model/PreKeyCrypto.js";
+import {Decoder, Encoder} from "bazinga64";
 
 export class CoreCryptoClient {
   private ciphersuite: Ciphersuite
@@ -59,7 +71,7 @@ export class CoreCryptoClient {
     return coreCryptoClient
   }
 
-  private static getMlsCiphersuiteName(ciphersuiteCode: number): Ciphersuite {
+  static getMlsCiphersuiteName(ciphersuiteCode: number): Ciphersuite {
     switch (ciphersuiteCode) {
       case 1:
         return Ciphersuite.MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519
@@ -237,6 +249,58 @@ export class CoreCryptoClient {
       await context.joinByExternalCommit(
         groupInfo,
         mlsCredentialType
+      )
+    })
+  }
+
+  /**
+   * Creates a conversation in CoreCrypto.
+   *
+   * @param ConversationId Group ID from creating the conversation on the backend
+   * @param externalSenders Keys fetched from backend for validating external remove proposals
+   */
+  async createConversation(
+    mlsGroupId: string,
+    removalKey: Uint8Array
+  ) {
+    await this.coreCrypto.transaction(async (context) => {
+      const mlsCredentialType = await this.getCredentialType(context)
+
+      const mlsGroupIdBytes = Decoder.fromBase64(mlsGroupId).asBytes
+      await context.createConversation(
+        new ConversationId(mlsGroupIdBytes),
+        mlsCredentialType,
+        {
+          ciphersuite: this.ciphersuite,
+          externalSenders: [new ExternalSenderKey(removalKey)]
+        }
+      )
+    })
+  }
+
+  async updateKeyingMaterial(mlsGroupId: string) {
+    await this.coreCrypto.transaction(async (context) => {
+      const mlsGroupIdBytes = Decoder.fromBase64(mlsGroupId).asBytes
+      await context.updateKeyingMaterial(
+        new ConversationId(mlsGroupIdBytes)
+      )
+    })
+  }
+
+  /**
+   * Alternative way to add a member to an MLS conversation.
+   * Instead of creating a join request accepted by the new client,
+   * this method directly adds a member to a conversation.
+   */
+  async addMemberToMlsConversation(
+    mlsGroupId: string,
+    keyPackages: Uint8Array[]
+  ) {
+    await this.coreCrypto.transaction(async (context) => {
+      const mlsGroupIdBytes = Decoder.fromBase64(mlsGroupId).asBytes
+      await context.addClientsToConversation(
+        new ConversationId(mlsGroupIdBytes),
+        keyPackages
       )
     })
   }
