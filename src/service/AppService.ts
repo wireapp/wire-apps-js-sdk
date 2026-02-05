@@ -40,5 +40,4 @@ export class AppService {
 
   private booleanToDatabaseValue = (value?: boolean): string => value ? '1' : '0'
   private databaseValueToBoolean = (value?: string): boolean => value === '1'
-
 }
