@@ -31,7 +31,7 @@ import {Decoder} from "bazinga64";
 import {container, inject, singleton} from "tsyringe";
 import {LoggerFactory} from "../utils/logger/LoggerFactory.js";
 import type {QualifiedId} from "../model/QualifiedId.js";
-import {AppService} from "../api/AppService.js";
+import {AppService} from "../service/AppService.js";
 
 /**
  * Service that handles initialization of CoreCrypto and provides a high-level API for:

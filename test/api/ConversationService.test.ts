@@ -25,8 +25,9 @@ import type {QualifiedId} from '../../src/model/QualifiedId.js'
 import type {ConversationResponse} from '../../src/api/response/ConversationResponse.js'
 import type {ConversationEntity} from '../../src/db/model/ConversationEntity.js'
 import {container} from 'tsyringe'
-import {AppService} from '../../src/api/AppService.js'
+import {AppService} from '../../src/service/AppService.js'
 import {CoreCryptoService} from '../../src/core/CoreCryptoService.js'
+import {CryptoProtocol} from '../../src/model/CryptoProtocol.js'
 
 describe('ConversationService', () => {
   let conversationService: ConversationService
@@ -45,7 +46,10 @@ describe('ConversationService', () => {
     } as any
 
     mockConversationsApiClient = {
-      getConversation: vi.fn()
+      getConversation: vi.fn(),
+      getConversationGroupInfo: vi.fn(),
+      getConversationIds: vi.fn(),
+      getConversationsById: vi.fn()
     } as any
 
     mockConversationRepository = {
@@ -461,6 +465,262 @@ describe('ConversationService', () => {
           creation_date: null
         }
       ])
+    })
+  })
+
+  describe('establishOrRejoinConversations', () => {
+    it('should skip re-joining when shouldRejoinConversations is false', async () => {
+      vi.mocked(mockAppService.getShouldRejoinConversations).mockReturnValue(false)
+  
+      await conversationService.establishOrRejoinConversations()
+  
+      expect(mockAppService.getShouldRejoinConversations).toHaveBeenCalled()
+      expect(mockConversationsApiClient.getConversationIds).not.toHaveBeenCalled()
+      expect(mockAppService.setShouldRejoinConversations).not.toHaveBeenCalled()
+    })
+  
+    it('should process MLS conversations when shouldRejoinConversations is true', async () => {
+      vi.mocked(mockAppService.getShouldRejoinConversations).mockReturnValue(true)
+      
+      const conversationIds = [CONVERSATION_ID, {...CONVERSATION_ID, id: 'conv-2'}]
+      const conversations: ConversationResponse[] = [
+        {
+          qualified_id: CONVERSATION_ID,
+          type: ConversationType.GROUP,
+          protocol: CryptoProtocol.MLS,
+          group_id: MLS_GROUP_ID,
+          epoch: 0,
+          members: {
+            others: [],
+            self: {qualified_id: SELF_USER_ID, conversation_role: 'wire_admin'}
+          }
+        } as ConversationResponse,
+        {
+          qualified_id: {...CONVERSATION_ID, id: 'conv-2'},
+          type: ConversationType.GROUP,
+          protocol: 'proteus' as any, // Non-MLS conversation
+          group_id: 'mls-group-2',
+          epoch: 0,
+          members: {
+            others: [],
+            self: {qualified_id: SELF_USER_ID, conversation_role: 'wire_admin'}
+          }
+        } as ConversationResponse
+      ]
+  
+      vi.mocked(mockConversationsApiClient.getConversationIds).mockResolvedValue(conversationIds)
+      vi.mocked(mockConversationsApiClient.getConversationsById).mockResolvedValue(conversations)
+      vi.mocked(mockCoreCryptoService.conversationExists).mockResolvedValue(false)
+  
+      await conversationService.establishOrRejoinConversations()
+  
+      expect(mockConversationsApiClient.getConversationIds).toHaveBeenCalled()
+      expect(mockConversationsApiClient.getConversationsById).toHaveBeenCalledWith(conversationIds)
+      expect(mockCoreCryptoService.conversationExists).toHaveBeenCalledTimes(1) // Only for MLS conversation
+      expect(mockAppService.setShouldRejoinConversations).toHaveBeenCalledWith(false)
+    })
+  
+    it('should process when shouldRejoinConversations is undefined', async () => {
+      vi.mocked(mockAppService.getShouldRejoinConversations).mockReturnValue(undefined)
+      
+      const conversationIds = [CONVERSATION_ID]
+      const conversations: ConversationResponse[] = []
+  
+      vi.mocked(mockConversationsApiClient.getConversationIds).mockResolvedValue(conversationIds)
+      vi.mocked(mockConversationsApiClient.getConversationsById).mockResolvedValue(conversations)
+  
+      await conversationService.establishOrRejoinConversations()
+  
+      expect(mockConversationsApiClient.getConversationIds).toHaveBeenCalled()
+      expect(mockAppService.setShouldRejoinConversations).toHaveBeenCalledWith(false)
+    })
+  
+    it('should process multiple MLS conversations', async () => {
+      vi.mocked(mockAppService.getShouldRejoinConversations).mockReturnValue(true)
+      
+      const conversationIds = [CONVERSATION_ID, {...CONVERSATION_ID, id: 'conv-2'}]
+      const conversations: ConversationResponse[] = [
+        {
+          qualified_id: CONVERSATION_ID,
+          type: ConversationType.GROUP,
+          protocol: CryptoProtocol.MLS,
+          group_id: MLS_GROUP_ID,
+          epoch: 5,
+          members: {
+            others: [],
+            self: {qualified_id: SELF_USER_ID, conversation_role: 'wire_admin'}
+          }
+        } as ConversationResponse,
+        {
+          qualified_id: {...CONVERSATION_ID, id: 'conv-2'},
+          type: ConversationType.SELF,
+          protocol: CryptoProtocol.MLS,
+          group_id: 'mls-group-2',
+          epoch: 0,
+          members: {
+            others: [],
+            self: {qualified_id: SELF_USER_ID, conversation_role: 'wire_admin'}
+          }
+        } as ConversationResponse
+      ]
+  
+      const mockGroupInfoBytes = new Uint8Array([1, 2, 3])
+  
+      vi.mocked(mockConversationsApiClient.getConversationIds).mockResolvedValue(conversationIds)
+      vi.mocked(mockConversationsApiClient.getConversationsById).mockResolvedValue(conversations)
+      vi.mocked(mockCoreCryptoService.conversationExists).mockResolvedValue(false)
+      vi.mocked(mockConversationsApiClient.getConversationGroupInfo).mockResolvedValue(mockGroupInfoBytes)
+  
+      await conversationService.establishOrRejoinConversations()
+  
+      expect(mockCoreCryptoService.conversationExists).toHaveBeenCalledTimes(2)
+      expect(mockCoreCryptoService.joinMlsConversationRequest).toHaveBeenCalledWith(mockGroupInfoBytes)
+      expect(mockCoreCryptoService.establishMlsConversation).toHaveBeenCalledWith([], 'mls-group-2')
+      expect(mockAppService.setShouldRejoinConversations).toHaveBeenCalledWith(false)
+    })
+  })
+  
+  describe('establishOrJoinMlsConversation', () => {
+    it('should skip conversation when it already exists', async () => {
+      const conversation: ConversationResponse = {
+        qualified_id: CONVERSATION_ID,
+        type: ConversationType.GROUP,
+        protocol: CryptoProtocol.MLS,
+        group_id: MLS_GROUP_ID,
+        epoch: 5,
+        members: {
+          others: [],
+          self: {qualified_id: SELF_USER_ID, conversation_role: 'wire_admin'}
+        }
+      } as ConversationResponse
+  
+      vi.mocked(mockCoreCryptoService.conversationExists).mockResolvedValue(true)
+  
+      // Call the private method via the public one
+      await (conversationService as any).establishOrJoinMlsConversation(conversation)
+  
+      expect(mockCoreCryptoService.conversationExists).toHaveBeenCalledWith(MLS_GROUP_ID)
+      expect(mockCoreCryptoService.joinMlsConversationRequest).not.toHaveBeenCalled()
+      expect(mockCoreCryptoService.establishMlsConversation).not.toHaveBeenCalled()
+    })
+  
+    it('should join conversation when epoch is non-zero', async () => {
+      const conversation: ConversationResponse = {
+        qualified_id: CONVERSATION_ID,
+        type: ConversationType.GROUP,
+        protocol: CryptoProtocol.MLS,
+        group_id: MLS_GROUP_ID,
+        epoch: 5,
+        members: {
+          others: [],
+          self: {qualified_id: SELF_USER_ID, conversation_role: 'wire_admin'}
+        }
+      } as ConversationResponse
+  
+      const mockGroupInfoBytes = new Uint8Array([1, 2, 3])
+  
+      vi.mocked(mockCoreCryptoService.conversationExists).mockResolvedValue(false)
+      vi.mocked(mockConversationsApiClient.getConversationGroupInfo).mockResolvedValue(mockGroupInfoBytes)
+  
+      await (conversationService as any).establishOrJoinMlsConversation(conversation)
+  
+      expect(mockCoreCryptoService.conversationExists).toHaveBeenCalledWith(MLS_GROUP_ID)
+      expect(mockConversationsApiClient.getConversationGroupInfo).toHaveBeenCalledWith(CONVERSATION_ID)
+      expect(mockCoreCryptoService.joinMlsConversationRequest).toHaveBeenCalledWith(mockGroupInfoBytes)
+      expect(mockCoreCryptoService.establishMlsConversation).not.toHaveBeenCalled()
+    })
+  
+    it('should establish SELF conversation when epoch is zero', async () => {
+      const conversation: ConversationResponse = {
+        qualified_id: CONVERSATION_ID,
+        type: ConversationType.SELF,
+        protocol: CryptoProtocol.MLS,
+        group_id: MLS_GROUP_ID,
+        epoch: 0,
+        members: {
+          others: [],
+          self: {qualified_id: SELF_USER_ID, conversation_role: 'wire_admin'}
+        }
+      } as ConversationResponse
+  
+      vi.mocked(mockCoreCryptoService.conversationExists).mockResolvedValue(false)
+  
+      await (conversationService as any).establishOrJoinMlsConversation(conversation)
+  
+      expect(mockCoreCryptoService.conversationExists).toHaveBeenCalledWith(MLS_GROUP_ID)
+      expect(mockCoreCryptoService.establishMlsConversation).toHaveBeenCalledWith([], MLS_GROUP_ID)
+      expect(mockConversationsApiClient.getConversationGroupInfo).not.toHaveBeenCalled()
+      expect(mockCoreCryptoService.joinMlsConversationRequest).not.toHaveBeenCalled()
+    })
+  
+    it('should establish ONE_TO_ONE conversation with members', async () => {
+      const conversation: ConversationResponse = {
+        qualified_id: CONVERSATION_ID,
+        type: ConversationType.ONE_TO_ONE,
+        protocol: CryptoProtocol.MLS,
+        group_id: MLS_GROUP_ID,
+        epoch: 0,
+        members: {
+          others: [{qualified_id: USER_ID, conversation_role: 'wire_member'}],
+          self: {qualified_id: SELF_USER_ID, conversation_role: 'wire_admin'}
+        }
+      } as ConversationResponse
+  
+      const mockMembers = [
+        {
+          user_id: SELF_USER_ID.id,
+          user_domain: SELF_USER_ID.domain,
+          conversation_id: CONVERSATION_ID.id,
+          conversation_domain: CONVERSATION_ID.domain,
+          role: 'wire_admin',
+          creation_date: null
+        },
+        {
+          user_id: USER_ID.id,
+          user_domain: USER_ID.domain,
+          conversation_id: CONVERSATION_ID.id,
+          conversation_domain: CONVERSATION_ID.domain,
+          role: 'wire_member',
+          creation_date: null
+        }
+      ]
+  
+      vi.mocked(mockCoreCryptoService.conversationExists).mockResolvedValue(false)
+      vi.mocked(mockConversationMemberRepository.getMembersByConversationId).mockReturnValue(mockMembers)
+  
+      await (conversationService as any).establishOrJoinMlsConversation(conversation)
+  
+      expect(mockCoreCryptoService.conversationExists).toHaveBeenCalledWith(MLS_GROUP_ID)
+      expect(mockConversationMemberRepository.getMembersByConversationId).toHaveBeenCalledWith(
+        CONVERSATION_ID.id,
+        CONVERSATION_ID.domain
+      )
+      expect(mockCoreCryptoService.establishMlsConversation).toHaveBeenCalledWith(
+        [SELF_USER_ID, USER_ID],
+        MLS_GROUP_ID
+      )
+    })
+  
+    it('should join conversation when epoch is null but not zero', async () => {
+      const conversation: ConversationResponse = {
+        qualified_id: CONVERSATION_ID,
+        type: ConversationType.GROUP,
+        protocol: CryptoProtocol.MLS,
+        group_id: MLS_GROUP_ID,
+        epoch: null as any,
+        members: {
+          others: [],
+          self: {qualified_id: SELF_USER_ID, conversation_role: 'wire_admin'}
+        }
+      } as ConversationResponse
+  
+      vi.mocked(mockCoreCryptoService.conversationExists).mockResolvedValue(false)
+  
+      await (conversationService as any).establishOrJoinMlsConversation(conversation)
+  
+      expect(mockCoreCryptoService.conversationExists).toHaveBeenCalledWith(MLS_GROUP_ID)
+      expect(mockCoreCryptoService.joinMlsConversationRequest).not.toHaveBeenCalled()
+      expect(mockCoreCryptoService.establishMlsConversation).not.toHaveBeenCalled()
     })
   })
 
