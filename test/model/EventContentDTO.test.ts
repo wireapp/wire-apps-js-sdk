@@ -5,7 +5,8 @@ import {
   isNewConversationEvent,
   isNewMLSMessageEvent,
   isTypingEvent,
-  isMemberJoinEvent, isMemberLeaveEvent,
+  isMemberJoinEvent,
+  isMemberLeaveEvent,
 } from '../../src/model/EventContentDTO.js';
 
 describe('EventContentDTO type guards', () => {
@@ -88,7 +89,7 @@ describe('EventContentDTO type guards', () => {
       time: new Date(),
       data: {
         users: [
-          { qualified_id: { id: 'user-1' }, conversation_role: 'member' }
+          {qualified_id: {id: 'user-1'}, conversation_role: 'member'}
         ]
       },
       qualified_conversation: {id: '1'},
@@ -108,7 +109,7 @@ describe('EventContentDTO type guards', () => {
       time: new Date(),
       data: {
         qualified_user_ids: [
-          { id: 'user-1' }
+          {id: 'user-1'}
         ],
         reason: 'left'
       },

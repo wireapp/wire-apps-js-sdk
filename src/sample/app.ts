@@ -89,7 +89,7 @@ class SampleEventsHandler extends WireEventsHandler {
   }
 
   public override async onUserJoinedConversation(conversationId: QualifiedId, members: ConversationMember[]): Promise<void> {
-    this.appLogger?.info(`[Sample App] App was added to conversation: ${obfuscateId(conversationId.id)} with ${members.length} members`)
+    this.appLogger?.info(`[Sample App] Users are added to conversation: ${obfuscateId(conversationId.id)} with ${members.length} members`)
 
     const textMessage = TextMessage.create({
       conversationId: conversationId,
@@ -97,6 +97,17 @@ class SampleEventsHandler extends WireEventsHandler {
     })
     await this.manager.sendMessage(textMessage)
   }
+
+  public override async onUserLeftConversation(conversationId: QualifiedId, members: QualifiedId[]): Promise<void> {
+    this.appLogger?.info(`[Sample App] User left the conversation: ${obfuscateId(conversationId.id)} - length: ${members.length}`)
+
+    const textMessage = TextMessage.create({
+      conversationId: conversationId,
+      text: `Goodbye ${members.map(m => obfuscateId(m.id)).join(', ')}! 👋`
+    })
+    await this.manager.sendMessage(textMessage)
+  }
+
 
 }
 

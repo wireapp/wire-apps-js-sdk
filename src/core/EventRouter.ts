@@ -209,7 +209,7 @@ export class EventRouter {
   private async processMemberLeaveEvent(event: MemberLeaveDTO) {
     this.logger.info(`Processing MemberLeave event for conversationId: ${obfuscateId(event.qualified_conversation.id)}`)
     await this.conversationService.removeMembers(event.data.qualified_user_ids, event.qualified_conversation)
-    // await this.wireEventsHandler.onUserLeftConversation(event.qualified_conversation, event.data.qualified_user_ids)
+    await this.wireEventsHandler.onUserLeftConversation(event.qualified_conversation, event.data.qualified_user_ids)
     this.logger.info(`Processed MemberLeave event for conversationId: ${obfuscateId(event.qualified_conversation.id)}`)
   }
 
