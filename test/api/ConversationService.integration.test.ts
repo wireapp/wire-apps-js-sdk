@@ -79,8 +79,8 @@ describe('ConversationService Integration', () => {
     } as any
 
     conversationService = new ConversationService(
-      USER_ID.id,
-      USER_ID.domain,
+      SELF_USER_ID.id,
+      SELF_USER_ID.domain,
       mockUsersApiClient,
       mockConversationsApiClient,
       conversationRepository,
@@ -175,13 +175,13 @@ describe('ConversationService Integration', () => {
     })
 
     it('calls deleteAllConversationDataFromLocalStorages when APP_CLIENT_ID is in userIds', async () => {
-      process.env["APP_CLIENT_ID"] = USER_ID.id
+      process.env["APP_CLIENT_ID"] = SELF_USER_ID.id
 
       const wipeSpy = vi
         .spyOn(conversationService as any, 'deleteAllConversationDataFromLocalStorages')
         .mockResolvedValue(undefined)
 
-      await conversationService.removeMembers([USER_ID], CONVERSATION_ID)
+      await conversationService.removeMembers([SELF_USER_ID, USER_3_ID], CONVERSATION_ID)
 
       expect(wipeSpy).toHaveBeenCalledWith(CONVERSATION_ID)
 

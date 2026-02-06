@@ -62,6 +62,7 @@ describe('ConversationService', () => {
       saveMany: vi.fn(),
       getMembersByConversationId: vi.fn(),
       deleteAllMembersInConversation: vi.fn(),
+      deleteMany: vi.fn()
     } as any
 
     mockAppProperties = {
@@ -77,8 +78,8 @@ describe('ConversationService', () => {
     } as any
 
     conversationService = new ConversationService(
-      USER_ID.id,
-      USER_ID.domain,
+      SELF_USER_ID.id,
+      SELF_USER_ID.domain,
       mockUsersApiClient,
       mockConversationsApiClient,
       mockConversationRepository,
@@ -473,17 +474,17 @@ describe('ConversationService', () => {
   describe('establishOrRejoinConversations', () => {
     it('should skip re-joining when shouldRejoinConversations is false', async () => {
       vi.mocked(mockAppProperties.getShouldRejoinConversations).mockReturnValue(false)
-  
+
       await conversationService.establishOrRejoinConversations()
-  
+
       expect(mockAppProperties.getShouldRejoinConversations).toHaveBeenCalled()
       expect(mockConversationsApiClient.getAllConversationIds).not.toHaveBeenCalled()
       expect(mockAppProperties.setShouldRejoinConversations).not.toHaveBeenCalled()
     })
-  
+
     it('should process MLS conversations when shouldRejoinConversations is true', async () => {
       vi.mocked(mockAppProperties.getShouldRejoinConversations).mockReturnValue(true)
-      
+
       const conversationIds = [CONVERSATION_ID, {...CONVERSATION_ID, id: 'conv-2'}]
       const conversations: ConversationResponse[] = [
         {
@@ -509,22 +510,22 @@ describe('ConversationService', () => {
           }
         } as ConversationResponse
       ]
-  
+
       vi.mocked(mockConversationsApiClient.getAllConversationIds).mockResolvedValue(conversationIds)
       vi.mocked(mockConversationsApiClient.getConversationsById).mockResolvedValue(conversations)
       vi.mocked(mockCoreCryptoService.conversationExists).mockResolvedValue(false)
-  
+
       await conversationService.establishOrRejoinConversations()
-  
+
       expect(mockConversationsApiClient.getAllConversationIds).toHaveBeenCalled()
       expect(mockConversationsApiClient.getConversationsById).toHaveBeenCalledWith(conversationIds)
       expect(mockCoreCryptoService.conversationExists).toHaveBeenCalledTimes(1) // Only for MLS conversation
       expect(mockAppProperties.setShouldRejoinConversations).toHaveBeenCalledWith(false)
     })
-  
+
     it('should process multiple MLS conversations', async () => {
       vi.mocked(mockAppProperties.getShouldRejoinConversations).mockReturnValue(true)
-      
+
       const conversationIds = [CONVERSATION_ID, {...CONVERSATION_ID, id: 'conv-2'}]
       const conversations: ConversationResponse[] = [
         {
@@ -550,23 +551,23 @@ describe('ConversationService', () => {
           }
         } as ConversationResponse
       ]
-  
+
       const mockGroupInfoBytes = new Uint8Array([1, 2, 3])
-  
+
       vi.mocked(mockConversationsApiClient.getAllConversationIds).mockResolvedValue(conversationIds)
       vi.mocked(mockConversationsApiClient.getConversationsById).mockResolvedValue(conversations)
       vi.mocked(mockCoreCryptoService.conversationExists).mockResolvedValue(false)
       vi.mocked(mockConversationsApiClient.getConversationGroupInfo).mockResolvedValue(mockGroupInfoBytes)
-  
+
       await conversationService.establishOrRejoinConversations()
-  
+
       expect(mockCoreCryptoService.conversationExists).toHaveBeenCalledTimes(2)
       expect(mockCoreCryptoService.joinMlsConversation).toHaveBeenCalledWith(mockGroupInfoBytes)
       expect(mockCoreCryptoService.establishMlsConversation).toHaveBeenCalledWith([], 'mls-group-2')
       expect(mockAppProperties.setShouldRejoinConversations).toHaveBeenCalledWith(false)
     })
   })
-  
+
   describe('establishOrJoinMlsConversation', () => {
     it('should skip conversation when it already exists', async () => {
       const conversation: ConversationResponse = {
@@ -580,17 +581,17 @@ describe('ConversationService', () => {
           self: {qualified_id: SELF_USER_ID, conversation_role: 'wire_admin'}
         }
       } as ConversationResponse
-  
+
       vi.mocked(mockCoreCryptoService.conversationExists).mockResolvedValue(true)
-  
+
       // Call the private method via the public one
       await (conversationService as any).establishOrJoinMlsConversation(conversation)
-  
+
       expect(mockCoreCryptoService.conversationExists).toHaveBeenCalledWith(MLS_GROUP_ID)
       expect(mockCoreCryptoService.joinMlsConversation).not.toHaveBeenCalled()
       expect(mockCoreCryptoService.establishMlsConversation).not.toHaveBeenCalled()
     })
-  
+
     it('should join conversation when epoch is non-zero', async () => {
       const conversation: ConversationResponse = {
         qualified_id: CONVERSATION_ID,
@@ -603,20 +604,20 @@ describe('ConversationService', () => {
           self: {qualified_id: SELF_USER_ID, conversation_role: 'wire_admin'}
         }
       } as ConversationResponse
-  
+
       const mockGroupInfoBytes = new Uint8Array([1, 2, 3])
-  
+
       vi.mocked(mockCoreCryptoService.conversationExists).mockResolvedValue(false)
       vi.mocked(mockConversationsApiClient.getConversationGroupInfo).mockResolvedValue(mockGroupInfoBytes)
-  
+
       await (conversationService as any).establishOrJoinMlsConversation(conversation)
-  
+
       expect(mockCoreCryptoService.conversationExists).toHaveBeenCalledWith(MLS_GROUP_ID)
       expect(mockConversationsApiClient.getConversationGroupInfo).toHaveBeenCalledWith(CONVERSATION_ID)
       expect(mockCoreCryptoService.joinMlsConversation).toHaveBeenCalledWith(mockGroupInfoBytes)
       expect(mockCoreCryptoService.establishMlsConversation).not.toHaveBeenCalled()
     })
-  
+
     it('should establish SELF conversation when epoch is zero', async () => {
       const conversation: ConversationResponse = {
         qualified_id: CONVERSATION_ID,
@@ -629,17 +630,17 @@ describe('ConversationService', () => {
           self: {qualified_id: SELF_USER_ID, conversation_role: 'wire_admin'}
         }
       } as ConversationResponse
-  
+
       vi.mocked(mockCoreCryptoService.conversationExists).mockResolvedValue(false)
-  
+
       await (conversationService as any).establishOrJoinMlsConversation(conversation)
-  
+
       expect(mockCoreCryptoService.conversationExists).toHaveBeenCalledWith(MLS_GROUP_ID)
       expect(mockCoreCryptoService.establishMlsConversation).toHaveBeenCalledWith([], MLS_GROUP_ID)
       expect(mockConversationsApiClient.getConversationGroupInfo).not.toHaveBeenCalled()
       expect(mockCoreCryptoService.joinMlsConversation).not.toHaveBeenCalled()
     })
-  
+
     it('should establish ONE_TO_ONE conversation with members', async () => {
       const conversation: ConversationResponse = {
         qualified_id: CONVERSATION_ID,
@@ -652,7 +653,7 @@ describe('ConversationService', () => {
           self: {qualified_id: SELF_USER_ID, conversation_role: 'wire_admin'}
         }
       } as ConversationResponse
-  
+
       const mockMembers = [
         {
           user_id: SELF_USER_ID.id,
@@ -671,12 +672,12 @@ describe('ConversationService', () => {
           creation_date: null
         }
       ]
-  
+
       vi.mocked(mockCoreCryptoService.conversationExists).mockResolvedValue(false)
       vi.mocked(mockConversationMemberRepository.getMembersByConversationId).mockReturnValue(mockMembers)
-  
+
       await (conversationService as any).establishOrJoinMlsConversation(conversation)
-  
+
       expect(mockCoreCryptoService.conversationExists).toHaveBeenCalledWith(MLS_GROUP_ID)
       expect(mockConversationMemberRepository.getMembersByConversationId).toHaveBeenCalledWith(
         CONVERSATION_ID.id,
@@ -687,7 +688,7 @@ describe('ConversationService', () => {
         MLS_GROUP_ID
       )
     })
-  
+
     it('should join conversation when epoch is null but not zero', async () => {
       const conversation: ConversationResponse = {
         qualified_id: CONVERSATION_ID,
@@ -700,11 +701,11 @@ describe('ConversationService', () => {
           self: {qualified_id: SELF_USER_ID, conversation_role: 'wire_admin'}
         }
       } as ConversationResponse
-  
+
       vi.mocked(mockCoreCryptoService.conversationExists).mockResolvedValue(false)
-  
+
       await (conversationService as any).establishOrJoinMlsConversation(conversation)
-  
+
       expect(mockCoreCryptoService.conversationExists).toHaveBeenCalledWith(MLS_GROUP_ID)
       expect(mockCoreCryptoService.joinMlsConversation).not.toHaveBeenCalled()
       expect(mockCoreCryptoService.establishMlsConversation).not.toHaveBeenCalled()
@@ -714,13 +715,13 @@ describe('ConversationService', () => {
   describe('establishOrRejoinConversations - batch processing', () => {
     it('should process 2500 conversations in multiple batches', async () => {
       vi.mocked(mockAppProperties.getShouldRejoinConversations).mockReturnValue(true)
-      
+
       // Generate 2500 conversation IDs
       const conversationIds = Array.from({length: 2500}, (_, i) => ({
         id: `conv-${i}`,
         domain: 'wire.com'
       }))
-      
+
       // Mock API to return MLS conversations for all batches
       vi.mocked(mockConversationsApiClient.getAllConversationIds).mockResolvedValue(conversationIds)
       vi.mocked(mockConversationsApiClient.getConversationsById).mockImplementation(async (ids) => {
@@ -736,32 +737,32 @@ describe('ConversationService', () => {
           }
         } as ConversationResponse))
       })
-      
+
       const mockGroupInfoBytes = new Uint8Array([1, 2, 3])
       vi.mocked(mockCoreCryptoService.conversationExists).mockResolvedValue(false)
       vi.mocked(mockConversationsApiClient.getConversationGroupInfo).mockResolvedValue(mockGroupInfoBytes)
-      
+
       await conversationService.establishOrRejoinConversations()
-      
+
       // Should be called 3 times: batches of 1000, 1000, and 500
       expect(mockConversationsApiClient.getConversationsById).toHaveBeenCalledTimes(3)
       expect(mockConversationsApiClient.getConversationsById).toHaveBeenNthCalledWith(1, conversationIds.slice(0, 1000))
       expect(mockConversationsApiClient.getConversationsById).toHaveBeenNthCalledWith(2, conversationIds.slice(1000, 2000))
       expect(mockConversationsApiClient.getConversationsById).toHaveBeenNthCalledWith(3, conversationIds.slice(2000, 2500))
-      
+
       // Should process all 2500 MLS conversations
       expect(mockCoreCryptoService.conversationExists).toHaveBeenCalledTimes(2500)
       expect(mockAppProperties.setShouldRejoinConversations).toHaveBeenCalledWith(false)
     })
-  
+
     it('should process exactly 3000 conversations in 3 equal batches', async () => {
       vi.mocked(mockAppProperties.getShouldRejoinConversations).mockReturnValue(true)
-      
+
       const conversationIds = Array.from({length: 3000}, (_, i) => ({
         id: `conv-${i}`,
         domain: 'wire.com'
       }))
-      
+
       vi.mocked(mockConversationsApiClient.getAllConversationIds).mockResolvedValue(conversationIds)
       vi.mocked(mockConversationsApiClient.getConversationsById).mockImplementation(async (ids) => {
         // Return mix of MLS and non-MLS (50/50 split)
@@ -777,19 +778,67 @@ describe('ConversationService', () => {
           }
         } as ConversationResponse))
       })
-      
+
       vi.mocked(mockCoreCryptoService.conversationExists).mockResolvedValue(false)
-      
+
       await conversationService.establishOrRejoinConversations()
-      
+
       // Should be called 3 times with exactly 1000 conversations each
       expect(mockConversationsApiClient.getConversationsById).toHaveBeenCalledTimes(3)
       expect(mockConversationsApiClient.getConversationsById).toHaveBeenNthCalledWith(1, conversationIds.slice(0, 1000))
       expect(mockConversationsApiClient.getConversationsById).toHaveBeenNthCalledWith(2, conversationIds.slice(1000, 2000))
       expect(mockConversationsApiClient.getConversationsById).toHaveBeenNthCalledWith(3, conversationIds.slice(2000, 3000))
-      
+
       // Should only process 1500 MLS conversations (50% of 3000)
       expect(mockCoreCryptoService.conversationExists).toHaveBeenCalledTimes(1500)
+    })
+  })
+
+  describe('removeMembers', () => {
+    beforeEach(() => {
+      // ensure conversation exists locally
+      vi.mocked(mockConversationRepository.findByIdAndDomain).mockReturnValue({
+        id: CONVERSATION_ID.id,
+        domain: CONVERSATION_ID.domain,
+        name: 'Existing Conversation',
+        team_id: TEAM_ID,
+        mls_group_id: MLS_GROUP_ID,
+        creation_date: null,
+        type: ConversationType.GROUP
+      } as any)
+
+        // ensure deleteMany is available on the mock for tests that expect it
+        (mockConversationMemberRepository as any).deleteMany = vi.fn()
+    })
+
+    it('calls deleteAllConversationDataFromLocalStorages when wire user is in userIds', async () => {
+      const wipeSpy = vi
+        .spyOn(conversationService as any, 'deleteAllConversationDataFromLocalStorages')
+        .mockResolvedValue(undefined)
+
+      await conversationService.removeMembers([SELF_USER_ID], CONVERSATION_ID)
+
+      expect(wipeSpy).toHaveBeenCalledWith(CONVERSATION_ID)
+
+      wipeSpy.mockRestore()
+    })
+
+    it('calls repository.deleteMany and does not call wipe when wire user is not in userIds', async () => {
+      const wipeSpy = vi
+        .spyOn(conversationService as any, 'deleteAllConversationDataFromLocalStorages')
+        .mockResolvedValue(undefined)
+
+      await conversationService.removeMembers([USER_ID], CONVERSATION_ID)
+
+      expect((mockConversationMemberRepository as any).deleteMany).toHaveBeenCalledWith(
+        [USER_ID],
+        CONVERSATION_ID.id,
+        CONVERSATION_ID.domain
+      )
+
+      expect(wipeSpy).not.toHaveBeenCalled()
+
+      wipeSpy.mockRestore()
     })
   })
 
