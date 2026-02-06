@@ -17,7 +17,9 @@
 import {HttpClient} from "../core/HttpClient.js";
 import {Encoder} from "bazinga64";
 import type {MlsKeyPackagesRequest} from "./request/MlsKeyPackagesRequest.js";
-import { singleton } from "tsyringe";
+import {singleton} from "tsyringe";
+import type {MlsPublicKeysResponse} from "./response/MlsPublicKeysResponse.js";
+import type {ClaimedKeyPackageList} from "./response/ClaimedKeyPackageList.js";
 
 @singleton()
 export class MlsApiClient {
@@ -29,16 +31,23 @@ export class MlsApiClient {
   private readonly commitBundlesPath = this.basePath + "/commit-bundles"
   private readonly sendMessagePath = this.basePath + "/messages"
   private readonly uploadMlsKeyPackagesPath = this.basePath + "/key-packages/self/"
+  private readonly claimKeyPackagesPath = this.basePath + "/key-packages/claim"
+  private readonly getPublicKeysPath = this.basePath + "/public-keys"
+  private readonly CIPHERSUITE_QUERY_PARAM = "ciphersuite"
 
   async uploadCommitBundle(commitBundle: Uint8Array): Promise<void> {
     await this.httpClient.postRequest<void>(
-      this.commitBundlesPath, commitBundle, this.HEADER_MLS_CONTENT_TYPE
+      this.commitBundlesPath, commitBundle, {
+        headerContentType: this.HEADER_MLS_CONTENT_TYPE
+      }
     )
   }
 
   async sendMessage(message: Uint8Array): Promise<void> {
     await this.httpClient.postRequest<void>(
-      this.sendMessagePath, message, this.HEADER_MLS_CONTENT_TYPE
+      this.sendMessagePath, message, {
+        headerContentType: this.HEADER_MLS_CONTENT_TYPE
+      }
     )
   }
 
@@ -52,5 +61,21 @@ export class MlsApiClient {
     }
 
     await this.httpClient.postRequest<void>(path, requestPayload)
+  }
+
+  async getPublicKeys(): Promise<MlsPublicKeysResponse> {
+    return await this.httpClient.getRequest<MlsPublicKeysResponse>(this.getPublicKeysPath)
+  }
+
+  async claimKeyPackages(
+    userId: string,
+    userDomain: string,
+    ciphersuite: string
+  ): Promise<ClaimedKeyPackageList> {
+    const path = this.claimKeyPackagesPath + `/${userDomain}/${userId}`
+    return await this.httpClient.postRequest<ClaimedKeyPackageList>(
+      path,
+      { params: { [this.CIPHERSUITE_QUERY_PARAM]: ciphersuite }}
+    )
   }
 }

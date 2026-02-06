@@ -60,6 +60,13 @@ export class DatabaseService {
         FOREIGN KEY(conversation_id, conversation_domain)
           REFERENCES conversation(id, domain)
       );
+
+      -- App table
+      CREATE TABLE IF NOT EXISTS app_properties (
+        key TEXT PRIMARY KEY NOT NULL,
+        value TEXT NOT NULL,
+        creation_date TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+      );
     `)
   }
 

@@ -27,7 +27,8 @@ import type { ConversationResponse } from '../../src/api/response/ConversationRe
 import { TestDatabaseService } from '../helpers/TestDatabaseService.js'
 import { ConversationEntity } from '../../src/db/model/ConversationEntity.js'
 import { ConversationMemberEntity } from '../../src/db/model/ConversationMemberEntity.js'
-import {CoreCryptoService} from "../../src/core/CoreCryptoService.js";
+import {AppProperties} from '../../src/service/AppProperties.js'
+import {CoreCryptoService} from '../../src/core/CoreCryptoService.js'
 
 describe('ConversationService Integration', () => {
   let testDbService: TestDatabaseService
@@ -36,6 +37,7 @@ describe('ConversationService Integration', () => {
   let conversationMemberRepository: ConversationMemberRepository
   let mockUsersApiClient: UsersApiClient
   let mockConversationsApiClient: ConversationsApiClient
+  let mockAppProperties: AppProperties
   let mockCoreCryptoService: CoreCryptoService
 
   beforeAll(() => {
@@ -64,8 +66,15 @@ describe('ConversationService Integration', () => {
       getConversation: vi.fn()
     } as any
 
+    mockAppProperties = {
+      getShouldRejoinConversations: vi.fn(),
+      setShouldRejoinConversations: vi.fn()
+    } as any
+
     mockCoreCryptoService = {
       conversationExists: vi.fn(),
+      joinMlsConversation: vi.fn(),
+      establishMlsConversation: vi.fn(),
       wipeConversation: vi.fn()
     } as any
 
@@ -74,6 +83,7 @@ describe('ConversationService Integration', () => {
       mockConversationsApiClient,
       conversationRepository,
       conversationMemberRepository,
+      mockAppProperties,
       mockCoreCryptoService
     )
 

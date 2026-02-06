@@ -29,6 +29,8 @@ import {ConversationsApiClient} from "./ConversationsApiClient.js";
 import {singleton} from "tsyringe";
 import type {ConversationMemberOtherResponse} from "./model/ConversationMemberOtherResponse.js";
 import {LoggerFactory} from "../utils/logger/LoggerFactory.js";
+import {AppProperties} from "../service/AppProperties.js";
+import {CryptoProtocol} from "../model/CryptoProtocol.js";
 import {CoreCryptoService} from "../core/CoreCryptoService.js";
 
 @singleton()
@@ -40,7 +42,8 @@ export class ConversationService {
     private conversationsApiClient: ConversationsApiClient,
     private conversationRepository: ConversationRepository,
     private conversationMemberRepository: ConversationMemberRepository,
-    private coreCryptoService: CoreCryptoService,
+    private appProperties: AppProperties,
+    private coreCryptoService: CoreCryptoService
   ) {
   }
 
@@ -190,5 +193,67 @@ export class ConversationService {
 
     this.conversationMemberRepository.saveMany(membersToSave)
     this.logger.info(`Added members to conversation. conversationId: ${obfuscateId(conversationId.id)}, members length: ${members.length}`)
+  }
+
+  async establishOrRejoinConversations(): Promise<void> {
+    const shouldRejoinConversations = this.appProperties.getShouldRejoinConversations()
+    if (!shouldRejoinConversations) {
+      this.logger.info("Skipping re-joining conversations as its not needed.")
+      return
+    }
+
+    const allConversationIds = await this.conversationsApiClient.getAllConversationIds()
+
+    let startIndex = 0
+    let endIndex = 1000
+    const sliceSize = 1000
+
+    do {
+      if (endIndex > allConversationIds.length) {
+        endIndex = allConversationIds.length
+      }
+
+      const conversationIdsSlice = allConversationIds.slice(startIndex, endIndex)
+      const conversations = await this.conversationsApiClient.getConversationsById(conversationIdsSlice)
+
+      const mlsConversations = conversations.filter(conversation =>
+        conversation.protocol === CryptoProtocol.MLS
+      )
+  
+      for (const conversation of mlsConversations) {
+        await this.establishOrJoinMlsConversation(conversation)
+      }
+
+      startIndex += sliceSize
+      endIndex += sliceSize
+    } while (endIndex < allConversationIds.length + sliceSize)
+
+    this.appProperties.setShouldRejoinConversations(false)
+  }
+
+  private async establishOrJoinMlsConversation(conversation: ConversationResponse): Promise<void> {
+    if (await this.coreCryptoService.conversationExists(conversation.group_id)) {
+      this.logger.info(`Conversation ${obfuscateId(conversation.qualified_id.id)} already exists, skipping it`)
+      return
+    }
+
+    if (conversation.epoch != null && conversation.epoch !== 0) {
+      const conversationGroupInfoBytes = await this.conversationsApiClient.getConversationGroupInfo(conversation.qualified_id)
+      await this.coreCryptoService.joinMlsConversation(conversationGroupInfoBytes)
+    } else if (conversation.type === ConversationType.SELF) {
+      await this.coreCryptoService.establishMlsConversation([], conversation.group_id)
+    } else if (conversation.type === ConversationType.ONE_TO_ONE) {
+      const users = this.conversationMemberRepository.getMembersByConversationId(
+        conversation.qualified_id.id,
+        conversation.qualified_id.domain
+      ).map(member => {
+        return {
+          id: member.user_id,
+          domain: member.user_domain
+        } as QualifiedId
+      })
+
+      await this.coreCryptoService.establishMlsConversation(users, conversation.group_id)
+    }
   }
 }
