@@ -214,7 +214,6 @@ export class ConversationService {
       }
 
       const conversationIdsSlice = allConversationIds.slice(startIndex, endIndex)
-      
       const conversations = await this.conversationsApiClient.getConversationsById(conversationIdsSlice)
 
       const mlsConversations = conversations.filter(conversation =>
