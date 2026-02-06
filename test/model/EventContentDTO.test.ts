@@ -5,7 +5,7 @@ import {
   isNewConversationEvent,
   isNewMLSMessageEvent,
   isTypingEvent,
-  isMemberJoinEvent,
+  isMemberJoinEvent, isMemberLeaveEvent,
 } from '../../src/model/EventContentDTO.js';
 
 describe('EventContentDTO type guards', () => {
@@ -100,5 +100,26 @@ describe('EventContentDTO type guards', () => {
     expect(isMemberJoinEvent(positive)).toBe(true);
     expect(isMemberJoinEvent(negative)).toBe(false);
     expect(isMemberJoinEvent(missing)).toBe(false);
+  });
+
+  it('isMemberLeaveEvent returns true for conversation.member-leave and false otherwise', () => {
+    const positive = {
+      type: 'conversation.member-leave',
+      time: new Date(),
+      data: {
+        qualified_user_ids: [
+          { id: 'user-1' }
+        ],
+        reason: 'left'
+      },
+      qualified_conversation: {id: '1'},
+      qualified_from: {id: '2'},
+    } as any;
+    const negative = {type: 'conversation.create'} as any;
+    const missing = {} as any;
+
+    expect(isMemberLeaveEvent(positive)).toBe(true);
+    expect(isMemberLeaveEvent(negative)).toBe(false);
+    expect(isMemberLeaveEvent(missing)).toBe(false);
   });
 });
