@@ -31,7 +31,7 @@ import {Decoder} from "bazinga64";
 import {container, inject, singleton} from "tsyringe";
 import {LoggerFactory} from "../utils/logger/LoggerFactory.js";
 import type {QualifiedId} from "../model/QualifiedId.js";
-import {AppService} from "../service/AppService.js";
+import {AppProperties} from "../service/AppProperties.js";
 
 /**
  * Service that handles initialization of CoreCrypto and provides a high-level API for:
@@ -53,7 +53,7 @@ export class CoreCryptoService {
     private clientsService: ClientsService,
     private mlsService: MlsService,
     private mlsTransport: CoreCryptoMlsTransport,
-    private appService: AppService
+    private appProperties: AppProperties
   ) {
   }
 
@@ -110,7 +110,7 @@ export class CoreCryptoService {
     await this.uploadClientWithMlsPublicKey()
     await this.uploadMlsKeyPackages()
 
-    this.appService.setShouldRejoinConversations(true)
+    this.appProperties.setShouldRejoinConversations(true)
   }
 
   private conversationIdFromMlsGroupId(mlsGroupId: string): ConversationId {

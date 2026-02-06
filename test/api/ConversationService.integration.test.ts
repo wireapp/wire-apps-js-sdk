@@ -27,7 +27,7 @@ import type { ConversationResponse } from '../../src/api/response/ConversationRe
 import { TestDatabaseService } from '../helpers/TestDatabaseService.js'
 import { ConversationEntity } from '../../src/db/model/ConversationEntity.js'
 import { ConversationMemberEntity } from '../../src/db/model/ConversationMemberEntity.js'
-import {AppService} from '../../src/service/AppService.js'
+import {AppProperties} from '../../src/service/AppProperties.js'
 import {CoreCryptoService} from '../../src/core/CoreCryptoService.js'
 
 describe('ConversationService Integration', () => {
@@ -37,7 +37,7 @@ describe('ConversationService Integration', () => {
   let conversationMemberRepository: ConversationMemberRepository
   let mockUsersApiClient: UsersApiClient
   let mockConversationsApiClient: ConversationsApiClient
-  let mockAppService: AppService
+  let mockAppProperties: AppProperties
   let mockCoreCryptoService: CoreCryptoService
 
   beforeAll(() => {
@@ -66,7 +66,7 @@ describe('ConversationService Integration', () => {
       getConversation: vi.fn()
     } as any
 
-    mockAppService = {
+    mockAppProperties = {
       getShouldRejoinConversations: vi.fn(),
       setShouldRejoinConversations: vi.fn()
     } as any
@@ -83,7 +83,7 @@ describe('ConversationService Integration', () => {
       mockConversationsApiClient,
       conversationRepository,
       conversationMemberRepository,
-      mockAppService,
+      mockAppProperties,
       mockCoreCryptoService
     )
 

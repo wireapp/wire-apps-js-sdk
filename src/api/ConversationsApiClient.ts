@@ -78,7 +78,7 @@ export class ConversationsApiClient {
 
     if (conversationIds.length === 0) {
       // TODO: Map to WireException
-      throw new Error("List of conversations to fetch is empty")
+      return []
     }
 
     let startIndex = this.FETCH_CONVERSATIONS_START_INDEX

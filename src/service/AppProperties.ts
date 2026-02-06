@@ -15,29 +15,33 @@
 */
 
 import {singleton} from "tsyringe";
-import {AppRepository} from "../db/AppRepository.js";
+import {AppPropertiesRepository} from "../db/AppPropertiesRepository.js";
 
 @singleton()
-export class AppService {
+export class AppProperties {
   private readonly SHOULD_REJOIN_CONVERSATIONS = "should_rejoin_conversations"
 
   constructor(
-    private appRepository: AppRepository
+    private appPropertiesRepository: AppPropertiesRepository
   ) {}
 
-  getShouldRejoinConversations(): boolean | undefined {
-    return this.databaseValueToBoolean(
-      this.appRepository.getByKey(this.SHOULD_REJOIN_CONVERSATIONS)?.value
-    )
+  getShouldRejoinConversations(): boolean {
+    const value = this.appPropertiesRepository.getByKey(this.SHOULD_REJOIN_CONVERSATIONS)?.value
+    const booleanValue = this.databaseValueToBoolean(value)
+    
+    return booleanValue ?? true
   }
 
   setShouldRejoinConversations(should: boolean) {
-    this.appRepository.save(
+    this.appPropertiesRepository.save(
       this.SHOULD_REJOIN_CONVERSATIONS,
       this.booleanToDatabaseValue(should)
     )
   }
 
-  private booleanToDatabaseValue = (value?: boolean): string => value ? '1' : '0'
-  private databaseValueToBoolean = (value?: string): boolean => value === '1'
+  private booleanToDatabaseValue = (value: boolean): string => value ? '1' : '0'
+  private databaseValueToBoolean = (value?: string): boolean | undefined => {
+    if (value === undefined) return undefined
+    return value === '1'
+  }
 }

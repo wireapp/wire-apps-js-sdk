@@ -19,7 +19,7 @@ import {DatabaseService} from "./DatabaseService.js";
 import type {AppEntity} from "./model/AppEntity.js";
 
 @singleton()
-export class AppRepository {
+export class AppPropertiesRepository {
   private selectByKeyStmt
   private insertStmt
 
@@ -27,13 +27,13 @@ export class AppRepository {
     this.selectByKeyStmt =
     this.database.db.prepare<[string], AppEntity>(`
       SELECT *
-      FROM app
+      FROM app_properties
       WHERE key = ?
     `)
 
     this.insertStmt =
     this.database.db.prepare<[string, string], void>(`
-      INSERT INTO app(key, value)
+      INSERT INTO app_properties(key, value)
       VALUES (?, ?)
       ON CONFLICT(key) DO UPDATE SET value=excluded.value;
     `)

@@ -29,7 +29,7 @@ import {ConversationsApiClient} from "./ConversationsApiClient.js";
 import {singleton} from "tsyringe";
 import type {ConversationMemberOtherResponse} from "./model/ConversationMemberOtherResponse.js";
 import {LoggerFactory} from "../utils/logger/LoggerFactory.js";
-import {AppService} from "../service/AppService.js";
+import {AppProperties} from "../service/AppProperties.js";
 import {CryptoProtocol} from "../model/CryptoProtocol.js";
 import {CoreCryptoService} from "../core/CoreCryptoService.js";
 
@@ -42,7 +42,7 @@ export class ConversationService {
     private conversationsApiClient: ConversationsApiClient,
     private conversationRepository: ConversationRepository,
     private conversationMemberRepository: ConversationMemberRepository,
-    private appService: AppService,
+    private appProperties: AppProperties,
     private coreCryptoService: CoreCryptoService
   ) {
   }
@@ -196,8 +196,8 @@ export class ConversationService {
   }
 
   async establishOrRejoinConversations(): Promise<void> {
-    const shouldRejoinConversations = this.appService.getShouldRejoinConversations()
-    if (shouldRejoinConversations != undefined && !shouldRejoinConversations) {
+    const shouldRejoinConversations = this.appProperties.getShouldRejoinConversations()
+    if (!shouldRejoinConversations) {
       this.logger.info("Skipping re-joining conversations as its not needed.")
       return
     }
@@ -213,7 +213,7 @@ export class ConversationService {
       await this.establishOrJoinMlsConversation(conversation)
     }
 
-    this.appService.setShouldRejoinConversations(false)
+    this.appProperties.setShouldRejoinConversations(false)
   }
 
   private async establishOrJoinMlsConversation(conversation: ConversationResponse): Promise<void> {

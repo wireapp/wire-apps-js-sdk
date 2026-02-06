@@ -15,125 +15,125 @@
 */
 
 import {beforeEach, describe, expect, it, vi} from 'vitest'
-import {AppService} from '../../src/service/AppService.js'
-import {AppRepository} from '../../src/db/AppRepository.js'
+import {AppProperties} from '../../src/service/AppProperties.js'
+import {AppPropertiesRepository} from '../../src/db/AppPropertiesRepository.js'
 import {container} from 'tsyringe'
 
-describe('AppService', () => {
-  let appService: AppService
-  let mockAppRepository: AppRepository
+describe('AppProperties', () => {
+  let appProperties: AppProperties
+  let mockAppPropertiesRepository: AppPropertiesRepository
 
   beforeEach(() => {
     container.clearInstances()
 
-    mockAppRepository = {
+    mockAppPropertiesRepository = {
       getByKey: vi.fn(),
       save: vi.fn()
     } as any
 
-    appService = new AppService(mockAppRepository)
+    appProperties = new AppProperties(mockAppPropertiesRepository)
   })
 
   describe('getShouldRejoinConversations', () => {
     it('should return true when value is "1"', () => {
-      vi.mocked(mockAppRepository.getByKey).mockReturnValue({
+      vi.mocked(mockAppPropertiesRepository.getByKey).mockReturnValue({
         key: 'should_rejoin_conversations',
         value: '1'
       })
 
-      const result = appService.getShouldRejoinConversations()
+      const result = appProperties.getShouldRejoinConversations()
 
-      expect(mockAppRepository.getByKey).toHaveBeenCalledWith('should_rejoin_conversations')
+      expect(mockAppPropertiesRepository.getByKey).toHaveBeenCalledWith('should_rejoin_conversations')
       expect(result).toBe(true)
     })
 
     it('should return false when value is "0"', () => {
-      vi.mocked(mockAppRepository.getByKey).mockReturnValue({
+      vi.mocked(mockAppPropertiesRepository.getByKey).mockReturnValue({
         key: 'should_rejoin_conversations',
         value: '0'
       })
 
-      const result = appService.getShouldRejoinConversations()
+      const result = appProperties.getShouldRejoinConversations()
 
-      expect(mockAppRepository.getByKey).toHaveBeenCalledWith('should_rejoin_conversations')
+      expect(mockAppPropertiesRepository.getByKey).toHaveBeenCalledWith('should_rejoin_conversations')
       expect(result).toBe(false)
     })
 
     it('should return false when value is undefined', () => {
-      vi.mocked(mockAppRepository.getByKey).mockReturnValue({
+      vi.mocked(mockAppPropertiesRepository.getByKey).mockReturnValue({
         key: 'should_rejoin_conversations',
         value: undefined
       })
 
-      const result = appService.getShouldRejoinConversations()
+      const result = appProperties.getShouldRejoinConversations()
 
-      expect(mockAppRepository.getByKey).toHaveBeenCalledWith('should_rejoin_conversations')
+      expect(mockAppPropertiesRepository.getByKey).toHaveBeenCalledWith('should_rejoin_conversations')
       expect(result).toBe(false)
     })
 
     it('should return false when key does not exist', () => {
-      vi.mocked(mockAppRepository.getByKey).mockReturnValue(null)
+      vi.mocked(mockAppPropertiesRepository.getByKey).mockReturnValue(null)
 
-      const result = appService.getShouldRejoinConversations()
+      const result = appProperties.getShouldRejoinConversations()
 
-      expect(mockAppRepository.getByKey).toHaveBeenCalledWith('should_rejoin_conversations')
+      expect(mockAppPropertiesRepository.getByKey).toHaveBeenCalledWith('should_rejoin_conversations')
       expect(result).toBe(false)
     })
 
     it('should return false when repository returns undefined', () => {
-      vi.mocked(mockAppRepository.getByKey).mockReturnValue(undefined)
+      vi.mocked(mockAppPropertiesRepository.getByKey).mockReturnValue(undefined)
 
-      const result = appService.getShouldRejoinConversations()
+      const result = appProperties.getShouldRejoinConversations()
 
-      expect(mockAppRepository.getByKey).toHaveBeenCalledWith('should_rejoin_conversations')
+      expect(mockAppPropertiesRepository.getByKey).toHaveBeenCalledWith('should_rejoin_conversations')
       expect(result).toBe(false)
     })
   })
 
   describe('setShouldRejoinConversations', () => {
     it('should save "1" when value is true', () => {
-      appService.setShouldRejoinConversations(true)
+      appProperties.setShouldRejoinConversations(true)
 
-      expect(mockAppRepository.save).toHaveBeenCalledWith('should_rejoin_conversations', '1')
+      expect(mockAppPropertiesRepository.save).toHaveBeenCalledWith('should_rejoin_conversations', '1')
     })
 
     it('should save "0" when value is false', () => {
-      appService.setShouldRejoinConversations(false)
+      appProperties.setShouldRejoinConversations(false)
 
-      expect(mockAppRepository.save).toHaveBeenCalledWith('should_rejoin_conversations', '0')
+      expect(mockAppPropertiesRepository.save).toHaveBeenCalledWith('should_rejoin_conversations', '0')
     })
   })
 
   describe('round-trip behavior', () => {
     it('should correctly round-trip true value', () => {
       // Set to true
-      appService.setShouldRejoinConversations(true)
+      appProperties.setShouldRejoinConversations(true)
       
-      expect(mockAppRepository.save).toHaveBeenCalledWith('should_rejoin_conversations', '1')
+      expect(mockAppPropertiesRepository.save).toHaveBeenCalledWith('should_rejoin_conversations', '1')
 
       // Mock the get to return what was saved
-      vi.mocked(mockAppRepository.getByKey).mockReturnValue({
+      vi.mocked(mockAppPropertiesRepository.getByKey).mockReturnValue({
         key: 'should_rejoin_conversations',
         value: '1'
       })
 
-      const result = appService.getShouldRejoinConversations()
+      const result = appProperties.getShouldRejoinConversations()
       expect(result).toBe(true)
     })
 
     it('should correctly round-trip false value', () => {
       // Set to false
-      appService.setShouldRejoinConversations(false)
+      appProperties.setShouldRejoinConversations(false)
       
-      expect(mockAppRepository.save).toHaveBeenCalledWith('should_rejoin_conversations', '0')
+      expect(mockAppPropertiesRepository.save).toHaveBeenCalledWith('should_rejoin_conversations', '0')
 
       // Mock the get to return what was saved
-      vi.mocked(mockAppRepository.getByKey).mockReturnValue({
+      vi.mocked(mockAppPropertiesRepository.getByKey).mockReturnValue({
         key: 'should_rejoin_conversations',
         value: '0'
       })
 
-      const result = appService.getShouldRejoinConversations()
+      const result = appProperties.getShouldRejoinConversations()
       expect(result).toBe(false)
     })
   })

@@ -62,7 +62,7 @@ export class DatabaseService {
       );
 
       -- App table
-      CREATE TABLE IF NOT EXISTS app (
+      CREATE TABLE IF NOT EXISTS app_properties (
         key TEXT PRIMARY KEY NOT NULL,
         value TEXT NOT NULL,
         creation_date TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
