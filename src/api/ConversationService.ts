@@ -200,7 +200,7 @@ export class ConversationService {
   async removeMembers(userIds: QualifiedId[], conversationId: QualifiedId): Promise<void> {
     this.logger.info(`Removing members from conversation. conversationId: ${obfuscateId(conversationId.id)}, userIds length: ${userIds.length}`)
 
-    if (await this.getConversationById(conversationId) == null) {
+    if (this.conversationRepository.findByIdAndDomain(conversationId.id, conversationId.domain) == null){
       this.logger.info(`Conversation does not exist locally. Skipping MemberLeave event for conversationId: ${obfuscateId(conversationId.id)}`)
       return
     }
