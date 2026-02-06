@@ -77,6 +77,8 @@ describe('ConversationService', () => {
     } as any
 
     conversationService = new ConversationService(
+      USER_ID.id,
+      USER_ID.domain,
       mockUsersApiClient,
       mockConversationsApiClient,
       mockConversationRepository,

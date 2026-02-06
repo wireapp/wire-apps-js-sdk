@@ -19,6 +19,7 @@ import {DatabaseService} from "./DatabaseService.js";
 import {singleton} from "tsyringe";
 import {LoggerFactory} from "../utils/logger/LoggerFactory.js";
 import {obfuscateId} from "../utils/ObfuscateUtil.js";
+import type {QualifiedId} from "../model/QualifiedId.js";
 
 @singleton()
 export class ConversationMemberRepository {
@@ -113,6 +114,15 @@ export class ConversationMemberRepository {
       conversationId,
       conversationDomain
     )
+  }
+
+  deleteMany(userIds: QualifiedId[], conversationId: string, conversationDomain: string) {
+    const deleteMany = this.database.db.transaction((userIds) => {
+      for (const userId of userIds) {
+        this.delete(userId.id, userId.domain, conversationId, conversationDomain)
+      }
+    })
+    deleteMany(userIds)
   }
 
   deleteAllMembersInConversation(conversationId: string, conversationDomain: string) {

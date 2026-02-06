@@ -79,6 +79,8 @@ describe('ConversationService Integration', () => {
     } as any
 
     conversationService = new ConversationService(
+      USER_ID.id,
+      USER_ID.domain,
       mockUsersApiClient,
       mockConversationsApiClient,
       conversationRepository,
@@ -166,6 +168,42 @@ describe('ConversationService Integration', () => {
     })
   })
 
+  describe('removeMembers', () => {
+    beforeEach(async () => {
+      // ensure conversation exists before attempting to remove members
+      await conversationService.saveConversationWithMembers(CONVERSATION_ID, CONVERSATION_RESPONSE)
+    })
+
+    it('calls deleteAllConversationDataFromLocalStorages when APP_CLIENT_ID is in userIds', async () => {
+      process.env["APP_CLIENT_ID"] = USER_ID.id
+
+      const wipeSpy = vi
+        .spyOn(conversationService as any, 'deleteAllConversationDataFromLocalStorages')
+        .mockResolvedValue(undefined)
+
+      await conversationService.removeMembers([USER_ID], CONVERSATION_ID)
+
+      expect(wipeSpy).toHaveBeenCalledWith(CONVERSATION_ID)
+
+      wipeSpy.mockRestore()
+      delete process.env["APP_CLIENT_ID"]
+    })
+
+    it('does not call deleteAllConversationDataFromLocalStorages when APP_CLIENT_ID is not in userIds', async () => {
+      process.env["APP_CLIENT_ID"] = USER_ID.id
+
+      const wipeSpy = vi
+        .spyOn(conversationService as any, 'deleteAllConversationDataFromLocalStorages')
+        .mockResolvedValue(undefined)
+
+      await conversationService.removeMembers([USER_3_ID, USER_4_ID], CONVERSATION_ID)
+
+      expect(wipeSpy).not.toHaveBeenCalled()
+
+      wipeSpy.mockRestore()
+    })
+  })
+
   const TEAM_ID: string = "team-id"
   const SELF_USER_ID: QualifiedId = {
     id: "self-user-id",
@@ -173,6 +211,14 @@ describe('ConversationService Integration', () => {
   }
   const USER_ID: QualifiedId = {
     id: "user-id",
+    domain: "wire.com"
+  }
+  const USER_3_ID: QualifiedId = {
+    id: "user-id-3",
+    domain: "wire.com"
+  }
+  const USER_4_ID: QualifiedId = {
+    id: "user-id-4",
     domain: "wire.com"
   }
   const CONVERSATION_ID: QualifiedId = {
