@@ -67,4 +67,11 @@ export abstract class WireEventsHandler {
     this.logger.info(`Received onUserJoinedConversation, ID: ${obfuscateId(conversationId.id)} - length: ${members.length}`)
   }
 
+  public async onUserLeftConversation(
+    conversationId: QualifiedId,
+    members: QualifiedId[]
+  ): Promise<void> {
+    this.logger.info(`Received onUserLeftConversation, ID: ${obfuscateId(conversationId.id)} - length: ${members.length}`)
+  }
+
 }

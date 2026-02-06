@@ -26,18 +26,21 @@ import type {ConversationMemberEntity} from "../db/model/ConversationMemberEntit
 import {obfuscateId} from "../utils/ObfuscateUtil.js";
 import {UsersApiClient} from "./UsersApiClient.js";
 import {ConversationsApiClient} from "./ConversationsApiClient.js";
-import {singleton} from "tsyringe";
+import {inject, singleton} from "tsyringe";
 import type {ConversationMemberOtherResponse} from "./model/ConversationMemberOtherResponse.js";
 import {LoggerFactory} from "../utils/logger/LoggerFactory.js";
 import {AppProperties} from "../service/AppProperties.js";
 import {CryptoProtocol} from "../model/CryptoProtocol.js";
 import {CoreCryptoService} from "../core/CoreCryptoService.js";
+import {WIRE_USER_DOMAIN, WIRE_USER_ID} from "../utils/DependencyInjectionTokens.js";
 
 @singleton()
 export class ConversationService {
   private logger = LoggerFactory.getLogger(this.constructor.name)
 
   constructor(
+    @inject(WIRE_USER_ID) private wireUserId: string,
+    @inject(WIRE_USER_DOMAIN) private wireUserDomain: string,
     private userApiClient: UsersApiClient,
     private conversationsApiClient: ConversationsApiClient,
     private conversationRepository: ConversationRepository,
@@ -175,8 +178,7 @@ export class ConversationService {
     this.logger.info(`Adding members to conversation. conversationId: ${obfuscateId(conversationId.id)}, members length: ${members.length}`)
 
     if (await this.getConversationById(conversationId) == null) {
-      this.logger.info(`Conversation does not exist locally.
-      Skipping MemberJoin event for conversationId: ${obfuscateId(conversationId.id)}`)
+      this.logger.info(`Conversation does not exist locally. Skipping MemberJoin event for conversationId: ${obfuscateId(conversationId.id)}`)
       return
     }
 
@@ -194,6 +196,28 @@ export class ConversationService {
     this.conversationMemberRepository.saveMany(membersToSave)
     this.logger.info(`Added members to conversation. conversationId: ${obfuscateId(conversationId.id)}, members length: ${members.length}`)
   }
+
+  async removeMembers(userIds: QualifiedId[], conversationId: QualifiedId): Promise<void> {
+    this.logger.info(`Removing members from conversation. conversationId: ${obfuscateId(conversationId.id)}, userIds length: ${userIds.length}`)
+
+    if (this.conversationRepository.findByIdAndDomain(conversationId.id, conversationId.domain) == null){
+      this.logger.info(`Conversation does not exist locally. Skipping MemberLeave event for conversationId: ${obfuscateId(conversationId.id)}`)
+      return
+    }
+
+    if (this.containsAppUser(userIds)) {
+      this.logger.info(`List of members to be removed contains the Wire user. Deleting all conversation data for conversationId: ${obfuscateId(conversationId.id)}`)
+      await this.deleteAllConversationDataFromLocalStorages(conversationId)
+    } else {
+      this.conversationMemberRepository.deleteMany(userIds, conversationId.id, conversationId.domain)
+    }
+    this.logger.info(`Removed members from conversation. conversationId: ${obfuscateId(conversationId.id)}, userIds length: ${userIds.length}`)
+  }
+
+  private containsAppUser(userIds: QualifiedId[]): boolean {
+    return userIds.some(user => user.id === this.wireUserId && user.domain === this.wireUserDomain)
+  }
+
 
   async establishOrRejoinConversations(): Promise<void> {
     const shouldRejoinConversations = this.appProperties.getShouldRejoinConversations()
@@ -219,7 +243,7 @@ export class ConversationService {
       const mlsConversations = conversations.filter(conversation =>
         conversation.protocol === CryptoProtocol.MLS
       )
-  
+
       for (const conversation of mlsConversations) {
         await this.establishOrJoinMlsConversation(conversation)
       }
