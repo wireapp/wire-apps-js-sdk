@@ -185,8 +185,8 @@ export class CoreCryptoService {
     )
   }
 
-  async joinMlsConversationRequest(groupInfoBytes: Uint8Array): Promise<void> {
-    await this.coreCryptoClient?.joinMlsConversationRequest(
+  async joinMlsConversation(groupInfoBytes: Uint8Array): Promise<void> {
+    await this.coreCryptoClient?.joinMlsConversation(
       new GroupInfo(groupInfoBytes)
     )
   }

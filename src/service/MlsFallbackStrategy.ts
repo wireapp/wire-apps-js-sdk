@@ -47,7 +47,7 @@ export class MlsFallbackStrategy {
 
     if (!conversationExists || isEpochBehind) {
       const groupInfoBytes = await this.conversationService.getConversationGroupInfo(conversationId)
-      await this.coreCryptoService.joinMlsConversationRequest(groupInfoBytes)
+      await this.coreCryptoService.joinMlsConversation(groupInfoBytes)
     }
   }
 }

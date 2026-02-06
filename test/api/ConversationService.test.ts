@@ -71,7 +71,7 @@ describe('ConversationService', () => {
 
     mockCoreCryptoService = {
       conversationExists: vi.fn(),
-      joinMlsConversationRequest: vi.fn(),
+      joinMlsConversation: vi.fn(),
       establishMlsConversation: vi.fn(),
       wipeConversation: vi.fn()
     } as any
@@ -559,7 +559,7 @@ describe('ConversationService', () => {
       await conversationService.establishOrRejoinConversations()
   
       expect(mockCoreCryptoService.conversationExists).toHaveBeenCalledTimes(2)
-      expect(mockCoreCryptoService.joinMlsConversationRequest).toHaveBeenCalledWith(mockGroupInfoBytes)
+      expect(mockCoreCryptoService.joinMlsConversation).toHaveBeenCalledWith(mockGroupInfoBytes)
       expect(mockCoreCryptoService.establishMlsConversation).toHaveBeenCalledWith([], 'mls-group-2')
       expect(mockAppProperties.setShouldRejoinConversations).toHaveBeenCalledWith(false)
     })
@@ -585,7 +585,7 @@ describe('ConversationService', () => {
       await (conversationService as any).establishOrJoinMlsConversation(conversation)
   
       expect(mockCoreCryptoService.conversationExists).toHaveBeenCalledWith(MLS_GROUP_ID)
-      expect(mockCoreCryptoService.joinMlsConversationRequest).not.toHaveBeenCalled()
+      expect(mockCoreCryptoService.joinMlsConversation).not.toHaveBeenCalled()
       expect(mockCoreCryptoService.establishMlsConversation).not.toHaveBeenCalled()
     })
   
@@ -611,7 +611,7 @@ describe('ConversationService', () => {
   
       expect(mockCoreCryptoService.conversationExists).toHaveBeenCalledWith(MLS_GROUP_ID)
       expect(mockConversationsApiClient.getConversationGroupInfo).toHaveBeenCalledWith(CONVERSATION_ID)
-      expect(mockCoreCryptoService.joinMlsConversationRequest).toHaveBeenCalledWith(mockGroupInfoBytes)
+      expect(mockCoreCryptoService.joinMlsConversation).toHaveBeenCalledWith(mockGroupInfoBytes)
       expect(mockCoreCryptoService.establishMlsConversation).not.toHaveBeenCalled()
     })
   
@@ -635,7 +635,7 @@ describe('ConversationService', () => {
       expect(mockCoreCryptoService.conversationExists).toHaveBeenCalledWith(MLS_GROUP_ID)
       expect(mockCoreCryptoService.establishMlsConversation).toHaveBeenCalledWith([], MLS_GROUP_ID)
       expect(mockConversationsApiClient.getConversationGroupInfo).not.toHaveBeenCalled()
-      expect(mockCoreCryptoService.joinMlsConversationRequest).not.toHaveBeenCalled()
+      expect(mockCoreCryptoService.joinMlsConversation).not.toHaveBeenCalled()
     })
   
     it('should establish ONE_TO_ONE conversation with members', async () => {
@@ -704,7 +704,7 @@ describe('ConversationService', () => {
       await (conversationService as any).establishOrJoinMlsConversation(conversation)
   
       expect(mockCoreCryptoService.conversationExists).toHaveBeenCalledWith(MLS_GROUP_ID)
-      expect(mockCoreCryptoService.joinMlsConversationRequest).not.toHaveBeenCalled()
+      expect(mockCoreCryptoService.joinMlsConversation).not.toHaveBeenCalled()
       expect(mockCoreCryptoService.establishMlsConversation).not.toHaveBeenCalled()
     })
   })

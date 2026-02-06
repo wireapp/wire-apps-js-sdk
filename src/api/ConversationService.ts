@@ -224,7 +224,7 @@ export class ConversationService {
 
     if (conversation.epoch != null && conversation.epoch !== 0) {
       const conversationGroupInfoBytes = await this.conversationsApiClient.getConversationGroupInfo(conversation.qualified_id)
-      await this.coreCryptoService.joinMlsConversationRequest(conversationGroupInfoBytes)
+      await this.coreCryptoService.joinMlsConversation(conversationGroupInfoBytes)
     } else if (conversation.type === ConversationType.SELF) {
       await this.coreCryptoService.establishMlsConversation([], conversation.group_id)
     } else if (conversation.type === ConversationType.ONE_TO_ONE) {

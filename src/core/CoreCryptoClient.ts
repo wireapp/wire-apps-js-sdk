@@ -256,7 +256,7 @@ export class CoreCryptoClient {
     }
   }
 
-  async joinMlsConversationRequest(groupInfo: GroupInfo): Promise<void> {
+  async joinMlsConversation(groupInfo: GroupInfo): Promise<void> {
     await this.coreCrypto.transaction(async (context) => {
       const mlsCredentialType = await this.getCredentialType(context)
       await context.joinByExternalCommit(

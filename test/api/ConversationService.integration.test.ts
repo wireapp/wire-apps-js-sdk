@@ -73,7 +73,7 @@ describe('ConversationService Integration', () => {
 
     mockCoreCryptoService = {
       conversationExists: vi.fn(),
-      joinMlsConversationRequest: vi.fn(),
+      joinMlsConversation: vi.fn(),
       establishMlsConversation: vi.fn(),
       wipeConversation: vi.fn()
     } as any

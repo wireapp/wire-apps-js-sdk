@@ -32,7 +32,7 @@ describe('MlsFallbackStrategy', () => {
     mockCoreCryptoService = {
       conversationExists: vi.fn(),
       conversationEpoch: vi.fn(),
-      joinMlsConversationRequest: vi.fn()
+      joinMlsConversation: vi.fn()
     } as any
 
     mockConversationService = {
@@ -63,7 +63,7 @@ describe('MlsFallbackStrategy', () => {
       expect(mockCoreCryptoService.conversationExists).toHaveBeenCalledWith(MLS_GROUP_ID)
       expect(mockConversationService.fetchEpoch).toHaveBeenCalledWith(CONVERSATION_ID)
       expect(mockConversationService.getConversationGroupInfo).toHaveBeenCalledWith(CONVERSATION_ID)
-      expect(mockCoreCryptoService.joinMlsConversationRequest).toHaveBeenCalledWith(mockGroupInfoBytes)
+      expect(mockCoreCryptoService.joinMlsConversation).toHaveBeenCalledWith(mockGroupInfoBytes)
     })
 
     it('should join MLS conversation when local epoch is behind remote epoch', async () => {
@@ -81,7 +81,7 @@ describe('MlsFallbackStrategy', () => {
       expect(mockConversationService.fetchEpoch).toHaveBeenCalledWith(CONVERSATION_ID)
       expect(mockCoreCryptoService.conversationEpoch).toHaveBeenCalledWith(MLS_GROUP_ID)
       expect(mockConversationService.getConversationGroupInfo).toHaveBeenCalledWith(CONVERSATION_ID)
-      expect(mockCoreCryptoService.joinMlsConversationRequest).toHaveBeenCalledWith(mockGroupInfoBytes)
+      expect(mockCoreCryptoService.joinMlsConversation).toHaveBeenCalledWith(mockGroupInfoBytes)
     })
 
     it('should NOT join MLS conversation when conversation exists and epoch is in sync', async () => {
@@ -97,7 +97,7 @@ describe('MlsFallbackStrategy', () => {
       expect(mockConversationService.fetchEpoch).toHaveBeenCalledWith(CONVERSATION_ID)
       expect(mockCoreCryptoService.conversationEpoch).toHaveBeenCalledWith(MLS_GROUP_ID)
       expect(mockConversationService.getConversationGroupInfo).not.toHaveBeenCalled()
-      expect(mockCoreCryptoService.joinMlsConversationRequest).not.toHaveBeenCalled()
+      expect(mockCoreCryptoService.joinMlsConversation).not.toHaveBeenCalled()
     })
 
     it('should NOT join MLS conversation when conversation exists and local epoch is ahead of remote epoch', async () => {
@@ -113,7 +113,7 @@ describe('MlsFallbackStrategy', () => {
       expect(mockConversationService.fetchEpoch).toHaveBeenCalledWith(CONVERSATION_ID)
       expect(mockCoreCryptoService.conversationEpoch).toHaveBeenCalledWith(MLS_GROUP_ID)
       expect(mockConversationService.getConversationGroupInfo).not.toHaveBeenCalled()
-      expect(mockCoreCryptoService.joinMlsConversationRequest).not.toHaveBeenCalled()
+      expect(mockCoreCryptoService.joinMlsConversation).not.toHaveBeenCalled()
     })
 
     it('should NOT join MLS conversation when remote epoch is null', async () => {
@@ -128,7 +128,7 @@ describe('MlsFallbackStrategy', () => {
       expect(mockCoreCryptoService.conversationExists).toHaveBeenCalledWith(MLS_GROUP_ID)
       expect(mockConversationService.fetchEpoch).toHaveBeenCalledWith(CONVERSATION_ID)
       expect(mockConversationService.getConversationGroupInfo).not.toHaveBeenCalled()
-      expect(mockCoreCryptoService.joinMlsConversationRequest).not.toHaveBeenCalled()
+      expect(mockCoreCryptoService.joinMlsConversation).not.toHaveBeenCalled()
     })
 
     it('should join MLS conversation when conversation does not exist even if epoch would be in sync', async () => {
@@ -143,7 +143,7 @@ describe('MlsFallbackStrategy', () => {
       await mlsFallbackStrategy.verifyConversationOutOfSync(MLS_GROUP_ID, CONVERSATION_ID)
 
       expect(mockConversationService.getConversationGroupInfo).toHaveBeenCalledWith(CONVERSATION_ID)
-      expect(mockCoreCryptoService.joinMlsConversationRequest).toHaveBeenCalledWith(mockGroupInfoBytes)
+      expect(mockCoreCryptoService.joinMlsConversation).toHaveBeenCalledWith(mockGroupInfoBytes)
     })
 
     it('should join MLS conversation when both conditions are true (does not exist AND epoch behind)', async () => {
@@ -158,7 +158,7 @@ describe('MlsFallbackStrategy', () => {
       await mlsFallbackStrategy.verifyConversationOutOfSync(MLS_GROUP_ID, CONVERSATION_ID)
 
       expect(mockConversationService.getConversationGroupInfo).toHaveBeenCalledWith(CONVERSATION_ID)
-      expect(mockCoreCryptoService.joinMlsConversationRequest).toHaveBeenCalledWith(mockGroupInfoBytes)
+      expect(mockCoreCryptoService.joinMlsConversation).toHaveBeenCalledWith(mockGroupInfoBytes)
     })
   })
 
