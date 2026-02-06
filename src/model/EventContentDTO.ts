@@ -91,6 +91,7 @@ export type EventContentDTO =
   | DeleteConversationDTO
   | TypingDTO
   | MemberJoinDTO
+  | MemberLeaveDTO
 
 // TODO: [Note from Baris] -> I think the following methods should be in the Router.
 //  We don't need to pass "event" object to this class just to check 'type'.

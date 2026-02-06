@@ -116,7 +116,7 @@ export class ConversationMemberRepository {
     )
   }
 
-  deleteMany(userIds: QualifiedId[], conversationId: string, conversationDomain: string) {
+  deleteMany(userIds: QualifiedId[], conversationId: string, conversationDomain: string): void {
     const deleteMany = this.database.db.transaction((userIds) => {
       for (const userId of userIds) {
         this.delete(userId.id, userId.domain, conversationId, conversationDomain)

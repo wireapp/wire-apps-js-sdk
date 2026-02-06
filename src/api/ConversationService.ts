@@ -178,8 +178,7 @@ export class ConversationService {
     this.logger.info(`Adding members to conversation. conversationId: ${obfuscateId(conversationId.id)}, members length: ${members.length}`)
 
     if (await this.getConversationById(conversationId) == null) {
-      this.logger.info(`Conversation does not exist locally.
-      Skipping MemberJoin event for conversationId: ${obfuscateId(conversationId.id)}`)
+      this.logger.info(`Conversation does not exist locally. Skipping MemberJoin event for conversationId: ${obfuscateId(conversationId.id)}`)
       return
     }
 
@@ -202,8 +201,7 @@ export class ConversationService {
     this.logger.info(`Removing members from conversation. conversationId: ${obfuscateId(conversationId.id)}, userIds length: ${userIds.length}`)
 
     if (await this.getConversationById(conversationId) == null) {
-      this.logger.info(`Conversation does not exist locally.
-      Skipping MemberLeave event for conversationId: ${obfuscateId(conversationId.id)}`)
+      this.logger.info(`Conversation does not exist locally. Skipping MemberLeave event for conversationId: ${obfuscateId(conversationId.id)}`)
       return
     }
 
