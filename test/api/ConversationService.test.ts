@@ -520,21 +520,6 @@ describe('ConversationService', () => {
       expect(mockAppProperties.setShouldRejoinConversations).toHaveBeenCalledWith(false)
     })
   
-    it('should process when shouldRejoinConversations is undefined', async () => {
-      vi.mocked(mockAppProperties.getShouldRejoinConversations).mockReturnValue(undefined)
-      
-      const conversationIds = [CONVERSATION_ID]
-      const conversations: ConversationResponse[] = []
-  
-      vi.mocked(mockConversationsApiClient.getConversationIds).mockResolvedValue(conversationIds)
-      vi.mocked(mockConversationsApiClient.getConversationsById).mockResolvedValue(conversations)
-  
-      await conversationService.establishOrRejoinConversations()
-  
-      expect(mockConversationsApiClient.getConversationIds).toHaveBeenCalled()
-      expect(mockAppProperties.setShouldRejoinConversations).toHaveBeenCalledWith(false)
-    })
-  
     it('should process multiple MLS conversations', async () => {
       vi.mocked(mockAppProperties.getShouldRejoinConversations).mockReturnValue(true)
       

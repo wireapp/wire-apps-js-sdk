@@ -77,7 +77,6 @@ export class ConversationsApiClient {
     const conversations: ConversationResponse[] = []
 
     if (conversationIds.length === 0) {
-      // TODO: Map to WireException
       return []
     }
 

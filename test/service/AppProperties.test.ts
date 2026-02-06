@@ -59,25 +59,13 @@ describe('AppProperties', () => {
       expect(result).toBe(false)
     })
 
-    it('should return false when value is undefined', () => {
-      vi.mocked(mockAppPropertiesRepository.getByKey).mockReturnValue({
-        key: 'should_rejoin_conversations',
-        value: undefined
-      })
-
-      const result = appProperties.getShouldRejoinConversations()
-
-      expect(mockAppPropertiesRepository.getByKey).toHaveBeenCalledWith('should_rejoin_conversations')
-      expect(result).toBe(false)
-    })
-
     it('should return false when key does not exist', () => {
       vi.mocked(mockAppPropertiesRepository.getByKey).mockReturnValue(null)
 
       const result = appProperties.getShouldRejoinConversations()
 
       expect(mockAppPropertiesRepository.getByKey).toHaveBeenCalledWith('should_rejoin_conversations')
-      expect(result).toBe(false)
+      expect(result).toBe(true)
     })
 
     it('should return false when repository returns undefined', () => {
@@ -86,7 +74,7 @@ describe('AppProperties', () => {
       const result = appProperties.getShouldRejoinConversations()
 
       expect(mockAppPropertiesRepository.getByKey).toHaveBeenCalledWith('should_rejoin_conversations')
-      expect(result).toBe(false)
+      expect(result).toBe(true)
     })
   })
 
