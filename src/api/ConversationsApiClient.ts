@@ -22,18 +22,18 @@ import type {ConversationIdsPaginationConfig} from "./model/ConversationIdsPagin
 import type {ConversationIdsResponse} from "./response/ConversationIdsResponse.js";
 import type {ConversationIdsRequest} from "./request/ConversationIdsRequest.js";
 import type {ConversationsResponse} from "./response/ConversationsResponse.js";
+import {LoggerFactory} from "../utils/logger/LoggerFactory.js";
 
 @singleton()
 export class ConversationsApiClient {
   constructor(private httpClient: HttpClient) {
   }
 
+  private logger = LoggerFactory.getLogger(this.constructor.name)
+
   private readonly basePath = "conversations";
   private readonly HEADER_MLS_ACCEPT = "message/mls"
   private readonly CONVERSATION_LIST_IDS_PAGING_SIZE = 100
-  private readonly FETCH_CONVERSATIONS_START_INDEX = 0
-  private readonly FETCH_CONVERSATIONS_END_INDEX = 1000
-  private readonly FETCH_CONVERSATIONS_INCREASE_INDEX = 1000
 
   async getConversation(conversationQualifiedId: QualifiedId): Promise<ConversationResponse> {
     return await this.httpClient.getRequest<ConversationResponse>(
@@ -48,7 +48,8 @@ export class ConversationsApiClient {
     )
   }
 
-  async getConversationIds(): Promise<QualifiedId[]> {
+  async getAllConversationIds(): Promise<QualifiedId[]> {
+    this.logger.info(`Getting all Conversation Ids`)
     const conversationIds: QualifiedId[] = []
     let paginationConfig: ConversationIdsPaginationConfig = {
       paging_state: null,
@@ -70,38 +71,28 @@ export class ConversationsApiClient {
       conversationIds.push(...conversationIdsResponse.qualified_conversations)
     } while (hasMorePages)
 
+    this.logger.info(`Returning ${conversationIds.length} conversation Ids`)
+
     return conversationIds
   }
 
   async getConversationsById(conversationIds: QualifiedId[]): Promise<ConversationResponse[]> {
-    const conversations: ConversationResponse[] = []
-
+    this.logger.info(`Getting ${conversationIds.length} conversations by Id`)
     if (conversationIds.length === 0) {
       return []
     }
 
-    let startIndex = this.FETCH_CONVERSATIONS_START_INDEX
-    let endIndex = this.FETCH_CONVERSATIONS_END_INDEX
+    const conversationIdsRequest: ConversationIdsRequest = {
+      qualified_ids: conversationIds
+    }
 
-    do {
-      if (endIndex > conversationIds.length) {
-        endIndex = conversationIds.length
-      }
+    const conversationListResponse = await this.httpClient.postRequest<ConversationsResponse>(
+      `${this.basePath}/list`,
+      conversationIdsRequest
+    )
 
-      const conversationIdsRequest: ConversationIdsRequest = {
-        qualified_ids: conversationIds.slice(startIndex, endIndex)
-      }
+    this.logger.info(`Returning ${conversationListResponse.found.length} found conversations`)
 
-      const conversationListResponse = await this.httpClient.postRequest<ConversationsResponse>(
-        `${this.basePath}/list`,
-        conversationIdsRequest
-      )
-
-      conversations.push(...conversationListResponse.found)
-      startIndex += this.FETCH_CONVERSATIONS_INCREASE_INDEX
-      endIndex += this.FETCH_CONVERSATIONS_INCREASE_INDEX
-    } while (endIndex < conversationIds.length + this.FETCH_CONVERSATIONS_INCREASE_INDEX)
-
-    return conversations
+    return conversationListResponse.found
   }
 }

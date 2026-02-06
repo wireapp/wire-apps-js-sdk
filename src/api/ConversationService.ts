@@ -202,16 +202,32 @@ export class ConversationService {
       return
     }
 
-    const conversationIds = await this.conversationsApiClient.getConversationIds()
-    const conversations = await this.conversationsApiClient.getConversationsById(conversationIds)
+    const allConversationIds = await this.conversationsApiClient.getAllConversationIds()
 
-    const mlsConversations = conversations.filter(conversation =>
-      conversation.protocol === CryptoProtocol.MLS
-    )
+    let startIndex = 0
+    let endIndex = 1000
+    const sliceSize = 1000
 
-    for (const conversation of mlsConversations) {
-      await this.establishOrJoinMlsConversation(conversation)
-    }
+    do {
+      if (endIndex > allConversationIds.length) {
+        endIndex = allConversationIds.length
+      }
+
+      const conversationIdsSlice = allConversationIds.slice(startIndex, endIndex)
+      
+      const conversations = await this.conversationsApiClient.getConversationsById(conversationIdsSlice)
+
+      const mlsConversations = conversations.filter(conversation =>
+        conversation.protocol === CryptoProtocol.MLS
+      )
+  
+      for (const conversation of mlsConversations) {
+        await this.establishOrJoinMlsConversation(conversation)
+      }
+
+      startIndex += sliceSize
+      endIndex += sliceSize
+    } while (endIndex < allConversationIds.length + sliceSize)
 
     this.appProperties.setShouldRejoinConversations(false)
   }
