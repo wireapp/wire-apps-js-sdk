@@ -174,6 +174,32 @@ export class ConversationService {
     this.logger.info("Deleted all conversation data.", "conversationId:", obfuscateId(conversationId.id))
   }
 
+  async updateMember(userId: QualifiedId, conversationId: QualifiedId, newRole: string): Promise<void> {
+    this.logger.info(`Updating member in conversation. conversationId: ${obfuscateId(conversationId.id)},
+    userId: ${obfuscateId(userId.id)}, newRole: ${newRole}`)
+
+    if (await this.getConversationById(conversationId) == null) {
+      this.logger.info(`Conversation does not exist locally. Skipping updating member
+      for conversationId: ${obfuscateId(conversationId.id)}, userId: ${obfuscateId(userId.id)}`)
+      return
+    }
+
+    const memberEntity = this.conversationMemberRepository.getMembersByConversationId(
+      conversationId.id,
+      conversationId.domain
+    ).find(member => member.user_id === userId.id && member.user_domain === userId.domain)
+
+    if (memberEntity) {
+      memberEntity.role = newRole
+      this.conversationMemberRepository.save(memberEntity)
+      this.logger.info(`Updated member in conversation. conversationId: ${obfuscateId(conversationId.id)},
+      userId: ${obfuscateId(userId.id)}, newRole: ${newRole}`)
+    } else {
+      this.logger.info(`Member to update not found in local database. Skipping MemberRoleChange event
+      for conversationId: ${obfuscateId(conversationId.id)}, userId: ${obfuscateId(userId.id)}`)
+    }
+  }
+
   async addMembers(members: ConversationMember[], conversationId: QualifiedId): Promise<void> {
     this.logger.info(`Adding members to conversation. conversationId: ${obfuscateId(conversationId.id)}, members length: ${members.length}`)
 
@@ -200,7 +226,7 @@ export class ConversationService {
   async removeMembers(userIds: QualifiedId[], conversationId: QualifiedId): Promise<void> {
     this.logger.info(`Removing members from conversation. conversationId: ${obfuscateId(conversationId.id)}, userIds length: ${userIds.length}`)
 
-    if (this.conversationRepository.findByIdAndDomain(conversationId.id, conversationId.domain) == null){
+    if (this.conversationRepository.findByIdAndDomain(conversationId.id, conversationId.domain) == null) {
       this.logger.info(`Conversation does not exist locally. Skipping MemberLeave event for conversationId: ${obfuscateId(conversationId.id)}`)
       return
     }
