@@ -183,6 +183,7 @@ export class HttpClient {
       headerContentType?: string;
       headerAccept?: string;
     },
+    additionalHeaders?: Record<string, string>,
     includeApiVersion: boolean = true
   ): Promise<T> {
     await this.verifyAuthorizationToken()
@@ -196,7 +197,8 @@ export class HttpClient {
       method: "GET",
       headers: {
         "Content-Type": headerContentType,
-        "Accept": headerAccept
+        "Accept": headerAccept,
+        ...additionalHeaders
       }
     }
     return (await this.request<T>(path, requestConfig, includeApiVersion)).data
