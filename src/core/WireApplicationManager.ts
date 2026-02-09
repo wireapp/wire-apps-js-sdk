@@ -1,7 +1,7 @@
 /*
 * Wire
 * Copyright (C) 2025 Wire Swiss GmbH
-* 
+*
 * This program is free software: you can redistribute it and/or modify
 * it under the terms of the GNU General Public License as published by
 * the Free Software Foundation, either version 3 of the License, or
@@ -16,18 +16,20 @@
 
 import { MlsService } from "../api/MlsService.js";
 import { ProtobufSerializer } from "../mappers/protobuf/ProtobufSerializer.js";
-import type { WireMessage } from "../model/WireMessage.js";
+import type { RemoteData, WireMessage } from "../model/WireMessage.js";
 import { CoreCryptoService } from "./CoreCryptoService.js";
 import { ConversationService } from "../api/ConversationService.js";
 import { singleton } from "tsyringe";
+import { AssetsTransferService } from "../api/AssetsTransferService.js";
 
 @singleton()
 export class WireApplicationManager {
-  
+
   constructor(
     private coreCryptoService: CoreCryptoService,
     private conversationService: ConversationService,
-    private mlsService: MlsService
+    private mlsService: MlsService,
+    private assetsTransferService: AssetsTransferService
   ) {}
 
   async sendMessage(message: WireMessage): Promise<string> {
@@ -43,5 +45,9 @@ export class WireApplicationManager {
     await this.mlsService.sendMessage(encryptedMessage)
 
     return message.id
+  }
+
+  async downloadAsset(assetRemoteData: RemoteData): Promise<Uint8Array> {
+    return await this.assetsTransferService.downloadAsset(assetRemoteData)
   }
 }
