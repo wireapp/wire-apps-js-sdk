@@ -7,6 +7,7 @@ import {
   isTypingEvent,
   isMemberJoinEvent,
   isMemberLeaveEvent,
+  isMemberUpdateEvent,
 } from '../../src/model/EventContentDTO.js';
 
 describe('EventContentDTO type guards', () => {
@@ -95,7 +96,7 @@ describe('EventContentDTO type guards', () => {
       qualified_conversation: {id: '1'},
       qualified_from: {id: '2'},
     } as any;
-    const negative = {type: 'conversation.create'} as any;
+    const negative = {type: 'conversation.mls-message-add'} as any;
     const missing = {} as any;
 
     expect(isMemberJoinEvent(positive)).toBe(true);
@@ -116,11 +117,30 @@ describe('EventContentDTO type guards', () => {
       qualified_conversation: {id: '1'},
       qualified_from: {id: '2'},
     } as any;
-    const negative = {type: 'conversation.create'} as any;
+    const negative = {type: 'conversation.member-join'} as any;
     const missing = {} as any;
 
     expect(isMemberLeaveEvent(positive)).toBe(true);
     expect(isMemberLeaveEvent(negative)).toBe(false);
     expect(isMemberLeaveEvent(missing)).toBe(false);
+  });
+
+  it('isMemberUpdateEvent returns true for conversation.member-update and false otherwise', () => {
+    const positive = {
+      type: 'conversation.member-update',
+      time: new Date(),
+      data: {
+        qualified_target: {id: 'user-1'},
+        conversation_role: 'admin'
+      },
+      qualified_conversation: {id: '1'},
+      qualified_from: {id: '2'},
+    } as any;
+    const negative = {type: 'conversation.member-leave'} as any;
+    const missing = {} as any;
+
+    expect(isMemberUpdateEvent(positive)).toBe(true);
+    expect(isMemberUpdateEvent(negative)).toBe(false);
+    expect(isMemberUpdateEvent(missing)).toBe(false);
   });
 });
