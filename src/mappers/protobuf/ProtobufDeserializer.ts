@@ -1,7 +1,7 @@
 /*
 * Wire
 * Copyright (C) 2025 Wire Swiss GmbH
-* 
+*
 * This program is free software: you can redistribute it and/or modify
 * it under the terms of the GNU General Public License as published by
 * the Free Software Foundation, either version 3 of the License, or
@@ -17,7 +17,20 @@
 import rootMessage, { type IGenericMessage } from "../../generated/messages.js";
 import type { QualifiedId } from "../../model/QualifiedId.js";
 const { GenericMessage } = rootMessage;
-import { type WireMessage, TextMessage, Unknown } from '../../model/WireMessage.js';
+import {
+  TextMessage,
+  Unknown,
+  AssetMessage
+} from '../../model/WireMessage.js';
+import type {
+  WireMessage,
+  AssetMetadata,
+  Image,
+  Audio,
+  Video,
+  RemoteData
+} from "../../model/WireMessage.js";
+import {MessageEncryptionAlgorithm} from "../../model/protobuf/MessageEncryptionAlgorithm.js";
 
 /**
  * Utility object responsible for mapping a GenericMessage to WireMessage
@@ -31,9 +44,11 @@ export const ProtobufDeserializer = {
     qualifiedConversation: QualifiedId
   ): WireMessage => {
     const genericMessage = GenericMessage.decode(message)
-    
+
     if (genericMessage.text) {
       return unpackTextMessage(genericMessage, qualifiedConversation)
+    } else if (genericMessage.asset) {
+      return unpackAssetMessage(genericMessage, qualifiedConversation)
     } else {
       return new Unknown()
     }
@@ -48,5 +63,44 @@ function unpackTextMessage(
     conversationId: qualifiedConversation,
     text: genericMessage.text!.content
     // TODO: Map other fields
+  })
+}
+
+function unpackAssetMessage(
+  genericMessage: IGenericMessage,
+  qualifiedConversation: QualifiedId
+): AssetMessage {
+  const asset = genericMessage.asset
+  const original = asset?.original
+
+  let metadata: AssetMetadata | null = null
+
+  if (original?.image) {
+    metadata = original.image as Image
+  } else if (original?.audio) {
+    metadata = original.audio as Audio
+  } else if (original?.video) {
+    metadata = original.video as Video
+  }
+
+  let remoteData: RemoteData | null = null
+  if (asset?.uploaded) {
+    remoteData = {
+      otrKey: asset.uploaded.otrKey,
+      sha256: asset.uploaded.sha256,
+      assetId: asset.uploaded.assetId!,
+      assetDomain: asset.uploaded.assetDomain!,
+      assetToken: asset.uploaded.assetToken!,
+      encryptionAlgorithm: asset.uploaded.encryption as unknown as MessageEncryptionAlgorithm
+    }
+  }
+
+  return AssetMessage.create({
+    conversationId: qualifiedConversation,
+    metadata: metadata,
+    mimeType: original?.mimeType ?? "*/*",
+    name: original?.name ?? null,
+    remoteData: remoteData,
+    sizeInBytes: original?.size ?? 0
   })
 }
