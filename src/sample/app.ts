@@ -25,6 +25,7 @@ import {
   obfuscateId,
   type QualifiedId,
   TextMessage,
+  AssetMessage,
   WireAppSdk,
   WireEventsHandler
 } from '../index.js'
@@ -109,6 +110,27 @@ class SampleEventsHandler extends WireEventsHandler {
   }
 
 
+
+  public override async onAssetMessageReceived(wireMessage: AssetMessage): Promise<void> {
+    console.log(`[SampleEventsHandler] Received asset: ${wireMessage.name}`)
+    if (!wireMessage.remoteData) return
+
+    const asset = await this.manager.downloadAsset(wireMessage.remoteData)
+    const filename = wireMessage.name ? wireMessage.name : `unknown-${crypto.randomUUID()}`
+    const dir = 'build/downloaded_assets/'
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir);
+    }
+    const filePath = dir + filename;
+    fs.writeFile(filePath, asset, (err) => {
+        if (err) {
+          console.log("There was an error writing the image")
+        } else {
+          console.log(`Downloaded asset with size: ${asset.length} bytes, saved to: ${filePath}`)
+        }
+      }
+    )
+  }
 }
 
 const sampleEventsHandler = new SampleEventsHandler()
