@@ -110,6 +110,8 @@ export class ConversationService {
     }
   }
 
+  // TODO: Baris: Rename this to getOrFetchConversation to better reflect what it does.
+  //  The name should indicate that it might fetch the conversation if it's not found locally.
   async getConversationById(conversationId: QualifiedId): Promise<ConversationEntity> {
     this.logger.info("Getting Conversation. conversationId:", obfuscateId(conversationId.id))
     const conversationEntity = this.conversationRepository.findByIdAndDomain(conversationId.id, conversationId.domain)
@@ -176,11 +178,11 @@ export class ConversationService {
 
   async updateMember(userId: QualifiedId, conversationId: QualifiedId, newRole: string): Promise<void> {
     this.logger.info(`Updating member in conversation. conversationId: ${obfuscateId(conversationId.id)},
-    userId: ${obfuscateId(userId.id)}, newRole: ${newRole}`)
+      userId: ${obfuscateId(userId.id)}, newRole: ${newRole}`)
 
-    if (await this.getConversationById(conversationId) == null) {
-      this.logger.info(`Conversation does not exist locally. Skipping updating member
-      for conversationId: ${obfuscateId(conversationId.id)}, userId: ${obfuscateId(userId.id)}`)
+    if (this.conversationRepository.findByIdAndDomain(conversationId.id, conversationId.domain) == null) {
+      this.logger.warn(`Conversation does not exist locally. Skipping updating member
+        for conversationId: ${obfuscateId(conversationId.id)}, userId: ${obfuscateId(userId.id)}`)
       return
     }
 
@@ -193,18 +195,20 @@ export class ConversationService {
       memberEntity.role = newRole
       this.conversationMemberRepository.save(memberEntity)
       this.logger.info(`Updated member in conversation. conversationId: ${obfuscateId(conversationId.id)},
-      userId: ${obfuscateId(userId.id)}, newRole: ${newRole}`)
+        userId: ${obfuscateId(userId.id)}, newRole: ${newRole}`)
     } else {
-      this.logger.info(`Member to update not found in local database. Skipping MemberRoleChange event
-      for conversationId: ${obfuscateId(conversationId.id)}, userId: ${obfuscateId(userId.id)}`)
+      this.logger.warn(`Member to update not found in local database. Skipping MemberRoleChange event
+        for conversationId: ${obfuscateId(conversationId.id)}, userId: ${obfuscateId(userId.id)}`)
     }
   }
 
   async addMembers(members: ConversationMember[], conversationId: QualifiedId): Promise<void> {
     this.logger.info(`Adding members to conversation. conversationId: ${obfuscateId(conversationId.id)}, members length: ${members.length}`)
 
-    if (await this.getConversationById(conversationId) == null) {
-      this.logger.info(`Conversation does not exist locally. Skipping MemberJoin event for conversationId: ${obfuscateId(conversationId.id)}`)
+    // TODO: Baris: In such cases we should throw custom exceptions and handle them in the upper layers instead of just logging and skipping the events.
+    //  For example for this scenario, the Router class should not call the callback method if we didn't add the memnbers to the conversation
+    if (this.conversationRepository.findByIdAndDomain(conversationId.id, conversationId.domain) == null) {
+      this.logger.warn(`Conversation does not exist locally. Skipping MemberJoin event for conversationId: ${obfuscateId(conversationId.id)}`)
       return
     }
 
@@ -227,7 +231,7 @@ export class ConversationService {
     this.logger.info(`Removing members from conversation. conversationId: ${obfuscateId(conversationId.id)}, userIds length: ${userIds.length}`)
 
     if (this.conversationRepository.findByIdAndDomain(conversationId.id, conversationId.domain) == null) {
-      this.logger.info(`Conversation does not exist locally. Skipping MemberLeave event for conversationId: ${obfuscateId(conversationId.id)}`)
+      this.logger.warn(`Conversation does not exist locally. Skipping MemberLeave event for conversationId: ${obfuscateId(conversationId.id)}`)
       return
     }
 
