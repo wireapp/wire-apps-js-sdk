@@ -33,6 +33,7 @@ import {AppProperties} from "../service/AppProperties.js";
 import {CryptoProtocol} from "../model/CryptoProtocol.js";
 import {CoreCryptoService} from "../core/CoreCryptoService.js";
 import {WIRE_USER_DOMAIN, WIRE_USER_ID} from "../utils/DependencyInjectionTokens.js";
+import type {ConversationRole} from "../model/conversation/ConversationRole.js";
 
 @singleton()
 export class ConversationService {
@@ -176,7 +177,7 @@ export class ConversationService {
     this.logger.info("Deleted all conversation data.", "conversationId:", obfuscateId(conversationId.id))
   }
 
-  async updateMember(userId: QualifiedId, conversationId: QualifiedId, newRole: string): Promise<void> {
+  async updateMember(userId: QualifiedId, conversationId: QualifiedId, newRole: ConversationRole): Promise<void> {
     this.logger.info(`Updating member in conversation. conversationId: ${obfuscateId(conversationId.id)},
       userId: ${obfuscateId(userId.id)}, newRole: ${newRole}`)
 

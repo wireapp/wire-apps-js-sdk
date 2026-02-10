@@ -28,6 +28,7 @@ import {container} from 'tsyringe'
 import {AppProperties} from '../../src/service/AppProperties.js'
 import {CoreCryptoService} from '../../src/core/CoreCryptoService.js'
 import {CryptoProtocol} from '../../src/model/CryptoProtocol.js'
+import {ConversationRole} from "../../src/model/conversation/ConversationRole.js";
 
 describe('ConversationService', () => {
   let conversationService: ConversationService
@@ -847,7 +848,8 @@ describe('ConversationService', () => {
       vi.mocked(mockConversationRepository.findByIdAndDomain).mockReturnValue(null)
       ;(mockConversationMemberRepository as any).save = vi.fn()
 
-      await conversationService.updateMember(USER_ID, CONVERSATION_ID, 'new-role')
+      const newRole: ConversationRole = ConversationRole.ADMIN
+      await conversationService.updateMember(USER_ID, CONVERSATION_ID, newRole)
 
       expect((mockConversationMemberRepository as any).save).not.toHaveBeenCalled()
     })
@@ -856,14 +858,15 @@ describe('ConversationService', () => {
       vi.mocked(mockConversationRepository.findByIdAndDomain).mockReturnValue({} as any)
       ;(mockConversationMemberRepository as any).save = vi.fn()
 
-      await conversationService.updateMember(USER_ID, CONVERSATION_ID, 'new-role')
+      const newRole: ConversationRole = ConversationRole.ADMIN
+      await conversationService.updateMember(USER_ID, CONVERSATION_ID, newRole)
 
       expect((mockConversationMemberRepository as any).save).toHaveBeenCalledWith({
         user_id: USER_ID.id,
         user_domain: USER_ID.domain,
         conversation_id: CONVERSATION_ID.id,
         conversation_domain: CONVERSATION_ID.domain,
-        role: 'new-role',
+        role: newRole,
         creation_date: null
       })
     })
