@@ -94,7 +94,7 @@ export interface MemberUpdateDTO {
 
 interface MemberRoleChangeData {
   qualified_target: QualifiedId,
-  conversation_role: string
+  conversation_role: ConversationRole
 }
 
 export type EventContentDTO =
