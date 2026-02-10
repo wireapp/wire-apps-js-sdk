@@ -35,6 +35,11 @@ export class ConversationsApiClient {
   private readonly HEADER_MLS_ACCEPT = "message/mls"
   private readonly CONVERSATION_LIST_IDS_PAGING_SIZE = 100
 
+  //TODO: Baris: In all ApiClient classes, we should use "fetch" word instead of "get" to be consistent in terms of naming.
+  // Note: We are following the common naming convention within this projects which is "fetch" for API calls and "get" for local data retrieval.
+  // I will change the method names in all ApiClient classes in a separate PR. The methods in service layer are alredy using "fetch" naming convention.
+  // But within ApiClient class, we missed this naming convention.
+
   async getConversation(conversationQualifiedId: QualifiedId): Promise<ConversationResponse> {
     return await this.httpClient.getRequest<ConversationResponse>(
       `${this.basePath}/${conversationQualifiedId.domain}/${conversationQualifiedId.id}`

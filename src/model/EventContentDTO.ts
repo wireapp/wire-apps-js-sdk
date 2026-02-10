@@ -84,6 +84,19 @@ interface MemberLeaveEventData {
   reason: string
 }
 
+export interface MemberUpdateDTO {
+  type: string
+  time: Date
+  data: MemberRoleChangeData
+  qualified_conversation: QualifiedId
+  qualified_from: QualifiedId
+}
+
+interface MemberRoleChangeData {
+  qualified_target: QualifiedId,
+  conversation_role: ConversationRole
+}
+
 export type EventContentDTO =
   MLSWelcomeDTO
   | NewMLSMessageDTO
@@ -92,6 +105,7 @@ export type EventContentDTO =
   | TypingDTO
   | MemberJoinDTO
   | MemberLeaveDTO
+  | MemberUpdateDTO
 
 // TODO: [Note from Baris] -> I think the following methods should be in the Router.
 //  We don't need to pass "event" object to this class just to check 'type'.
@@ -127,4 +141,8 @@ export function isMemberJoinEvent(event: EventContentDTO): event is MemberJoinDT
 
 export function isMemberLeaveEvent(event: EventContentDTO): event is MemberLeaveDTO {
   return (event as MemberLeaveDTO).type === "conversation.member-leave"
+}
+
+export function isMemberUpdateEvent(event: EventContentDTO): event is MemberUpdateDTO {
+  return (event as MemberUpdateDTO).type === "conversation.member-update"
 }

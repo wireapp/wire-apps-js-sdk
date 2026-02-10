@@ -33,6 +33,7 @@ import {AppProperties} from "../service/AppProperties.js";
 import {CryptoProtocol} from "../model/CryptoProtocol.js";
 import {CoreCryptoService} from "../core/CoreCryptoService.js";
 import {WIRE_USER_DOMAIN, WIRE_USER_ID} from "../utils/DependencyInjectionTokens.js";
+import type {ConversationRole} from "../model/conversation/ConversationRole.js";
 
 @singleton()
 export class ConversationService {
@@ -110,6 +111,8 @@ export class ConversationService {
     }
   }
 
+  // TODO: Baris: Rename this to getOrFetchConversation to better reflect what it does.
+  //  The name should indicate that it might fetch the conversation if it's not found locally.
   async getConversationById(conversationId: QualifiedId): Promise<ConversationEntity> {
     this.logger.info("Getting Conversation. conversationId:", obfuscateId(conversationId.id))
     const conversationEntity = this.conversationRepository.findByIdAndDomain(conversationId.id, conversationId.domain)
@@ -174,11 +177,37 @@ export class ConversationService {
     this.logger.info("Deleted all conversation data.", "conversationId:", obfuscateId(conversationId.id))
   }
 
+  async updateMember(userId: QualifiedId, conversationId: QualifiedId, newRole: ConversationRole): Promise<void> {
+    this.logger.info(`Updating member in conversation. conversationId: ${obfuscateId(conversationId.id)},
+      userId: ${obfuscateId(userId.id)}, newRole: ${newRole}`)
+
+    if (this.conversationRepository.findByIdAndDomain(conversationId.id, conversationId.domain) == null) {
+      this.logger.warn(`Conversation does not exist locally. Skipping updating member
+        for conversationId: ${obfuscateId(conversationId.id)}, userId: ${obfuscateId(userId.id)}`)
+      return
+    }
+
+    const memberEntity: ConversationMemberEntity = {
+      user_id: userId.id,
+      user_domain: userId.domain,
+      conversation_id: conversationId.id,
+      conversation_domain: conversationId.domain,
+      role: newRole,
+      creation_date: null
+    }
+
+    this.conversationMemberRepository.save(memberEntity)
+    this.logger.info(`Updated member in conversation. conversationId: ${obfuscateId(conversationId.id)},
+        userId: ${obfuscateId(userId.id)}, newRole: ${newRole}`)
+  }
+
   async addMembers(members: ConversationMember[], conversationId: QualifiedId): Promise<void> {
     this.logger.info(`Adding members to conversation. conversationId: ${obfuscateId(conversationId.id)}, members length: ${members.length}`)
 
-    if (await this.getConversationById(conversationId) == null) {
-      this.logger.info(`Conversation does not exist locally. Skipping MemberJoin event for conversationId: ${obfuscateId(conversationId.id)}`)
+    // TODO: Baris: In such cases we should throw custom exceptions and handle them in the upper layers instead of just logging and skipping the events.
+    //  For example for this scenario, the Router class should not call the callback method if we didn't add the memnbers to the conversation
+    if (this.conversationRepository.findByIdAndDomain(conversationId.id, conversationId.domain) == null) {
+      this.logger.warn(`Conversation does not exist locally. Skipping MemberJoin event for conversationId: ${obfuscateId(conversationId.id)}`)
       return
     }
 
@@ -200,8 +229,8 @@ export class ConversationService {
   async removeMembers(userIds: QualifiedId[], conversationId: QualifiedId): Promise<void> {
     this.logger.info(`Removing members from conversation. conversationId: ${obfuscateId(conversationId.id)}, userIds length: ${userIds.length}`)
 
-    if (this.conversationRepository.findByIdAndDomain(conversationId.id, conversationId.domain) == null){
-      this.logger.info(`Conversation does not exist locally. Skipping MemberLeave event for conversationId: ${obfuscateId(conversationId.id)}`)
+    if (this.conversationRepository.findByIdAndDomain(conversationId.id, conversationId.domain) == null) {
+      this.logger.warn(`Conversation does not exist locally. Skipping MemberLeave event for conversationId: ${obfuscateId(conversationId.id)}`)
       return
     }
 

@@ -23,11 +23,15 @@ import {
   isNewConversationEvent,
   isDeleteConversationEvent,
   isMemberJoinEvent,
+  isMemberLeaveEvent,
+  isMemberUpdateEvent,
   type EventContentDTO,
   type NewMLSMessageDTO,
   type NewConversationDTO,
   type DeleteConversationDTO,
-  type MemberJoinDTO, isMemberLeaveEvent, type MemberLeaveDTO
+  type MemberJoinDTO,
+  type MemberLeaveDTO,
+  type MemberUpdateDTO
 } from "../model/EventContentDTO.js";
 import {isCoreCryptoMlsException} from "../model/exception/CoreCryptoMlsException.js";
 import {isMlsException} from "../model/exception/MlsException.js";
@@ -122,6 +126,9 @@ export class EventRouter {
       } else if (isMemberLeaveEvent(event)) {
         const memberLeaveEvent = (event as MemberLeaveDTO)
         await this.processMemberLeaveEvent(memberLeaveEvent)
+      } else if (isMemberUpdateEvent(event)) {
+        const memberUpdateDTO = (event as MemberUpdateDTO)
+        await this.processMemberUpdateEvent(memberUpdateDTO)
       } else {
         this.logger.info(`Received an unmapped event: ${(event as EventContentDTO).type}`)
       }
@@ -211,6 +218,12 @@ export class EventRouter {
     await this.conversationService.removeMembers(event.data.qualified_user_ids, event.qualified_conversation)
     await this.wireEventsHandler.onUserLeftConversation(event.qualified_conversation, event.data.qualified_user_ids)
     this.logger.info(`Processed MemberLeave event for conversationId: ${obfuscateId(event.qualified_conversation.id)}`)
+  }
+
+  private async processMemberUpdateEvent(event: MemberUpdateDTO) {
+    this.logger.info(`Processing MemberUpdateDTO event for conversationId: ${obfuscateId(event.qualified_conversation.id)}`)
+    await this.conversationService.updateMember(event.data.qualified_target, event.qualified_conversation, event.data.conversation_role)
+    this.logger.info(`Processed MemberUpdateDTO event for conversationId: ${obfuscateId(event.qualified_conversation.id)}`)
   }
 
 }
