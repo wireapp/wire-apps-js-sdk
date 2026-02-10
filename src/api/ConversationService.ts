@@ -186,20 +186,18 @@ export class ConversationService {
       return
     }
 
-    const memberEntity = this.conversationMemberRepository.getMembersByConversationId(
-      conversationId.id,
-      conversationId.domain
-    ).find(member => member.user_id === userId.id && member.user_domain === userId.domain)
-
-    if (memberEntity) {
-      memberEntity.role = newRole
-      this.conversationMemberRepository.save(memberEntity)
-      this.logger.info(`Updated member in conversation. conversationId: ${obfuscateId(conversationId.id)},
-        userId: ${obfuscateId(userId.id)}, newRole: ${newRole}`)
-    } else {
-      this.logger.warn(`Member to update not found in local database. Skipping MemberRoleChange event
-        for conversationId: ${obfuscateId(conversationId.id)}, userId: ${obfuscateId(userId.id)}`)
+    const memberEntity: ConversationMemberEntity = {
+      user_id: userId.id,
+      user_domain: userId.domain,
+      conversation_id: conversationId.id,
+      conversation_domain: conversationId.domain,
+      role: newRole,
+      creation_date: null
     }
+
+    this.conversationMemberRepository.save(memberEntity)
+    this.logger.info(`Updated member in conversation. conversationId: ${obfuscateId(conversationId.id)},
+        userId: ${obfuscateId(userId.id)}, newRole: ${newRole}`)
   }
 
   async addMembers(members: ConversationMember[], conversationId: QualifiedId): Promise<void> {

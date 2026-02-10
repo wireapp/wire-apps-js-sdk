@@ -471,46 +471,6 @@ describe('ConversationService', () => {
     })
   })
 
-  describe('updateMember', () => {
-    it('skips updating when conversation does not exist locally', async () => {
-      vi.spyOn(conversationService as any, 'getConversationById').mockResolvedValue(null)
-      ;(mockConversationMemberRepository as any).getMembersByConversationId = vi.fn()
-      ;(mockConversationMemberRepository as any).save = vi.fn()
-
-      await conversationService.updateMember(USER_ID, CONVERSATION_ID, 'new-role')
-
-      expect((mockConversationMemberRepository as any).getMembersByConversationId).not.toHaveBeenCalled()
-      expect((mockConversationMemberRepository as any).save).not.toHaveBeenCalled()
-
-      ;(conversationService as any).getConversationById.mockRestore && (conversationService as any).getConversationById.mockRestore()
-    })
-
-    it('updates existing member role when member found', async () => {
-      vi.spyOn(conversationService as any, 'getConversationById').mockResolvedValue({} as any)
-
-      const memberEntity = {
-        user_id: USER_ID.id,
-        user_domain: USER_ID.domain,
-        conversation_id: CONVERSATION_ID.id,
-        conversation_domain: CONVERSATION_ID.domain,
-        role: 'old-role',
-        creation_date: null
-      }
-
-      vi.mocked(mockConversationMemberRepository.getMembersByConversationId).mockReturnValue([memberEntity] as any)
-      ;(mockConversationMemberRepository as any).save = vi.fn()
-
-      await conversationService.updateMember(USER_ID, CONVERSATION_ID, 'new-role')
-
-      expect((mockConversationMemberRepository as any).save).toHaveBeenCalledWith({
-        ...memberEntity,
-        role: 'new-role'
-      })
-
-      ;(conversationService as any).getConversationById.mockRestore && (conversationService as any).getConversationById.mockRestore()
-    })
-  })
-
   describe('establishOrRejoinConversations', () => {
     it('should skip re-joining when shouldRejoinConversations is false', async () => {
       vi.mocked(mockAppProperties.getShouldRejoinConversations).mockReturnValue(false)
@@ -879,6 +839,33 @@ describe('ConversationService', () => {
       expect(wipeSpy).not.toHaveBeenCalled()
 
       wipeSpy.mockRestore()
+    })
+  })
+
+  describe('updateMember', () => {
+    it('skips updating when conversation does not exist locally', async () => {
+      vi.mocked(mockConversationRepository.findByIdAndDomain).mockReturnValue(null)
+      ;(mockConversationMemberRepository as any).save = vi.fn()
+
+      await conversationService.updateMember(USER_ID, CONVERSATION_ID, 'new-role')
+
+      expect((mockConversationMemberRepository as any).save).not.toHaveBeenCalled()
+    })
+
+    it('updates member role when conversation exists', async () => {
+      vi.mocked(mockConversationRepository.findByIdAndDomain).mockReturnValue({} as any)
+      ;(mockConversationMemberRepository as any).save = vi.fn()
+
+      await conversationService.updateMember(USER_ID, CONVERSATION_ID, 'new-role')
+
+      expect((mockConversationMemberRepository as any).save).toHaveBeenCalledWith({
+        user_id: USER_ID.id,
+        user_domain: USER_ID.domain,
+        conversation_id: CONVERSATION_ID.id,
+        conversation_domain: CONVERSATION_ID.domain,
+        role: 'new-role',
+        creation_date: null
+      })
     })
   })
 
