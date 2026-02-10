@@ -19,6 +19,10 @@
 //  It will be more clear to understand the code when we have ConversationMemberRole.MEMBER instead of ConversationRole.MEMBER.
 //  I prefer making this change in a separate PR.
 
+
+// TODO: Baris: At the moment, this class is not used for the verification of the incoming values.
+//  Because TS types are erased at runtime, we need to add a function to verify the incoming values
+//  and convert them to ConversationRole type.
 export enum ConversationRole {
   MEMBER = "wire_member",
   ADMIN = "wire_admin",
