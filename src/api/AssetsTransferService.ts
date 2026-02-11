@@ -19,11 +19,15 @@ import { AssetsApiClient } from "./AssetsApiClient.js";
 import type { RemoteData } from "../model/WireMessage.js";
 import { AESUtils } from "../utils/AESUtils.js";
 import { HashUtils } from "../utils/HashUtils.js";
+import type { AssetUploadData } from "./model/asset/AssetUploadData.js";
+import { AssetRetention } from "./model/asset/AssetRetention.js";
 
 @singleton()
 export class AssetsTransferService {
   constructor(private assetsApiClient: AssetsApiClient) {
   }
+
+  private readonly MAX_DATA_SIZE = 100 * 1024 * 1024
 
   async downloadAsset(assetRemoteData: RemoteData): Promise<Uint8Array> {
     const encryptedAsset: Uint8Array = await this.assetsApiClient.downloadAsset(
@@ -39,5 +43,36 @@ export class AssetsTransferService {
     }
 
     return AESUtils.decryptData(encryptedAsset, assetRemoteData.otrKey)
+  }
+
+  async uploadAsset(
+    asset: Uint8Array,
+    retention?: AssetRetention
+  ): Promise<RemoteData> {
+    if (asset.length > this.MAX_DATA_SIZE) {
+      // TODO: Map to WireException
+      throw new Error("Asset size exceeds the maximum limit of 100MB")
+    }
+
+    const encryptionKey = AESUtils.generateRandomAES256Key()
+    const encryptedFile = AESUtils.encryptData(asset, encryptionKey)
+    const assetUploadData: AssetUploadData = {
+      retention: retention ?? AssetRetention.ETERNAL_INFREQUENT_ACCESS,
+      public: false
+    }
+    const assetSHA256Hash = HashUtils.calculateSha256Hash(encryptedFile)
+
+    const assetUploadResponse = await this.assetsApiClient.uploadAsset(
+      encryptedFile,
+      assetUploadData
+    )
+
+    return {
+      otrKey: encryptionKey,
+      sha256: assetSHA256Hash,
+      assetId: assetUploadResponse.key,
+      assetDomain: assetUploadResponse.domain,
+      assetToken: assetUploadResponse.token,
+    }
   }
 }
