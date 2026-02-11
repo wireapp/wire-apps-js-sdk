@@ -39,10 +39,10 @@ export class AssetsApiClient {
 
     return await this.httpClient.getRequest<Uint8Array>(
       path,
-      undefined,
-      undefined,
+      {
+        includeApiVersion: false
+      },
       headerAssetToken,
-      false
     )
   }
 
@@ -70,9 +70,10 @@ export class AssetsApiClient {
     return await this.httpClient.postRequest(
       this.PATH_PUBLIC_ASSETS_V3,
       concatToBuffer(body, encryptedFile, footer),
-      `multipart/mixed; boundary=${boundary}`,
-      undefined,
-      false
+      {
+        headerContentType: `multipart/mixed; boundary=${boundary}`,
+        includeApiVersion: false
+      },
     )
   }
 }

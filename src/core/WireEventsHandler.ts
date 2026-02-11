@@ -15,7 +15,7 @@
  */
 
 import {WireApplicationManager} from "./WireApplicationManager.js";
-import type {TextMessage} from "../model/WireMessage.js";
+import type {AssetMessage, TextMessage} from "../model/WireMessage.js";
 import type {Conversation} from "../model/conversation/Conversation.js";
 import type {ConversationMember} from "../model/conversation/ConversationMember.js";
 import {obfuscateId} from "../utils/ObfuscateUtil.js";

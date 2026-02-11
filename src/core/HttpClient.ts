@@ -185,15 +185,16 @@ export class HttpClient {
     options?: {
       headerContentType?: string;
       headerAccept?: string;
+      includeApiVersion?: boolean;
     },
     additionalHeaders?: Record<string, string>,
-    includeApiVersion: boolean = true
   ): Promise<T> {
     await this.verifyAuthorizationToken()
 
     const {
       headerContentType = this.HEADER_DEFAULT_CONTENT_TYPE,
-      headerAccept = this.HEADER_DEFAULT_ACCEPT
+      headerAccept = this.HEADER_DEFAULT_ACCEPT,
+      includeApiVersion = true
     } = options ?? {}
 
     const requestConfig = {
@@ -213,15 +214,16 @@ export class HttpClient {
     options?: {
       headerContentType?: string;
       headerAccept?: string;
+      includeApiVersion?: boolean;
       params?: Record<string, string>;
     },
-    includeApiVersion: boolean = true
   ): Promise<T> {
     await this.verifyAuthorizationToken()
 
     const {
       headerContentType = this.HEADER_DEFAULT_CONTENT_TYPE,
       headerAccept = this.HEADER_DEFAULT_ACCEPT,
+      includeApiVersion = true,
       params
     } = options ?? {}
 
