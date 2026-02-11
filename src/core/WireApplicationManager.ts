@@ -73,6 +73,6 @@ export class WireApplicationManager {
       sizeInBytes: asset.length
     })
 
-    await this.sendMessage(assetMessage)
+    return await this.sendMessage(assetMessage)
   }
 }
