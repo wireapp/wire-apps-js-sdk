@@ -1,7 +1,7 @@
 /*
 * Wire
 * Copyright (C) 2025 Wire Swiss GmbH
-* 
+*
 * This program is free software: you can redistribute it and/or modify
 * it under the terms of the GNU General Public License as published by
 * the Free Software Foundation, either version 3 of the License, or
@@ -15,23 +15,25 @@
 */
 
 import type { QualifiedId } from "./QualifiedId.js";
+import { MessageEncryptionAlgorithm } from "./protobuf/MessageEncryptionAlgorithm.js";
+import Long from "long";
 
 type Item = object
-  
+
 interface Ephemeral {
   expiresAfterMillis?: number | null
 }
-  
+
 interface Replyable {
   timestamp: Date
 }
-  
+
 export interface Mention {
   userId: QualifiedId
   offset: number
   length: number
 }
-  
+
 export interface LinkPreview {
   url: string
   urlOffset: number
@@ -58,11 +60,11 @@ export class Unknown implements WireMessageBase {
   get id(): string {
     throw new Error("Unknown message, no ID")
   }
-  
+
   get conversationId(): QualifiedId {
     throw new Error("Unknown message, no conversation")
   }
-  
+
   get sender(): QualifiedId {
     throw new Error("Unknown message, no sender")
   }
@@ -70,7 +72,7 @@ export class Unknown implements WireMessageBase {
   get timestamp(): Date {
     throw new Error("Unknown message, no timestamp")
   }
-    
+
   readonly type = "unknown" as const
 }
 
@@ -111,6 +113,74 @@ export const TextMessage = {
   }
 }
 
+export interface AssetMessage extends WireMessageBase, Ephemeral, Replyable {
+  type: 'asset'
+  sizeInBytes: number | Long
+  name?: string | null
+  mimeType: string
+  metadata?: AssetMetadata | null
+  remoteData?: RemoteData | null
+}
+
+export const AssetMessage = {
+  create(
+    params: {
+      conversationId: QualifiedId
+      sizeInBytes: number | Long
+      name?: string | null
+      mimeType: string
+      metadata?: AssetMetadata | null
+      remoteData?: RemoteData | null
+      expiresAfterMillis?: number
+    }
+  ): AssetMessage {
+    return {
+      type: 'asset',
+      id: crypto.randomUUID(),
+      conversationId: params.conversationId,
+      sender: {
+        id: crypto.randomUUID(),
+        domain: crypto.randomUUID(),
+      },
+      timestamp: new Date(),
+      sizeInBytes: params.sizeInBytes,
+      name: params.name ?? null,
+      mimeType: params.mimeType,
+      metadata: params.metadata ?? null,
+      remoteData: params.remoteData ?? null,
+      expiresAfterMillis: params.expiresAfterMillis ?? null
+    }
+  }
+}
+
+export type AssetMetadata = Image | Video | Audio
+
+export interface Image {
+  width: number
+  height: number
+}
+
+export interface Video {
+  width?: number
+  height?: number
+  durationMs?: number
+}
+
+export interface Audio {
+  durationMs?: number
+  normalizedLoudness?: Uint8Array
+}
+
+export interface RemoteData {
+  otrKey: Uint8Array
+  sha256: Uint8Array
+  assetId: string
+  assetToken?: string
+  assetDomain: string
+  encryptionAlgorithm?: MessageEncryptionAlgorithm | null
+}
+
 export type WireMessage =
   | Unknown
-  | TextMessage;
+  | TextMessage
+  | AssetMessage;
