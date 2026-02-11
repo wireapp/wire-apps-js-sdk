@@ -156,17 +156,20 @@ export const AssetMessage = {
 export type AssetMetadata = Image | Video | Audio
 
 export interface Image {
+  type: 'image'
   width: number
   height: number
 }
 
 export interface Video {
+  type: 'video'
   width?: number
   height?: number
   durationMs?: number
 }
 
 export interface Audio {
+  type: 'audio'
   durationMs?: number
   normalizedLoudness?: Uint8Array
 }
@@ -175,7 +178,7 @@ export interface RemoteData {
   otrKey: Uint8Array
   sha256: Uint8Array
   assetId: string
-  assetToken?: string
+  assetToken?: string | undefined
   assetDomain: string
   encryptionAlgorithm?: MessageEncryptionAlgorithm | null
 }

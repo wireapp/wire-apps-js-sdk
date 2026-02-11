@@ -16,11 +16,14 @@
 
 import { MlsService } from "../api/MlsService.js";
 import { ProtobufSerializer } from "../mappers/protobuf/ProtobufSerializer.js";
-import type { RemoteData, WireMessage } from "../model/WireMessage.js";
+import type { AssetMetadata, RemoteData, WireMessage } from "../model/WireMessage.js";
+import { AssetMessage } from "../model/WireMessage.js"
 import { CoreCryptoService } from "./CoreCryptoService.js";
 import { ConversationService } from "../api/ConversationService.js";
 import { singleton } from "tsyringe";
 import { AssetsTransferService } from "../api/AssetsTransferService.js";
+import type { QualifiedId } from "../model/QualifiedId.js";
+import type { AssetRetention } from "../api/model/asset/AssetRetention.js";
 
 @singleton()
 export class WireApplicationManager {
@@ -49,5 +52,27 @@ export class WireApplicationManager {
 
   async downloadAsset(assetRemoteData: RemoteData): Promise<Uint8Array> {
     return await this.assetsTransferService.downloadAsset(assetRemoteData)
+  }
+
+  async sendAsset(
+    conversationId: QualifiedId,
+    asset: Uint8Array,
+    name: string,
+    mimeType: string,
+    metadata?: AssetMetadata | null,
+    retention?: AssetRetention
+  ){
+    const remoteData = await this.assetsTransferService.uploadAsset(asset, retention)
+
+    const assetMessage = AssetMessage.create({
+      conversationId: conversationId,
+      metadata: metadata ?? null,
+      mimeType: mimeType,
+      name: name,
+      remoteData: remoteData,
+      sizeInBytes: asset.length
+    })
+
+    await this.sendMessage(assetMessage)
   }
 }

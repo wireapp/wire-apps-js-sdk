@@ -1,7 +1,7 @@
 /*
 * Wire
 * Copyright (C) 2025 Wire Swiss GmbH
-* 
+*
 * This program is free software: you can redistribute it and/or modify
 * it under the terms of the GNU General Public License as published by
 * the Free Software Foundation, either version 3 of the License, or
@@ -16,10 +16,12 @@
 
 import rootMessage, {
   type IText,
-  type IGenericMessage
+  type IGenericMessage,
+  type IAsset,
+  type Asset
 } from "../../generated/messages.js";
 const { GenericMessage } = rootMessage;
-import { type WireMessage, TextMessage } from '../../model/WireMessage.js';
+import { type WireMessage, TextMessage, AssetMessage } from '../../model/WireMessage.js';
 
 /**
  * Utility object responsible for serializing WireMessage to GenericMessage
@@ -27,7 +29,7 @@ import { type WireMessage, TextMessage } from '../../model/WireMessage.js';
 export const ProtobufSerializer = {
   /**
    * Converts a WireMessage to a GenericMessage Byte Array
-   * 
+   *
    * @param wireMessage The message to serialize
    * @returns Uint8Array containing the serialized protobuf message
    * @throws Error if the message type is not supported
@@ -42,6 +44,10 @@ export const ProtobufSerializer = {
     switch (wireMessage.type) {
       case 'text':
         builtMessage = packTextMessage(wireMessage, genericMessage);
+        break;
+
+      case 'asset':
+        builtMessage = packAssetMessage(wireMessage, genericMessage);
         break;
 
         // TODO: Add other message types here
@@ -86,4 +92,71 @@ function packTextMessage(
     ...genericMessage,
     text: textContent,
   } as IGenericMessage;
+}
+
+function packAssetMessage(
+  wireMessage: AssetMessage,
+  genericMessage: Partial<IGenericMessage>
+): IGenericMessage {
+  const original: Asset.IOriginal = {
+    mimeType: wireMessage.mimeType,
+    size: wireMessage.sizeInBytes,
+    name: wireMessage.name ?? null
+  };
+
+  if (wireMessage.metadata) {
+    if (wireMessage.metadata.type === 'image') {
+      original.image = {
+        width: wireMessage.metadata.width,
+        height: wireMessage.metadata.height
+      };
+    } else if (wireMessage.metadata.type === 'audio') {
+      original.audio = {};
+      if (wireMessage.metadata.durationMs !== undefined) {
+        original.audio.durationInMillis = wireMessage.metadata.durationMs;
+      }
+      if (wireMessage.metadata.normalizedLoudness !== undefined) {
+        original.audio.normalizedLoudness = wireMessage.metadata.normalizedLoudness;
+      }
+    } else if (wireMessage.metadata.type === 'video') {
+      original.video = {};
+      if (wireMessage.metadata.width !== undefined) {
+        original.video.width = wireMessage.metadata.width;
+      }
+      if (wireMessage.metadata.height !== undefined) {
+        original.video.height = wireMessage.metadata.height;
+      }
+      if (wireMessage.metadata.durationMs !== undefined) {
+        original.video.durationInMillis = wireMessage.metadata.durationMs;
+      }
+    }
+  }
+
+  const uploaded: Asset.IRemoteData = {
+    otrKey: wireMessage.remoteData?.otrKey || new Uint8Array(),
+    sha256: wireMessage.remoteData?.sha256 || new Uint8Array(),
+    assetId: wireMessage.remoteData?.assetId || null,
+    assetToken: wireMessage.remoteData?.assetToken || null,
+    assetDomain: wireMessage.remoteData?.assetDomain || null
+  };
+
+  const asset: IAsset = {
+    original,
+    uploaded
+  };
+
+  if (wireMessage.expiresAfterMillis !== undefined && wireMessage.expiresAfterMillis !== null) {
+    return {
+      ...genericMessage,
+      ephemeral: {
+        expireAfterMillis: wireMessage.expiresAfterMillis,
+        asset
+      }
+    } as IGenericMessage;
+  } else {
+    return {
+      ...genericMessage,
+      asset
+    } as IGenericMessage;
+  }
 }
