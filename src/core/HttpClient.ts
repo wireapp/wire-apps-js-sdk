@@ -214,7 +214,8 @@ export class HttpClient {
       headerContentType?: string;
       headerAccept?: string;
       params?: Record<string, string>;
-    }
+    },
+    includeApiVersion: boolean = true
   ): Promise<T> {
     await this.verifyAuthorizationToken()
 
@@ -235,14 +236,15 @@ export class HttpClient {
       ? (isBinary ? body as BodyInit : JSON.stringify(body))
       : null
 
-    return (await this.request<T>(finalPath, {
+    const requestConfig = {
       method: "POST",
       body: requestBody,
       headers: {
         "Content-Type": headerContentType,
         "Accept": headerAccept
       }
-    })).data
+    }
+    return (await this.request<T>(finalPath, requestConfig, includeApiVersion)).data
   }
 
   async putRequest<T>(
