@@ -16,12 +16,17 @@
 
 import { HttpClient } from "../core/HttpClient.js";
 import { singleton } from "tsyringe";
+import type { AssetUploadData } from "./model/asset/AssetUploadData.js";
+import type { AssetUploadResponse } from "./model/asset/AssetUploadResponse.js";
+import { randomUUID } from "crypto";
+import { concatToBuffer } from "../utils/BufferUtils.js";
 
 @singleton()
 export class AssetsApiClient {
   constructor(private httpClient: HttpClient) {
   }
 
+  private readonly PATH_PUBLIC_ASSETS_V3 = "assets/v3";
   private readonly PATH_PUBLIC_ASSETS_V4 = "assets/v4";
 
   async downloadAsset(
@@ -37,6 +42,36 @@ export class AssetsApiClient {
       undefined,
       undefined,
       headerAssetToken,
+      false
+    )
+  }
+
+  async uploadAsset(
+    encryptedFile: Uint8Array,
+    assetUploadData: AssetUploadData
+  ): Promise<AssetUploadResponse> {
+    const boundary = `Frontier${randomUUID()}`
+
+    const metadata = JSON.stringify(assetUploadData)
+
+    const body =
+      `--${boundary}\r\n` +
+      'Content-Type: application/json;charset=utf-8\r\n' +
+      `Content-length: ${metadata.length}\r\n` +
+      '\r\n' +
+      `${metadata}\r\n` +
+      `--${boundary}\r\n` +
+      'Content-Type: application/octet-stream\r\n' +
+      `Content-length: ${encryptedFile.length}\r\n` +
+      '\r\n';
+
+    const footer = `\r\n--${boundary}--\r\n`;
+
+    return await this.httpClient.postRequest(
+      this.PATH_PUBLIC_ASSETS_V3,
+      concatToBuffer(body, encryptedFile, footer),
+      `multipart/mixed; boundary=${boundary}`,
+      undefined,
       false
     )
   }
