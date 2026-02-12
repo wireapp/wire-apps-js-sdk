@@ -61,7 +61,7 @@ export class WireApplicationManager {
     mimeType: string,
     metadata?: AssetMetadata | null,
     retention?: AssetRetention
-  ){
+  ): Promise<string> {
     const remoteData = await this.assetsTransferService.uploadAsset(asset, retention)
 
     const assetMessage = AssetMessage.create({
