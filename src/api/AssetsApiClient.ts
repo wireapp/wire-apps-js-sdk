@@ -32,7 +32,7 @@ export class AssetsApiClient {
   async downloadAsset(
     assetId: string,
     assetDomain: string,
-    assetToken?: string
+    assetToken?: string | null
   ): Promise<Uint8Array> {
     const path = `${this.PATH_PUBLIC_ASSETS_V4}/${assetDomain}/${assetId}`
     const headerAssetToken: Record<string, string> = assetToken ? {"Asset-Token": assetToken} : {}

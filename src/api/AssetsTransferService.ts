@@ -72,7 +72,7 @@ export class AssetsTransferService {
       sha256: assetSHA256Hash,
       assetId: assetUploadResponse.key,
       assetDomain: assetUploadResponse.domain,
-      assetToken: assetUploadResponse.token,
+      assetToken: assetUploadResponse.token ?? null,
     }
   }
 }

@@ -178,7 +178,7 @@ export interface RemoteData {
   otrKey: Uint8Array
   sha256: Uint8Array
   assetId: string
-  assetToken?: string | undefined
+  assetToken?: string | null
   assetDomain: string
   encryptionAlgorithm?: MessageEncryptionAlgorithm | null
 }
