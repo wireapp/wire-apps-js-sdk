@@ -18,18 +18,10 @@ import crypto from 'crypto';
 
 export const HashUtils = {
   calculateSha256Hash(data: Uint8Array) {
-    return Uint8Array.from(crypto.createHash('sha256').update(data).digest())
+    return crypto.createHash('sha256').update(data).digest()
   },
 
-  isHashEqual(arrayA: Uint8Array, arrayB: Uint8Array) {
-    if (arrayA.length !== arrayB.length) return false
-
-    const ua = new Uint8Array(arrayA)
-    const ub = new Uint8Array(arrayB)
-
-    for (let index = 0; index < ua.length; index++) {
-      if (ua[index] !== ub[index]) return false
-    }
-    return true
+  isHashEqual(arrayA: Uint8Array, arrayB: Buffer) {
+    return crypto.timingSafeEqual(arrayA, arrayB)
   }
 }
