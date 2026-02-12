@@ -24,7 +24,7 @@ export const AESUtils = {
     const iv = encryptedData.slice(0, IV_SIZE)
     const decipher = crypto.createDecipheriv(algorithm, key, iv)
 
-    return Buffer.concat([decipher.update(encryptedData), decipher.final()]).subarray(IV_SIZE)
+    return Buffer.concat([decipher.update(encryptedData.subarray(IV_SIZE)), decipher.final()])
   },
 
   generateRandomAES256Key(): Uint8Array {
@@ -35,7 +35,6 @@ export const AESUtils = {
     const iv = crypto.randomBytes(IV_SIZE);
     const cipher = crypto.createCipheriv(algorithm, Buffer.from(key), iv);
 
-    const encrypted = Buffer.concat([cipher.update(data), cipher.final()]);
-    return Buffer.concat([iv, encrypted]);
+    return Buffer.concat([cipher.update(Buffer.concat([iv, data])), cipher.final()]);
   }
 }
