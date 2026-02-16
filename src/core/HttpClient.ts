@@ -166,9 +166,6 @@ export class HttpClient {
     if (contentType?.includes("application/json")) {
       const data = await response.json() as T
       return { data, response };
-    } else if (contentType?.includes("application/octet-stream")) {
-      const data = new Uint8Array(await response.arrayBuffer()) as unknown as T
-      return { data, response }
     }
 
     if (contentType?.includes("message/mls") || contentType?.includes("octet-stream")) {
