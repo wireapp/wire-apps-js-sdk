@@ -15,7 +15,7 @@
 */
 
 import "reflect-metadata";
-import 'fake-indexeddb/auto';
+// import 'fake-indexeddb/auto';
 import {CoreCryptoService} from "./core/CoreCryptoService.js";
 import {
   WIRE_API_HOST,
@@ -35,6 +35,7 @@ import type {Logger} from "./utils/logger/Logger.js";
 import {LoggerFactory} from "./utils/logger/LoggerFactory.js";
 import {ConsoleLogger} from "./utils/logger/ConsoleLogger.js";
 import {ConversationService} from "./api/ConversationService.js";
+import {setupIndexedDatabase} from "./setup-indexeddb.js";
 
 export class WireAppSdk {
   private userEmail: string
@@ -102,6 +103,7 @@ export class WireAppSdk {
   }
 
   private async init() {
+    setupIndexedDatabase()
     this.configureDependencies()
     await this.initCryptoClient()
   }
