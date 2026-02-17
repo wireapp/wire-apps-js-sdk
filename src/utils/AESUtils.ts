@@ -15,20 +15,24 @@
 */
 
 import crypto from 'crypto';
+import assert from 'node:assert';
 
-const algorithm = 'aes-256-cbc'
-const IV_SIZE = 16;
+const KEY_SIZE = 256
+const KEY_SIZE_BYTES = KEY_SIZE / 8
+const algorithm = `aes-${KEY_SIZE}-cbc`
+const BLOCK_SIZE = 128;
+const IV_SIZE_BYTES = BLOCK_SIZE / 8;
 
 export const AESUtils = {
   decryptData(encryptedData: Uint8Array, key: Uint8Array) {
-    const iv = encryptedData.slice(0, IV_SIZE)
+    const iv = encryptedData.slice(0, IV_SIZE_BYTES)
     const decipher = crypto.createDecipheriv(algorithm, key, iv)
 
-    return Buffer.concat([decipher.update(encryptedData.subarray(IV_SIZE)), decipher.final()])
+    return Buffer.concat([decipher.update(encryptedData.subarray(IV_SIZE_BYTES)), decipher.final()])
   },
 
   generateRandomAES256Key(): Uint8Array {
-    return crypto.randomBytes(32)
+    return crypto.randomBytes(KEY_SIZE_BYTES)
   },
 
   encryptData(data: Uint8Array, key: Uint8Array) {
