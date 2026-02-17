@@ -25,6 +25,7 @@ const IV_SIZE_BYTES = BLOCK_SIZE / 8;
 
 export const AESUtils = {
   decryptData(encryptedData: Uint8Array, key: Uint8Array) {
+    validateKey(key)
     const iv = encryptedData.slice(0, IV_SIZE_BYTES)
     const decipher = crypto.createDecipheriv(algorithm, key, iv)
 
@@ -36,9 +37,17 @@ export const AESUtils = {
   },
 
   encryptData(data: Uint8Array, key: Uint8Array) {
-    const iv = crypto.randomBytes(IV_SIZE);
+    validateKey(key)
+    const iv = crypto.randomBytes(IV_SIZE_BYTES);
     const cipher = crypto.createCipheriv(algorithm, Buffer.from(key), iv);
 
     return Buffer.concat([cipher.update(Buffer.concat([iv, data])), cipher.final()]);
   }
+}
+
+function validateKey(key: Uint8Array): void {
+  assert(
+    key.length === KEY_SIZE_BYTES,
+    `Invalid key length: expected ${KEY_SIZE_BYTES} bytes, got ${key.length}`
+  );
 }
