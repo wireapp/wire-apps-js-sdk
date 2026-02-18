@@ -16,7 +16,7 @@
 
 import { MlsService } from "../api/MlsService.js";
 import { ProtobufSerializer } from "../mappers/protobuf/ProtobufSerializer.js";
-import type { AssetMetadata, RemoteData, WireMessage } from "../model/WireMessage.js";
+import type { AssetMetadata, AssetRemoteData, WireMessage } from "../model/WireMessage.js";
 import { AssetMessage } from "../model/WireMessage.js"
 import { CoreCryptoService } from "./CoreCryptoService.js";
 import { ConversationService } from "../api/ConversationService.js";
@@ -50,7 +50,7 @@ export class WireApplicationManager {
     return message.id
   }
 
-  async downloadAsset(assetRemoteData: RemoteData): Promise<Uint8Array> {
+  async downloadAsset(assetRemoteData: AssetRemoteData): Promise<Uint8Array> {
     return await this.assetsTransferService.downloadAsset(assetRemoteData)
   }
 

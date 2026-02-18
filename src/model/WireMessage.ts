@@ -119,7 +119,7 @@ export interface AssetMessage extends WireMessageBase, Ephemeral, Replyable {
   name?: string | null
   mimeType: string
   metadata?: AssetMetadata | null
-  remoteData?: RemoteData | null
+  remoteData?: AssetRemoteData | null
 }
 
 export const AssetMessage = {
@@ -130,7 +130,7 @@ export const AssetMessage = {
       name?: string | null
       mimeType: string
       metadata?: AssetMetadata | null
-      remoteData?: RemoteData | null
+      remoteData?: AssetRemoteData | null
       expiresAfterMillis?: number
     }
   ): AssetMessage {
@@ -174,7 +174,7 @@ export interface Audio {
   normalizedLoudness?: Uint8Array
 }
 
-export interface RemoteData {
+export interface AssetRemoteData {
   otrKey: Uint8Array
   sha256: Uint8Array
   assetId: string

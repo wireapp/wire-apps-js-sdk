@@ -16,7 +16,7 @@
 
 import { singleton } from "tsyringe";
 import { AssetsApiClient } from "./AssetsApiClient.js";
-import type { RemoteData } from "../model/WireMessage.js";
+import type { AssetRemoteData } from "../model/WireMessage.js";
 import { AESUtils } from "../utils/AESUtils.js";
 import { HashUtils } from "../utils/HashUtils.js";
 import type { AssetUploadData } from "./model/asset/AssetUploadData.js";
@@ -29,7 +29,7 @@ export class AssetsTransferService {
 
   private readonly MAX_DATA_SIZE = 100 * 1024 * 1024
 
-  async downloadAsset(assetRemoteData: RemoteData): Promise<Uint8Array> {
+  async downloadAsset(assetRemoteData: AssetRemoteData): Promise<Uint8Array> {
     const encryptedAsset: Uint8Array = await this.assetsApiClient.downloadAsset(
       assetRemoteData.assetId,
       assetRemoteData.assetDomain,
@@ -48,7 +48,7 @@ export class AssetsTransferService {
   async uploadAsset(
     asset: Uint8Array,
     retention?: AssetRetention
-  ): Promise<RemoteData> {
+  ): Promise<AssetRemoteData> {
     if (asset.length > this.MAX_DATA_SIZE) {
       // TODO: Map to WireException
       throw new Error("Asset size exceeds the maximum limit of 100MB")

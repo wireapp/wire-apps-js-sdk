@@ -28,7 +28,7 @@ import type {
   Image,
   Audio,
   Video,
-  RemoteData
+  AssetRemoteData
 } from "../../model/WireMessage.js";
 import {MessageEncryptionAlgorithm} from "../../model/protobuf/MessageEncryptionAlgorithm.js";
 
@@ -83,7 +83,7 @@ function unpackAssetMessage(
     metadata = original.video as Video
   }
 
-  let remoteData: RemoteData | null = null
+  let remoteData: AssetRemoteData | null = null
   if (asset?.uploaded) {
     remoteData = {
       otrKey: asset.uploaded.otrKey,
