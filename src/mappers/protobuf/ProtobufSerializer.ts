@@ -112,21 +112,21 @@ function packAssetMessage(
       };
     } else if (wireMessage.metadata.type === 'audio') {
       original.audio = {};
-      if (wireMessage.metadata.durationMs !== undefined) {
+      if (wireMessage.metadata.durationMs) {
         original.audio.durationInMillis = wireMessage.metadata.durationMs;
       }
-      if (wireMessage.metadata.normalizedLoudness !== undefined) {
+      if (wireMessage.metadata.normalizedLoudness) {
         original.audio.normalizedLoudness = wireMessage.metadata.normalizedLoudness;
       }
     } else if (wireMessage.metadata.type === 'video') {
       original.video = {};
-      if (wireMessage.metadata.width !== undefined) {
+      if (wireMessage.metadata.width) {
         original.video.width = wireMessage.metadata.width;
       }
-      if (wireMessage.metadata.height !== undefined) {
+      if (wireMessage.metadata.height) {
         original.video.height = wireMessage.metadata.height;
       }
-      if (wireMessage.metadata.durationMs !== undefined) {
+      if (wireMessage.metadata.durationMs) {
         original.video.durationInMillis = wireMessage.metadata.durationMs;
       }
     }
