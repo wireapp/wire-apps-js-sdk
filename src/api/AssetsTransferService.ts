@@ -21,6 +21,7 @@ import { AESUtils } from "../utils/AESUtils.js";
 import { HashUtils } from "../utils/HashUtils.js";
 import type { AssetUploadData } from "./model/asset/AssetUploadData.js";
 import { AssetRetention } from "./model/asset/AssetRetention.js";
+import { obfuscateId } from "../utils/ObfuscateUtil.js";
 
 @singleton()
 export class AssetsTransferService {
