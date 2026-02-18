@@ -14,12 +14,12 @@
 * along with this program. If not, see http://www.gnu.org/licenses/.
 */
 
-import {describe, expect, it} from 'vitest'
+import {describe, expect, test} from 'vitest'
 import { AESUtils } from "../../src/utils/AESUtils.js";
 import fs from "fs";
 
 describe("AES utils", () => {
-  it("given file, when encrypted and decrypted, then not changed", () => {
+  test("given file, when encrypted and decrypted, then not changed", () => {
     const filename = 'banana-icon.png'
     const path = `./test/fixtures/${filename}`
     fs.readFile(path, (err, data) => {
@@ -35,20 +35,20 @@ describe("AES utils", () => {
     })
   })
 
-  it("given key generator, when called twice, then outputs are unique", () => {
+  test("given key generator, when called twice, then outputs are unique", () => {
     const key1 = AESUtils.generateRandomAES256Key()
     const key2 = AESUtils.generateRandomAES256Key()
 
     expect(key1).not.toBe(key2)
   })
 
-  it("given key generator, when invoked, then returned key size is 32 bytes", () => {
+  test("given key generator, when invoked, then returned key size is 32 bytes", () => {
     const cryptoKeyInfo = AESUtils.generateRandomAES256Key()
 
     expect(cryptoKeyInfo.keyMaterial.length).toBe(32)
   })
 
-  it("given invalid key length, when encrypting or decrypting, then exception is thrown", () => {
+  test("given invalid key length, when encrypting or decrypting, then exception is thrown", () => {
     const invalidKey = new Uint8Array(16)
     const data = new Uint8Array()
 
