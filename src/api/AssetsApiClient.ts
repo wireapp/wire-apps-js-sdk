@@ -40,9 +40,9 @@ export class AssetsApiClient {
     return await this.httpClient.getRequest<Uint8Array>(
       path,
       {
-        includeApiVersion: false
-      },
-      headerAssetToken,
+        includeApiVersion: false,
+        additionalHeaders: headerAssetToken
+      }
     )
   }
 

@@ -183,15 +183,16 @@ export class HttpClient {
       headerContentType?: string;
       headerAccept?: string;
       includeApiVersion?: boolean;
-    },
-    additionalHeaders?: Record<string, string>,
+      additionalHeaders?: Record<string, string>
+    }
   ): Promise<T> {
     await this.verifyAuthorizationToken()
 
     const {
       headerContentType = this.HEADER_DEFAULT_CONTENT_TYPE,
       headerAccept = this.HEADER_DEFAULT_ACCEPT,
-      includeApiVersion = true
+      includeApiVersion = true,
+      additionalHeaders = {}
     } = options ?? {}
 
     const requestConfig = {
