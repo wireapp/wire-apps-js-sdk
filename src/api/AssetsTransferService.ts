@@ -20,8 +20,9 @@ import type { AssetRemoteData } from "../model/WireMessage.js";
 import { AESUtils } from "../utils/AESUtils.js";
 import { HashUtils } from "../utils/HashUtils.js";
 import type { AssetUploadData } from "./model/asset/AssetUploadData.js";
-import { AssetRetention } from "./model/asset/AssetRetention.js";
 import { obfuscateId } from "../utils/ObfuscateUtil.js";
+import type { AssetUploadResponse } from "./model/asset/AssetUploadResponse.js";
+import { ETERNAL_INFREQUENT_ACCESS } from "./model/asset/AssetRetention.js";
 
 @singleton()
 export class AssetsTransferService {
@@ -46,34 +47,43 @@ export class AssetsTransferService {
     return AESUtils.decryptData(encryptedAsset, assetRemoteData.otrKey)
   }
 
-  async uploadAsset(
-    asset: Uint8Array,
-    retention?: AssetRetention
+  async uploadAssetForSending(
+    asset: Uint8Array
   ): Promise<AssetRemoteData> {
+    const cryptoKeyInfo = AESUtils.generateRandomAES256Key()
+    const encryptedAsset = AESUtils.encryptData(asset, cryptoKeyInfo.keyMaterial)
+    const assetUploadData = {
+      retention: ETERNAL_INFREQUENT_ACCESS,
+      public: false
+    }
+
+    const assetUploadResponse = await this.uploadAsset(
+      encryptedAsset,
+      assetUploadData
+    )
+
+    return {
+      otrKey: cryptoKeyInfo.keyMaterial,
+      encryptionAlgorithm: cryptoKeyInfo.algorithm,
+      sha256: HashUtils.calculateSha256Hash(encryptedAsset),
+      assetId: assetUploadResponse.key,
+      assetToken: assetUploadResponse.token ?? null,
+      assetDomain: assetUploadResponse.domain
+    }
+  }
+
+  private async uploadAsset(
+    asset: Uint8Array,
+    assetUploadData: AssetUploadData
+  ): Promise<AssetUploadResponse> {
     if (asset.length > this.MAX_DATA_SIZE) {
       // TODO: Map to WireException
       throw new Error("Asset size exceeds the maximum limit of 100MB")
     }
 
-    const encryptionKey = AESUtils.generateRandomAES256Key()
-    const encryptedFile = AESUtils.encryptData(asset, encryptionKey)
-    const assetUploadData: AssetUploadData = {
-      retention: retention ?? AssetRetention.ETERNAL_INFREQUENT_ACCESS,
-      public: false
-    }
-    const assetSHA256Hash = HashUtils.calculateSha256Hash(encryptedFile)
-
-    const assetUploadResponse = await this.assetsApiClient.uploadAsset(
-      encryptedFile,
+    return await this.assetsApiClient.uploadAsset(
+      asset,
       assetUploadData
     )
-
-    return {
-      otrKey: encryptionKey,
-      sha256: assetSHA256Hash,
-      assetId: assetUploadResponse.key,
-      assetDomain: assetUploadResponse.domain,
-      assetToken: assetUploadResponse.token ?? null,
-    }
   }
 }

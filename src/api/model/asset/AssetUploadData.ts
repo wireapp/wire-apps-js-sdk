@@ -14,9 +14,7 @@
  * along with this program. If not, see http://www.gnu.org/licenses/.
  */
 
-import type { AssetRetention } from "./AssetRetention.js";
-
 export interface AssetUploadData {
-  retention?: AssetRetention;
+  retention?: string;
   public?: boolean;
 }

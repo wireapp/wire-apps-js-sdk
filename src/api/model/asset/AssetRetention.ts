@@ -14,9 +14,8 @@
  * along with this program. If not, see http://www.gnu.org/licenses/.
  */
 
-export const enum AssetRetention {
-  ETERNAL = "eternal",
-  VOLATILE = "volatile",
-  ETERNAL_INFREQUENT_ACCESS = "eternal-infrequent_access",
-  EXPIRING = "expiring"
-}
+/**
+ * The asset is retained indefinitely, storage is optimized
+ * for infrequent access after 30 days of creation.
+ */
+export const ETERNAL_INFREQUENT_ACCESS = "eternal-infrequent_access"
