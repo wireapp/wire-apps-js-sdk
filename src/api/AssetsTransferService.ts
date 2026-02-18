@@ -39,7 +39,7 @@ export class AssetsTransferService {
     const calculatedSha256 = HashUtils.calculateSha256Hash(encryptedAsset)
     if (!HashUtils.isHashEqual(assetRemoteData.sha256, calculatedSha256)) {
       // TODO: Map to WireException
-      throw new Error(`The sha256 doesn't match for asset with ID ${assetRemoteData.assetId}`)
+      throw new Error(`The sha256 doesn't match for asset with ID ${obfuscateId(assetRemoteData.assetId)}`)
     }
 
     return AESUtils.decryptData(encryptedAsset, assetRemoteData.otrKey)
