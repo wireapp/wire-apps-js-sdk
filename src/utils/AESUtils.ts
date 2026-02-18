@@ -16,12 +16,18 @@
 
 import crypto from 'crypto';
 import assert from 'node:assert';
+import {MessageEncryptionAlgorithm} from "../model/protobuf/MessageEncryptionAlgorithm.js";
 
 const KEY_SIZE = 256
 const KEY_SIZE_BYTES = KEY_SIZE / 8
 const algorithm = `aes-${KEY_SIZE}-cbc`
 const BLOCK_SIZE = 128;
 const IV_SIZE_BYTES = BLOCK_SIZE / 8;
+
+export interface CryptoKeyInfo {
+  keyMaterial: Uint8Array,
+  algorithm: MessageEncryptionAlgorithm
+}
 
 export const AESUtils = {
   decryptData(encryptedData: Uint8Array, key: Uint8Array) {
@@ -32,8 +38,11 @@ export const AESUtils = {
     return Buffer.concat([decipher.update(encryptedData.subarray(IV_SIZE_BYTES)), decipher.final()])
   },
 
-  generateRandomAES256Key(): Uint8Array {
-    return crypto.randomBytes(KEY_SIZE_BYTES)
+  generateRandomAES256Key(): CryptoKeyInfo {
+    return {
+      keyMaterial: crypto.randomBytes(KEY_SIZE_BYTES),
+      algorithm: MessageEncryptionAlgorithm.AES_CBC
+    }
   },
 
   encryptData(data: Uint8Array, key: Uint8Array) {

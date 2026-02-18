@@ -27,7 +27,7 @@ describe("AES utils", () => {
         throw err;
       }
 
-      const key = AESUtils.generateRandomAES256Key()
+      const key = AESUtils.generateRandomAES256Key().keyMaterial
       const encryptedFile = AESUtils.encryptData(data, key)
       const decryptedFile = AESUtils.decryptData(encryptedFile, key)
 
@@ -43,9 +43,9 @@ describe("AES utils", () => {
   })
 
   it("given key generator, when invoked, then returned key size is 32 bytes", () => {
-    const key = AESUtils.generateRandomAES256Key()
+    const cryptoKeyInfo = AESUtils.generateRandomAES256Key()
 
-    expect(key.length).toBe(32)
+    expect(cryptoKeyInfo.keyMaterial.length).toBe(32)
   })
 
   it("given invalid key length, when encrypting or decrypting, then exception is thrown", () => {
