@@ -23,6 +23,7 @@ import { ConversationService } from "../api/ConversationService.js";
 import { singleton } from "tsyringe";
 import { AssetsTransferService } from "../api/AssetsTransferService.js";
 import type { QualifiedId } from "../model/QualifiedId.js";
+import type {AssetData} from "../model/AssetData.js";
 
 @singleton()
 export class WireApplicationManager {
@@ -55,7 +56,7 @@ export class WireApplicationManager {
 
   async sendAsset(
     conversationId: QualifiedId,
-    asset: Uint8Array,
+    asset: AssetData,
     name: string,
     mimeType: string,
     metadata?: AssetMetadata | null

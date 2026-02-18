@@ -23,6 +23,7 @@ import type { AssetUploadData } from "./model/asset/AssetUploadData.js";
 import { obfuscateId } from "../utils/ObfuscateUtil.js";
 import type { AssetUploadResponse } from "./model/asset/AssetUploadResponse.js";
 import { ETERNAL_INFREQUENT_ACCESS } from "./model/asset/AssetRetention.js";
+import type {AssetData} from "../model/AssetData.js";
 
 @singleton()
 export class AssetsTransferService {
@@ -48,7 +49,7 @@ export class AssetsTransferService {
   }
 
   async uploadAssetForSending(
-    asset: Uint8Array
+    asset: AssetData
   ): Promise<AssetRemoteData> {
     const cryptoKeyInfo = AESUtils.generateRandomAES256Key()
     const encryptedAsset = AESUtils.encryptData(asset, cryptoKeyInfo.keyMaterial)
@@ -73,12 +74,12 @@ export class AssetsTransferService {
   }
 
   private async uploadAsset(
-    asset: Uint8Array,
+    asset: AssetData,
     assetUploadData: AssetUploadData
   ): Promise<AssetUploadResponse> {
     if (asset.length > this.MAX_DATA_SIZE) {
       // TODO: Map to WireException
-      throw new Error("Asset size exceeds the maximum limit of 100MB")
+      throw new Error("AssetData size exceeds the maximum limit of 100MB")
     }
 
     return await this.assetsApiClient.uploadAsset(

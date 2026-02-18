@@ -20,6 +20,7 @@ import type { AssetUploadData } from "./model/asset/AssetUploadData.js";
 import type { AssetUploadResponse } from "./model/asset/AssetUploadResponse.js";
 import { randomUUID } from "crypto";
 import { concatToBuffer } from "../utils/BufferUtils.js";
+import type { AssetData } from "../model/AssetData.js";
 
 @singleton()
 export class AssetsApiClient {
@@ -33,7 +34,7 @@ export class AssetsApiClient {
     assetId: string,
     assetDomain: string,
     assetToken?: string | null
-  ): Promise<Uint8Array> {
+  ): Promise<AssetData> {
     const path = `${this.PATH_PUBLIC_ASSETS_V4}/${assetDomain}/${assetId}`
     const headerAssetToken: Record<string, string> = assetToken ? {"Asset-Token": assetToken} : {}
 
@@ -47,7 +48,7 @@ export class AssetsApiClient {
   }
 
   async uploadAsset(
-    encryptedFile: Uint8Array,
+    asset: AssetData,
     assetUploadData: AssetUploadData
   ): Promise<AssetUploadResponse> {
     const boundary = `Frontier${randomUUID()}`
@@ -62,14 +63,14 @@ export class AssetsApiClient {
       `${metadata}\r\n` +
       `--${boundary}\r\n` +
       'Content-Type: application/octet-stream\r\n' +
-      `Content-length: ${encryptedFile.length}\r\n` +
+      `Content-length: ${asset.length}\r\n` +
       '\r\n';
 
     const footer = `\r\n--${boundary}--\r\n`;
 
     return await this.httpClient.postRequest(
       this.PATH_PUBLIC_ASSETS_V3,
-      concatToBuffer(body, encryptedFile, footer),
+      concatToBuffer(body, asset, footer),
       {
         headerContentType: `multipart/mixed; boundary=${boundary}`,
         includeApiVersion: false
