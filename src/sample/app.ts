@@ -156,10 +156,12 @@ class SampleEventsHandler extends WireEventsHandler {
 
       this.manager.sendAsset(
         wireMessage.conversationId,
-        data,
-        filename,
-        "image/png",
-        metadata
+        {
+          data: data,
+          name: filename,
+          mimeType: "image/png",
+          metadata: metadata
+        }
       )
     });
   }
@@ -176,10 +178,12 @@ class SampleEventsHandler extends WireEventsHandler {
 
       this.manager.sendAsset(
         wireMessage.conversationId,
-        data,
-        filename,
-        "audio/mp3",
-        metadata
+        {
+          data: data,
+          name: filename,
+          mimeType: "audio/mp3",
+          metadata: metadata
+        }
       )
     });
   }
@@ -214,10 +218,12 @@ class SampleEventsHandler extends WireEventsHandler {
 
       this.manager.sendAsset(
         wireMessage.conversationId,
-        data,
-        filename,
-        "video/mp4",
-        metadata
+        {
+          data: data,
+          name: filename,
+          mimeType: "video/mp4",
+          metadata: metadata
+        }
       )
     });
   }

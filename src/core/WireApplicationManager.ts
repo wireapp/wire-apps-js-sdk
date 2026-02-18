@@ -16,14 +16,14 @@
 
 import { MlsService } from "../api/MlsService.js";
 import { ProtobufSerializer } from "../mappers/protobuf/ProtobufSerializer.js";
-import type { AssetMetadata, AssetRemoteData, WireMessage } from "../model/WireMessage.js";
+import type { AssetRemoteData, WireMessage } from "../model/WireMessage.js";
 import { AssetMessage } from "../model/WireMessage.js"
 import { CoreCryptoService } from "./CoreCryptoService.js";
 import { ConversationService } from "../api/ConversationService.js";
 import { singleton } from "tsyringe";
 import { AssetsTransferService } from "../api/AssetsTransferService.js";
 import type { QualifiedId } from "../model/QualifiedId.js";
-import type {AssetData} from "../model/AssetData.js";
+import type { Asset } from "../model/AssetData.js";
 
 @singleton()
 export class WireApplicationManager {
@@ -56,20 +56,17 @@ export class WireApplicationManager {
 
   async sendAsset(
     conversationId: QualifiedId,
-    asset: AssetData,
-    name: string,
-    mimeType: string,
-    metadata?: AssetMetadata | null
+    asset: Asset
   ): Promise<string> {
-    const remoteData = await this.assetsTransferService.uploadAssetForSending(asset)
+    const remoteData = await this.assetsTransferService.uploadAssetForSending(asset.data)
 
     const assetMessage = AssetMessage.create({
       conversationId: conversationId,
-      metadata: metadata ?? null,
-      mimeType: mimeType,
-      name: name,
+      metadata: asset.metadata ?? null,
+      mimeType: asset.mimeType,
+      name: asset.name,
       remoteData: remoteData,
-      sizeInBytes: asset.length
+      sizeInBytes: asset.data.length
     })
 
     return await this.sendMessage(assetMessage)

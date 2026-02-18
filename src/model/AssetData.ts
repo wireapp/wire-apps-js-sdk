@@ -14,4 +14,13 @@
 * along with this program. If not, see http://www.gnu.org/licenses/.
 */
 
+import type {AssetMetadata} from "./WireMessage.js";
+
 export type AssetData = Uint8Array
+
+export interface Asset {
+  data: AssetData,
+  name: string,
+  mimeType: string,
+  metadata?: AssetMetadata | null
+}
