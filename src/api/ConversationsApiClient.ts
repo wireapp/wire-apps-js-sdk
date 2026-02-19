@@ -100,4 +100,8 @@ export class ConversationsApiClient {
 
     return conversationListResponse.found
   }
+
+  async leaveConversation(conversationQualifiedId: QualifiedId): Promise<void> {
+    this.logger.debug(`Request to leave the conversation with id: ${conversationQualifiedId.id} and domain: ${conversationQualifiedId.domain}`)
+  }
 }
