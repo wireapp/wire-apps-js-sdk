@@ -17,16 +17,20 @@
 import {HttpClient} from "../core/HttpClient.js";
 import type {ConversationResponse} from "./response/ConversationResponse.js";
 import type {QualifiedId} from "../model/QualifiedId.js";
-import {singleton} from "tsyringe";
+import {inject, singleton} from "tsyringe";
 import type {ConversationIdsPaginationConfig} from "./model/ConversationIdsPaginationConfig.js";
 import type {ConversationIdsResponse} from "./response/ConversationIdsResponse.js";
 import type {ConversationIdsRequest} from "./request/ConversationIdsRequest.js";
 import type {ConversationsResponse} from "./response/ConversationsResponse.js";
 import {LoggerFactory} from "../utils/logger/LoggerFactory.js";
+import {WIRE_USER_DOMAIN, WIRE_USER_ID} from "../utils/DependencyInjectionTokens.js";
 
 @singleton()
 export class ConversationsApiClient {
-  constructor(private httpClient: HttpClient) {
+  constructor(
+    @inject(WIRE_USER_ID) private wireUserId: string,
+    @inject(WIRE_USER_DOMAIN) private wireUserDomain: string,
+    private httpClient: HttpClient) {
   }
 
   private logger = LoggerFactory.getLogger(this.constructor.name)
@@ -103,5 +107,10 @@ export class ConversationsApiClient {
 
   async leaveConversation(conversationQualifiedId: QualifiedId): Promise<void> {
     this.logger.debug(`Request to leave the conversation with id: ${conversationQualifiedId.id} and domain: ${conversationQualifiedId.domain}`)
+
+    const path = `${this.basePath}/${conversationQualifiedId.domain}/${conversationQualifiedId.id}/members/${this.wireUserDomain}/${this.wireUserId}`
+    await this.httpClient.deleteRequest(path)
+
+    this.logger.info(`Left the conversation with id: ${conversationQualifiedId.id}`)
   }
 }
