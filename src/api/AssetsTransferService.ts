@@ -22,7 +22,7 @@ import { HashUtils } from "../utils/HashUtils.js";
 import type { AssetUploadData } from "./model/asset/AssetUploadData.js";
 import { obfuscateId } from "../utils/ObfuscateUtil.js";
 import type { AssetUploadResponse } from "./model/asset/AssetUploadResponse.js";
-import type {AssetData} from "../model/AssetData.js";
+import type {AssetData} from "../model/Asset.js";
 
 @singleton()
 export class AssetsTransferService {

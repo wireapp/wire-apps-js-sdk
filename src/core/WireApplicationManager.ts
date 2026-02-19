@@ -23,7 +23,7 @@ import { ConversationService } from "../api/ConversationService.js";
 import { singleton } from "tsyringe";
 import { AssetsTransferService } from "../api/AssetsTransferService.js";
 import type { QualifiedId } from "../model/QualifiedId.js";
-import type { Asset } from "../model/AssetData.js";
+import type { Asset } from "../model/Asset.js";
 
 @singleton()
 export class WireApplicationManager {

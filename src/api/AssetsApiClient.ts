@@ -20,7 +20,7 @@ import type { AssetUploadData } from "./model/asset/AssetUploadData.js";
 import type { AssetUploadResponse } from "./model/asset/AssetUploadResponse.js";
 import { randomUUID } from "crypto";
 import { concatToBuffer } from "../utils/BufferUtils.js";
-import type { AssetData } from "../model/AssetData.js";
+import type { AssetData } from "../model/Asset.js";
 
 @singleton()
 export class AssetsApiClient {

@@ -16,11 +16,11 @@
 
 import type {AssetMetadata} from "./WireMessage.js";
 
-export type AssetData = Uint8Array
-
 export interface Asset {
   data: AssetData,
   name: string,
   mimeType: string,
   metadata?: AssetMetadata | null
 }
+
+export type AssetData = Uint8Array
