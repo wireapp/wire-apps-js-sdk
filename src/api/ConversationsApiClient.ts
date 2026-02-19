@@ -17,20 +17,17 @@
 import {HttpClient} from "../core/HttpClient.js";
 import type {ConversationResponse} from "./response/ConversationResponse.js";
 import type {QualifiedId} from "../model/QualifiedId.js";
-import {inject, singleton} from "tsyringe";
+import {singleton} from "tsyringe";
 import type {ConversationIdsPaginationConfig} from "./model/ConversationIdsPaginationConfig.js";
 import type {ConversationIdsResponse} from "./response/ConversationIdsResponse.js";
 import type {ConversationIdsRequest} from "./request/ConversationIdsRequest.js";
 import type {ConversationsResponse} from "./response/ConversationsResponse.js";
 import {LoggerFactory} from "../utils/logger/LoggerFactory.js";
-import {WIRE_USER_DOMAIN, WIRE_USER_ID} from "../utils/DependencyInjectionTokens.js";
 import {obfuscateId} from "../utils/ObfuscateUtil.js";
 
 @singleton()
 export class ConversationsApiClient {
   constructor(
-    @inject(WIRE_USER_ID) private wireUserId: string,
-    @inject(WIRE_USER_DOMAIN) private wireUserDomain: string,
     private httpClient: HttpClient) {
   }
 
@@ -106,10 +103,10 @@ export class ConversationsApiClient {
     return conversationListResponse.found
   }
 
-  async leaveConversation(conversationQualifiedId: QualifiedId): Promise<void> {
+  async leaveConversation(conversationQualifiedId: QualifiedId, userDomain: string, userId: string): Promise<void> {
     this.logger.debug(`Leaving the conversation. conversationId: ${obfuscateId(conversationQualifiedId.id)}`)
 
-    const path = `${this.basePath}/${conversationQualifiedId.domain}/${conversationQualifiedId.id}/members/${this.wireUserDomain}/${this.wireUserId}`
+    const path = `${this.basePath}/${conversationQualifiedId.domain}/${conversationQualifiedId.id}/members/${userDomain}/${userId}`
     await this.httpClient.deleteRequest(path)
 
     this.logger.info(`Left the conversation. conversationId: ${obfuscateId(conversationQualifiedId.id)}`)

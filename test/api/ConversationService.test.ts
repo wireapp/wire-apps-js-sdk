@@ -948,7 +948,7 @@ describe('ConversationService', () => {
 
       await conversationService.leaveConversation(CONVERSATION_ID)
 
-      expect(mockConversationsApiClient.leaveConversation).toHaveBeenCalledWith(CONVERSATION_ID)
+      expect(mockConversationsApiClient.leaveConversation).toHaveBeenCalledWith(CONVERSATION_ID, SELF_USER_ID.domain, SELF_USER_ID.id)
       expect(wipeSpy).toHaveBeenCalledWith(CONVERSATION_ID)
 
       wipeSpy.mockRestore()
@@ -981,7 +981,7 @@ describe('ConversationService', () => {
 
       await expect(conversationService.leaveConversation(CONVERSATION_ID)).rejects.toThrow('leave failed')
 
-      expect(mockConversationsApiClient.leaveConversation).toHaveBeenCalledWith(CONVERSATION_ID)
+      expect(mockConversationsApiClient.leaveConversation).toHaveBeenCalledWith(CONVERSATION_ID, SELF_USER_ID.domain, SELF_USER_ID.id)
       expect(wipeSpy).not.toHaveBeenCalled()
 
       wipeSpy.mockRestore()
