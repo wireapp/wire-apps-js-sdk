@@ -28,7 +28,7 @@ import {
   AssetMessage,
   WireAppSdk,
   WireEventsHandler
-} from 'wire-app-js-sdk' // This will be imported from the SDK when used outside of this repository
+} from 'wire-app-js-sdk'
 import fs from 'fs'
 import type { Audio, Image, Video } from "../model/WireMessage.js"
 
