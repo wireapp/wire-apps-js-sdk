@@ -22,7 +22,6 @@ import { HashUtils } from "../utils/HashUtils.js";
 import type { AssetUploadData } from "./model/asset/AssetUploadData.js";
 import { obfuscateId } from "../utils/ObfuscateUtil.js";
 import type { AssetUploadResponse } from "./model/asset/AssetUploadResponse.js";
-import { ETERNAL_INFREQUENT_ACCESS } from "./model/asset/AssetRetention.js";
 import type {AssetData} from "../model/AssetData.js";
 
 @singleton()
@@ -88,3 +87,10 @@ export class AssetsTransferService {
     )
   }
 }
+
+/**
+ * The asset is retained indefinitely, storage is optimized
+ * for infrequent access after 30 days of creation.
+ */
+const ETERNAL_INFREQUENT_ACCESS = "eternal-infrequent_access"
+

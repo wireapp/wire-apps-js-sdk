@@ -21,7 +21,6 @@ import {AssetsTransferService} from "../../src/api/AssetsTransferService.js";
 import type {AssetRemoteData} from "../../src/model/WireMessage.js";
 import {HashUtils} from "../../src/utils/HashUtils.js";
 import {AESUtils} from "../../src/utils/AESUtils.js";
-import {ETERNAL_INFREQUENT_ACCESS} from "../../src/api/model/asset/AssetRetention.js";
 import crypto from "crypto";
 
 describe('AssetTransferService', () => {
@@ -107,7 +106,7 @@ describe('AssetTransferService', () => {
       expect(mockAssetsApiClient.uploadAsset).toHaveBeenCalledWith(
         mockEncryptedAsset,
         {
-          retention: ETERNAL_INFREQUENT_ACCESS,
+          retention: "eternal-infrequent_access",
           public: false
         }
       )
