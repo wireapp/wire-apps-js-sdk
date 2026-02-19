@@ -14,26 +14,30 @@
 * along with this program. If not, see http://www.gnu.org/licenses/.
 */
 
-import { MlsService } from "../api/MlsService.js";
-import { ProtobufSerializer } from "../mappers/protobuf/ProtobufSerializer.js";
-import type { AssetRemoteData, WireMessage } from "../model/WireMessage.js";
-import { AssetMessage } from "../model/WireMessage.js"
-import { CoreCryptoService } from "./CoreCryptoService.js";
-import { ConversationService } from "../api/ConversationService.js";
-import { singleton } from "tsyringe";
-import { AssetsTransferService } from "../api/AssetsTransferService.js";
-import type { QualifiedId } from "../model/QualifiedId.js";
-import type { Asset } from "../model/Asset.js";
+import {MlsService} from "../api/MlsService.js";
+import {ProtobufSerializer} from "../mappers/protobuf/ProtobufSerializer.js";
+import type {AssetRemoteData, WireMessage} from "../model/WireMessage.js";
+import {AssetMessage} from "../model/WireMessage.js"
+import {CoreCryptoService} from "./CoreCryptoService.js";
+import {ConversationService} from "../api/ConversationService.js";
+import {singleton} from "tsyringe";
+import type {QualifiedId} from "../model/QualifiedId.js";
+import {LoggerFactory} from "../utils/logger/LoggerFactory.js";
+import {obfuscateId} from "../utils/ObfuscateUtil.js";
+import {AssetsTransferService} from "../api/AssetsTransferService.js";
+import type {Asset} from "../model/Asset.js";
 
 @singleton()
 export class WireApplicationManager {
+  private logger = LoggerFactory.getLogger(this.constructor.name)
 
   constructor(
     private coreCryptoService: CoreCryptoService,
     private conversationService: ConversationService,
     private mlsService: MlsService,
     private assetsTransferService: AssetsTransferService
-  ) {}
+  ) {
+  }
 
   async sendMessage(message: WireMessage): Promise<string> {
     const mlsGroupId =
@@ -71,4 +75,14 @@ export class WireApplicationManager {
 
     return await this.sendMessage(assetMessage)
   }
+
+  async leaveConversation(conversationId: QualifiedId): Promise<void> {
+    this.logger.debug('App requested to leave the conversation with id: ' + obfuscateId(conversationId.id));
+
+    await this.conversationService.leaveConversation(conversationId);
+
+    this.logger.debug('App left the conversation with id: ' + obfuscateId(conversationId.id));
+  }
+
+
 }

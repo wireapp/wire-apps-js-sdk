@@ -18,7 +18,7 @@
 
 import "reflect-metadata";
 import dotenv from 'dotenv';
-import { PinoLogger } from './PinoLogger.js'
+import {PinoLogger} from './PinoLogger.js'
 import {
   type Conversation,
   type ConversationMember,
@@ -33,8 +33,9 @@ import {
   WireEventsHandler
 } from 'wire-apps-js-sdk'
 import fs from 'fs'
+import type {Audio, Image, Video} from "../model/WireMessage.js"
 
-dotenv.config({ path: '../.env' })
+dotenv.config({path: '../.env'})
 
 const userEmail = process.env['WIRE_SDK_USER_EMAIL'];
 const userPassword = process.env['WIRE_SDK_USER_PASSWORD'];
@@ -70,9 +71,12 @@ if (!cryptographyStoragePassword) {
 class SampleEventsHandler extends WireEventsHandler {
   public appLogger?: PinoLogger
 
+  // TODO: Baris: We better handle asset related commands in reserved test commands section
   public override async onTextMessageReceived(wireMessage: TextMessage): Promise<void> {
-    this.appLogger?.info(`[SampleEventsHandler] Received message: ${wireMessage.text}`)
-    if (wireMessage.text == "asset-image") {
+    this.appLogger?.info(`[Sample App] Received message: ${wireMessage.text}`)
+    if (this.isReservedTestCommand(wireMessage.text)) {
+      await this.processReservedTestCommand(wireMessage.text, wireMessage.conversationId)
+    } else if (wireMessage.text == "asset-image") {
       this.processAssetImage(wireMessage);
     } else if (wireMessage.text == "asset-audio") {
       this.processAssetAudio(wireMessage);
@@ -84,7 +88,7 @@ class SampleEventsHandler extends WireEventsHandler {
         text: `Sent from SampleEventsHandler: ${wireMessage.text}`
       })
 
-      this.manager.sendMessage(textMessage)
+      await this.manager.sendMessage(textMessage)
     }
   }
 
@@ -228,6 +232,34 @@ class SampleEventsHandler extends WireEventsHandler {
         }
       )
     });
+  }
+
+  // - - -  RESERVED TEST COMMANDS - - -
+  private getReservedTestCommandHandlers(): Record<string, (conversationId: QualifiedId, command?: string) => Promise<void>> {
+    return {
+      'leave-group-conversation': async (conversationId) => {
+        this.appLogger?.info(`[Sample App] Executing handler for: leave-group-conversation`)
+        await this.manager.leaveConversation(conversationId)
+      },
+      // More reserved test commands will be added here
+    }
+  }
+
+  private isReservedTestCommand(message?: string): boolean {
+    if (!message) return false
+    const cmd = message.trim()
+    return Object.prototype.hasOwnProperty.call(this.getReservedTestCommandHandlers(), cmd)
+  }
+
+  private async processReservedTestCommand(command: string, conversationId: QualifiedId): Promise<boolean> {
+    if (!command) return false
+    const cmd = command.trim()
+    const handler = this.getReservedTestCommandHandlers()[cmd]
+    if (!handler) return false
+
+    this.appLogger?.info(`[Sample App] Processing reserved test command: ${cmd}`)
+    await handler(conversationId, command)
+    return true
   }
 }
 
