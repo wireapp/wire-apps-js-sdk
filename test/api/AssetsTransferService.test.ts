@@ -23,8 +23,8 @@ import {HashUtils} from "../../src/utils/HashUtils.js";
 import {AESUtils} from "../../src/utils/AESUtils.js";
 import crypto from "crypto";
 
-describe('AssetTransferService', () => {
-  let assetTransferService: AssetsTransferService
+describe('AssetsTransferService', () => {
+  let assetsTransferService: AssetsTransferService
   let mockAssetsApiClient: AssetsApiClient;
 
   const KEY_MATERIAL = crypto.randomBytes(32)
@@ -42,7 +42,7 @@ describe('AssetTransferService', () => {
       keyMaterial: KEY_MATERIAL
     })
 
-    assetTransferService = new AssetsTransferService(mockAssetsApiClient)
+    assetsTransferService = new AssetsTransferService(mockAssetsApiClient)
   })
 
   describe("given asset download succeeds", () => {
@@ -60,7 +60,7 @@ describe('AssetTransferService', () => {
       vi.mocked(mockAssetsApiClient.downloadAsset).mockResolvedValue(encryptedAsset)
 
       // Act
-      const result = await assetTransferService.downloadAsset(assetRemoteData)
+      const result = await assetsTransferService.downloadAsset(assetRemoteData)
 
       // Assert
       expect(Array.from(result)).toEqual(Array.from(plainData))
@@ -79,7 +79,7 @@ describe('AssetTransferService', () => {
       vi.mocked(mockAssetsApiClient.downloadAsset).mockResolvedValue(maliciousAsset)
 
       // Act & Assert
-      await expect(assetTransferService.downloadAsset(assetRemoteData)).rejects.toThrowError()
+      await expect(assetsTransferService.downloadAsset(assetRemoteData)).rejects.toThrowError()
     })
   })
 
@@ -98,7 +98,7 @@ describe('AssetTransferService', () => {
       vi.spyOn(AESUtils, 'encryptData').mockReturnValue(mockEncryptedAsset)
 
       // Act
-      const result = await assetTransferService.uploadAssetForSending(assetData)
+      const result = await assetsTransferService.uploadAssetForSending(assetData)
 
       // Assert
       expect(AESUtils.generateRandomAES256Key).toHaveBeenCalledOnce()
