@@ -25,9 +25,12 @@ import {
   obfuscateId,
   type QualifiedId,
   TextMessage,
+  AssetMessage,
   WireAppSdk,
   WireEventsHandler
-} from '../index.js'
+} from '../index.js' // This will be imported from the SDK when used outside of this repository
+import fs from 'fs'
+import type { Audio, Image, Video } from "../model/WireMessage.js"
 
 dotenv.config()
 
@@ -67,12 +70,20 @@ class SampleEventsHandler extends WireEventsHandler {
 
   public override async onTextMessageReceived(wireMessage: TextMessage): Promise<void> {
     this.appLogger?.info(`[SampleEventsHandler] Received message: ${wireMessage.text}`)
-    const textMessage = TextMessage.create({
-      conversationId: wireMessage.conversationId,
-      text: `Sent from SampleEventsHandler: ${wireMessage.text}`
-    })
+    if (wireMessage.text == "asset-image") {
+      this.processAssetImage(wireMessage);
+    } else if (wireMessage.text == "asset-audio") {
+      this.processAssetAudio(wireMessage);
+    } else if (wireMessage.text == "asset-video") {
+      this.processAssetVideo(wireMessage);
+    } else {
+      const textMessage = TextMessage.create({
+        conversationId: wireMessage.conversationId,
+        text: `Sent from SampleEventsHandler: ${wireMessage.text}`
+      })
 
-    await this.manager.sendMessage(textMessage)
+      this.manager.sendMessage(textMessage)
+    }
   }
 
   public override async onConversationDeleted(conversationId: QualifiedId): Promise<void> {
@@ -108,7 +119,114 @@ class SampleEventsHandler extends WireEventsHandler {
     await this.manager.sendMessage(textMessage)
   }
 
+  public override async onAssetMessageReceived(wireMessage: AssetMessage): Promise<void> {
+    console.log(`[SampleEventsHandler] Received asset: ${wireMessage.name}`)
+    if (!wireMessage.remoteData) return
 
+    const asset = await this.manager.downloadAsset(wireMessage.remoteData)
+    const filename = wireMessage.name ? wireMessage.name : `unknown-${crypto.randomUUID()}`
+    const dir = 'build/downloaded_assets/'
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir);
+    }
+    const filePath = dir + filename;
+    fs.writeFile(filePath, asset, (err) => {
+        if (err) {
+          console.log("There was an error writing the image")
+        } else {
+          console.log(`Downloaded asset with size: ${asset.length} bytes, saved to: ${filePath}`)
+        }
+      }
+    )
+  }
+
+  private processAssetImage(wireMessage: TextMessage) {
+    const filename = 'banana-icon.png'
+    const path = `./src/sample/resources/${filename}`
+    fs.readFile(path, (err, data) => {
+      if (err) {
+        throw err;
+      }
+
+      const metadata: Image = {
+        type: 'image',
+        width: 240,
+        height: 240
+      }
+
+      this.manager.sendAsset(
+        wireMessage.conversationId,
+        {
+          data: data,
+          name: filename,
+          mimeType: "image/png",
+          metadata: metadata
+        }
+      )
+    });
+  }
+
+  private processAssetAudio(wireMessage: TextMessage) {
+    const filename = 'sample_audio_6s.mp3'
+    const path = `./src/sample/resources/${filename}`
+    fs.readFile(path, (err, data) => {
+      if (err) {
+        throw err;
+      }
+
+      const metadata: Audio = this.getSampleAudioMetadata()
+
+      this.manager.sendAsset(
+        wireMessage.conversationId,
+        {
+          data: data,
+          name: filename,
+          mimeType: "audio/mp3",
+          metadata: metadata
+        }
+      )
+    });
+  }
+
+  private getSampleAudioMetadata(): Audio {
+    const base64Loudness = "/////////////////////////////////////8u+iP///8TCo///////l//////7" +
+      "q3x6cXWAhIGOfn6KjouUi4SQlZGdkIeSm5OenoWFioqJnYZ/hIqOlJOIjZOanJSNkp2jqf///////" +
+      "///////////////////////////////i3v///+ytIf/////1rfp/////8CWiHuDhYubk4SKi5GgnZ" +
+      "COjJOlmpiQjJKmop6Jio2Pjp+MiYqKjpuQhIOFi5KUfoKKkJX/"
+
+    return {
+      type: 'audio',
+      durationMs: 6000,
+      normalizedLoudness: Buffer.from(base64Loudness, 'base64')
+    }
+  }
+
+  private processAssetVideo(wireMessage: TextMessage) {
+    const filename = 'sample_video_5s.mp4'
+    const path = `./src/sample/resources/${filename}`
+    fs.readFile(path, (err, data) => {
+      if (err) {
+        throw err;
+      }
+
+      const metadata: Video = {
+        type: 'video',
+        width: 1920,
+        height: 1080,
+        durationMs: 5000
+      }
+
+      this.manager.sendAsset(
+        wireMessage.conversationId,
+        {
+          data: data,
+          name: filename,
+          mimeType: "video/mp4",
+          metadata: metadata
+        }
+      )
+    });
+  }
 }
 
 const sampleEventsHandler = new SampleEventsHandler()

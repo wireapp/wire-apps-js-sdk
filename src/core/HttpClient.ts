@@ -124,7 +124,8 @@ export class HttpClient {
 
   async request<T>(
     path: string,
-    options: RequestInit = {}
+    options: RequestInit = {},
+    includeApiVersion: boolean = true
   ): Promise<{ data: T; response: Response }> {
     const optionsAndHeaders = {
       ...options,
@@ -133,7 +134,12 @@ export class HttpClient {
         ...(options.headers || {})
       }
     }
-    const response = await fetch(`${this.wireApiHost}/${this.API_HOST_VERSION}/${path}`, optionsAndHeaders)
+    const url = [
+      this.wireApiHost,
+      includeApiVersion ? this.API_HOST_VERSION : null,
+      path
+    ].filter(Boolean).join("/")
+    const response = await fetch(url, optionsAndHeaders)
 
     if (!response.ok) {
       let errorDetails = ''
@@ -167,7 +173,7 @@ export class HttpClient {
       const data = new Uint8Array(arrayBuffer) as T
       return { data, response };
     }
-  
+
     return { data: undefined as unknown as T, response }
   }
 
@@ -176,22 +182,28 @@ export class HttpClient {
     options?: {
       headerContentType?: string;
       headerAccept?: string;
+      includeApiVersion?: boolean;
+      additionalHeaders?: Record<string, string>
     }
   ): Promise<T> {
     await this.verifyAuthorizationToken()
 
     const {
       headerContentType = this.HEADER_DEFAULT_CONTENT_TYPE,
-      headerAccept = this.HEADER_DEFAULT_ACCEPT
+      headerAccept = this.HEADER_DEFAULT_ACCEPT,
+      includeApiVersion = true,
+      additionalHeaders = {}
     } = options ?? {}
-    
-    return (await this.request<T>(path, {
+
+    const requestConfig = {
       method: "GET",
       headers: {
         "Content-Type": headerContentType,
-        "Accept": headerAccept
+        "Accept": headerAccept,
+        ...additionalHeaders
       }
-    })).data
+    }
+    return (await this.request<T>(path, requestConfig, includeApiVersion)).data
   }
 
   async postRequest<T>(
@@ -200,17 +212,19 @@ export class HttpClient {
     options?: {
       headerContentType?: string;
       headerAccept?: string;
+      includeApiVersion?: boolean;
       params?: Record<string, string>;
-    }
+    },
   ): Promise<T> {
     await this.verifyAuthorizationToken()
 
     const {
       headerContentType = this.HEADER_DEFAULT_CONTENT_TYPE,
       headerAccept = this.HEADER_DEFAULT_ACCEPT,
+      includeApiVersion = true,
       params
     } = options ?? {}
-    
+
     let finalPath = path
     if (params) {
       const queryString = new URLSearchParams(params).toString()
@@ -218,18 +232,19 @@ export class HttpClient {
     }
 
     const isBinary = body instanceof Uint8Array || body instanceof ArrayBuffer
-    const requestBody = body 
+    const requestBody = body
       ? (isBinary ? body as BodyInit : JSON.stringify(body))
       : null
 
-    return (await this.request<T>(finalPath, {
+    const requestConfig = {
       method: "POST",
       body: requestBody,
       headers: {
         "Content-Type": headerContentType,
         "Accept": headerAccept
       }
-    })).data
+    }
+    return (await this.request<T>(finalPath, requestConfig, includeApiVersion)).data
   }
 
   async putRequest<T>(

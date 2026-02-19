@@ -1,7 +1,7 @@
 /*
 * Wire
 * Copyright (C) 2025 Wire Swiss GmbH
-* 
+*
 * This program is free software: you can redistribute it and/or modify
 * it under the terms of the GNU General Public License as published by
 * the Free Software Foundation, either version 3 of the License, or
@@ -16,18 +16,23 @@
 
 import { MlsService } from "../api/MlsService.js";
 import { ProtobufSerializer } from "../mappers/protobuf/ProtobufSerializer.js";
-import type { WireMessage } from "../model/WireMessage.js";
+import type { AssetRemoteData, WireMessage } from "../model/WireMessage.js";
+import { AssetMessage } from "../model/WireMessage.js"
 import { CoreCryptoService } from "./CoreCryptoService.js";
 import { ConversationService } from "../api/ConversationService.js";
 import { singleton } from "tsyringe";
+import { AssetsTransferService } from "../api/AssetsTransferService.js";
+import type { QualifiedId } from "../model/QualifiedId.js";
+import type { Asset } from "../model/Asset.js";
 
 @singleton()
 export class WireApplicationManager {
-  
+
   constructor(
     private coreCryptoService: CoreCryptoService,
     private conversationService: ConversationService,
-    private mlsService: MlsService
+    private mlsService: MlsService,
+    private assetsTransferService: AssetsTransferService
   ) {}
 
   async sendMessage(message: WireMessage): Promise<string> {
@@ -43,5 +48,27 @@ export class WireApplicationManager {
     await this.mlsService.sendMessage(encryptedMessage)
 
     return message.id
+  }
+
+  async downloadAsset(assetRemoteData: AssetRemoteData): Promise<Uint8Array> {
+    return await this.assetsTransferService.downloadAsset(assetRemoteData)
+  }
+
+  async sendAsset(
+    conversationId: QualifiedId,
+    asset: Asset
+  ): Promise<string> {
+    const remoteData = await this.assetsTransferService.uploadAssetForSending(asset.data)
+
+    const assetMessage = AssetMessage.create({
+      conversationId: conversationId,
+      metadata: asset.metadata ?? null,
+      mimeType: asset.mimeType,
+      name: asset.name,
+      remoteData: remoteData,
+      sizeInBytes: asset.data.length
+    })
+
+    return await this.sendMessage(assetMessage)
   }
 }
