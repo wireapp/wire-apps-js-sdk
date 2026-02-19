@@ -162,7 +162,7 @@ export class ConversationService {
   }
 
   async leaveConversation(conversationId: QualifiedId) {
-    this.logger.info("Attempting to leave the conversation. conversationId:" + obfuscateId(conversationId.id))
+    this.logger.info("Leaving the conversation. conversationId:" + obfuscateId(conversationId.id))
 
     if (!await this.isGroupConversation(conversationId)) {
       this.logger.warn("You cannot leave a non-group conversation. conversationId:" + obfuscateId(conversationId.id))

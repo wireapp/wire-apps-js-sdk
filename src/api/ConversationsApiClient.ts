@@ -24,6 +24,7 @@ import type {ConversationIdsRequest} from "./request/ConversationIdsRequest.js";
 import type {ConversationsResponse} from "./response/ConversationsResponse.js";
 import {LoggerFactory} from "../utils/logger/LoggerFactory.js";
 import {WIRE_USER_DOMAIN, WIRE_USER_ID} from "../utils/DependencyInjectionTokens.js";
+import {obfuscateId} from "../utils/ObfuscateUtil.js";
 
 @singleton()
 export class ConversationsApiClient {
@@ -106,11 +107,11 @@ export class ConversationsApiClient {
   }
 
   async leaveConversation(conversationQualifiedId: QualifiedId): Promise<void> {
-    this.logger.debug(`Request to leave the conversation with id: ${conversationQualifiedId.id} and domain: ${conversationQualifiedId.domain}`)
+    this.logger.debug(`Leaving the conversation. conversationId: ${obfuscateId(conversationQualifiedId.id)}`)
 
     const path = `${this.basePath}/${conversationQualifiedId.domain}/${conversationQualifiedId.id}/members/${this.wireUserDomain}/${this.wireUserId}`
     await this.httpClient.deleteRequest(path)
 
-    this.logger.info(`Left the conversation with id: ${conversationQualifiedId.id}`)
+    this.logger.info(`Left the conversation. conversationId: ${obfuscateId(conversationQualifiedId.id)}`)
   }
 }
