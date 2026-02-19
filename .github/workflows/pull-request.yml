@@ -29,6 +29,9 @@ jobs:
       - name: TypeScript Build
         run: npm run build
 
+      - name: Build Sample
+        run: npm run build:sample
+
       - name: Tests with Coverage
         run: npm run test:coverage -- --no-cache
 

@@ -18,7 +18,7 @@
 
 import "reflect-metadata";
 import dotenv from 'dotenv';
-import {PinoLogger} from './PinoLogger.js'
+import { PinoLogger } from './PinoLogger.js'
 import {
   type Conversation,
   type ConversationMember,
@@ -28,11 +28,11 @@ import {
   AssetMessage,
   WireAppSdk,
   WireEventsHandler
-} from '../index.js' // This will be imported from the SDK when used outside of this repository
+} from 'wire-app-js-sdk' // This will be imported from the SDK when used outside of this repository
 import fs from 'fs'
 import type { Audio, Image, Video } from "../model/WireMessage.js"
 
-dotenv.config()
+dotenv.config({ path: '../.env' })
 
 const userEmail = process.env['WIRE_SDK_USER_EMAIL'];
 const userPassword = process.env['WIRE_SDK_USER_PASSWORD'];
@@ -93,7 +93,7 @@ class SampleEventsHandler extends WireEventsHandler {
   public override async onAppAddedToConversation(conversation: Conversation, members: ConversationMember[]): Promise<void> {
     this.appLogger?.info(`[Sample App] App was added to conversation: ${obfuscateId(conversation.id)} with ${members.length} members`)
     const textMessage = TextMessage.create({
-      conversationId: {id: conversation.id, domain: conversation.domain},
+      conversationId: { id: conversation.id, domain: conversation.domain },
       text: `Hello! I'm the Sample App 🙂 I've just joined this conversation 👋`
     })
     await this.manager.sendMessage(textMessage)
@@ -131,12 +131,12 @@ class SampleEventsHandler extends WireEventsHandler {
     }
     const filePath = dir + filename;
     fs.writeFile(filePath, asset, (err) => {
-        if (err) {
-          console.log("There was an error writing the image")
-        } else {
-          console.log(`Downloaded asset with size: ${asset.length} bytes, saved to: ${filePath}`)
-        }
+      if (err) {
+        console.log("There was an error writing the image")
+      } else {
+        console.log(`Downloaded asset with size: ${asset.length} bytes, saved to: ${filePath}`)
       }
+    }
     )
   }
 
