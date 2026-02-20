@@ -196,8 +196,8 @@ export class WireAppSdk {
       await this.close()
       this.logger.info('Cleanup completed successfully')
       process.exit(0)
-    } catch (error) {
-      this.logger.error('Error during cleanup:', error)
+    } catch (exception) {
+      this.logger.error('Error during cleanup:', exception)
       process.exit(1)
     }
   }

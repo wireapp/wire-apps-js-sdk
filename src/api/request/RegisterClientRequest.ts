@@ -44,7 +44,6 @@ export class RegisterClientRequest {
   private DEFAULT_CLIENT_TYPE = "temporary"
   private DEFAULT_CLIENT_MODEL = "Typescript App Client"
   private DEFAULT_CAPABILITIES: CapabilitiesRequest[] = [
-    CapabilitiesRequest.LEGALHOLD_IMPLICIT_CONSENT,
-    CapabilitiesRequest.CONSUMABLE_NOTIFICATIONS
+    CapabilitiesRequest.LEGALHOLD_IMPLICIT_CONSENT
   ]
 }

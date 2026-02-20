@@ -20,6 +20,7 @@ import {AppPropertiesRepository} from "../db/AppPropertiesRepository.js";
 @singleton()
 export class AppProperties {
   private readonly SHOULD_REJOIN_CONVERSATIONS = "should_rejoin_conversations"
+  private readonly LAST_NOTIFICATION_ID = "last_notification_id"
 
   constructor(
     private appPropertiesRepository: AppPropertiesRepository
@@ -36,6 +37,17 @@ export class AppProperties {
     this.appPropertiesRepository.save(
       this.SHOULD_REJOIN_CONVERSATIONS,
       this.booleanToDatabaseValue(should)
+    )
+  }
+
+  getLastNotificationId(): string | undefined {
+    return this.appPropertiesRepository.getByKey(this.LAST_NOTIFICATION_ID)?.value
+  }
+
+  setLastNotificationId(lastNotificationId: string) {
+    this.appPropertiesRepository.save(
+      this.LAST_NOTIFICATION_ID,
+      lastNotificationId
     )
   }
 

@@ -214,7 +214,7 @@ export class HttpClient {
       headerAccept?: string;
       includeApiVersion?: boolean;
       params?: Record<string, string>;
-    },
+    }
   ): Promise<T> {
     await this.verifyAuthorizationToken()
 
