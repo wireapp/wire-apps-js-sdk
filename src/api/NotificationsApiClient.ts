@@ -32,7 +32,7 @@ export class NotificationsApiClient {
   async getLastNotification(): Promise<EventResponse> {
     const cachedDeviceId = this.httpClient.getCachedDeviceId()
     const path = `${this.lastNotificationPath}?${this.CLIENT_QUERY_KEY}=${cachedDeviceId}`
-    console.log(`PATH GLN: ${path}`)
+
     return await this.httpClient.getRequest<EventResponse>(
       path
     )
@@ -45,11 +45,10 @@ export class NotificationsApiClient {
     const cachedDeviceId = this.httpClient.getCachedDeviceId()
 
     let path = `${this.basePath}?${this.SIZE_QUERY_KEY}=${querySize}&${this.CLIENT_QUERY_KEY}=${cachedDeviceId}`
-    if (querySince && querySince != null) {
+    if (querySince) {
       path = `${path}&${this.SINCE_QUERY_KEY}=${querySince}`
     }
-    console.log(`PATH GPN: ${path}`)
-    
+
     return await this.httpClient.getRequest<NotificationsResponse>(path)
   }
 }

@@ -137,9 +137,7 @@ export class CoreCryptoService {
     } catch (exception) {
       if (isMlsOrphanWelcomeError(exception)) {
         this.logger.warn("Cannot process welcome message, asking to join the conversation")
-        await this.coreCryptoClient?.joinMlsConversation(
-          new GroupInfo(groupInfoBytes)
-        )
+        await this.joinMlsConversation(groupInfoBytes)
       } else {
         this.logger.error("Cannot process welcome message", exception)
       }
