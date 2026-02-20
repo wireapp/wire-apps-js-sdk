@@ -264,6 +264,36 @@ export class HttpClient {
     })).data
   }
 
+  async deleteRequest<T>(
+    path: string,
+    body?: unknown,
+    options?: {
+      headerContentType?: string;
+      headerAccept?: string;
+    }
+  ): Promise<T> {
+    await this.verifyAuthorizationToken()
+
+    const {
+      headerContentType = this.HEADER_DEFAULT_CONTENT_TYPE,
+      headerAccept = this.HEADER_DEFAULT_ACCEPT
+    } = options ?? {}
+
+    const isBinary = body instanceof Uint8Array || body instanceof ArrayBuffer
+    const requestBody = body
+      ? (isBinary ? body as BodyInit : JSON.stringify(body))
+      : null
+
+    return (await this.request<T>(path, {
+      method: "DELETE",
+      ...(requestBody && { body: requestBody }),
+      headers: {
+        "Content-Type": headerContentType,
+        "Accept": headerAccept
+      }
+    })).data
+  }
+
   private API_HOST_VERSION: string = "v12"
   private TOKEN_EXPIRATION_MS = 14 * 60 * 1000 // 14 minutes in milliseconds
   private HEADER_DEFAULT_CONTENT_TYPE = "application/json"

@@ -161,6 +161,35 @@ export class ConversationService {
     )
   }
 
+  async leaveConversation(conversationId: QualifiedId) {
+    this.logger.info("Leaving the conversation. conversationId:" + obfuscateId(conversationId.id))
+
+    if (!await this.isGroupConversation(conversationId)) {
+      this.logger.warn("You cannot leave a non-group conversation. conversationId:" + obfuscateId(conversationId.id))
+      return // TODO: Baris: We should throw an exception here instead of just logging and returning.
+    }
+
+    if (!await this.isAppUserMemberOfConversation(conversationId)) {
+      this.logger.warn("You cannot leave a conversation that you are not a member of. conversationId:" + obfuscateId(conversationId.id))
+      return // TODO: Baris: We should throw an exception here instead of just logging and returning.
+    }
+
+    await this.conversationsApiClient.leaveConversation(conversationId)
+    await this.deleteAllConversationDataFromLocalStorages(conversationId)
+
+    this.logger.info("App user left the conversation. conversationId:" + obfuscateId(conversationId.id))
+  }
+
+  private async isGroupConversation(conversationId: QualifiedId): Promise<boolean> {
+    const conversation = await this.getConversationById(conversationId)
+    return conversation.type === ConversationType.GROUP
+  }
+
+  private async isAppUserMemberOfConversation(conversationId: QualifiedId): Promise<boolean> {
+    const members = this.getMembersByConversationId(conversationId)
+    return members.some(member => member.user_id === this.wireUserId && member.user_domain === this.wireUserDomain)
+  }
+
   async deleteAllConversationDataFromLocalStorages(conversationId: QualifiedId): Promise<void> {
     this.logger.info("Deleting all conversation data.", "conversationId:", obfuscateId(conversationId.id))
     const conversationEntity = this.conversationRepository.findByIdAndDomain(conversationId.id, conversationId.domain);

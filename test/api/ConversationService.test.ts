@@ -50,7 +50,8 @@ describe('ConversationService', () => {
       getConversation: vi.fn(),
       getConversationGroupInfo: vi.fn(),
       getAllConversationIds: vi.fn(),
-      getConversationsById: vi.fn()
+      getConversationsById: vi.fn(),
+      leaveConversation: vi.fn(),
     } as any
 
     mockConversationRepository = {
@@ -869,6 +870,121 @@ describe('ConversationService', () => {
         role: newRole,
         creation_date: null
       })
+    })
+  })
+
+  describe('leaveConversation', () => {
+    it('should not call API for non-group conversation', async () => {
+      vi.mocked(mockConversationRepository.findByIdAndDomain).mockReturnValue({
+        id: CONVERSATION_ID.id,
+        domain: CONVERSATION_ID.domain,
+        name: 'One-to-one',
+        team_id: TEAM_ID,
+        mls_group_id: null,
+        creation_date: null,
+        type: ConversationType.ONE_TO_ONE
+      } as any)
+
+      await conversationService.leaveConversation(CONVERSATION_ID)
+
+      expect(mockConversationRepository.findByIdAndDomain).toHaveBeenCalledWith(CONVERSATION_ID.id, CONVERSATION_ID.domain)
+      expect(mockConversationsApiClient.leaveConversation).not.toHaveBeenCalled()
+    })
+
+    it('should not call API when app user is not a member', async () => {
+      vi.mocked(mockConversationRepository.findByIdAndDomain).mockReturnValue({
+        id: CONVERSATION_ID.id,
+        domain: CONVERSATION_ID.domain,
+        name: 'Group',
+        team_id: TEAM_ID,
+        mls_group_id: MLS_GROUP_ID,
+        creation_date: null,
+        type: ConversationType.GROUP
+      } as any)
+
+      // members do not include the app user
+      vi.mocked(mockConversationMemberRepository.getMembersByConversationId).mockReturnValue([
+        {
+          user_id: USER_ID.id,
+          user_domain: USER_ID.domain,
+          conversation_id: CONVERSATION_ID.id,
+          conversation_domain: CONVERSATION_ID.domain,
+          role: 'wire_member',
+          creation_date: null
+        }
+      ])
+
+      await conversationService.leaveConversation(CONVERSATION_ID)
+
+      expect(mockConversationMemberRepository.getMembersByConversationId).toHaveBeenCalledWith(CONVERSATION_ID.id, CONVERSATION_ID.domain)
+      expect(mockConversationsApiClient.leaveConversation).not.toHaveBeenCalled()
+    })
+
+    it('should call API and delete local data when app user is a member', async () => {
+      vi.mocked(mockConversationRepository.findByIdAndDomain).mockReturnValue({
+        id: CONVERSATION_ID.id,
+        domain: CONVERSATION_ID.domain,
+        name: 'Group',
+        team_id: TEAM_ID,
+        mls_group_id: MLS_GROUP_ID,
+        creation_date: null,
+        type: ConversationType.GROUP
+      } as any)
+
+      // include app user in members
+      vi.mocked(mockConversationMemberRepository.getMembersByConversationId).mockReturnValue([
+        {
+          user_id: SELF_USER_ID.id,
+          user_domain: SELF_USER_ID.domain,
+          conversation_id: CONVERSATION_ID.id,
+          conversation_domain: CONVERSATION_ID.domain,
+          role: 'wire_admin',
+          creation_date: null
+        }
+      ])
+
+      vi.mocked(mockConversationsApiClient.leaveConversation).mockResolvedValue(undefined)
+      const wipeSpy = vi.spyOn(conversationService as any, 'deleteAllConversationDataFromLocalStorages').mockResolvedValue(undefined)
+
+      await conversationService.leaveConversation(CONVERSATION_ID)
+
+      expect(mockConversationsApiClient.leaveConversation).toHaveBeenCalledWith(CONVERSATION_ID)
+      expect(wipeSpy).toHaveBeenCalledWith(CONVERSATION_ID)
+
+      wipeSpy.mockRestore()
+    })
+
+    it('should propagate error from API and not delete local data', async () => {
+      vi.mocked(mockConversationRepository.findByIdAndDomain).mockReturnValue({
+        id: CONVERSATION_ID.id,
+        domain: CONVERSATION_ID.domain,
+        name: 'Group',
+        team_id: TEAM_ID,
+        mls_group_id: MLS_GROUP_ID,
+        creation_date: null,
+        type: ConversationType.GROUP
+      } as any)
+
+      vi.mocked(mockConversationMemberRepository.getMembersByConversationId).mockReturnValue([
+        {
+          user_id: SELF_USER_ID.id,
+          user_domain: SELF_USER_ID.domain,
+          conversation_id: CONVERSATION_ID.id,
+          conversation_domain: CONVERSATION_ID.domain,
+          role: 'wire_admin',
+          creation_date: null
+        }
+      ])
+
+      vi.mocked(mockConversationsApiClient.leaveConversation).mockRejectedValue(new Error('leave failed'))
+      const wipeSpy = vi.spyOn(conversationService as any, 'deleteAllConversationDataFromLocalStorages').mockResolvedValue(undefined)
+
+      await expect(conversationService.leaveConversation(CONVERSATION_ID)).rejects.toThrow('leave failed')
+
+      expect(mockConversationsApiClient.leaveConversation).toHaveBeenCalledWith(CONVERSATION_ID)
+      expect(wipeSpy).not.toHaveBeenCalled()
+
+      wipeSpy.mockRestore()
     })
   })
 
