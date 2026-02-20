@@ -8,6 +8,7 @@
   ],
   "scripts": {
     "storage:mkdir": "mkdir -p storage",
+    "storage:mkdir:sample": "mkdir -p sample/storage",
     "proto:mkdir": "mkdir -p src/generated",
     "proto:package": "node scripts/create-generated-package-json.js",
     "proto:js": "pbjs -t static-module -w commonjs -o src/generated/messages.js src/proto/messages.proto",
@@ -18,7 +19,7 @@
     "build:setup": "npm install && npm run storage:mkdir && npm run corecrypto:fix-main && npm run proto:generate",
     "build": "tsc -p tsconfig.json && npm run proto:copy",
     "build:sample": "npm run build && npm run -w sample build",
-    "sample": "npm run build:sample && npm run -w sample start",
+    "sample": "npm run storage:mkdir:sample && npm run build:sample && npm run -w sample start",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "clean": "rm -rf build sample/build",
