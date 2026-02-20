@@ -47,8 +47,8 @@ describe('ConversationService Integration', () => {
   afterAll(() => {
     try {
       testDbService.close()
-    } catch (error) {
-      console.error('Failed to close test database:', error)
+    } catch (exception) {
+      console.error('Failed to close test database:', exception)
     }
   })
 

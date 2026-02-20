@@ -14,7 +14,7 @@
 * along with this program. If not, see http://www.gnu.org/licenses/.
 */
 
-import {ConversationId, GroupInfo, isMlsConversationAlreadyExistsError} from "@wireapp/core-crypto";
+import {ConversationId, GroupInfo, isMlsConversationAlreadyExistsError, isMlsOrphanWelcomeError} from "@wireapp/core-crypto";
 import {ClientsService} from "../api/ClientsService.js";
 import {AppClientId} from "../model/AppClientId.js";
 import {
@@ -94,8 +94,8 @@ export class CoreCryptoService {
     let registeredDeviceId;
     try {
       registeredDeviceId = await this.clientsService.registerClient(proteusPreKeys, proteusLastPreKey)
-    } catch (error) {
-      throw new Error(`Error when registering client: ${(error as Error).message}`);
+    } catch (exception) {
+      throw new Error(`Error when registering client: ${(exception as Error).message}`);
     }
 
     const appClientId = AppClientId.create(
@@ -128,10 +128,20 @@ export class CoreCryptoService {
     await this.mlsService.uploadMlsKeyPackages(keyPackages)
   }
 
-  async processWelcomeMessage(welcomeMessageBytes: Uint8Array) {
-    await this.coreCryptoClient!.processWelcomeMessage(welcomeMessageBytes)
-    // TODO: Handle MlsException.OrphanWelcome in try/catch
-    // TODO: Request to join conversation by external commit
+  async processWelcomeMessage(
+    welcomeMessageBytes: Uint8Array,
+    groupInfoBytes: Uint8Array
+  ) {
+    try {
+      await this.coreCryptoClient!.processWelcomeMessage(welcomeMessageBytes)
+    } catch (exception) {
+      if (isMlsOrphanWelcomeError(exception)) {
+        this.logger.warn("Cannot process welcome message, asking to join the conversation")
+        await this.joinMlsConversation(groupInfoBytes)
+      } else {
+        this.logger.error("Cannot process welcome message", exception)
+      }
+    }
   }
 
   async hasTooFewKeyPackageCount() {

@@ -17,5 +17,7 @@
 import type { EventContentDTO } from "../../model/EventContentDTO.js";
 
 export interface EventResponse {
-  payload?: EventContentDTO[]
+  id: string,
+  payload?: EventContentDTO[],
+  transient: boolean
 }

@@ -15,8 +15,8 @@
 */
 
 import Database, { type Database as DB } from "better-sqlite3";
-import { inject, singleton } from "tsyringe";
-import { WIRE_DATABASE_PATH } from "../utils/DependencyInjectionTokens.js";
+import {inject, singleton} from "tsyringe";
+import {WIRE_DATABASE_PATH} from "../utils/DependencyInjectionTokens.js";
 import {LoggerFactory} from "../utils/logger/LoggerFactory.js";
 
 @singleton()

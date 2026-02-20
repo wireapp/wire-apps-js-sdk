@@ -213,8 +213,7 @@ export class HttpClient {
       headerContentType?: string;
       headerAccept?: string;
       includeApiVersion?: boolean;
-      params?: Record<string, string>;
-    },
+    }
   ): Promise<T> {
     await this.verifyAuthorizationToken()
 
@@ -222,14 +221,7 @@ export class HttpClient {
       headerContentType = this.HEADER_DEFAULT_CONTENT_TYPE,
       headerAccept = this.HEADER_DEFAULT_ACCEPT,
       includeApiVersion = true,
-      params
     } = options ?? {}
-
-    let finalPath = path
-    if (params) {
-      const queryString = new URLSearchParams(params).toString()
-      finalPath = `${path}?${queryString}`
-    }
 
     const isBinary = body instanceof Uint8Array || body instanceof ArrayBuffer
     const requestBody = body
@@ -244,7 +236,7 @@ export class HttpClient {
         "Accept": headerAccept
       }
     }
-    return (await this.request<T>(finalPath, requestConfig, includeApiVersion)).data
+    return (await this.request<T>(path, requestConfig, includeApiVersion)).data
   }
 
   async putRequest<T>(
