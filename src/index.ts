@@ -37,7 +37,10 @@ export { ConsoleLogger } from "./utils/logger/ConsoleLogger.js"
 export {
   type WireMessage,
   TextMessage,
-  AssetMessage
+  AssetMessage,
+  type Audio,
+  type Image,
+  type Video
 } from "./model/WireMessage.js"
 
 export type { Conversation } from "./model/conversation/Conversation.js";

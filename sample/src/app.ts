@@ -26,11 +26,13 @@ import {
   type QualifiedId,
   TextMessage,
   AssetMessage,
+  type Audio,
+  type Image,
+  type Video,
   WireAppSdk,
   WireEventsHandler
-} from 'wire-app-js-sdk'
+} from 'wire-apps-js-sdk'
 import fs from 'fs'
-import type { Audio, Image, Video } from "../model/WireMessage.js"
 
 dotenv.config({ path: '../.env' })
 
@@ -142,7 +144,7 @@ class SampleEventsHandler extends WireEventsHandler {
 
   private processAssetImage(wireMessage: TextMessage) {
     const filename = 'banana-icon.png'
-    const path = `./src/sample/resources/${filename}`
+    const path = `./resources/${filename}`
     fs.readFile(path, (err, data) => {
       if (err) {
         throw err;
