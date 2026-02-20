@@ -174,7 +174,7 @@ export class ConversationService {
       return // TODO: Baris: We should throw an exception here instead of just logging and returning.
     }
 
-    await this.conversationsApiClient.leaveConversation(conversationId, this.wireUserDomain, this.wireUserId)
+    await this.conversationsApiClient.leaveConversation(conversationId)
     await this.deleteAllConversationDataFromLocalStorages(conversationId)
 
     this.logger.info("App user left the conversation. conversationId:" + obfuscateId(conversationId.id))
