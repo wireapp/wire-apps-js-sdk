@@ -807,7 +807,7 @@ describe('ConversationService', () => {
         mls_group_id: MLS_GROUP_ID,
         creation_date: null,
         type: ConversationType.GROUP
-      } as any)
+      } as any);
 
         // ensure deleteMany is available on the mock for tests that expect it
         (mockConversationMemberRepository as any).deleteMany = vi.fn()
@@ -846,8 +846,8 @@ describe('ConversationService', () => {
 
   describe('updateMember', () => {
     it('skips updating when conversation does not exist locally', async () => {
-      vi.mocked(mockConversationRepository.findByIdAndDomain).mockReturnValue(null)
-      ;(mockConversationMemberRepository as any).save = vi.fn()
+      vi.mocked(mockConversationRepository.findByIdAndDomain).mockReturnValue(null);
+      (mockConversationMemberRepository as any).save = vi.fn()
 
       const newRole: ConversationRole = ConversationRole.ADMIN
       await conversationService.updateMember(USER_ID, CONVERSATION_ID, newRole)

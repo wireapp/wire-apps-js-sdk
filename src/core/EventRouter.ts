@@ -141,7 +141,11 @@ export class EventRouter {
     welcomeMessageBytes: Uint8Array,
     conversationId: QualifiedId
   ) {
-    await this.coreCryptoService.processWelcomeMessage(welcomeMessageBytes)
+    const groupInfoBytes = await this.conversationService.getConversationGroupInfo(conversationId)
+    await this.coreCryptoService.processWelcomeMessage(
+      welcomeMessageBytes,
+      groupInfoBytes
+    )
 
     const conversationResponse = await this.conversationService.fetchConversationById(conversationId)
     const {conversation, members} = await this.conversationService.saveConversationWithMembers(

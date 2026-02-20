@@ -72,10 +72,7 @@ export class MlsApiClient {
     userDomain: string,
     ciphersuite: string
   ): Promise<ClaimedKeyPackageList> {
-    const path = this.claimKeyPackagesPath + `/${userDomain}/${userId}`
-    return await this.httpClient.postRequest<ClaimedKeyPackageList>(
-      path,
-      { params: { [this.CIPHERSUITE_QUERY_PARAM]: ciphersuite }}
-    )
+    const path = `${this.claimKeyPackagesPath}/${userDomain}/${userId}?${this.CIPHERSUITE_QUERY_PARAM}=${ciphersuite}`
+    return await this.httpClient.postRequest<ClaimedKeyPackageList>(path)
   }
 }

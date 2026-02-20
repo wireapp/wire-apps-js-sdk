@@ -1,6 +1,6 @@
 /*
 * Wire
-* Copyright (C) 2025 Wire Swiss GmbH
+* Copyright (C) 2026 Wire Swiss GmbH
 * 
 * This program is free software: you can redistribute it and/or modify
 * it under the terms of the GNU General Public License as published by
@@ -14,10 +14,10 @@
 * along with this program. If not, see http://www.gnu.org/licenses/.
 */
 
-import type { EventContentDTO } from "../../model/EventContentDTO.js";
+import type {EventResponse} from "./EventResponse.js"
 
-export interface EventResponse {
-  id: string,
-  payload?: EventContentDTO[],
-  transient: boolean
+export interface NotificationsResponse {
+  has_more: boolean
+  notifications: EventResponse[]
+  time: Date
 }

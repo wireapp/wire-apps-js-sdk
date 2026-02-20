@@ -14,20 +14,17 @@
 * along with this program. If not, see http://www.gnu.org/licenses/.
 */
 
-import { HttpClient } from "./HttpClient.js";
-import { randomUUID } from "crypto";
-import { WIRE_API_HOST } from "../utils/DependencyInjectionTokens.js";
-import { WebSocket as NodeWebSocket } from "ws";
-import type { ConsumableNotificationResponse } from "../api/response/ConsumableNotificationResponse.js";
-import type { EventNotification } from "../model/notification/EventNotification.js";
-import type { MissedNotification } from "../model/notification/MissedNotification.js";
-import type { SynchronizationNotification } from "../model/notification/SynchronizationNotification.js";
-import { EventAcknowledgeRequest } from "../api/request/EventAcknowledgeRequest.js";
-import { EventRouter } from "./EventRouter.js";
-import { inject, singleton } from "tsyringe";
+import {HttpClient} from "./HttpClient.js";
+import {WIRE_API_HOST} from "../utils/DependencyInjectionTokens.js";
+import {WebSocket as NodeWebSocket} from "ws";
+import {EventRouter} from "./EventRouter.js";
+import {inject, singleton} from "tsyringe";
 import {LoggerFactory} from "../utils/logger/LoggerFactory.js";
+import type {EventResponse} from "../api/response/EventResponse.js";
+import {NotificationsService} from "../service/NotificationsService.js";
+import {AppProperties} from "../service/AppProperties.js";
 
-const WebSocketImpl = (globalThis.WebSocket ?? NodeWebSocket) as typeof WebSocket;
+const getWebSocketImpl = (): typeof WebSocket => (globalThis.WebSocket ?? NodeWebSocket) as typeof WebSocket;
 
 /**
  * Handles the WebSocket connection to the backend.
@@ -37,26 +34,26 @@ const WebSocketImpl = (globalThis.WebSocket ?? NodeWebSocket) as typeof WebSocke
 @singleton()
 export class WebSocketClient {
   private logger = LoggerFactory.getLogger(this.constructor.name)
-  private webSocket?: InstanceType<typeof WebSocketImpl> | undefined
-  private syncMarker?: string | null
+  private webSocket?: WebSocket | undefined
+  private processedEventIds = new Set<string>()
 
   constructor(
     @inject(WIRE_API_HOST) private wireApiHost: string,
     private httpClient: HttpClient,
+    private notificationsService: NotificationsService,
+    private appProperties: AppProperties,
     private eventRouter: EventRouter
   ) {}
 
   async connect(): Promise<void> {
-    this.syncMarker = randomUUID()
-
     try {
       const webSocketUrl = this.buildUrl()
       this.logger.info(`Connecting`)
 
       await this.connectWebSocket(webSocketUrl)
-    } catch (err) {
-      this.logger.error("Error connecting:", err)
-      throw err
+    } catch (exception) {
+      this.logger.error("Error connecting:", exception)
+      throw exception
     } finally {
       this.logger.warn("Connection closed, stopping event listener")
     }
@@ -67,45 +64,68 @@ export class WebSocketClient {
       .replace(/^https/, "wss")
       .replace(/-https/, "-ssl")
 
-    const url = new URL(`${webSocketBaseUrl}/${this.httpClient.getApiHostVersion()}/events`)
+    const url = new URL(`${webSocketBaseUrl}/await`)
     url.searchParams.append("client", this.httpClient.getCachedDeviceId())
     url.searchParams.append("access_token", this.httpClient.getCachedAccessToken())
-    url.searchParams.append("sync_marker", this.syncMarker!)
 
     return url.toString()
   }
 
   private async connectWebSocket(webSocketUrl: string): Promise<void> {
-    const webSocket = new WebSocketImpl(webSocketUrl)
+    const webSocket = new (getWebSocketImpl())(webSocketUrl)
     this.webSocket = webSocket
 
     return new Promise((resolve, reject) => {
-      webSocket.onopen = () => {
-        this.logger.info("Websocket Connected")
-      }
+      const messageBuffer: MessageEvent[] = []
+      let isSyncing = true
 
-      webSocket.onmessage = async (event: MessageEvent) => {
+      const processMessage = async (event: MessageEvent) => {
         if (event.data instanceof Blob ||
           event.data instanceof ArrayBuffer ||
           event.data instanceof Uint8Array ||
           Buffer.isBuffer(event.data)) {
 
-          let buffer: Buffer;
+          let buffer: Buffer
           if (event.data instanceof Blob) {
-            const arrayBuffer = await event.data.arrayBuffer();
-            buffer = Buffer.from(arrayBuffer);
+            const arrayBuffer = await event.data.arrayBuffer()
+            buffer = Buffer.from(arrayBuffer)
           } else if (Buffer.isBuffer(event.data)) {
-            buffer = event.data;
+            buffer = event.data
           } else if (event.data instanceof ArrayBuffer) {
-            buffer = Buffer.from(event.data);
+            buffer = Buffer.from(event.data)
           } else {
-            buffer = Buffer.from(event.data);
+            buffer = Buffer.from(event.data)
           }
 
-          await this.handleEvent(buffer);
+          await this.handleEvent(buffer)
         } else {
           this.logger.error("Unsupported frame type:", typeof event.data)
-          return
+        }
+      }
+
+      webSocket.onopen = async () => {
+        this.logger.info("Websocket Connected")
+        
+        try {
+          await this.syncMissedNotifications();
+        } catch (error) {
+          this.logger.error("Failed to sync missed notifications:", error)
+        }
+        
+        isSyncing = false
+        
+        for (const bufferedMsg of messageBuffer) {
+          await processMessage(bufferedMsg)
+        }
+        this.logger.info("Sync of missed notifications completed")
+        messageBuffer.length = 0
+      }
+
+      webSocket.onmessage = async (event: MessageEvent) => {
+        if (isSyncing) {
+          messageBuffer.push(event)
+        } else {
+          await processMessage(event)
         }
       }
 
@@ -121,77 +141,49 @@ export class WebSocketClient {
     })
   }
 
-  private async handleEventNotification(notification: EventNotification) {
-    this.logger.info(`Received EventNotification`);
-    try {
-      await this.eventRouter.route(notification.data.event);
-      const ackRequest = EventAcknowledgeRequest.basicAck(notification.data.delivery_tag);
-      this.ackEvent(ackRequest);
-    } catch (exception) {
-      this.logger.error(`Error processing event:, ${exception}`);
-    }
-  }
-
-  private async handleMissedNotification() {
-    this.logger.warn("App was offline for too long, missed some notifications")
-    const ackRequest = EventAcknowledgeRequest.notificationMissedAck();
-    this.ackEvent(ackRequest);
-  }
-
-  private async handleSyncNotification(notification: SynchronizationNotification) {
-    if ((notification as SynchronizationNotification).data.delivery_tag) {
-      const ackRequest = EventAcknowledgeRequest.basicAck((notification as SynchronizationNotification).data.delivery_tag);
-      this.ackEvent(ackRequest);
-    }
-
-    if ((notification as SynchronizationNotification).data.marker_id === this.syncMarker) {
-      this.logger.info("Notifications are up to date since last sync marker.");
-    } else {
-      this.logger.info(
-        `Skipping sync marker [${(notification as SynchronizationNotification).data.marker_id}], ` +
-        `as it is not valid for this session.`
-      );
-    }
-  }
-
   private async handleEvent(data: Buffer) {
+    const jsonString = data.toString('utf-8');
+    const event = JSON.parse(jsonString) as EventResponse;
+
     try {
-      const jsonString = data.toString('utf-8');
+      if (!event.transient && !this.processedEventIds.has(event.id)) {
+        this.processedEventIds.clear()
+        await this.eventRouter.route(event)
+        this.appProperties.setLastNotificationId(event.id)
 
-      const notification = JSON.parse(jsonString) as ConsumableNotificationResponse;
-
-      if (this.isEventNotification(notification)) {
-        await this.handleEventNotification(notification)
-      } else if (this.isMissedNotification(notification)) {
-        await this.handleMissedNotification()
-      } else if (this.isSynchronizationNotification(notification)) {
-        await this.handleSyncNotification(notification)
+        // TODO: Send back ACK event (To be done when we have Async notifications again)
       }
     } catch (exception) {
-      this.logger.error("Error handling event:", exception);
+      this.logger.error(`Error processing event: ${event}`, exception)
     }
   }
 
-  private ackEvent(ackRequest: EventAcknowledgeRequest): boolean {
-    try {
-      const json = JSON.stringify(ackRequest)
+  /**
+   * Fetches and syncs missed notifications while the SDK was offline.
+   */
+  private async syncMissedNotifications() {
+    let lastNotificationId = await this.notificationsService.getLastNotificationId()
 
-      if (!this.webSocket) {
-        this.logger.error("Failed to send acknowledge event: WebSocket not initialized", json)
-        return false
+    let hasMore = true
+    while (hasMore) {
+      const notificationsResponse = await this.notificationsService.getPaginatedNotifications(lastNotificationId)
+
+      for (const notification of notificationsResponse.notifications) {
+        try {
+          await this.eventRouter.route(notification)
+          this.processedEventIds.add(notification.id)
+        } catch (exception) {
+          this.logger.error(`Failed to process notification: ${notification.id}`, exception)
+        }
       }
 
-      if (this.webSocket.readyState !== WebSocketImpl.OPEN) {
-        this.logger.error(`Failed to send acknowledge event: WebSocket state is ${this.webSocket.readyState}`, json)
-        return false
+      const lastNotification = notificationsResponse.notifications.at(-1)
+      if (lastNotification) {
+        lastNotificationId = lastNotification.id
+        this.appProperties.setLastNotificationId(lastNotificationId)
       }
 
-      this.webSocket.send(json)
-      this.logger.debug("Acknowledge event sent successfully", json)
-      return true
-    } catch (error) {
-      this.logger.error("Failed to send acknowledge event", ackRequest, error)
-      return false
+      hasMore = notificationsResponse.has_more
     }
   }
 
@@ -200,17 +192,5 @@ export class WebSocketClient {
       this.webSocket.close()
       this.webSocket = undefined
     }
-  }
-
-  private isEventNotification(notification: ConsumableNotificationResponse): notification is EventNotification {
-    return notification.type === "event"
-  }
-
-  private isMissedNotification(notification: ConsumableNotificationResponse): notification is MissedNotification {
-    return notification.type === "notifications_missed"
-  }
-
-  private isSynchronizationNotification(notification: ConsumableNotificationResponse): notification is SynchronizationNotification {
-    return notification.type === "synchronization"
   }
 }
