@@ -10,7 +10,7 @@ export default [
     ignores: [
       "build/**",
       "node_modules/**",
-      "src/sample/**",
+      "sample/**",
       "src/generated/**"
     ]
   },

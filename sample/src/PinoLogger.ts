@@ -1,5 +1,5 @@
 import pino from 'pino';
-import {type Logger} from '../index.js'
+import { type Logger } from 'wire-apps-js-sdk'
 
 export class PinoLogger implements Logger {
   private pinoLogger: pino.Logger;

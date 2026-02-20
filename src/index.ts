@@ -17,19 +17,19 @@
 // ============================================
 // Main SDK Class
 // ============================================
-export {WireAppSdk} from './WireAppSdk.js';
+export { WireAppSdk } from './WireAppSdk.js';
 
 // ============================================
 // Core Components
 // ============================================
-export {WireEventsHandler} from "./core/WireEventsHandler.js"
+export { WireEventsHandler } from "./core/WireEventsHandler.js"
 
 // ============================================
 // Logger Interface
 // ============================================
-export type {Logger} from "./utils/logger/Logger.js"
-export {LogLevel} from "./utils/logger/LogLevel.js"
-export {ConsoleLogger} from "./utils/logger/ConsoleLogger.js"
+export type { Logger } from "./utils/logger/Logger.js"
+export { LogLevel } from "./utils/logger/LogLevel.js"
+export { ConsoleLogger } from "./utils/logger/ConsoleLogger.js"
 
 // ============================================
 // Model Classes
@@ -37,10 +37,13 @@ export {ConsoleLogger} from "./utils/logger/ConsoleLogger.js"
 export {
   type WireMessage,
   TextMessage,
-  AssetMessage
+  AssetMessage,
+  type Audio,
+  type Image,
+  type Video
 } from "./model/WireMessage.js"
 
-export type {Conversation} from "./model/conversation/Conversation.js";
-export type {ConversationMember} from "./model/conversation/ConversationMember.js";
-export type {QualifiedId} from "./model/QualifiedId.js";
-export {obfuscateId} from "./utils/ObfuscateUtil.js"
+export type { Conversation } from "./model/conversation/Conversation.js";
+export type { ConversationMember } from "./model/conversation/ConversationMember.js";
+export type { QualifiedId } from "./model/QualifiedId.js";
+export { obfuscateId } from "./utils/ObfuscateUtil.js"
