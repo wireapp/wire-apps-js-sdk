@@ -18,7 +18,7 @@
 
 import "reflect-metadata";
 import dotenv from 'dotenv';
-import {PinoLogger} from './PinoLogger.js'
+import { PinoLogger } from './PinoLogger.js'
 import {
   type Conversation,
   type ConversationMember,
@@ -33,9 +33,8 @@ import {
   WireEventsHandler
 } from 'wire-apps-js-sdk'
 import fs from 'fs'
-import type {Audio, Image, Video} from "../model/WireMessage.js"
 
-dotenv.config({path: '../.env'})
+dotenv.config({ path: '../.env' })
 
 const userEmail = process.env['WIRE_SDK_USER_EMAIL'];
 const userPassword = process.env['WIRE_SDK_USER_PASSWORD'];
