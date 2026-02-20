@@ -55,7 +55,7 @@
     "vitest": "^4.0.18"
   },
   "dependencies": {
-    "@wireapp/core-crypto": "^9.1.2",
+    "@wireapp/core-crypto": "^9.2.1",
     "bazinga64": "^6.5.13",
     "better-sqlite3": "^12.6.2",
     "protobufjs": "^7.5.4",
