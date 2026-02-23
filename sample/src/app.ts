@@ -146,11 +146,11 @@ class SampleEventsHandler extends WireEventsHandler {
     )
   }
 
-  private readonly resourcesPath = 'resources'
+  private readonly RESOURCES_PATH = 'resources'
 
   private processAssetImage(wireMessage: TextMessage) {
     const filename = 'banana-icon.png'
-    const filePath = path.join(this.resourcesPath, filename)
+    const filePath = path.join(this.RESOURCES_PATH, filename)
     fs.readFile(filePath, (err, data) => {
       if (err) {
         throw err;
@@ -176,7 +176,7 @@ class SampleEventsHandler extends WireEventsHandler {
 
   private processAssetAudio(wireMessage: TextMessage) {
     const filename = 'sample_audio_6s.mp3'
-    const filePath = path.join(this.resourcesPath, filename)
+    const filePath = path.join(this.RESOURCES_PATH, filename)
     fs.readFile(filePath, (err, data) => {
       if (err) {
         throw err;
@@ -211,7 +211,7 @@ class SampleEventsHandler extends WireEventsHandler {
 
   private processAssetVideo(wireMessage: TextMessage) {
     const filename = 'sample_video_5s.mp4'
-    const filePath = path.join(this.resourcesPath, filename)
+    const filePath = path.join(this.RESOURCES_PATH, filename)
     fs.readFile(filePath, (err, data) => {
       if (err) {
         throw err;
