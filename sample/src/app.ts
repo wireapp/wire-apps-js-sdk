@@ -33,6 +33,7 @@ import {
   WireEventsHandler
 } from 'wire-apps-js-sdk'
 import fs from 'fs'
+import path from 'node:path'
 
 dotenv.config({ path: '../.env' })
 
@@ -145,10 +146,12 @@ class SampleEventsHandler extends WireEventsHandler {
     )
   }
 
+  private readonly RESOURCES_PATH = 'resources'
+
   private processAssetImage(wireMessage: TextMessage) {
     const filename = 'banana-icon.png'
-    const path = `./resources/${filename}`
-    fs.readFile(path, (err, data) => {
+    const filePath = path.join(this.RESOURCES_PATH, filename)
+    fs.readFile(filePath, (err, data) => {
       if (err) {
         throw err;
       }
@@ -173,8 +176,8 @@ class SampleEventsHandler extends WireEventsHandler {
 
   private processAssetAudio(wireMessage: TextMessage) {
     const filename = 'sample_audio_6s.mp3'
-    const path = `./src/sample/resources/${filename}`
-    fs.readFile(path, (err, data) => {
+    const filePath = path.join(this.RESOURCES_PATH, filename)
+    fs.readFile(filePath, (err, data) => {
       if (err) {
         throw err;
       }
@@ -208,8 +211,8 @@ class SampleEventsHandler extends WireEventsHandler {
 
   private processAssetVideo(wireMessage: TextMessage) {
     const filename = 'sample_video_5s.mp4'
-    const path = `./src/sample/resources/${filename}`
-    fs.readFile(path, (err, data) => {
+    const filePath = path.join(this.RESOURCES_PATH, filename)
+    fs.readFile(filePath, (err, data) => {
       if (err) {
         throw err;
       }
