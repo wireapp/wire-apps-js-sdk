@@ -47,7 +47,7 @@
     "@types/ws": "^8.18.1",
     "@vitest/coverage-v8": "^4.0.18",
     "cpy-cli": "^7.0.0",
-    "eslint": "^9.39.2",
+    "eslint": "^9.39.4",
     "fake-indexeddb": "^6.2.4",
     "globals": "^17.4.0",
     "protobufjs-cli": "^2.0.0",
