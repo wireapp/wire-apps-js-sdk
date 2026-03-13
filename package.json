@@ -7,7 +7,6 @@
     "sample"
   ],
   "scripts": {
-    "storage:mkdir": "mkdir -p storage",
     "storage:mkdir:sample": "mkdir -p sample/storage",
     "proto:mkdir": "mkdir -p src/generated",
     "proto:package": "node scripts/create-generated-package-json.js",
@@ -16,7 +15,7 @@
     "proto:copy": "cpy 'src/generated/*' build/generated/",
     "proto:generate": "npm run proto:mkdir && npm run proto:package && npm run proto:js && npm run proto:ts",
     "corecrypto:fix-main": "node scripts/fix-core-crypto-main.js",
-    "build:setup": "npm install && npm run storage:mkdir && npm run corecrypto:fix-main && npm run proto:generate",
+    "build:setup": "npm install && npm run corecrypto:fix-main && npm run proto:generate",
     "build": "tsc -p tsconfig.json && npm run proto:copy",
     "build:sample": "npm run build && npm run -w sample build",
     "sample": "npm run storage:mkdir:sample && npm run build:sample && npm run -w sample start",
