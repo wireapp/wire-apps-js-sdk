@@ -18,10 +18,25 @@ import rootMessage, {
   type IText,
   type IGenericMessage,
   type IAsset,
-  type Asset
+  type Asset,
+  type IComposite,
+  Confirmation,
 } from "../../generated/messages.js";
 const { GenericMessage } = rootMessage;
-import { type WireMessage, TextMessage, AssetMessage } from '../../model/WireMessage.js';
+import {
+  type WireMessage,
+  TextMessage,
+  AssetMessage,
+  type CompositeMessage,
+  type ButtonActionMessage,
+  type ButtonActionConfirmationMessage,
+  type KnockMessage,
+  type LocationMessage,
+  type ReactionMessage,
+  type MessageDeleteMessage,
+  type MessageEditMessage,
+  type ConfirmationMessage,
+} from '../../model/WireMessage.js';
 
 /**
  * Utility object responsible for serializing WireMessage to GenericMessage
@@ -50,7 +65,41 @@ export const ProtobufSerializer = {
         builtMessage = packAssetMessage(wireMessage, genericMessage);
         break;
 
-        // TODO: Add other message types here
+      case 'composite':
+        builtMessage = packCompositeMessage(wireMessage, genericMessage);
+        break;
+
+      case 'buttonAction':
+        builtMessage = packButtonActionMessage(wireMessage, genericMessage);
+        break;
+
+      case 'buttonActionConfirmation':
+        builtMessage = packButtonActionConfirmationMessage(wireMessage, genericMessage);
+        break;
+
+      case 'knock':
+        builtMessage = packKnockMessage(wireMessage, genericMessage);
+        break;
+
+      case 'location':
+        builtMessage = packLocationMessage(wireMessage, genericMessage);
+        break;
+
+      case 'reaction':
+        builtMessage = packReactionMessage(wireMessage, genericMessage);
+        break;
+
+      case 'messageDelete':
+        builtMessage = packMessageDeleteMessage(wireMessage, genericMessage);
+        break;
+
+      case 'messageEdit':
+        builtMessage = packMessageEditMessage(wireMessage, genericMessage);
+        break;
+
+      case 'confirmation':
+        builtMessage = packConfirmationMessage(wireMessage, genericMessage);
+        break;
 
       default:
         throw new Error(`Unsupported message type: ${(wireMessage as WireMessage).type}`);
@@ -70,22 +119,37 @@ function packTextMessage(
 ): IGenericMessage {
   const textContent: IText = {
     content: wireMessage.text,
-    // Add other text-specific fields
-    mentions: wireMessage.mentions?.map(mention => ({
+    mentions: (wireMessage.mentions ?? []).map(mention => ({
       qualifiedUserId: mention.userId,
       start: mention.offset,
-      length: mention.length
-    })) || [],
-    linkPreview: [], // TODO: Add proper mapping for LinkPreview / LinkPreviewAsset
+      length: mention.length,
+    })),
+    linkPreview: (wireMessage.linkPreviews ?? []).map(lp => ({
+      url: lp.url,
+      urlOffset: lp.urlOffset,
+      permanentUrl: lp.permanentUrl ?? null,
+      title: lp.title ?? null,
+      summary: lp.summary ?? null,
+    })),
     expectsReadConfirmation: false,
-    legalHoldStatus: null
+    legalHoldStatus: null,
   };
 
   if (wireMessage.quotedMessageId) {
     textContent.quote = {
       quotedMessageId: wireMessage.quotedMessageId!,
-      ...(wireMessage.quotedMessageSha256 !== undefined ? { quotedMessageSha256: wireMessage.quotedMessageSha256 } : {})
+      ...(wireMessage.quotedMessageSha256 != null ? { quotedMessageSha256: wireMessage.quotedMessageSha256 } : {})
     };
+  }
+
+  if (wireMessage.expiresAfterMillis !== undefined && wireMessage.expiresAfterMillis !== null) {
+    return {
+      ...genericMessage,
+      ephemeral: {
+        expireAfterMillis: wireMessage.expiresAfterMillis,
+        text: textContent,
+      }
+    } as IGenericMessage;
   }
 
   return {
@@ -159,4 +223,144 @@ function packAssetMessage(
       asset
     } as IGenericMessage;
   }
+}
+
+function buildCompositeProto(wireMessage: CompositeMessage): IComposite {
+  return {
+    items: wireMessage.items.map(item => {
+      if (item.button) {
+        return { button: { text: item.button.text, id: item.button.id } }
+      } else if (item.text) {
+        return { text: { content: item.text.content } }
+      }
+      return {}
+    }),
+    expectsReadConfirmation: wireMessage.expectsReadConfirmation ?? false,
+  }
+}
+
+function packCompositeMessage(
+  wireMessage: CompositeMessage,
+  genericMessage: Partial<IGenericMessage>
+): IGenericMessage {
+  return {
+    ...genericMessage,
+    composite: buildCompositeProto(wireMessage),
+  } as IGenericMessage;
+}
+
+function packButtonActionMessage(
+  wireMessage: ButtonActionMessage,
+  genericMessage: Partial<IGenericMessage>
+): IGenericMessage {
+  return {
+    ...genericMessage,
+    buttonAction: {
+      buttonId: wireMessage.buttonId,
+      referenceMessageId: wireMessage.referenceMessageId,
+    },
+  } as IGenericMessage;
+}
+
+function packButtonActionConfirmationMessage(
+  wireMessage: ButtonActionConfirmationMessage,
+  genericMessage: Partial<IGenericMessage>
+): IGenericMessage {
+  return {
+    ...genericMessage,
+    buttonActionConfirmation: {
+      referenceMessageId: wireMessage.referenceMessageId,
+      buttonId: wireMessage.buttonId ?? undefined,
+    },
+  } as IGenericMessage;
+}
+
+function packKnockMessage(
+  wireMessage: KnockMessage,
+  genericMessage: Partial<IGenericMessage>
+): IGenericMessage {
+  const knock = { hotKnock: wireMessage.hotKnock };
+  if (wireMessage.expiresAfterMillis != null) {
+    return { ...genericMessage, ephemeral: { expireAfterMillis: wireMessage.expiresAfterMillis, knock } } as IGenericMessage;
+  }
+  return { ...genericMessage, knock } as IGenericMessage;
+}
+
+function packLocationMessage(
+  wireMessage: LocationMessage,
+  genericMessage: Partial<IGenericMessage>
+): IGenericMessage {
+  const location = {
+    longitude: wireMessage.longitude,
+    latitude: wireMessage.latitude,
+    name: wireMessage.name ?? undefined,
+    zoom: wireMessage.zoom ?? undefined,
+  };
+  if (wireMessage.expiresAfterMillis != null) {
+    return { ...genericMessage, ephemeral: { expireAfterMillis: wireMessage.expiresAfterMillis, location } } as IGenericMessage;
+  }
+  return { ...genericMessage, location } as IGenericMessage;
+}
+
+function packReactionMessage(
+  wireMessage: ReactionMessage,
+  genericMessage: Partial<IGenericMessage>
+): IGenericMessage {
+  return {
+    ...genericMessage,
+    reaction: {
+      emoji: wireMessage.emoji,
+      messageId: wireMessage.targetMessageId,
+    },
+  } as IGenericMessage;
+}
+
+function packMessageDeleteMessage(
+  wireMessage: MessageDeleteMessage,
+  genericMessage: Partial<IGenericMessage>
+): IGenericMessage {
+  return {
+    ...genericMessage,
+    deleted: {
+      messageId: wireMessage.targetMessageId,
+    },
+  } as IGenericMessage;
+}
+
+function packMessageEditMessage(
+  wireMessage: MessageEditMessage,
+  genericMessage: Partial<IGenericMessage>
+): IGenericMessage {
+  const edited: IGenericMessage['edited'] = {
+    replacingMessageId: wireMessage.replacingMessageId,
+  };
+
+  if (wireMessage.text != null) {
+    edited!.text = { content: wireMessage.text };
+  } else if (wireMessage.composite != null) {
+    edited!.composite = buildCompositeProto(wireMessage.composite);
+  } else {
+    throw new Error('MessageEditMessage must have either text or composite content');
+  }
+
+  return {
+    ...genericMessage,
+    edited,
+  } as IGenericMessage;
+}
+
+function packConfirmationMessage(
+  wireMessage: ConfirmationMessage,
+  genericMessage: Partial<IGenericMessage>
+): IGenericMessage {
+  return {
+    ...genericMessage,
+    confirmation: {
+      type: wireMessage.confirmationType === 'read'
+        ? Confirmation.Type.READ
+        : Confirmation.Type.DELIVERED,
+      firstMessageId: wireMessage.firstMessageId,
+      moreMessageIds: wireMessage.moreMessageIds ?? [],
+    },
+  } as IGenericMessage;
 }

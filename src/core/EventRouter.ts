@@ -184,7 +184,42 @@ export class EventRouter {
         await this.wireEventsHandler.onAssetMessageReceived(wireMessage)
         break;
 
-      // TODO: Add other WireMessage types
+      case 'composite':
+        await this.wireEventsHandler.onCompositeMessageReceived(wireMessage)
+        break;
+
+      case 'buttonAction':
+        await this.wireEventsHandler.onButtonActionReceived(wireMessage)
+        break;
+
+      case 'buttonActionConfirmation':
+        await this.wireEventsHandler.onButtonActionConfirmationReceived(wireMessage)
+        break;
+
+      case 'knock':
+        await this.wireEventsHandler.onKnockReceived(wireMessage)
+        break;
+
+      case 'location':
+        await this.wireEventsHandler.onLocationMessageReceived(wireMessage)
+        break;
+
+      case 'reaction':
+        await this.wireEventsHandler.onReactionReceived(wireMessage)
+        break;
+
+      case 'messageDelete':
+        await this.wireEventsHandler.onMessageDeleted(wireMessage)
+        break;
+
+      case 'messageEdit':
+        await this.wireEventsHandler.onMessageEdited(wireMessage)
+        break;
+
+      case 'confirmation':
+        await this.wireEventsHandler.onConfirmationReceived(wireMessage)
+        break;
+
       case 'unknown':
       default:
         this.logger.info("Unknown event received.")

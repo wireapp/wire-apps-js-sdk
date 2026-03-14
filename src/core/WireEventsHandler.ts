@@ -15,7 +15,19 @@
  */
 
 import {WireApplicationManager} from "./WireApplicationManager.js";
-import type {AssetMessage, TextMessage} from "../model/WireMessage.js";
+import type {
+  AssetMessage,
+  ButtonActionConfirmationMessage,
+  ButtonActionMessage,
+  CompositeMessage,
+  ConfirmationMessage,
+  KnockMessage,
+  LocationMessage,
+  MessageDeleteMessage,
+  MessageEditMessage,
+  ReactionMessage,
+  TextMessage,
+} from "../model/WireMessage.js";
 import type {Conversation} from "../model/conversation/Conversation.js";
 import type {ConversationMember} from "../model/conversation/ConversationMember.js";
 import {obfuscateId} from "../utils/ObfuscateUtil.js";
@@ -49,6 +61,76 @@ export abstract class WireEventsHandler {
 
   public async onAssetMessageReceived(wireMessage: AssetMessage): Promise<void> {
     this.logger.info(`Received onAssetMessageReceived, ID: ${wireMessage.id}`)
+  }
+
+  /**
+   * Called when a Composite (interactive UI card) message is received.
+   * Composite messages contain a mix of text paragraphs and tappable buttons.
+   * When a user taps a button, a ButtonAction event will follow.
+   */
+  public async onCompositeMessageReceived(wireMessage: CompositeMessage): Promise<void> {
+    this.logger.info(`Received onCompositeMessageReceived, ID: ${wireMessage.id}`)
+  }
+
+  /**
+   * Called when a user taps a button inside a Composite message.
+   * Use `referenceMessageId` to identify which Composite message the action belongs to.
+   * Respond by sending a ButtonActionConfirmation via `manager.sendMessage()`.
+   */
+  public async onButtonActionReceived(wireMessage: ButtonActionMessage): Promise<void> {
+    this.logger.info(`Received onButtonActionReceived, ID: ${wireMessage.id}`)
+  }
+
+  /**
+   * Called when the server or bot confirms which button was accepted in response
+   * to a ButtonAction. If `buttonId` is absent, no button was accepted.
+   */
+  public async onButtonActionConfirmationReceived(wireMessage: ButtonActionConfirmationMessage): Promise<void> {
+    this.logger.info(`Received onButtonActionConfirmationReceived, ID: ${wireMessage.id}`)
+  }
+
+  /**
+   * Called when a knock/ping message is received to get attention in a conversation.
+   */
+  public async onKnockReceived(wireMessage: KnockMessage): Promise<void> {
+    this.logger.info(`Received onKnockReceived, ID: ${wireMessage.id}`)
+  }
+
+  /**
+   * Called when a location message is received.
+   */
+  public async onLocationMessageReceived(wireMessage: LocationMessage): Promise<void> {
+    this.logger.info(`Received onLocationMessageReceived, ID: ${wireMessage.id}`)
+  }
+
+  /**
+   * Called when an emoji reaction is sent to a message.
+   * An empty `emoji` string means the sender removed their reaction.
+   */
+  public async onReactionReceived(wireMessage: ReactionMessage): Promise<void> {
+    this.logger.info(`Received onReactionReceived, ID: ${wireMessage.id}`)
+  }
+
+  /**
+   * Called when a message has been deleted by its sender.
+   */
+  public async onMessageDeleted(wireMessage: MessageDeleteMessage): Promise<void> {
+    this.logger.info(`Received onMessageDeleted, ID: ${wireMessage.id}`)
+  }
+
+  /**
+   * Called when an existing message has been edited.
+   * The `replacingMessageId` identifies the original message.
+   */
+  public async onMessageEdited(wireMessage: MessageEditMessage): Promise<void> {
+    this.logger.info(`Received onMessageEdited, ID: ${wireMessage.id}`)
+  }
+
+  /**
+   * Called when a delivery or read confirmation is received for one or more messages.
+   */
+  public async onConfirmationReceived(wireMessage: ConfirmationMessage): Promise<void> {
+    this.logger.info(`Received onConfirmationReceived, ID: ${wireMessage.id}, type: ${wireMessage.confirmationType}`)
   }
 
   public async onAppAddedToConversation(

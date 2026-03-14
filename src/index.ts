@@ -36,11 +36,27 @@ export { ConsoleLogger } from "./utils/logger/ConsoleLogger.js"
 // ============================================
 export {
   type WireMessage,
+  // Text
   TextMessage,
+  // Asset
   AssetMessage,
   type Audio,
   type Image,
-  type Video
+  type Video,
+  // Composite / UI Components
+  CompositeMessage,
+  type Button,
+  type CompositeItem,
+  ButtonActionMessage,
+  ButtonActionConfirmationMessage,
+  // Other message types
+  KnockMessage,
+  LocationMessage,
+  ReactionMessage,
+  MessageDeleteMessage,
+  MessageEditMessage,
+  ConfirmationMessage,
+  type ConfirmationType,
 } from "./model/WireMessage.js"
 
 export type { Conversation } from "./model/conversation/Conversation.js";
