@@ -14,9 +14,9 @@
 * along with this program. If not, see http://www.gnu.org/licenses/.
 */
 
-import rootMessage, { type IGenericMessage, Confirmation } from "../../generated/messages.js";
+import rootMessage, { type IGenericMessage } from "../../generated/messages.js";
 import type { QualifiedId } from "../../model/QualifiedId.js";
-const { GenericMessage } = rootMessage;
+const { GenericMessage, Confirmation } = rootMessage;
 import {
   TextMessage,
   Unknown,
