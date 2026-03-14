@@ -20,9 +20,8 @@ import rootMessage, {
   type IAsset,
   type Asset,
   type IComposite,
-  Confirmation,
 } from "../../generated/messages.js";
-const { GenericMessage } = rootMessage;
+const { GenericMessage, Confirmation } = rootMessage;
 import {
   type WireMessage,
   TextMessage,
