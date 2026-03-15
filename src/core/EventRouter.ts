@@ -25,6 +25,7 @@ import {
   isMemberJoinEvent,
   isMemberLeaveEvent,
   isMemberUpdateEvent,
+  isTeamInviteEvent,
   type EventContentDTO,
   type NewMLSMessageDTO,
   type NewConversationDTO,
@@ -129,6 +130,8 @@ export class EventRouter {
       } else if (isMemberUpdateEvent(event)) {
         const memberUpdateDTO = (event as MemberUpdateDTO)
         await this.processMemberUpdateEvent(memberUpdateDTO)
+      } else if (isTeamInviteEvent(event)) {
+        // No action required — team membership is managed server-side
       } else {
         this.logger.info(`Received an unmapped event: ${(event as EventContentDTO).type}`)
       }
