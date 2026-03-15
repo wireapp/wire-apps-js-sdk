@@ -89,6 +89,7 @@ export const TextMessage = {
   create(
     params: {
       conversationId: QualifiedId
+      sender?: QualifiedId
       text: string
       mentions?: Mention[]
       linkPreviews?: LinkPreview[]
@@ -101,10 +102,7 @@ export const TextMessage = {
       type: 'text',
       id: crypto.randomUUID(),
       conversationId: params.conversationId,
-      sender: {
-        id: crypto.randomUUID(),
-        domain: crypto.randomUUID(),
-      },
+      sender: params.sender ?? { id: crypto.randomUUID(), domain: crypto.randomUUID() },
       text: params.text,
       mentions: params.mentions ?? [],
       linkPreviews: params.linkPreviews ?? [],
@@ -129,6 +127,7 @@ export const AssetMessage = {
   create(
     params: {
       conversationId: QualifiedId
+      sender?: QualifiedId
       sizeInBytes: number | Long
       name?: string | null
       mimeType: string
@@ -141,10 +140,7 @@ export const AssetMessage = {
       type: 'asset',
       id: crypto.randomUUID(),
       conversationId: params.conversationId,
-      sender: {
-        id: crypto.randomUUID(),
-        domain: crypto.randomUUID(),
-      },
+      sender: params.sender ?? { id: crypto.randomUUID(), domain: crypto.randomUUID() },
       timestamp: new Date(),
       sizeInBytes: params.sizeInBytes,
       name: params.name ?? null,
@@ -222,6 +218,7 @@ export const CompositeMessage = {
   create(
     params: {
       conversationId: QualifiedId
+      sender?: QualifiedId
       items: CompositeItem[]
       expectsReadConfirmation?: boolean | null
     }
@@ -230,10 +227,7 @@ export const CompositeMessage = {
       type: 'composite',
       id: crypto.randomUUID(),
       conversationId: params.conversationId,
-      sender: {
-        id: crypto.randomUUID(),
-        domain: crypto.randomUUID(),
-      },
+      sender: params.sender ?? { id: crypto.randomUUID(), domain: crypto.randomUUID() },
       timestamp: new Date(),
       items: params.items,
       expectsReadConfirmation: params.expectsReadConfirmation ?? null,
@@ -254,6 +248,7 @@ export const ButtonActionMessage = {
   create(
     params: {
       conversationId: QualifiedId
+      sender?: QualifiedId
       buttonId: string
       referenceMessageId: string
     }
@@ -262,10 +257,7 @@ export const ButtonActionMessage = {
       type: 'buttonAction',
       id: crypto.randomUUID(),
       conversationId: params.conversationId,
-      sender: {
-        id: crypto.randomUUID(),
-        domain: crypto.randomUUID(),
-      },
+      sender: params.sender ?? { id: crypto.randomUUID(), domain: crypto.randomUUID() },
       timestamp: new Date(),
       buttonId: params.buttonId,
       referenceMessageId: params.referenceMessageId,
@@ -288,6 +280,7 @@ export const ButtonActionConfirmationMessage = {
   create(
     params: {
       conversationId: QualifiedId
+      sender?: QualifiedId
       referenceMessageId: string
       buttonId?: string | null
     }
@@ -296,10 +289,7 @@ export const ButtonActionConfirmationMessage = {
       type: 'buttonActionConfirmation',
       id: crypto.randomUUID(),
       conversationId: params.conversationId,
-      sender: {
-        id: crypto.randomUUID(),
-        domain: crypto.randomUUID(),
-      },
+      sender: params.sender ?? { id: crypto.randomUUID(), domain: crypto.randomUUID() },
       timestamp: new Date(),
       referenceMessageId: params.referenceMessageId,
       buttonId: params.buttonId ?? null,
@@ -321,6 +311,7 @@ export const KnockMessage = {
   create(
     params: {
       conversationId: QualifiedId
+      sender?: QualifiedId
       hotKnock?: boolean
       expiresAfterMillis?: number | null
     }
@@ -329,10 +320,7 @@ export const KnockMessage = {
       type: 'knock',
       id: crypto.randomUUID(),
       conversationId: params.conversationId,
-      sender: {
-        id: crypto.randomUUID(),
-        domain: crypto.randomUUID(),
-      },
+      sender: params.sender ?? { id: crypto.randomUUID(), domain: crypto.randomUUID() },
       timestamp: new Date(),
       hotKnock: params.hotKnock ?? false,
       expiresAfterMillis: params.expiresAfterMillis ?? null,
@@ -353,6 +341,7 @@ export const LocationMessage = {
   create(
     params: {
       conversationId: QualifiedId
+      sender?: QualifiedId
       longitude: number
       latitude: number
       name?: string | null
@@ -364,10 +353,7 @@ export const LocationMessage = {
       type: 'location',
       id: crypto.randomUUID(),
       conversationId: params.conversationId,
-      sender: {
-        id: crypto.randomUUID(),
-        domain: crypto.randomUUID(),
-      },
+      sender: params.sender ?? { id: crypto.randomUUID(), domain: crypto.randomUUID() },
       timestamp: new Date(),
       longitude: params.longitude,
       latitude: params.latitude,
@@ -390,6 +376,7 @@ export const ReactionMessage = {
   create(
     params: {
       conversationId: QualifiedId
+      sender?: QualifiedId
       emoji: string
       targetMessageId: string
     }
@@ -398,10 +385,7 @@ export const ReactionMessage = {
       type: 'reaction',
       id: crypto.randomUUID(),
       conversationId: params.conversationId,
-      sender: {
-        id: crypto.randomUUID(),
-        domain: crypto.randomUUID(),
-      },
+      sender: params.sender ?? { id: crypto.randomUUID(), domain: crypto.randomUUID() },
       timestamp: new Date(),
       emoji: params.emoji,
       targetMessageId: params.targetMessageId,
@@ -419,6 +403,7 @@ export const MessageDeleteMessage = {
   create(
     params: {
       conversationId: QualifiedId
+      sender?: QualifiedId
       targetMessageId: string
     }
   ): MessageDeleteMessage {
@@ -426,10 +411,7 @@ export const MessageDeleteMessage = {
       type: 'messageDelete',
       id: crypto.randomUUID(),
       conversationId: params.conversationId,
-      sender: {
-        id: crypto.randomUUID(),
-        domain: crypto.randomUUID(),
-      },
+      sender: params.sender ?? { id: crypto.randomUUID(), domain: crypto.randomUUID() },
       timestamp: new Date(),
       targetMessageId: params.targetMessageId,
     }
@@ -450,6 +432,7 @@ export const MessageEditMessage = {
   create(
     params: {
       conversationId: QualifiedId
+      sender?: QualifiedId
       replacingMessageId: string
       text?: string | null
       composite?: CompositeMessage | null
@@ -459,10 +442,7 @@ export const MessageEditMessage = {
       type: 'messageEdit',
       id: crypto.randomUUID(),
       conversationId: params.conversationId,
-      sender: {
-        id: crypto.randomUUID(),
-        domain: crypto.randomUUID(),
-      },
+      sender: params.sender ?? { id: crypto.randomUUID(), domain: crypto.randomUUID() },
       timestamp: new Date(),
       replacingMessageId: params.replacingMessageId,
       text: params.text ?? null,
@@ -485,6 +465,7 @@ export const ConfirmationMessage = {
   create(
     params: {
       conversationId: QualifiedId
+      sender?: QualifiedId
       confirmationType: ConfirmationType
       firstMessageId: string
       moreMessageIds?: string[]
@@ -494,10 +475,7 @@ export const ConfirmationMessage = {
       type: 'confirmation',
       id: crypto.randomUUID(),
       conversationId: params.conversationId,
-      sender: {
-        id: crypto.randomUUID(),
-        domain: crypto.randomUUID(),
-      },
+      sender: params.sender ?? { id: crypto.randomUUID(), domain: crypto.randomUUID() },
       timestamp: new Date(),
       confirmationType: params.confirmationType,
       firstMessageId: params.firstMessageId,
