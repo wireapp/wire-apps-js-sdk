@@ -67,6 +67,7 @@ beforeEach(() => {
   mockHttpClient = {
     getCachedDeviceId: vi.fn().mockReturnValue('device-id'),
     getCachedAccessToken: vi.fn().mockReturnValue('access-token'),
+    verifyAuthorizationToken: vi.fn().mockResolvedValue(undefined),
   } as any
 
   mockEventRouter = {

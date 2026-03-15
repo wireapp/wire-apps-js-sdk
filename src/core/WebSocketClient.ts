@@ -66,6 +66,7 @@ export class WebSocketClient {
     try {
       while (!this._stopped) {
         try {
+          await this.httpClient.verifyAuthorizationToken()
           this.logger.info('Connecting')
           await this.connectWebSocket(this.buildUrl())
         } catch (exception) {
