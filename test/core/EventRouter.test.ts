@@ -24,6 +24,7 @@ import type {
   MemberUpdateDTO,
   TeamInviteDTO,
 } from '../../src/model/EventContentDTO.js'
+import {ConversationRole} from '../../src/model/conversation/ConversationRole.js'
 
 const makeEventResponse = (payload: EventResponse['payload']): EventResponse => ({
   id: 'event-id',
@@ -91,8 +92,8 @@ describe('EventRouter', () => {
         qualified_from: USER_A,
         data: {
           users: [
-            {qualified_id: USER_A, conversation_role: 'wire_member'},
-            {qualified_id: USER_B, conversation_role: 'wire_member'},
+            {qualified_id: USER_A, conversation_role: ConversationRole.MEMBER},
+            {qualified_id: USER_B, conversation_role: ConversationRole.MEMBER},
           ],
         },
       }
@@ -100,7 +101,7 @@ describe('EventRouter', () => {
       await router.route(makeEventResponse([event]))
 
       expect(mockConversationService.addMembers).toHaveBeenCalledWith(
-        [{userId: USER_A, role: 'wire_member'}, {userId: USER_B, role: 'wire_member'}],
+        [{userId: USER_A, role: ConversationRole.MEMBER}, {userId: USER_B, role: ConversationRole.MEMBER}],
         CONV_ID
       )
       expect(mockWireEventsHandler.onUserJoinedConversation).toHaveBeenCalledWith(CONV_ID, expect.any(Array))
@@ -131,12 +132,12 @@ describe('EventRouter', () => {
         time: new Date(),
         qualified_conversation: CONV_ID,
         qualified_from: USER_A,
-        data: {qualified_target: USER_B, conversation_role: 'wire_admin'},
+        data: {qualified_target: USER_B, conversation_role: ConversationRole.ADMIN},
       }
 
       await router.route(makeEventResponse([event]))
 
-      expect(mockConversationService.updateMember).toHaveBeenCalledWith(USER_B, CONV_ID, 'wire_admin')
+      expect(mockConversationService.updateMember).toHaveBeenCalledWith(USER_B, CONV_ID, ConversationRole.ADMIN)
     })
   })
 
