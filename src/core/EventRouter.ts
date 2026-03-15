@@ -94,7 +94,8 @@ export class EventRouter {
 
           await this.forwardMessage(
             message,
-            textEvent.qualified_conversation
+            textEvent.qualified_conversation,
+            textEvent.qualified_from
           )
         } catch (exception) {
           if (isMlsException(exception)) {
@@ -171,11 +172,13 @@ export class EventRouter {
 
   private async forwardMessage(
     message: Uint8Array,
-    qualifiedConversation: QualifiedId
+    qualifiedConversation: QualifiedId,
+    qualifiedFrom: QualifiedId
   ) {
     const wireMessage = ProtobufDeserializer.toWireMessage(
       message,
-      qualifiedConversation
+      qualifiedConversation,
+      qualifiedFrom
     )
 
     switch (wireMessage.type) {
