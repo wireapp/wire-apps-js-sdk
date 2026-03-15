@@ -20,6 +20,7 @@ import rootMessage, {
   type IAsset,
   type Asset,
   type IComposite,
+  type EncryptionAlgorithm,
 } from "../../generated/messages.js";
 const { GenericMessage, Confirmation } = rootMessage;
 import {
@@ -200,7 +201,8 @@ function packAssetMessage(
     sha256: wireMessage.remoteData?.sha256 || new Uint8Array(),
     assetId: wireMessage.remoteData?.assetId || null,
     assetToken: wireMessage.remoteData?.assetToken || null,
-    assetDomain: wireMessage.remoteData?.assetDomain || null
+    assetDomain: wireMessage.remoteData?.assetDomain || null,
+    encryption: wireMessage.remoteData?.encryptionAlgorithm as unknown as EncryptionAlgorithm ?? null,
   };
 
   const asset: IAsset = {

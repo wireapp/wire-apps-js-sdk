@@ -204,7 +204,9 @@ function unpackEphemeralMessage(
           : null,
       })),
       quotedMessageId: text.quote?.quotedMessageId ?? null,
-      quotedMessageSha256: text.quote?.quotedMessageSha256 ?? null,
+      quotedMessageSha256: text.quote?.quotedMessageSha256
+        ? new Uint8Array(text.quote.quotedMessageSha256)
+        : null,
       expiresAfterMillis,
     })
   } else if (ephemeral.asset) {
