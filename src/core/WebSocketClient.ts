@@ -30,12 +30,19 @@ const getWebSocketImpl = (): typeof WebSocket => (globalThis.WebSocket ?? NodeWe
  * Handles the WebSocket connection to the backend.
  *
  * Receives binary events and routes them to the appropriate handlers.
+ * Automatically reconnects with exponential backoff on unexpected disconnection.
  */
 @singleton()
 export class WebSocketClient {
   private logger = LoggerFactory.getLogger(this.constructor.name)
   private webSocket?: WebSocket | undefined
   private processedEventIds = new Set<string>()
+  private _stopped = false
+  private _reconnectAttempts = 0
+
+  private static readonly MAX_RECONNECT_ATTEMPTS = 10
+  private static readonly BASE_RECONNECT_DELAY_MS = 1_000
+  private static readonly MAX_RECONNECT_DELAY_MS = 30_000
 
   constructor(
     @inject(WIRE_API_HOST) private wireApiHost: string,
@@ -46,17 +53,34 @@ export class WebSocketClient {
   ) {}
 
   async connect(): Promise<void> {
-    try {
-      const webSocketUrl = this.buildUrl()
-      this.logger.info(`Connecting`)
+    this._stopped = false
+    this._reconnectAttempts = 0
 
-      await this.connectWebSocket(webSocketUrl)
-    } catch (exception) {
-      this.logger.error("Error connecting:", exception)
-      throw exception
-    } finally {
-      this.logger.warn("Connection closed, stopping event listener")
+    while (!this._stopped) {
+      try {
+        this.logger.info('Connecting')
+        await this.connectWebSocket(this.buildUrl())
+      } catch (exception) {
+        this.logger.error('Connection error:', exception)
+      }
+
+      if (this._stopped) break
+
+      if (this._reconnectAttempts >= WebSocketClient.MAX_RECONNECT_ATTEMPTS) {
+        this.logger.error(`WebSocket stopped after ${WebSocketClient.MAX_RECONNECT_ATTEMPTS} failed reconnect attempts`)
+        break
+      }
+
+      const delay = Math.min(
+        WebSocketClient.BASE_RECONNECT_DELAY_MS * (2 ** this._reconnectAttempts),
+        WebSocketClient.MAX_RECONNECT_DELAY_MS
+      )
+      this._reconnectAttempts++
+      this.logger.info(`Reconnecting in ${delay}ms (attempt ${this._reconnectAttempts}/${WebSocketClient.MAX_RECONNECT_ATTEMPTS})`)
+      await new Promise<void>(r => setTimeout(r, delay))
     }
+
+    this.logger.warn('WebSocket connection loop ended')
   }
 
   private buildUrl(): string {
@@ -75,7 +99,15 @@ export class WebSocketClient {
     const webSocket = new (getWebSocketImpl())(webSocketUrl)
     this.webSocket = webSocket
 
-    return new Promise((resolve, reject) => {
+    return new Promise<void>((resolve) => {
+      // Ensures onerror followed by onclose (standard WebSocket behaviour) only resolves once
+      let settled = false
+      const settle = () => {
+        if (settled) return
+        settled = true
+        resolve()
+      }
+
       const messageBuffer: MessageEvent[] = []
       let isSyncing = true
 
@@ -104,16 +136,17 @@ export class WebSocketClient {
       }
 
       webSocket.onopen = async () => {
+        this._reconnectAttempts = 0
         this.logger.info("Websocket Connected")
-        
+
         try {
           await this.syncMissedNotifications();
         } catch (error) {
           this.logger.error("Failed to sync missed notifications:", error)
         }
-        
+
         isSyncing = false
-        
+
         for (const bufferedMsg of messageBuffer) {
           await processMessage(bufferedMsg)
         }
@@ -131,12 +164,12 @@ export class WebSocketClient {
 
       webSocket.onerror = (error) => {
         this.logger.error("Websocket Error:", error)
-        reject(error)
+        settle()
       }
 
       webSocket.onclose = () => {
         this.logger.warn("WebSocket Closed")
-        resolve()
+        settle()
       }
     })
   }
@@ -188,6 +221,7 @@ export class WebSocketClient {
   }
 
   close() {
+    this._stopped = true
     if (this.webSocket) {
       this.webSocket.close()
       this.webSocket = undefined
