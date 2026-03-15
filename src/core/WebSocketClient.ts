@@ -37,6 +37,7 @@ export class WebSocketClient {
   private logger = LoggerFactory.getLogger(this.constructor.name)
   private webSocket?: WebSocket | undefined
   private processedEventIds = new Set<string>()
+  private _connecting = false
   private _stopped = false
   private _reconnectAttempts = 0
 
@@ -53,31 +54,41 @@ export class WebSocketClient {
   ) {}
 
   async connect(): Promise<void> {
+    if (this._connecting) {
+      this.logger.warn('connect() called while already connecting — ignoring')
+      return
+    }
+
+    this._connecting = true
     this._stopped = false
     this._reconnectAttempts = 0
 
-    while (!this._stopped) {
-      try {
-        this.logger.info('Connecting')
-        await this.connectWebSocket(this.buildUrl())
-      } catch (exception) {
-        this.logger.error('Connection error:', exception)
+    try {
+      while (!this._stopped) {
+        try {
+          this.logger.info('Connecting')
+          await this.connectWebSocket(this.buildUrl())
+        } catch (exception) {
+          this.logger.error('Connection error:', exception)
+        }
+
+        if (this._stopped) break
+
+        if (this._reconnectAttempts >= WebSocketClient.MAX_RECONNECT_ATTEMPTS) {
+          this.logger.error(`WebSocket stopped after ${WebSocketClient.MAX_RECONNECT_ATTEMPTS} failed reconnect attempts`)
+          break
+        }
+
+        const delay = Math.min(
+          WebSocketClient.BASE_RECONNECT_DELAY_MS * (2 ** this._reconnectAttempts),
+          WebSocketClient.MAX_RECONNECT_DELAY_MS
+        )
+        this._reconnectAttempts++
+        this.logger.info(`Reconnecting in ${delay}ms (attempt ${this._reconnectAttempts}/${WebSocketClient.MAX_RECONNECT_ATTEMPTS})`)
+        await new Promise<void>(r => setTimeout(r, delay))
       }
-
-      if (this._stopped) break
-
-      if (this._reconnectAttempts >= WebSocketClient.MAX_RECONNECT_ATTEMPTS) {
-        this.logger.error(`WebSocket stopped after ${WebSocketClient.MAX_RECONNECT_ATTEMPTS} failed reconnect attempts`)
-        break
-      }
-
-      const delay = Math.min(
-        WebSocketClient.BASE_RECONNECT_DELAY_MS * (2 ** this._reconnectAttempts),
-        WebSocketClient.MAX_RECONNECT_DELAY_MS
-      )
-      this._reconnectAttempts++
-      this.logger.info(`Reconnecting in ${delay}ms (attempt ${this._reconnectAttempts}/${WebSocketClient.MAX_RECONNECT_ATTEMPTS})`)
-      await new Promise<void>(r => setTimeout(r, delay))
+    } finally {
+      this._connecting = false
     }
 
     this.logger.warn('WebSocket connection loop ended')

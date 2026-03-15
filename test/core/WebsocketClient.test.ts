@@ -412,6 +412,51 @@ describe('WebSocketClient', () => {
       await stopClient(client, connectPromise)
     })
 
+    it('should stop reconnecting after max attempts and resolve the connect promise', async () => {
+      vi.useFakeTimers()
+
+      const client = makeClient()
+      const connectPromise = client.connect()
+      await flushPromises()
+
+      // Initial connection fails immediately (no onopen)
+      mockWebSocket.onclose!()
+
+      // Drive through MAX_RECONNECT_ATTEMPTS (10) reconnect cycles
+      // Each cycle: advance past the longest possible delay, then fail the new socket
+      for (let i = 0; i < 10; i++) {
+        await vi.advanceTimersByTimeAsync(35_000)
+        await flushPromises()
+        mockWebSocket.onclose!()
+      }
+
+      // connect() loop should have exited cleanly
+      await expect(connectPromise).resolves.toBeUndefined()
+    })
+
+    it('should stop cleanly when close() is called during backoff delay', async () => {
+      vi.useFakeTimers()
+
+      const client = makeClient()
+      const connectPromise = client.connect()
+      await flushPromises()
+      await mockWebSocket.onopen!()
+
+      // Unexpected close — backoff delay of 1s starts
+      mockWebSocket.onclose!()
+
+      // close() is called before the delay expires
+      const socketDuringDelay = mockWebSocket
+      client.close()
+
+      // Advance past the backoff — loop should see _stopped and exit without reconnecting
+      await vi.advanceTimersByTimeAsync(1100)
+      await flushPromises()
+
+      expect(mockWebSocket).toBe(socketDuringDelay) // no new socket created
+      await expect(connectPromise).resolves.toBeUndefined()
+    })
+
     it('should not open multiple sockets from a single onerror + onclose sequence', async () => {
       vi.useFakeTimers()
 
