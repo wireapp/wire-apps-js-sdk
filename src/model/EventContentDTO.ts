@@ -97,6 +97,11 @@ interface MemberRoleChangeData {
   conversation_role: ConversationRole
 }
 
+export interface TeamInviteDTO {
+  type: string
+  team: string
+}
+
 export type EventContentDTO =
   MLSWelcomeDTO
   | NewMLSMessageDTO
@@ -106,6 +111,7 @@ export type EventContentDTO =
   | MemberJoinDTO
   | MemberLeaveDTO
   | MemberUpdateDTO
+  | TeamInviteDTO
 
 // TODO: [Note from Baris] -> I think the following methods should be in the Router.
 //  We don't need to pass "event" object to this class just to check 'type'.
@@ -145,4 +151,8 @@ export function isMemberLeaveEvent(event: EventContentDTO): event is MemberLeave
 
 export function isMemberUpdateEvent(event: EventContentDTO): event is MemberUpdateDTO {
   return (event as MemberUpdateDTO).type === "conversation.member-update"
+}
+
+export function isTeamInviteEvent(event: EventContentDTO): event is TeamInviteDTO {
+  return (event as TeamInviteDTO).type === "team.invite"
 }
