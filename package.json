@@ -58,7 +58,7 @@
   "dependencies": {
     "@wireapp/core-crypto": "^9.1.2",
     "bazinga64": "^6.5.13",
-    "better-sqlite3": "^12.6.2",
+    "better-sqlite3": "^12.8.0",
     "protobufjs": "^7.5.4",
     "reflect-metadata": "^0.2.2",
     "tsyringe": "^4.10.0",
