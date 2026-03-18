@@ -1,7 +1,7 @@
 /*
 * Wire
 * Copyright (C) 2025 Wire Swiss GmbH
-* 
+*
 * This program is free software: you can redistribute it and/or modify
 * it under the terms of the GNU General Public License as published by
 * the Free Software Foundation, either version 3 of the License, or
@@ -31,9 +31,9 @@ describe("Conversation Mapping", () => {
       id: conversationId,
       domain: conversationDomain,
       name: conversationName,
-      team_id: conversationTeamId,
-      mls_group_id: "dummyMlsGroupId",
-      creation_date: null,
+      teamId: conversationTeamId,
+      mlsGroupId: "dummyMlsGroupId",
+      creationDate: null,
       type: "0"
     }
 

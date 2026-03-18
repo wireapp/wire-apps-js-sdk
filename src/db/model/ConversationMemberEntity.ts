@@ -1,7 +1,7 @@
 /*
 * Wire
 * Copyright (C) 2025 Wire Swiss GmbH
-* 
+*
 * This program is free software: you can redistribute it and/or modify
 * it under the terms of the GNU General Public License as published by
 * the Free Software Foundation, either version 3 of the License, or
@@ -15,10 +15,10 @@
 */
 
 export interface ConversationMemberEntity {
-  user_id: string
-  user_domain: string
-  conversation_id: string
-  conversation_domain: string
+  userId: string
+  userDomain: string
+  conversationId: string
+  conversationDomain: string
   role: string
-  creation_date: string | null
+  creationDate: string | null
 }

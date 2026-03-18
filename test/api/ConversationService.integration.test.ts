@@ -108,16 +108,16 @@ describe('ConversationService Integration', () => {
 
       expect(savedConversation).toBeDefined()
       expect((savedConversation as ConversationEntity).name).toBe(CONVERSATION_NAME)
-      expect((savedConversation as ConversationEntity).team_id).toBe(TEAM_ID)
-      expect((savedConversation as ConversationEntity).mls_group_id).toBe(MLS_GROUP_ID)
+      expect((savedConversation as ConversationEntity).teamId).toBe(TEAM_ID)
+      expect((savedConversation as ConversationEntity).mlsGroupId).toBe(MLS_GROUP_ID)
 
       const savedMembers = conversationService.getMembersByConversationId(CONVERSATION_ID)
 
       expect(savedMembers).toHaveLength(2)
-      expect(savedMembers.map((m: ConversationMemberEntity) => m.user_id)).toContain(USER_ID.id)
-      expect(savedMembers.map((m: ConversationMemberEntity) => m.user_domain)).toContain(USER_ID.domain)
-      expect(savedMembers.map((m: ConversationMemberEntity) => m.conversation_id)).toContain(CONVERSATION_ID.id)
-      expect(savedMembers.map((m: ConversationMemberEntity) => m.conversation_domain)).toContain(CONVERSATION_ID.domain)
+      expect(savedMembers.map((m: ConversationMemberEntity) => m.userId)).toContain(USER_ID.id)
+      expect(savedMembers.map((m: ConversationMemberEntity) => m.userDomain)).toContain(USER_ID.domain)
+      expect(savedMembers.map((m: ConversationMemberEntity) => m.conversationId)).toContain(CONVERSATION_ID.id)
+      expect(savedMembers.map((m: ConversationMemberEntity) => m.conversationDomain)).toContain(CONVERSATION_ID.domain)
     })
 
     it('should fetch user name from API for ONE_TO_ONE conversations', async () => {

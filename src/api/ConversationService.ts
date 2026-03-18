@@ -79,9 +79,9 @@ export class ConversationService {
       id: conversationId.id,
       domain: conversationId.domain,
       name: conversationName,
-      team_id: conversation.team,
-      mls_group_id: conversation.group_id,
-      creation_date: null,
+      teamId: conversation.team,
+      mlsGroupId: conversation.group_id,
+      creationDate: null,
       type: ConversationTypeMapper.toModel(conversation.type)
     }
 
@@ -94,12 +94,12 @@ export class ConversationService {
 
     const membersToSave: ConversationMemberEntity[] = members.map((member) => {
       return {
-        user_id: member.userId.id,
-        user_domain: member.userId.domain,
-        conversation_id: conversationId.id,
-        conversation_domain: conversationId.domain,
+        userId: member.userId.id,
+        userDomain: member.userId.domain,
+        conversationId: conversationId.id,
+        conversationDomain: conversationId.domain,
         role: member.role,
-        creation_date: null
+        creationDate: null
       }
     })
 
@@ -147,7 +147,7 @@ export class ConversationService {
   async getConversationMLSGroupId(conversationId: QualifiedId): Promise<string> {
     const conversation = await this.getConversationById(conversationId)
 
-    return conversation.mls_group_id
+    return conversation.mlsGroupId
   }
 
   async getConversationGroupInfo(conversationId: QualifiedId): Promise<Uint8Array> {
@@ -187,16 +187,16 @@ export class ConversationService {
 
   private async isAppUserMemberOfConversation(conversationId: QualifiedId): Promise<boolean> {
     const members = this.getMembersByConversationId(conversationId)
-    return members.some(member => member.user_id === this.wireUserId && member.user_domain === this.wireUserDomain)
+    return members.some(member => member.userId === this.wireUserId && member.userDomain === this.wireUserDomain)
   }
 
   async deleteAllConversationDataFromLocalStorages(conversationId: QualifiedId): Promise<void> {
     this.logger.info("Deleting all conversation data.", "conversationId:", obfuscateId(conversationId.id))
     const conversationEntity = this.conversationRepository.findByIdAndDomain(conversationId.id, conversationId.domain);
 
-    if (conversationEntity?.mls_group_id) {
-      if (await this.coreCryptoService.conversationExists(conversationEntity.mls_group_id)) {
-        await this.coreCryptoService.wipeConversation(conversationEntity.mls_group_id)
+    if (conversationEntity?.mlsGroupId) {
+      if (await this.coreCryptoService.conversationExists(conversationEntity.mlsGroupId)) {
+        await this.coreCryptoService.wipeConversation(conversationEntity.mlsGroupId)
       }
     }
 
@@ -217,12 +217,12 @@ export class ConversationService {
     }
 
     const memberEntity: ConversationMemberEntity = {
-      user_id: userId.id,
-      user_domain: userId.domain,
-      conversation_id: conversationId.id,
-      conversation_domain: conversationId.domain,
+      userId: userId.id,
+      userDomain: userId.domain,
+      conversationId: conversationId.id,
+      conversationDomain: conversationId.domain,
       role: newRole,
-      creation_date: null
+      creationDate: null
     }
 
     this.conversationMemberRepository.save(memberEntity)
@@ -242,12 +242,12 @@ export class ConversationService {
 
     const membersToSave: ConversationMemberEntity[] = members.map((member) => {
       return {
-        user_id: member.userId.id,
-        user_domain: member.userId.domain,
-        conversation_id: conversationId.id,
-        conversation_domain: conversationId.domain,
+        userId: member.userId.id,
+        userDomain: member.userId.domain,
+        conversationId: conversationId.id,
+        conversationDomain: conversationId.domain,
         role: member.role,
-        creation_date: null
+        creationDate: null
       }
     })
 
@@ -330,8 +330,8 @@ export class ConversationService {
         conversation.qualified_id.domain
       ).map(member => {
         return {
-          id: member.user_id,
-          domain: member.user_domain
+          id: member.userId,
+          domain: member.userDomain
         } as QualifiedId
       })
 
