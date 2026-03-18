@@ -20,6 +20,8 @@ import {singleton} from "tsyringe";
 import {LoggerFactory} from "../utils/logger/LoggerFactory.js";
 import {obfuscateId} from "../utils/ObfuscateUtil.js";
 import type {QualifiedId} from "../model/QualifiedId.js";
+import {conversationMember} from "./schema.js";
+import {and, eq, sql} from "drizzle-orm";
 
 @singleton()
 export class ConversationMemberRepository {
@@ -32,47 +34,46 @@ export class ConversationMemberRepository {
   private deleteAllMembersInConversationStmt
 
   constructor(private readonly database: DatabaseService) {
-    this.selectAllStmt =
-    this.database.db.prepare<[], ConversationMemberEntity>(`
-      SELECT *
-      FROM conversation_member
-    `)
+    this.selectAllStmt = this.database.db.select().from(conversationMember).prepare();
 
-    this.selectByIdAndDomainStmt =
-    this.database.db.prepare<[string, string], ConversationMemberEntity>(`
-      SELECT *
-      FROM conversation_member
-      WHERE conversation_id = ? AND conversation_domain = ?
-    `)
-
-    this.insertStmt =
-    this.database.db.prepare<[string, string, string, string, string], void>(`
-      INSERT INTO conversation_member(
-        user_id, user_domain,
-        conversation_id, conversation_domain,
-        role
+    this.selectByIdAndDomainStmt = this.database.db.select().from(conversationMember).where(
+      and(
+        eq(conversationMember.conversationId, sql.placeholder('conversationId')),
+        eq(conversationMember.conversationDomain, sql.placeholder('conversationDomain')),
       )
-      VALUES (?, ?, ?, ?, ?)
-      ON CONFLICT(user_id, user_domain, conversation_id, conversation_domain)
-      DO UPDATE SET role = excluded.role
-    `)
+    ).prepare();
 
-    this.deleteStmt =
-    this.database.db.prepare<[string, string, string, string], void>(`
-      DELETE FROM conversation_member
-      WHERE user_id = ?
-        AND user_domain = ?
-        AND conversation_id = ?
-        AND conversation_domain = ?
-    `)
+    this.insertStmt = this.database.db.insert(conversationMember).values({
+      userId: sql.placeholder('userId'),
+      userDomain: sql.placeholder('userDomain'),
+      conversationId: sql.placeholder('conversationId'),
+      conversationDomain: sql.placeholder('conversationDomain'),
+      role: sql.placeholder('role')
+    }).onConflictDoUpdate({
+      target: [
+        conversationMember.userId,
+        conversationMember.userDomain,
+        conversationMember.conversationId,
+        conversationMember.conversationDomain
+      ],
+      set: { role: sql.raw(`excluded.${conversationMember.role.name}`)}
+    }).prepare();
 
-    this.deleteAllMembersInConversationStmt =
-      this.database.db.prepare<[string, string], void>(`
-        DELETE
-        FROM conversation_member
-        WHERE conversation_id = ?
-          AND conversation_domain = ?
-      `)
+    this.deleteStmt = this.database.db.delete(conversationMember).where(
+      and(
+        eq(conversationMember.userId, sql.placeholder('userId')),
+        eq(conversationMember.userDomain, sql.placeholder('userDomain')),
+        eq(conversationMember.conversationId, sql.placeholder('conversationId')),
+        eq(conversationMember.conversationDomain, sql.placeholder('conversationDomain'))
+      )
+    ).prepare();
+
+    this.deleteAllMembersInConversationStmt = this.database.db.delete(conversationMember).where(
+      and(
+        eq(conversationMember.conversationId, sql.placeholder('conversationId')),
+        eq(conversationMember.conversationDomain, sql.placeholder('conversationDomain')),
+      )
+    ).prepare();
   }
 
   getAll(): ConversationMemberEntity[] {
@@ -80,26 +81,25 @@ export class ConversationMemberRepository {
   }
 
   getMembersByConversationId(id: string, domain: string): ConversationMemberEntity[] {
-    return this.selectByIdAndDomainStmt.all(id, domain)
+    return this.selectByIdAndDomainStmt.all({ conversationId: id, conversationDomain: domain })
   }
 
   save(member: ConversationMemberEntity): void {
-    this.insertStmt.run(
-      member.user_id,
-      member.user_domain,
-      member.conversation_id,
-      member.conversation_domain,
-      member.role
-    )
+    this.insertStmt.run({
+      userId: member.userId,
+      userDomain: member.userDomain,
+      conversationId: member.conversationId,
+      conversationDomain: member.conversationDomain,
+      role: member.role
+    })
   }
 
   saveMany(members: ConversationMemberEntity[]) {
-    const insertMany = this.database.db.transaction((members) => {
+    this.database.db.transaction(() => {
       for (const member of members) {
         this.save(member)
       }
     })
-    insertMany(members)
   }
 
   delete(
@@ -108,26 +108,25 @@ export class ConversationMemberRepository {
     conversationId: string,
     conversationDomain: string
   ): void {
-    this.deleteStmt.run(
+    this.deleteStmt.run({
       userId,
       userDomain,
       conversationId,
       conversationDomain
-    )
+    })
   }
 
-  deleteMany(userIds: QualifiedId[], conversationId: string, conversationDomain: string): void {
-    const deleteUsersTransaction = this.database.db.transaction((userIds) => {
+  deleteMany(userIds: QualifiedId[], conversationId: string, conversationDomain: string) {
+    this.database.db.transaction(() => {
       for (const userId of userIds) {
         this.delete(userId.id, userId.domain, conversationId, conversationDomain)
       }
     })
-    deleteUsersTransaction(userIds)
   }
 
   deleteAllMembersInConversation(conversationId: string, conversationDomain: string) {
     this.logger.debug(`All members in the conversation will be deleted from database. conversationId: ${obfuscateId(conversationId)}, conversationDomain: ${conversationDomain}`);
-    this.deleteAllMembersInConversationStmt.run(conversationId, conversationDomain);
+    this.deleteAllMembersInConversationStmt.run({ conversationId, conversationDomain });
     this.logger.debug(`All members in the conversation are deleted from database. conversationId: ${obfuscateId(conversationId)}, conversationDomain: ${conversationDomain}`);
   }
 }
