@@ -1,0 +1,197 @@
+{
+  "version": "6",
+  "dialect": "sqlite",
+  "id": "589f8b03-e134-46b6-9a0a-8e1401c75828",
+  "prevId": "00000000-0000-0000-0000-000000000000",
+  "tables": {
+    "app_properties": {
+      "name": "app_properties",
+      "columns": {
+        "key": {
+          "name": "key",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "value": {
+          "name": "value",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "creationDate": {
+          "name": "creationDate",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'sql`(CURRENT_TIMESTAMP)`'"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "conversation": {
+      "name": "conversation",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "domain": {
+          "name": "domain",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "teamId": {
+          "name": "teamId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "mlsGroupId": {
+          "name": "mlsGroupId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "creationDate": {
+          "name": "creationDate",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'sql`(CURRENT_TIMESTAMP)`'"
+        },
+        "type": {
+          "name": "type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {
+        "conversation_id_domain_pk": {
+          "columns": [
+            "id",
+            "domain"
+          ],
+          "name": "conversation_id_domain_pk"
+        }
+      },
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "conversation_member": {
+      "name": "conversation_member",
+      "columns": {
+        "userId": {
+          "name": "userId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "userDomain": {
+          "name": "userDomain",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "conversationId": {
+          "name": "conversationId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "conversationDomain": {
+          "name": "conversationDomain",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "role": {
+          "name": "role",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "creationDate": {
+          "name": "creationDate",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'sql`(CURRENT_TIMESTAMP)`'"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "conversation_member_conversationId_conversationDomain_conversation_id_domain_fk": {
+          "name": "conversation_member_conversationId_conversationDomain_conversation_id_domain_fk",
+          "tableFrom": "conversation_member",
+          "tableTo": "conversation",
+          "columnsFrom": [
+            "conversationId",
+            "conversationDomain"
+          ],
+          "columnsTo": [
+            "id",
+            "domain"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "conversation_member_userId_userDomain_conversationId_conversationDomain_pk": {
+          "columns": [
+            "userId",
+            "userDomain",
+            "conversationId",
+            "conversationDomain"
+          ],
+          "name": "conversation_member_userId_userDomain_conversationId_conversationDomain_pk"
+        }
+      },
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    }
+  },
+  "views": {},
+  "enums": {},
+  "_meta": {
+    "schemas": {},
+    "tables": {},
+    "columns": {}
+  },
+  "internal": {
+    "indexes": {}
+  }
+}

@@ -15,15 +15,24 @@
 */
 
 import { DatabaseService } from '../../src/db/DatabaseService.js'
-import { conversation, conversationMember } from "../../src/db/schema.js";
+import { migrate } from 'drizzle-orm/better-sqlite3/migrator'
+import * as schema from '../../src/db/schema.js'
 
 export class TestDatabaseService extends DatabaseService {
   constructor() {
     super(':memory:')
+
+    this.initSchema()
+  }
+
+  private initSchema() {
+    migrate(this.db, {
+      migrationsFolder: 'src/db/migrations'
+    })
   }
 
   clearData() {
-    this.db.delete(conversationMember)
-    this.db.delete(conversation)
+    this.db.delete(schema.conversationMember).run()
+    this.db.delete(schema.conversation).run()
   }
 }
