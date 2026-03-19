@@ -131,28 +131,28 @@ describe('ConversationService', () => {
         id: CONVERSATION_ID.id,
         domain: CONVERSATION_ID.domain,
         name: 'Dummy User',
-        team_id: TEAM_ID,
-        mls_group_id: MLS_GROUP_ID,
-        creation_date: null,
+        teamId: TEAM_ID,
+        mlsGroupId: MLS_GROUP_ID,
+        creationDate: null,
         type: ConversationType.ONE_TO_ONE
       })
 
       expect(mockConversationMemberRepository.saveMany).toHaveBeenCalledWith([
         {
-          user_id: SELF_USER_ID.id,
-          user_domain: SELF_USER_ID.domain,
-          conversation_id: CONVERSATION_ID.id,
-          conversation_domain: CONVERSATION_ID.domain,
+          userId: SELF_USER_ID.id,
+          userDomain: SELF_USER_ID.domain,
+          conversationId: CONVERSATION_ID.id,
+          conversationDomain: CONVERSATION_ID.domain,
           role: 'wire_admin',
-          creation_date: null
+          creationDate: null
         },
         {
-          user_id: USER_ID.id,
-          user_domain: USER_ID.domain,
-          conversation_id: CONVERSATION_ID.id,
-          conversation_domain: CONVERSATION_ID.domain,
+          userId: USER_ID.id,
+          userDomain: USER_ID.domain,
+          conversationId: CONVERSATION_ID.id,
+          conversationDomain: CONVERSATION_ID.domain,
           role: 'wire_member',
-          creation_date: null
+          creationDate: null
         }
       ])
 
@@ -322,12 +322,12 @@ describe('ConversationService', () => {
     it('returns members from repository', () => {
       const members = [
         {
-          user_id: 'a',
-          user_domain: 'wire.com',
-          conversation_id: 'c',
-          conversation_domain: 'wire.com',
+          userId: 'a',
+          userDomain: 'wire.com',
+          conversationId: 'c',
+          conversationDomain: 'wire.com',
           role: 'wire_member',
-          creation_date: null
+          creationDate: null
         }
       ]
 
@@ -439,9 +439,9 @@ describe('ConversationService', () => {
         id: CONVERSATION_ID.id,
         domain: CONVERSATION_ID.domain,
         name: 'Existing Conversation',
-        team_id: TEAM_ID,
-        mls_group_id: MLS_GROUP_ID,
-        creation_date: null,
+        teamId: TEAM_ID,
+        mlsGroupId: MLS_GROUP_ID,
+        creationDate: null,
         type: ConversationType.GROUP
       } as any)
 
@@ -454,20 +454,20 @@ describe('ConversationService', () => {
 
       expect(mockConversationMemberRepository.saveMany).toHaveBeenCalledWith([
         {
-          user_id: USER_ID.id,
-          user_domain: USER_ID.domain,
-          conversation_id: CONVERSATION_ID.id,
-          conversation_domain: CONVERSATION_ID.domain,
+          userId: USER_ID.id,
+          userDomain: USER_ID.domain,
+          conversationId: CONVERSATION_ID.id,
+          conversationDomain: CONVERSATION_ID.domain,
           role: 'wire_member',
-          creation_date: null
+          creationDate: null
         },
         {
-          user_id: SELF_USER_ID.id,
-          user_domain: SELF_USER_ID.domain,
-          conversation_id: CONVERSATION_ID.id,
-          conversation_domain: CONVERSATION_ID.domain,
+          userId: SELF_USER_ID.id,
+          userDomain: SELF_USER_ID.domain,
+          conversationId: CONVERSATION_ID.id,
+          conversationDomain: CONVERSATION_ID.domain,
           role: 'wire_admin',
-          creation_date: null
+          creationDate: null
         }
       ])
     })
@@ -658,20 +658,20 @@ describe('ConversationService', () => {
 
       const mockMembers = [
         {
-          user_id: SELF_USER_ID.id,
-          user_domain: SELF_USER_ID.domain,
-          conversation_id: CONVERSATION_ID.id,
-          conversation_domain: CONVERSATION_ID.domain,
+          userId: SELF_USER_ID.id,
+          userDomain: SELF_USER_ID.domain,
+          conversationId: CONVERSATION_ID.id,
+          conversationDomain: CONVERSATION_ID.domain,
           role: 'wire_admin',
-          creation_date: null
+          creationDate: null
         },
         {
-          user_id: USER_ID.id,
-          user_domain: USER_ID.domain,
-          conversation_id: CONVERSATION_ID.id,
-          conversation_domain: CONVERSATION_ID.domain,
+          userId: USER_ID.id,
+          userDomain: USER_ID.domain,
+          conversationId: CONVERSATION_ID.id,
+          conversationDomain: CONVERSATION_ID.domain,
           role: 'wire_member',
-          creation_date: null
+          creationDate: null
         }
       ]
 
@@ -863,12 +863,12 @@ describe('ConversationService', () => {
       await conversationService.updateMember(USER_ID, CONVERSATION_ID, newRole)
 
       expect((mockConversationMemberRepository as any).save).toHaveBeenCalledWith({
-        user_id: USER_ID.id,
-        user_domain: USER_ID.domain,
-        conversation_id: CONVERSATION_ID.id,
-        conversation_domain: CONVERSATION_ID.domain,
+        userId: USER_ID.id,
+        userDomain: USER_ID.domain,
+        conversationId: CONVERSATION_ID.id,
+        conversationDomain: CONVERSATION_ID.domain,
         role: newRole,
-        creation_date: null
+        creationDate: null
       })
     })
   })
