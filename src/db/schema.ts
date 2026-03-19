@@ -28,10 +28,10 @@ export const conversationMember = sqliteTable("conversation_member", {
   creationDate: text().default("sql`(CURRENT_TIMESTAMP)`").notNull(),
 },
 (table) => [
-  foreignKey(() => ({
+  foreignKey({
     columns: [table.conversationId, table.conversationDomain],
     foreignColumns: [conversation.id, conversation.domain],
     name: "conversation_member_conversationId_conversationDomain_conversation_id_domain_fk"
-  })),
+  }),
   primaryKey({ columns: [table.userId, table.userDomain, table.conversationId, table.conversationDomain], name: "conversation_member_userId_userDomain_conversationId_conversationDomain_pk"})
 ]);
