@@ -1,7 +1,7 @@
 /*
 * Wire
 * Copyright (C) 2025 Wire Swiss GmbH
-* 
+*
 * This program is free software: you can redistribute it and/or modify
 * it under the terms of the GNU General Public License as published by
 * the Free Software Foundation, either version 3 of the License, or
@@ -15,6 +15,7 @@
 */
 
 import { DatabaseService } from '../../src/db/DatabaseService.js'
+import { conversation, conversationMember } from "../../src/db/schema.js";
 
 export class TestDatabaseService extends DatabaseService {
   constructor() {
@@ -22,7 +23,7 @@ export class TestDatabaseService extends DatabaseService {
   }
 
   clearData() {
-    this.db.exec('DELETE FROM conversation_member')
-    this.db.exec('DELETE FROM conversation')
+    this.db.delete(conversationMember)
+    this.db.delete(conversation)
   }
 }
