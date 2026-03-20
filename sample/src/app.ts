@@ -100,7 +100,7 @@ class SampleEventsHandler extends WireEventsHandler {
     this.appLogger?.info(`[Sample App] App was added to conversation: ${obfuscateId(conversation.id)} with ${members.length} members`)
     const textMessage = TextMessage.create({
       conversationId: { id: conversation.id, domain: conversation.domain },
-      text: `Hello! I'm the Sample App 🙂 I've just joined this conversation 👋`
+      text: `Hello! I'm the Typescript SDK Sample App 🙂 I've just joined this conversation 👋`
     })
     await this.manager.sendMessage(textMessage)
   }
