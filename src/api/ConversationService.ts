@@ -34,6 +34,7 @@ import {CryptoProtocol} from "../model/CryptoProtocol.js";
 import {CoreCryptoService} from "../core/CoreCryptoService.js";
 import {WIRE_USER_DOMAIN, WIRE_USER_ID} from "../utils/DependencyInjectionTokens.js";
 import type {ConversationRole} from "../model/conversation/ConversationRole.js";
+import {ConversationException} from "../model/exception/ConversationException.js";
 
 @singleton()
 export class ConversationService {
@@ -165,13 +166,11 @@ export class ConversationService {
     this.logger.info("Leaving the conversation. conversationId:" + obfuscateId(conversationId.id))
 
     if (!await this.isGroupConversation(conversationId)) {
-      this.logger.warn("You cannot leave a non-group conversation. conversationId:" + obfuscateId(conversationId.id))
-      return // TODO: Baris: We should throw an exception here instead of just logging and returning.
+      throw new ConversationException(`Cannot leave a non-group conversation. conversationId: ${obfuscateId(conversationId.id)}`)
     }
 
     if (!await this.isAppUserMemberOfConversation(conversationId)) {
-      this.logger.warn("You cannot leave a conversation that you are not a member of. conversationId:" + obfuscateId(conversationId.id))
-      return // TODO: Baris: We should throw an exception here instead of just logging and returning.
+      throw new ConversationException(`Cannot leave a conversation the user is not a member of. conversationId: ${obfuscateId(conversationId.id)}`)
     }
 
     await this.conversationsApiClient.leaveConversation(conversationId)
@@ -233,11 +232,8 @@ export class ConversationService {
   async addMembers(members: ConversationMember[], conversationId: QualifiedId): Promise<void> {
     this.logger.info(`Adding members to conversation. conversationId: ${obfuscateId(conversationId.id)}, members length: ${members.length}`)
 
-    // TODO: Baris: In such cases we should throw custom exceptions and handle them in the upper layers instead of just logging and skipping the events.
-    //  For example for this scenario, the Router class should not call the callback method if we didn't add the memnbers to the conversation
     if (this.conversationRepository.findByIdAndDomain(conversationId.id, conversationId.domain) == null) {
-      this.logger.warn(`Conversation does not exist locally. Skipping MemberJoin event for conversationId: ${obfuscateId(conversationId.id)}`)
-      return
+      throw new ConversationException(`Cannot add members: conversation does not exist locally. conversationId: ${obfuscateId(conversationId.id)}`)
     }
 
     const membersToSave: ConversationMemberEntity[] = members.map((member) => {
