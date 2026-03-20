@@ -21,10 +21,11 @@ import {ConversationMemberRepository} from "../db/ConversationMemberRepository.j
 import {ConversationType} from "../model/conversation/ConversationType.js";
 import type {ConversationEntity} from "../db/model/ConversationEntity.js";
 import type {ConversationMember} from "../model/conversation/ConversationMember.js";
+import type {ConversationMemberWithName} from "../model/conversation/ConversationMemberWithName.js";
 import {ConversationTypeMapper} from "../mappers/conversation/ConversationTypeMapper.js";
 import type {ConversationMemberEntity} from "../db/model/ConversationMemberEntity.js";
 import {obfuscateId} from "../utils/ObfuscateUtil.js";
-import {UsersApiClient} from "./UsersApiClient.js";
+import {UserService} from "./UserService.js";
 import {ConversationsApiClient} from "./ConversationsApiClient.js";
 import {inject, singleton} from "tsyringe";
 import type {ConversationMemberOtherResponse} from "./model/ConversationMemberOtherResponse.js";
@@ -42,7 +43,7 @@ export class ConversationService {
   constructor(
     @inject(WIRE_USER_ID) private wireUserId: string,
     @inject(WIRE_USER_DOMAIN) private wireUserDomain: string,
-    private userApiClient: UsersApiClient,
+    private userService: UserService,
     private conversationsApiClient: ConversationsApiClient,
     private conversationRepository: ConversationRepository,
     private conversationMemberRepository: ConversationMemberRepository,
@@ -51,16 +52,13 @@ export class ConversationService {
   ) {
   }
 
-  private async getConversationName(conversation: ConversationResponse) {
+  // Reads the conversation name from the local user cache rather than the backend.
+  // cacheUsers() must be called before this so the relevant profiles are available.
+  private getConversationName(conversation: ConversationResponse): string {
     if (conversation.type === ConversationType.ONE_TO_ONE && conversation.members.others.length > 0) {
-      this.logger.info(
-        "Fetching User from remote to populate Conversation name.",
-        "conversationId:", obfuscateId(conversation.qualified_id.id)
-      );
-
       const firstUser = conversation.members.others[0] as ConversationMemberOtherResponse
-      return await this.userApiClient.getUserName(firstUser.qualified_id)
-      // TODO: Introduce UserService class, move few lines there under getUserName() method
+      const cached = this.userService.getUser(firstUser.qualified_id)
+      return cached?.name ?? conversation.name ?? ""
     } else {
       return conversation.name ?? ""
     }
@@ -73,7 +71,14 @@ export class ConversationService {
     conversationId: QualifiedId,
     conversation: ConversationResponse
   ): Promise<{ conversation: ConversationEntity, members: ConversationMember[] }> {
-    const conversationName = await this.getConversationName(conversation)
+    // Populate the user cache for all members before reading the conversation name.
+    // This replaces the previous per-1-to-1 API call in getConversationName with a
+    // single bulk fetch, and ensures member names are available for all conversation types.
+    const allMemberIds = [conversation.members.self, ...conversation.members.others]
+      .map(m => m.qualified_id)
+    await this.userService.cacheUsers(allMemberIds)
+
+    const conversationName = this.getConversationName(conversation)
 
     const conversationEntity: ConversationEntity = {
       id: conversationId.id,
@@ -252,7 +257,33 @@ export class ConversationService {
     })
 
     this.conversationMemberRepository.saveMany(membersToSave)
+
+    // Cache profiles for newly joined members so their names are immediately
+    // available without a separate lookup.
+    await this.userService.cacheUsers(members.map(m => m.userId))
+
     this.logger.info(`Added members to conversation. conversationId: ${obfuscateId(conversationId.id)}, members length: ${members.length}`)
+  }
+
+  // Returns members of a conversation with their display names resolved from
+  // the local user cache. No API calls are made — cacheUsers() is always called
+  // ahead of time (in saveConversationWithMembers / addMembers), so names should
+  // be present. Members whose profiles could not be fetched will have null names.
+  getMembersWithNames(conversationId: QualifiedId): ConversationMemberWithName[] {
+    const memberEntities = this.conversationMemberRepository.getMembersByConversationId(
+      conversationId.id,
+      conversationId.domain
+    )
+
+    return memberEntities.map(entity => {
+      const cached = this.userService.getUser({id: entity.user_id, domain: entity.user_domain})
+      return {
+        userId: {id: entity.user_id, domain: entity.user_domain},
+        role: entity.role as ConversationRole,
+        name: cached?.name ?? null,
+        handle: cached?.handle ?? null
+      }
+    })
   }
 
   async removeMembers(userIds: QualifiedId[], conversationId: QualifiedId): Promise<void> {

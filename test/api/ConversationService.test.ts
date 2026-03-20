@@ -16,7 +16,7 @@
 
 import {beforeEach, describe, expect, it, vi} from 'vitest'
 import {ConversationService} from '../../src/api/ConversationService.js'
-import {UsersApiClient} from '../../src/api/UsersApiClient.js'
+import {UserService} from '../../src/api/UserService.js'
 import {ConversationsApiClient} from '../../src/api/ConversationsApiClient.js'
 import {ConversationRepository} from '../../src/db/ConversationRepository.js'
 import {ConversationMemberRepository} from '../../src/db/ConversationMemberRepository.js'
@@ -32,7 +32,7 @@ import {ConversationRole} from "../../src/model/conversation/ConversationRole.js
 
 describe('ConversationService', () => {
   let conversationService: ConversationService
-  let mockUsersApiClient: UsersApiClient
+  let mockUserService: UserService
   let mockConversationsApiClient: ConversationsApiClient
   let mockConversationRepository: ConversationRepository
   let mockConversationMemberRepository: ConversationMemberRepository
@@ -42,8 +42,9 @@ describe('ConversationService', () => {
   beforeEach(() => {
     container.clearInstances()
 
-    mockUsersApiClient = {
-      getUserName: vi.fn()
+    mockUserService = {
+      cacheUsers: vi.fn().mockResolvedValue(undefined),
+      getUser: vi.fn().mockReturnValue(null)
     } as any
 
     mockConversationsApiClient = {
@@ -82,7 +83,7 @@ describe('ConversationService', () => {
     conversationService = new ConversationService(
       SELF_USER_ID.id,
       SELF_USER_ID.domain,
-      mockUsersApiClient,
+      mockUserService,
       mockConversationsApiClient,
       mockConversationRepository,
       mockConversationMemberRepository,
@@ -118,14 +119,20 @@ describe('ConversationService', () => {
         }
       } as ConversationResponse
 
-      vi.mocked(mockUsersApiClient.getUserName).mockResolvedValue('Dummy User')
+      // cacheUsers populates the cache; getUser is called synchronously afterward to read the name
+      vi.mocked(mockUserService.getUser).mockReturnValue({
+        user_id: USER_ID.id,
+        user_domain: USER_ID.domain,
+        name: 'Dummy User',
+        handle: null
+      })
 
       const result = await conversationService.saveConversationWithMembers(
         CONVERSATION_ID,
         conversationResponse
       )
 
-      expect(mockUsersApiClient.getUserName).toHaveBeenCalledWith(USER_ID)
+      expect(mockUserService.cacheUsers).toHaveBeenCalled()
 
       expect(mockConversationRepository.save).toHaveBeenCalledWith({
         id: CONVERSATION_ID.id,
@@ -186,7 +193,9 @@ describe('ConversationService', () => {
         conversationResponse
       )
 
-      expect(mockUsersApiClient.getUserName).not.toHaveBeenCalled()
+      // cacheUsers is always called (to pre-populate names for all member types), but
+      // getUser is only used to resolve the name for 1:1 conversations — not GROUP ones.
+      expect(mockUserService.cacheUsers).toHaveBeenCalled()
       expect(result.conversation.name).toBe('Test Conversation')
       expect(result.members).toHaveLength(2)
     })
@@ -315,6 +324,46 @@ describe('ConversationService', () => {
       const result = await conversationService.getConversationMLSGroupId(CONVERSATION_ID)
 
       expect(result).toBe(MLS_GROUP_ID)
+    })
+  })
+
+  describe('getMembersWithNames', () => {
+    const memberEntities = [
+      {user_id: USER_ID.id, user_domain: USER_ID.domain, conversation_id: CONVERSATION_ID.id, conversation_domain: CONVERSATION_ID.domain, role: 'wire_member', creation_date: null},
+      {user_id: SELF_USER_ID.id, user_domain: SELF_USER_ID.domain, conversation_id: CONVERSATION_ID.id, conversation_domain: CONVERSATION_ID.domain, role: 'wire_admin', creation_date: null}
+    ]
+
+    it('returns members with names resolved from the user cache', () => {
+      vi.mocked(mockConversationMemberRepository.getMembersByConversationId).mockReturnValue(memberEntities)
+      vi.mocked(mockUserService.getUser).mockImplementation(({id}) =>
+        id === USER_ID.id
+          ? {user_id: USER_ID.id, user_domain: USER_ID.domain, name: 'Alice', handle: 'alice'}
+          : {user_id: SELF_USER_ID.id, user_domain: SELF_USER_ID.domain, name: 'Self', handle: 'self'}
+      )
+
+      const result = conversationService.getMembersWithNames(CONVERSATION_ID)
+
+      expect(result).toHaveLength(2)
+      expect(result[0]).toEqual({userId: USER_ID, role: 'wire_member', name: 'Alice', handle: 'alice'})
+      expect(result[1]).toEqual({userId: SELF_USER_ID, role: 'wire_admin', name: 'Self', handle: 'self'})
+    })
+
+    it('returns null name and handle when a user profile is not in the cache (e.g. federation failure)', () => {
+      vi.mocked(mockConversationMemberRepository.getMembersByConversationId).mockReturnValue(memberEntities)
+      vi.mocked(mockUserService.getUser).mockReturnValue(null)
+
+      const result = conversationService.getMembersWithNames(CONVERSATION_ID)
+
+      expect(result[0].name).toBeNull()
+      expect(result[0].handle).toBeNull()
+    })
+
+    it('returns an empty array when the conversation has no members', () => {
+      vi.mocked(mockConversationMemberRepository.getMembersByConversationId).mockReturnValue([])
+
+      const result = conversationService.getMembersWithNames(CONVERSATION_ID)
+
+      expect(result).toEqual([])
     })
   })
 
@@ -470,6 +519,10 @@ describe('ConversationService', () => {
           creation_date: null
         }
       ])
+
+      // Profiles for newly joined members should be cached immediately
+      // so their names are available without a subsequent API call.
+      expect(mockUserService.cacheUsers).toHaveBeenCalledWith([USER_ID, SELF_USER_ID])
     })
   })
 

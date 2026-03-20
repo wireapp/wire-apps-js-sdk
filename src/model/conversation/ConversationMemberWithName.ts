@@ -1,7 +1,7 @@
 /*
 * Wire
-* Copyright (C) 2025 Wire Swiss GmbH
-* 
+* Copyright (C) 2026 Wire Swiss GmbH
+*
 * This program is free software: you can redistribute it and/or modify
 * it under the terms of the GNU General Public License as published by
 * the Free Software Foundation, either version 3 of the License, or
@@ -14,16 +14,14 @@
 * along with this program. If not, see http://www.gnu.org/licenses/.
 */
 
-import { DatabaseService } from '../../src/db/DatabaseService.js'
+import type {QualifiedId} from "../QualifiedId.js"
+import type {ConversationRole} from "./ConversationRole.js"
 
-export class TestDatabaseService extends DatabaseService {
-  constructor() {
-    super(':memory:')
-  }
-
-  clearData() {
-    this.db.exec('DELETE FROM conversation_member')
-    this.db.exec('DELETE FROM conversation')
-    this.db.exec('DELETE FROM user')
-  }
+export interface ConversationMemberWithName {
+  userId: QualifiedId
+  role: ConversationRole
+  // null when the user profile has not been cached yet (e.g. a federated user
+  // whose home backend was unreachable at the time of the bulk fetch).
+  name: string | null
+  handle: string | null
 }

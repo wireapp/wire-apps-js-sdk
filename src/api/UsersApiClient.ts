@@ -17,6 +17,7 @@
 import {HttpClient} from "../core/HttpClient.js";
 import type {UserResponse} from "./model/UserResponse.js";
 import type {QualifiedId} from "../model/QualifiedId.js";
+import type {ListUsersResponse} from "./response/ListUsersResponse.js";
 import { singleton } from "tsyringe";
 
 @singleton()
@@ -27,12 +28,18 @@ export class UsersApiClient {
   private readonly basePath = "users";
 
   async getUserName(userQualifiedId: QualifiedId): Promise<string> {
-    const user = await this.getUser(userQualifiedId.domain, userQualifiedId.id)
+    const path = `${this.basePath}/${userQualifiedId.domain}/${userQualifiedId.id}`
+    const user = await this.httpClient.getRequest<UserResponse>(path)
     return user.name
   }
 
-  private async getUser(userDomain: string, userId: string): Promise<UserResponse> {
-    const path = `${this.basePath}/${userDomain}/${userId}`
-    return await this.httpClient.getRequest<UserResponse>(path)
+  // Fetches multiple user profiles in a single request using the Wire federated
+  // bulk-lookup endpoint. Callers should prefer this over repeated getUserName
+  // calls when resolving a set of member IDs (e.g. during conversation sync).
+  async listUsers(qualifiedIds: QualifiedId[]): Promise<ListUsersResponse> {
+    return await this.httpClient.postRequest<ListUsersResponse>(
+      `${this.basePath}/list`,
+      {qualified_ids: qualifiedIds}
+    )
   }
 }

@@ -1,7 +1,7 @@
 /*
 * Wire
-* Copyright (C) 2025 Wire Swiss GmbH
-* 
+* Copyright (C) 2026 Wire Swiss GmbH
+*
 * This program is free software: you can redistribute it and/or modify
 * it under the terms of the GNU General Public License as published by
 * the Free Software Foundation, either version 3 of the License, or
@@ -14,16 +14,15 @@
 * along with this program. If not, see http://www.gnu.org/licenses/.
 */
 
-import { DatabaseService } from '../../src/db/DatabaseService.js'
+import type {QualifiedId} from "../../model/QualifiedId.js"
+import type {UserResponse} from "../model/UserResponse.js"
 
-export class TestDatabaseService extends DatabaseService {
-  constructor() {
-    super(':memory:')
-  }
-
-  clearData() {
-    this.db.exec('DELETE FROM conversation_member')
-    this.db.exec('DELETE FROM conversation')
-    this.db.exec('DELETE FROM user')
-  }
+// Mirrors the shape returned by POST /list-users on the Wire backend.
+// failed: IDs the server could not look up (e.g. federated backend unreachable).
+// not_found: IDs that simply do not exist.
+// We only act on `found`; the other arrays are retained so callers can log or retry if needed.
+export interface ListUsersResponse {
+  found: UserResponse[]
+  failed: QualifiedId[]
+  not_found: QualifiedId[]
 }

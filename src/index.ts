@@ -61,5 +61,6 @@ export {
 
 export type { Conversation } from "./model/conversation/Conversation.js";
 export type { ConversationMember } from "./model/conversation/ConversationMember.js";
+export type { ConversationMemberWithName } from "./model/conversation/ConversationMemberWithName.js";
 export type { QualifiedId } from "./model/QualifiedId.js";
 export { obfuscateId } from "./utils/ObfuscateUtil.js"

@@ -1,7 +1,7 @@
 /*
 * Wire
-* Copyright (C) 2025 Wire Swiss GmbH
-* 
+* Copyright (C) 2026 Wire Swiss GmbH
+*
 * This program is free software: you can redistribute it and/or modify
 * it under the terms of the GNU General Public License as published by
 * the Free Software Foundation, either version 3 of the License, or
@@ -14,16 +14,9 @@
 * along with this program. If not, see http://www.gnu.org/licenses/.
 */
 
-import { DatabaseService } from '../../src/db/DatabaseService.js'
-
-export class TestDatabaseService extends DatabaseService {
-  constructor() {
-    super(':memory:')
-  }
-
-  clearData() {
-    this.db.exec('DELETE FROM conversation_member')
-    this.db.exec('DELETE FROM conversation')
-    this.db.exec('DELETE FROM user')
-  }
+export interface UserEntity {
+  user_id: string
+  user_domain: string
+  name: string
+  handle: string | null
 }
