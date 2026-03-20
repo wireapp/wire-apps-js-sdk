@@ -29,6 +29,7 @@ import {AppProperties} from '../../src/service/AppProperties.js'
 import {CoreCryptoService} from '../../src/core/CoreCryptoService.js'
 import {CryptoProtocol} from '../../src/model/CryptoProtocol.js'
 import {ConversationRole} from "../../src/model/conversation/ConversationRole.js";
+import {ConversationException} from "../../src/model/exception/ConversationException.js";
 
 describe('ConversationService', () => {
   let conversationService: ConversationService
@@ -524,6 +525,15 @@ describe('ConversationService', () => {
       // so their names are available without a subsequent API call.
       expect(mockUserService.cacheUsers).toHaveBeenCalledWith([USER_ID, SELF_USER_ID])
     })
+
+    it('should throw ConversationException when conversation does not exist locally', async () => {
+      vi.mocked(mockConversationRepository.findByIdAndDomain).mockReturnValue(null)
+
+      const members = [{userId: USER_ID, role: 'wire_member'}] as any
+
+      await expect(conversationService.addMembers(members, CONVERSATION_ID)).rejects.toThrow(ConversationException)
+      expect(mockConversationMemberRepository.saveMany).not.toHaveBeenCalled()
+    })
   })
 
   describe('establishOrRejoinConversations', () => {
@@ -927,7 +937,7 @@ describe('ConversationService', () => {
   })
 
   describe('leaveConversation', () => {
-    it('should not call API for non-group conversation', async () => {
+    it('should throw ConversationException for non-group conversation', async () => {
       vi.mocked(mockConversationRepository.findByIdAndDomain).mockReturnValue({
         id: CONVERSATION_ID.id,
         domain: CONVERSATION_ID.domain,
@@ -938,13 +948,13 @@ describe('ConversationService', () => {
         type: ConversationType.ONE_TO_ONE
       } as any)
 
-      await conversationService.leaveConversation(CONVERSATION_ID)
+      await expect(conversationService.leaveConversation(CONVERSATION_ID)).rejects.toThrow(ConversationException)
 
       expect(mockConversationRepository.findByIdAndDomain).toHaveBeenCalledWith(CONVERSATION_ID.id, CONVERSATION_ID.domain)
       expect(mockConversationsApiClient.leaveConversation).not.toHaveBeenCalled()
     })
 
-    it('should not call API when app user is not a member', async () => {
+    it('should throw ConversationException when app user is not a member', async () => {
       vi.mocked(mockConversationRepository.findByIdAndDomain).mockReturnValue({
         id: CONVERSATION_ID.id,
         domain: CONVERSATION_ID.domain,
@@ -967,7 +977,7 @@ describe('ConversationService', () => {
         }
       ])
 
-      await conversationService.leaveConversation(CONVERSATION_ID)
+      await expect(conversationService.leaveConversation(CONVERSATION_ID)).rejects.toThrow(ConversationException)
 
       expect(mockConversationMemberRepository.getMembersByConversationId).toHaveBeenCalledWith(CONVERSATION_ID.id, CONVERSATION_ID.domain)
       expect(mockConversationsApiClient.leaveConversation).not.toHaveBeenCalled()

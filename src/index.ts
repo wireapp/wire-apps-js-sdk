@@ -64,3 +64,8 @@ export type { ConversationMember } from "./model/conversation/ConversationMember
 export type { ConversationMemberWithName } from "./model/conversation/ConversationMemberWithName.js";
 export type { QualifiedId } from "./model/QualifiedId.js";
 export { obfuscateId } from "./utils/ObfuscateUtil.js"
+
+// ============================================
+// Exceptions
+// ============================================
+export { ConversationException, isConversationException } from "./model/exception/ConversationException.js"
