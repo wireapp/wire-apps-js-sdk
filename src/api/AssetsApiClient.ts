@@ -27,21 +27,19 @@ export class AssetsApiClient {
   constructor(private httpClient: HttpClient) {
   }
 
-  private readonly PATH_PUBLIC_ASSETS_V3 = "assets/v3";
-  private readonly PATH_PUBLIC_ASSETS_V4 = "assets/v4";
+  private readonly PATH_ASSETS = "assets";
 
   async downloadAsset(
     assetId: string,
     assetDomain: string,
     assetToken?: string | null
   ): Promise<AssetData> {
-    const path = `${this.PATH_PUBLIC_ASSETS_V4}/${assetDomain}/${assetId}`
+    const path = `${this.PATH_ASSETS}/${assetDomain}/${assetId}`
     const headerAssetToken: Record<string, string> = assetToken ? {"Asset-Token": assetToken} : {}
 
     return await this.httpClient.getRequest<Uint8Array>(
       path,
       {
-        includeApiVersion: false,
         additionalHeaders: headerAssetToken
       }
     )
@@ -69,11 +67,10 @@ export class AssetsApiClient {
     const footer = `\r\n--${boundary}--\r\n`;
 
     return await this.httpClient.postRequest(
-      this.PATH_PUBLIC_ASSETS_V3,
+      this.PATH_ASSETS,
       concatToBuffer(body, asset, footer),
       {
         headerContentType: `multipart/mixed; boundary=${boundary}`,
-        includeApiVersion: false
       },
     )
   }
