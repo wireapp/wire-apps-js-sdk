@@ -14,8 +14,8 @@
 * along with this program. If not, see http://www.gnu.org/licenses/.
 */
 
-import type {EventResponse} from "../api/response/EventResponse.js";
-import {ProtobufDeserializer} from "../mappers/protobuf/ProtobufDeserializer.js";
+import type {EventResponse} from "../../api/response/EventResponse.js";
+import {ProtobufDeserializer} from "../../mappers/protobuf/ProtobufDeserializer.js";
 import {
   isMLSWelcomeEvent,
   isNewMLSMessageEvent,
@@ -32,22 +32,22 @@ import {
   type MemberJoinDTO,
   type MemberLeaveDTO,
   type MemberUpdateDTO
-} from "../model/EventContentDTO.js";
-import {isCoreCryptoMlsException} from "../model/exception/CoreCryptoMlsException.js";
-import {isMlsException} from "../model/exception/MlsException.js";
-import type {QualifiedId} from "../model/QualifiedId.js";
-import {CoreCryptoService} from "./CoreCryptoService.js";
-import {WireEventsHandler} from "./WireEventsHandler.js";
-import {APP_CLIENT_ID, WIRE_EVENTS_HANDLER} from "../utils/DependencyInjectionTokens.js";
-import {ConversationService} from "../api/ConversationService.js";
-import {MlsService} from "../api/MlsService.js";
+} from "../../model/EventContentDTO.js";
+import {isCoreCryptoMlsException} from "../../model/exception/CoreCryptoMlsException.js";
+import {isMlsException} from "../../model/exception/MlsException.js";
+import type {QualifiedId} from "../../model/QualifiedId.js";
+import {CoreCryptoService} from "../CoreCryptoService.js";
+import {WireEventsHandler} from "../WireEventsHandler.js";
+import {APP_CLIENT_ID, WIRE_EVENTS_HANDLER} from "../../utils/DependencyInjectionTokens.js";
+import {ConversationService} from "../../api/ConversationService.js";
+import {MlsService} from "../../api/MlsService.js";
 import {Decoder} from "bazinga64";
-import {ConversationMapper} from "../mappers/conversation/ConversationMapper.js";
+import {ConversationMapper} from "../../mappers/conversation/ConversationMapper.js";
 import {container, inject, singleton} from "tsyringe";
-import {LoggerFactory} from "../utils/logger/LoggerFactory.js";
-import {obfuscateId} from "../utils/ObfuscateUtil.js";
-import {MlsFallbackStrategy} from "../service/MlsFallbackStrategy.js";
-import type {ConversationMember} from "../model/conversation/ConversationMember.js";
+import {LoggerFactory} from "../../utils/logger/LoggerFactory.js";
+import {obfuscateId} from "../../utils/ObfuscateUtil.js";
+import {MlsFallbackStrategy} from "../../service/MlsFallbackStrategy.js";
+import type {ConversationMember} from "../../model/conversation/ConversationMember.js";
 
 @singleton()
 export class EventRouter {
