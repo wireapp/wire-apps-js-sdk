@@ -26,6 +26,8 @@ import {LoggerFactory} from "../utils/logger/LoggerFactory.js";
 import {obfuscateId} from "../utils/ObfuscateUtil.js";
 import {AssetsTransferService} from "../api/AssetsTransferService.js";
 import type {Asset} from "../model/Asset.js";
+import {UsersApiClient} from "../api/UsersApiClient.js";
+import type {UserProfile} from "../model/user/UserProfile.js";
 
 @singleton()
 export class WireApplicationManager {
@@ -35,7 +37,8 @@ export class WireApplicationManager {
     private coreCryptoService: CoreCryptoService,
     private conversationService: ConversationService,
     private mlsService: MlsService,
-    private assetsTransferService: AssetsTransferService
+    private assetsTransferService: AssetsTransferService,
+    private usersApiClient: UsersApiClient
   ) {
   }
 
@@ -74,6 +77,16 @@ export class WireApplicationManager {
     })
 
     return await this.sendMessage(assetMessage)
+  }
+
+  async getUser(userId: QualifiedId): Promise<UserProfile> {
+    const response = await this.usersApiClient.getUser(userId.domain, userId.id)
+    const profile: UserProfile = {
+      id: response.qualified_id,
+      name: response.name,
+      ...(response.handle !== undefined && {handle: response.handle})
+    }
+    return profile
   }
 
   async leaveConversation(conversationId: QualifiedId): Promise<void> {
