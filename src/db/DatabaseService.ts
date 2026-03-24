@@ -61,18 +61,6 @@ export class DatabaseService {
           REFERENCES conversation(id, domain)
       );
 
-      -- User profile cache
-      -- Kept separate from conversation_member so that a user's name and handle
-      -- are stored once regardless of how many conversations they belong to.
-      -- A single upsert here reflects in all member lookups without touching member rows.
-      CREATE TABLE IF NOT EXISTS user (
-        user_id TEXT NOT NULL,
-        user_domain TEXT NOT NULL,
-        name TEXT NOT NULL,
-        handle TEXT,
-        PRIMARY KEY (user_id, user_domain)
-      );
-
       -- App table
       CREATE TABLE IF NOT EXISTS app_properties (
         key TEXT PRIMARY KEY NOT NULL,

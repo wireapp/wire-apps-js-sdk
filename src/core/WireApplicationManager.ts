@@ -26,7 +26,6 @@ import {LoggerFactory} from "../utils/logger/LoggerFactory.js";
 import {obfuscateId} from "../utils/ObfuscateUtil.js";
 import {AssetsTransferService} from "../api/AssetsTransferService.js";
 import type {Asset} from "../model/Asset.js";
-import type {ConversationMemberWithName} from "../model/conversation/ConversationMemberWithName.js";
 
 @singleton()
 export class WireApplicationManager {
@@ -75,12 +74,6 @@ export class WireApplicationManager {
     })
 
     return await this.sendMessage(assetMessage)
-  }
-
-  // Returns the members of a conversation with their display names.
-  // All data is served from the local cache — no API call is made.
-  getConversationMembers(conversationId: QualifiedId): ConversationMemberWithName[] {
-    return this.conversationService.getMembersWithNames(conversationId)
   }
 
   async leaveConversation(conversationId: QualifiedId): Promise<void> {

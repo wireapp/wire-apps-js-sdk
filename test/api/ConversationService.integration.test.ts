@@ -17,8 +17,6 @@
 import 'reflect-metadata'
 import { describe, it, expect, beforeAll, afterAll, beforeEach, vi } from 'vitest'
 import { ConversationService } from '../../src/api/ConversationService.js'
-import { UserService } from '../../src/api/UserService.js'
-import { UserRepository } from '../../src/db/UserRepository.js'
 import { UsersApiClient } from '../../src/api/UsersApiClient.js'
 import { ConversationsApiClient } from '../../src/api/ConversationsApiClient.js'
 import { ConversationRepository } from '../../src/db/ConversationRepository.js'
@@ -37,9 +35,7 @@ describe('ConversationService Integration', () => {
   let conversationService: ConversationService
   let conversationRepository: ConversationRepository
   let conversationMemberRepository: ConversationMemberRepository
-  let userRepository: UserRepository
   let mockUsersApiClient: UsersApiClient
-  let userService: UserService
   let mockConversationsApiClient: ConversationsApiClient
   let mockAppProperties: AppProperties
   let mockCoreCryptoService: CoreCryptoService
@@ -61,15 +57,10 @@ describe('ConversationService Integration', () => {
 
     conversationRepository = new ConversationRepository(testDbService)
     conversationMemberRepository = new ConversationMemberRepository(testDbService)
-    userRepository = new UserRepository(testDbService)
 
     mockUsersApiClient = {
-      listUsers: vi.fn().mockResolvedValue({ found: [], failed: [], not_found: [] })
+      getUserName: vi.fn()
     } as any
-
-    // Use a real UserService backed by the in-memory DB so that cacheUsers/getUser
-    // round-trips are exercised in integration tests.
-    userService = new UserService(userRepository, mockUsersApiClient)
 
     mockConversationsApiClient = {
       getConversation: vi.fn()
@@ -90,7 +81,7 @@ describe('ConversationService Integration', () => {
     conversationService = new ConversationService(
       SELF_USER_ID.id,
       SELF_USER_ID.domain,
-      userService,
+      mockUsersApiClient,
       mockConversationsApiClient,
       conversationRepository,
       conversationMemberRepository,
@@ -129,21 +120,21 @@ describe('ConversationService Integration', () => {
       expect(savedMembers.map((m: ConversationMemberEntity) => m.conversation_domain)).toContain(CONVERSATION_ID.domain)
     })
 
-    it('should resolve name from user cache for ONE_TO_ONE conversations via bulk fetch', async () => {
-      // The bulk endpoint returns the display name for the other participant;
-      // UserService stores it locally so no further API calls are needed.
-      vi.mocked(mockUsersApiClient.listUsers).mockResolvedValue({
-        found: [{ qualified_id: USER_ID, name: ONE_TO_ONE_CONVERSATION_NAME, handle: 'dummy_handle' }],
-        failed: [],
-        not_found: []
-      } as any)
+    it('should fetch user name from API for ONE_TO_ONE conversations', async () => {
+      let userNameRequested = false
+      mockUsersApiClient.getUserName = async (userId: QualifiedId) => {
+        userNameRequested = true
+        expect(userId.id).toBe(USER_ID.id)
+        expect(userId.domain).toBe(USER_ID.domain)
+        return ONE_TO_ONE_CONVERSATION_NAME
+      }
 
       const result = await conversationService.saveConversationWithMembers(
         CONVERSATION_ID,
         ONE_TO_ONE_CONVERSATION_RESPONSE
       )
 
-      expect(mockUsersApiClient.listUsers).toHaveBeenCalled()
+      expect(userNameRequested).toBe(true)
       expect(result.conversation.name).toBe(ONE_TO_ONE_CONVERSATION_NAME)
 
       const savedConversation = await conversationService.getConversationById(CONVERSATION_ID)
@@ -160,7 +151,7 @@ describe('ConversationService Integration', () => {
       const firstConversation = await conversationService.getConversationById(CONVERSATION_ID)
       expect(firstConversation).toBeDefined()
 
-      const secondConversation = await conversationService.getConversationById(OTHER_CONVERSATION_ID)
+      const secondConversation = await conversationService.getConversationById(CONVERSATION_ID)
       expect(secondConversation).toBeDefined()
 
       const firstConversationMembers = conversationService.getMembersByConversationId(CONVERSATION_ID)

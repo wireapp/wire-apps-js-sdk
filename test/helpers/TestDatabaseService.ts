@@ -24,6 +24,5 @@ export class TestDatabaseService extends DatabaseService {
   clearData() {
     this.db.exec('DELETE FROM conversation_member')
     this.db.exec('DELETE FROM conversation')
-    this.db.exec('DELETE FROM user')
   }
 }
