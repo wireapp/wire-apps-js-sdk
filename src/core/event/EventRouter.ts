@@ -16,15 +16,15 @@
 
 import type {EventResponse} from "../../api/response/EventResponse.js";
 import {
+  type DeleteConversationDTO,
   type EventContentDTO,
-  isDeleteConversationEvent,
-  isMemberJoinEvent,
-  isMemberLeaveEvent,
-  isMemberUpdateEvent,
-  isMLSWelcomeEvent,
-  isNewConversationEvent,
-  isNewMLSMessageEvent,
-  isTypingEvent
+  type MemberJoinDTO,
+  type MemberLeaveDTO,
+  type MemberUpdateDTO,
+  type MLSWelcomeDTO,
+  type NewConversationDTO,
+  type NewMLSMessageDTO,
+  type TypingDTO
 } from "../../model/EventContentDTO.js";
 import {singleton} from "tsyringe";
 import {LoggerFactory} from "../../utils/logger/LoggerFactory.js";
@@ -57,14 +57,14 @@ export class EventRouter {
     memberUpdateEventProcessor: MemberUpdateEventProcessor,
   ) {
     this.processors = [
-      [isMLSWelcomeEvent, mlsWelcomeEventProcessor],
-      [isNewMLSMessageEvent, mlsMessageEventProcessor],
-      [isNewConversationEvent, newConversationEventProcessor],
-      [isDeleteConversationEvent, deleteConversationEventProcessor],
-      [isMemberJoinEvent, memberJoinEventProcessor],
-      [isMemberLeaveEvent, memberLeaveEventProcessor],
-      [isMemberUpdateEvent, memberUpdateEventProcessor],
-      [isTypingEvent, this.ignoreEvent],
+      [EventRouter.isMLSWelcomeEvent, mlsWelcomeEventProcessor],
+      [EventRouter.isNewMLSMessageEvent, mlsMessageEventProcessor],
+      [EventRouter.isNewConversationEvent, newConversationEventProcessor],
+      [EventRouter.isDeleteConversationEvent, deleteConversationEventProcessor],
+      [EventRouter.isMemberJoinEvent, memberJoinEventProcessor],
+      [EventRouter.isMemberLeaveEvent, memberLeaveEventProcessor],
+      [EventRouter.isMemberUpdateEvent, memberUpdateEventProcessor],
+      [EventRouter.isTypingEvent, this.ignoreEvent],
     ];
   }
 
@@ -81,8 +81,38 @@ export class EventRouter {
       } else {
         this.logger.info(`Received an unmapped event: ${(event as EventContentDTO).type}`);
       }
-
     }
   }
 
+  private static isNewMLSMessageEvent(event: EventContentDTO): event is NewMLSMessageDTO {
+    return event.type === "conversation.mls-message-add"
+  }
+
+  private static isMLSWelcomeEvent(event: EventContentDTO): event is MLSWelcomeDTO {
+    return event.type === "conversation.mls-welcome"
+  }
+
+  private static isNewConversationEvent(event: EventContentDTO): event is NewConversationDTO {
+    return event.type === "conversation.create"
+  }
+
+  private static isDeleteConversationEvent(event: EventContentDTO): event is DeleteConversationDTO {
+    return event.type === "conversation.delete"
+  }
+
+  private static isTypingEvent(event: EventContentDTO): event is TypingDTO {
+    return event.type === "conversation.typing"
+  }
+
+  private static isMemberJoinEvent(event: EventContentDTO): event is MemberJoinDTO {
+    return event.type === "conversation.member-join"
+  }
+
+  private static isMemberLeaveEvent(event: EventContentDTO): event is MemberLeaveDTO {
+    return event.type === "conversation.member-leave"
+  }
+
+  private static isMemberUpdateEvent(event: EventContentDTO): event is MemberUpdateDTO {
+    return event.type === "conversation.member-update"
+  }
 }
