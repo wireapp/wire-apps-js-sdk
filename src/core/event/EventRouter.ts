@@ -20,6 +20,7 @@ import {LoggerFactory} from "../../utils/logger/LoggerFactory.js";
 import {injectAll, singleton} from "tsyringe";
 import type {EventContentDTO} from "../../model/EventContentDTO.js";
 import type {EventProcessor} from "./EventProcessor.js";
+import {EVENT_PROCESSOR} from "../../utils/DependencyInjectionTokens.js";
 
 @singleton()
 export class EventRouter {
@@ -28,11 +29,10 @@ export class EventRouter {
   private processorMap: Map<string, EventProcessor<EventContentDTO>>;
 
   constructor(
-    @injectAll("EVENT_PROCESSOR")
-      processors: EventProcessor<EventContentDTO>[],
+    @injectAll(EVENT_PROCESSOR) processors: EventProcessor<EventContentDTO>[],
   ) {
     this.processorMap = new Map(
-      processors.map(p => [p.eventType, p])
+      processors.map(processor => [processor.eventType, processor])
     );
   }
 

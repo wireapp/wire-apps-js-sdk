@@ -44,7 +44,7 @@ export class MemberJoinEventProcessor implements EventProcessor<MemberJoinDTO> {
       role: user.conversation_role
     }));
 
-    this.logger.info(`New members to be added: ${members.map(m => obfuscateId(m.userId.id)).join()}`);
+    this.logger.info(`New members to be added: ${members.map(member => obfuscateId(member.userId.id)).join()}`);
     await this.conversationService.addMembers(members, event.qualified_conversation);
     await this.wireEventsHandler.onUserJoinedConversation(event.qualified_conversation, members);
 
