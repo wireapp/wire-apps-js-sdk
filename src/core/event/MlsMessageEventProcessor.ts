@@ -14,20 +14,20 @@
  * along with this program. If not, see http://www.gnu.org/licenses/.
  */
 
-import {inject, singleton} from "tsyringe";
+import {inject, injectable} from "tsyringe";
 import {ProtobufDeserializer} from "../../mappers/protobuf/ProtobufDeserializer.js";
 import type {EventProcessor} from "./EventProcessor.js";
 import type {NewMLSMessageDTO} from "../../model/EventContentDTO.js";
 import {CoreCryptoService} from "../CoreCryptoService.js";
 import {ConversationService} from "../../api/ConversationService.js";
 import {WireEventsHandler} from "../WireEventsHandler.js";
-import {WIRE_EVENTS_HANDLER} from "../../utils/DependencyInjectionTokens.js";
+import {EVENT_PROCESSOR, WIRE_EVENTS_HANDLER} from "../../utils/DependencyInjectionTokens.js";
 import {isCoreCryptoMlsException} from "../../model/exception/CoreCryptoMlsException.js";
 import {isMlsException} from "../../model/exception/MlsException.js";
 import {LoggerFactory} from "../../utils/logger/LoggerFactory.js";
 import {MlsFallbackStrategy} from "../../service/MlsFallbackStrategy.js";
 
-@singleton()
+@injectable({token: EVENT_PROCESSOR})
 export class MlsMessageEventProcessor implements EventProcessor<NewMLSMessageDTO> {
   private logger = LoggerFactory.getLogger(this.constructor.name);
 

@@ -14,14 +14,15 @@
  * along with this program. If not, see http://www.gnu.org/licenses/.
  */
 
-import {singleton} from "tsyringe";
+import {injectable} from "tsyringe";
 import type {EventProcessor} from "./EventProcessor.js";
 import type {NewConversationDTO} from "../../model/EventContentDTO.js";
 import {ConversationService} from "../../api/ConversationService.js";
 import {LoggerFactory} from "../../utils/logger/LoggerFactory.js";
 import {obfuscateId} from "../../utils/ObfuscateUtil.js";
+import {EVENT_PROCESSOR} from "../../utils/DependencyInjectionTokens.js";
 
-@singleton()
+@injectable({token: EVENT_PROCESSOR})
 export class NewConversationEventProcessor implements EventProcessor<NewConversationDTO> {
   private logger = LoggerFactory.getLogger(this.constructor.name);
 
