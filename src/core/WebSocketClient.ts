@@ -17,7 +17,7 @@
 import {HttpClient} from "./HttpClient.js";
 import {WIRE_API_HOST} from "../utils/DependencyInjectionTokens.js";
 import {WebSocket as NodeWebSocket} from "ws";
-import {EventRouter} from "./EventRouter.js";
+import {EventRouter} from "./event/EventRouter.js";
 import {inject, singleton} from "tsyringe";
 import {LoggerFactory} from "../utils/logger/LoggerFactory.js";
 import type {EventResponse} from "../api/response/EventResponse.js";
@@ -105,15 +105,15 @@ export class WebSocketClient {
 
       webSocket.onopen = async () => {
         this.logger.info("Websocket Connected")
-        
+
         try {
           await this.syncMissedNotifications();
         } catch (error) {
           this.logger.error("Failed to sync missed notifications:", error)
         }
-        
+
         isSyncing = false
-        
+
         for (const bufferedMsg of messageBuffer) {
           await processMessage(bufferedMsg)
         }

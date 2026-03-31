@@ -1,7 +1,7 @@
 /*
 * Wire
 * Copyright (C) 2026 Wire Swiss GmbH
-* 
+*
 * This program is free software: you can redistribute it and/or modify
 * it under the terms of the GNU General Public License as published by
 * the Free Software Foundation, either version 3 of the License, or
@@ -17,7 +17,7 @@
 import {beforeEach, describe, expect, it, vi} from 'vitest'
 import {WebSocketClient} from '../../src/core/WebSocketClient.js'
 import {HttpClient} from '../../src/core/HttpClient.js'
-import {EventRouter} from '../../src/core/EventRouter.js'
+import {EventRouter} from '../../src/core/event/EventRouter.js'
 import {NotificationsService} from '../../src/service/NotificationsService.js'
 import {AppProperties} from '../../src/service/AppProperties.js'
 import type {EventResponse} from '../../src/api/response/EventResponse.js'
