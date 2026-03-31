@@ -45,7 +45,7 @@ export class EventRouter {
       const processor = this.processorMap.get(event.type);
 
       if (processor) {
-        await processor.process(event as any);
+        await processor.process(event as never);
       } else {
         this.logger.info(`Received an unmapped event: ${event.type}`);
       }
