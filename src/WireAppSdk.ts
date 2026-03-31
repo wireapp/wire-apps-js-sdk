@@ -25,7 +25,8 @@ import {
   WIRE_USER_DOMAIN,
   WIRE_USER_EMAIL,
   WIRE_USER_ID,
-  WIRE_USER_PASSWORD
+  WIRE_USER_PASSWORD,
+  EVENT_PROCESSOR
 } from "./utils/DependencyInjectionTokens.js";
 import {WebSocketClient} from "./core/WebSocketClient.js";
 import {WireEventsHandler} from "./core/WireEventsHandler.js";
@@ -35,6 +36,14 @@ import type {Logger} from "./utils/logger/Logger.js";
 import {LoggerFactory} from "./utils/logger/LoggerFactory.js";
 import {ConsoleLogger} from "./utils/logger/ConsoleLogger.js";
 import {ConversationService} from "./api/ConversationService.js";
+
+import {DeleteConversationEventProcessor} from "./core/event/DeleteConversationEventProcessor.js";
+import {MemberJoinEventProcessor} from "./core/event/MemberJoinEventProcessor.js";
+import {MemberLeaveEventProcessor} from "./core/event/MemberLeaveEventProcessor.js";
+import {MemberUpdateEventProcessor} from "./core/event/MemberUpdateEventProcessor.js";
+import {MlsMessageEventProcessor} from "./core/event/MlsMessageEventProcessor.js";
+import {MlsWelcomeEventProcessor} from "./core/event/MlsWelcomeEventProcessor.js";
+import {NewConversationEventProcessor} from "./core/event/NewConversationEventProcessor.js";
 
 export class WireAppSdk {
   private userEmail: string
@@ -116,6 +125,9 @@ export class WireAppSdk {
     container.registerInstance(WIRE_DATABASE_PATH, DatabaseService.DEFAULT_DATABASE_PATH)
 
     container.registerInstance(WIRE_EVENTS_HANDLER, this.wireEventsHandler)
+
+    this.registerEventProcessors()
+
     this.webSocketClient = container.resolve(WebSocketClient)
     this.conversationService = container.resolve(ConversationService)
   }
@@ -164,6 +176,16 @@ export class WireAppSdk {
 
     // Clear container to prevent memory leaks
     container.clearInstances()
+  }
+
+  private registerEventProcessors() {
+    container.register(EVENT_PROCESSOR, { useClass: DeleteConversationEventProcessor });
+    container.register(EVENT_PROCESSOR, { useClass: MemberJoinEventProcessor });
+    container.register(EVENT_PROCESSOR, { useClass: MemberLeaveEventProcessor });
+    container.register(EVENT_PROCESSOR, { useClass: MemberUpdateEventProcessor });
+    container.register(EVENT_PROCESSOR, { useClass: MlsMessageEventProcessor });
+    container.register(EVENT_PROCESSOR, { useClass: MlsWelcomeEventProcessor });
+    container.register(EVENT_PROCESSOR, { useClass: NewConversationEventProcessor });
   }
 
   private registerExitHandlers(): void {

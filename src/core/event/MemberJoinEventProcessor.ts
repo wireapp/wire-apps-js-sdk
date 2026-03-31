@@ -12,6 +12,8 @@ import {obfuscateId} from "../../utils/ObfuscateUtil.js";
 export class MemberJoinEventProcessor implements EventProcessor<MemberJoinDTO> {
   private logger = LoggerFactory.getLogger(this.constructor.name);
 
+  readonly eventType = "conversation.member-join" as const;
+
   constructor(
     private conversationService: ConversationService,
     @inject(WIRE_EVENTS_HANDLER) private wireEventsHandler: WireEventsHandler

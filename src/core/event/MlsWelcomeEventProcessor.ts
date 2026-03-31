@@ -13,6 +13,8 @@ import {container} from "tsyringe";
 @singleton()
 export class MlsWelcomeEventProcessor implements EventProcessor<MLSWelcomeDTO> {
 
+  readonly eventType = "conversation.mls-welcome" as const;
+
   constructor(
     private coreCryptoService: CoreCryptoService,
     private conversationService: ConversationService,

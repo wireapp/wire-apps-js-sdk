@@ -15,6 +15,8 @@ import {MlsFallbackStrategy} from "../../service/MlsFallbackStrategy.js";
 export class MlsMessageEventProcessor implements EventProcessor<NewMLSMessageDTO> {
   private logger = LoggerFactory.getLogger(this.constructor.name);
 
+  readonly eventType = "conversation.mls-message-add" as const;
+
   constructor(
     private coreCryptoService: CoreCryptoService,
     private conversationService: ConversationService,

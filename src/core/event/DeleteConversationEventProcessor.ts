@@ -11,6 +11,8 @@ import {obfuscateId} from "../../utils/ObfuscateUtil.js";
 export class DeleteConversationEventProcessor implements EventProcessor<DeleteConversationDTO> {
   private logger = LoggerFactory.getLogger(this.constructor.name);
 
+  readonly eventType = "conversation.delete" as const;
+
   constructor(
     private conversationService: ConversationService,
     @inject(WIRE_EVENTS_HANDLER) private wireEventsHandler: WireEventsHandler

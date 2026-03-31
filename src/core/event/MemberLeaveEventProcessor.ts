@@ -11,6 +11,8 @@ import {obfuscateId} from "../../utils/ObfuscateUtil.js";
 export class MemberLeaveEventProcessor implements EventProcessor<MemberLeaveDTO> {
   private logger = LoggerFactory.getLogger(this.constructor.name);
 
+  readonly eventType = "conversation.member-leave" as const;
+
   constructor(
     private conversationService: ConversationService,
     @inject(WIRE_EVENTS_HANDLER) private wireEventsHandler: WireEventsHandler

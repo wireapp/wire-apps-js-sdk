@@ -18,13 +18,7 @@ import {beforeEach, describe, expect, it, vi} from 'vitest'
 import {EventRouter} from '../../../src/core/event/EventRouter.js'
 import type {EventResponse} from '../../../src/api/response/EventResponse.js'
 import type {EventContentDTO} from '../../../src/model/EventContentDTO.js'
-import type {MlsWelcomeEventProcessor} from '../../../src/core/event/MlsWelcomeEventProcessor.js'
-import type {MlsMessageEventProcessor} from '../../../src/core/event/MlsMessageEventProcessor.js'
-import type {NewConversationEventProcessor} from '../../../src/core/event/NewConversationEventProcessor.js'
-import type {DeleteConversationEventProcessor} from '../../../src/core/event/DeleteConversationEventProcessor.js'
-import type {MemberJoinEventProcessor} from '../../../src/core/event/MemberJoinEventProcessor.js'
-import type {MemberLeaveEventProcessor} from '../../../src/core/event/MemberLeaveEventProcessor.js'
-import type {MemberUpdateEventProcessor} from '../../../src/core/event/MemberUpdateEventProcessor.js'
+import type {EventProcessor} from '../../../src/core/event/EventProcessor.js'
 
 const makeEvent = (type: string) => ({type} as any)
 
@@ -34,27 +28,37 @@ const makeEventResponse = (payload?: EventContentDTO[]): EventResponse => ({
   ...(payload !== undefined && {payload}),
 })
 
-let mlsWelcomeEventProcessor: MlsWelcomeEventProcessor
-let mlsMessageEventProcessor: MlsMessageEventProcessor
-let newConversationEventProcessor: NewConversationEventProcessor
-let deleteConversationEventProcessor: DeleteConversationEventProcessor
-let memberJoinEventProcessor: MemberJoinEventProcessor
-let memberLeaveEventProcessor: MemberLeaveEventProcessor
-let memberUpdateEventProcessor: MemberUpdateEventProcessor
+const createProcessorMock = (eventType: string) => ({
+  eventType,
+  process: vi.fn().mockResolvedValue(undefined),
+}) as EventProcessor<any>
+
+let processors: EventProcessor<any>[]
 let router: EventRouter
+
+let mlsWelcomeEventProcessor: EventProcessor<any>
+let mlsMessageEventProcessor: EventProcessor<any>
+let newConversationEventProcessor: EventProcessor<any>
+let deleteConversationEventProcessor: EventProcessor<any>
+let memberJoinEventProcessor: EventProcessor<any>
+let memberLeaveEventProcessor: EventProcessor<any>
+let memberUpdateEventProcessor: EventProcessor<any>
+let typingEventProcessor: EventProcessor<any>
 
 beforeEach(() => {
   vi.clearAllMocks()
 
-  mlsWelcomeEventProcessor = {process: vi.fn().mockResolvedValue(undefined)} as any
-  mlsMessageEventProcessor = {process: vi.fn().mockResolvedValue(undefined)} as any
-  newConversationEventProcessor = {process: vi.fn().mockResolvedValue(undefined)} as any
-  deleteConversationEventProcessor = {process: vi.fn().mockResolvedValue(undefined)} as any
-  memberJoinEventProcessor = {process: vi.fn().mockResolvedValue(undefined)} as any
-  memberLeaveEventProcessor = {process: vi.fn().mockResolvedValue(undefined)} as any
-  memberUpdateEventProcessor = {process: vi.fn().mockResolvedValue(undefined)} as any
+  mlsWelcomeEventProcessor = createProcessorMock('conversation.mls-welcome')
+  mlsMessageEventProcessor = createProcessorMock('conversation.mls-message-add')
+  newConversationEventProcessor = createProcessorMock('conversation.create')
+  deleteConversationEventProcessor = createProcessorMock('conversation.delete')
+  memberJoinEventProcessor = createProcessorMock('conversation.member-join')
+  memberLeaveEventProcessor = createProcessorMock('conversation.member-leave')
+  memberUpdateEventProcessor = createProcessorMock('conversation.member-update')
 
-  router = new EventRouter(
+  typingEventProcessor = createProcessorMock('conversation.typing')
+
+  processors = [
     mlsWelcomeEventProcessor,
     mlsMessageEventProcessor,
     newConversationEventProcessor,
@@ -62,110 +66,48 @@ beforeEach(() => {
     memberJoinEventProcessor,
     memberLeaveEventProcessor,
     memberUpdateEventProcessor,
-  )
+    typingEventProcessor,
+  ]
+
+  router = new EventRouter(processors)
 })
 
 describe('EventRouter', () => {
   describe('route', () => {
+
     it('should do nothing when payload is undefined', async () => {
       await router.route(makeEventResponse())
 
-      expect(mlsWelcomeEventProcessor.process).not.toHaveBeenCalled()
-      expect(mlsMessageEventProcessor.process).not.toHaveBeenCalled()
-      expect(newConversationEventProcessor.process).not.toHaveBeenCalled()
-      expect(deleteConversationEventProcessor.process).not.toHaveBeenCalled()
-      expect(memberJoinEventProcessor.process).not.toHaveBeenCalled()
-      expect(memberLeaveEventProcessor.process).not.toHaveBeenCalled()
-      expect(memberUpdateEventProcessor.process).not.toHaveBeenCalled()
+      processors.forEach(p => {
+        expect(p.process).not.toHaveBeenCalled()
+      })
     })
 
     it('should do nothing when payload is empty', async () => {
       await router.route(makeEventResponse([]))
 
-      expect(mlsWelcomeEventProcessor.process).not.toHaveBeenCalled()
+      processors.forEach(p => {
+        expect(p.process).not.toHaveBeenCalled()
+      })
     })
 
-    it('should route conversation.mls-welcome to mlsWelcomeEventProcessor', async () => {
+    it('should route events to correct processors', async () => {
       const event = makeEvent('conversation.mls-welcome')
+
       await router.route(makeEventResponse([event]))
 
-      expect(mlsWelcomeEventProcessor.process).toHaveBeenCalledTimes(1)
       expect(mlsWelcomeEventProcessor.process).toHaveBeenCalledWith(event)
     })
 
-    it('should route conversation.mls-message-add to mlsMessageEventProcessor', async () => {
-      const event = makeEvent('conversation.mls-message-add')
-      await router.route(makeEventResponse([event]))
-
-      expect(mlsMessageEventProcessor.process).toHaveBeenCalledTimes(1)
-      expect(mlsMessageEventProcessor.process).toHaveBeenCalledWith(event)
-    })
-
-    it('should route conversation.create to newConversationEventProcessor', async () => {
-      const event = makeEvent('conversation.create')
-      await router.route(makeEventResponse([event]))
-
-      expect(newConversationEventProcessor.process).toHaveBeenCalledTimes(1)
-      expect(newConversationEventProcessor.process).toHaveBeenCalledWith(event)
-    })
-
-    it('should route conversation.delete to deleteConversationEventProcessor', async () => {
-      const event = makeEvent('conversation.delete')
-      await router.route(makeEventResponse([event]))
-
-      expect(deleteConversationEventProcessor.process).toHaveBeenCalledTimes(1)
-      expect(deleteConversationEventProcessor.process).toHaveBeenCalledWith(event)
-    })
-
-    it('should route conversation.member-join to memberJoinEventProcessor', async () => {
-      const event = makeEvent('conversation.member-join')
-      await router.route(makeEventResponse([event]))
-
-      expect(memberJoinEventProcessor.process).toHaveBeenCalledTimes(1)
-      expect(memberJoinEventProcessor.process).toHaveBeenCalledWith(event)
-    })
-
-    it('should route conversation.member-leave to memberLeaveEventProcessor', async () => {
-      const event = makeEvent('conversation.member-leave')
-      await router.route(makeEventResponse([event]))
-
-      expect(memberLeaveEventProcessor.process).toHaveBeenCalledTimes(1)
-      expect(memberLeaveEventProcessor.process).toHaveBeenCalledWith(event)
-    })
-
-    it('should route conversation.member-update to memberUpdateEventProcessor', async () => {
-      const event = makeEvent('conversation.member-update')
-      await router.route(makeEventResponse([event]))
-
-      expect(memberUpdateEventProcessor.process).toHaveBeenCalledTimes(1)
-      expect(memberUpdateEventProcessor.process).toHaveBeenCalledWith(event)
-    })
-
-    it('should silently ignore conversation.typing events', async () => {
-      await router.route(makeEventResponse([makeEvent('conversation.typing')]))
-
-      expect(mlsWelcomeEventProcessor.process).not.toHaveBeenCalled()
-      expect(mlsMessageEventProcessor.process).not.toHaveBeenCalled()
-      expect(newConversationEventProcessor.process).not.toHaveBeenCalled()
-      expect(deleteConversationEventProcessor.process).not.toHaveBeenCalled()
-      expect(memberJoinEventProcessor.process).not.toHaveBeenCalled()
-      expect(memberLeaveEventProcessor.process).not.toHaveBeenCalled()
-      expect(memberUpdateEventProcessor.process).not.toHaveBeenCalled()
-    })
-
-    it('should not route unknown event types to any processor', async () => {
+    it('should not route unknown event types', async () => {
       await router.route(makeEventResponse([makeEvent('conversation.unknown-event')]))
 
-      expect(mlsWelcomeEventProcessor.process).not.toHaveBeenCalled()
-      expect(mlsMessageEventProcessor.process).not.toHaveBeenCalled()
-      expect(newConversationEventProcessor.process).not.toHaveBeenCalled()
-      expect(deleteConversationEventProcessor.process).not.toHaveBeenCalled()
-      expect(memberJoinEventProcessor.process).not.toHaveBeenCalled()
-      expect(memberLeaveEventProcessor.process).not.toHaveBeenCalled()
-      expect(memberUpdateEventProcessor.process).not.toHaveBeenCalled()
+      processors.forEach(p => {
+        expect(p.process).not.toHaveBeenCalled()
+      })
     })
 
-    it('should route multiple events in a single payload to their respective processors', async () => {
+    it('should route multiple events correctly', async () => {
       const welcome = makeEvent('conversation.mls-welcome')
       const memberJoin = makeEvent('conversation.member-join')
       const newConversation = makeEvent('conversation.create')
@@ -177,12 +119,13 @@ describe('EventRouter', () => {
       expect(newConversationEventProcessor.process).toHaveBeenCalledWith(newConversation)
     })
 
-    it('should process events sequentially and await each one', async () => {
+    it('should process events sequentially', async () => {
       const callOrder: string[] = []
 
       vi.mocked(mlsWelcomeEventProcessor.process).mockImplementation(async () => {
         callOrder.push('mls-welcome')
       })
+
       vi.mocked(memberJoinEventProcessor.process).mockImplementation(async () => {
         callOrder.push('member-join')
       })
@@ -195,8 +138,19 @@ describe('EventRouter', () => {
       expect(callOrder).toEqual(['mls-welcome', 'member-join'])
     })
 
-    it('should resolve without a value on success', async () => {
-      await expect(router.route(makeEventResponse([makeEvent('conversation.create')]))).resolves.toBeUndefined()
+    it('should resolve without a value', async () => {
+      await expect(
+        router.route(makeEventResponse([makeEvent('conversation.create')]))
+      ).resolves.toBeUndefined()
     })
+
+    it('should call typing processor (no longer ignored by router)', async () => {
+      const event = makeEvent('conversation.typing')
+
+      await router.route(makeEventResponse([event]))
+
+      expect(typingEventProcessor.process).toHaveBeenCalledWith(event)
+    })
+
   })
 })

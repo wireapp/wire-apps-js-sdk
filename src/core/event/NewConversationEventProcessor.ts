@@ -9,6 +9,8 @@ import {obfuscateId} from "../../utils/ObfuscateUtil.js";
 export class NewConversationEventProcessor implements EventProcessor<NewConversationDTO> {
   private logger = LoggerFactory.getLogger(this.constructor.name);
 
+  readonly eventType = "conversation.create" as const;
+
   constructor(private conversationService: ConversationService) {
   }
 

@@ -15,104 +15,40 @@
 */
 
 import type {EventResponse} from "../../api/response/EventResponse.js";
-import {
-  type DeleteConversationDTO,
-  type EventContentDTO,
-  type MemberJoinDTO,
-  type MemberLeaveDTO,
-  type MemberUpdateDTO,
-  type MLSWelcomeDTO,
-  type NewConversationDTO,
-  type NewMLSMessageDTO,
-  type TypingDTO
-} from "../../model/EventContentDTO.js";
-import {singleton} from "tsyringe";
 import {LoggerFactory} from "../../utils/logger/LoggerFactory.js";
-import {MlsMessageEventProcessor} from "./MlsMessageEventProcessor.js";
-import {NewConversationEventProcessor} from "./NewConversationEventProcessor.js";
-import {DeleteConversationEventProcessor} from "./DeleteConversationEventProcessor.js";
-import {MemberJoinEventProcessor} from "./MemberJoinEventProcessor.js";
-import {MemberLeaveEventProcessor} from "./MemberLeaveEventProcessor.js";
-import {MemberUpdateEventProcessor} from "./MemberUpdateEventProcessor.js";
-import {MlsWelcomeEventProcessor} from "./MlsWelcomeEventProcessor.js";
+
+import {injectAll, singleton} from "tsyringe";
+import type {EventContentDTO} from "../../model/EventContentDTO.js";
+import type {EventProcessor} from "./EventProcessor.js";
 
 @singleton()
 export class EventRouter {
   private logger = LoggerFactory.getLogger(this.constructor.name);
 
-  private readonly processors: Array<[
-    (event: EventContentDTO) => boolean,
-    { process(event: EventContentDTO): Promise<void> }
-  ]>;
-
-  private ignoreEvent = {process: () => Promise.resolve()};
+  private processorMap: Map<string, EventProcessor<EventContentDTO>>;
 
   constructor(
-    mlsWelcomeEventProcessor: MlsWelcomeEventProcessor,
-    mlsMessageEventProcessor: MlsMessageEventProcessor,
-    newConversationEventProcessor: NewConversationEventProcessor,
-    deleteConversationEventProcessor: DeleteConversationEventProcessor,
-    memberJoinEventProcessor: MemberJoinEventProcessor,
-    memberLeaveEventProcessor: MemberLeaveEventProcessor,
-    memberUpdateEventProcessor: MemberUpdateEventProcessor,
+    @injectAll("EVENT_PROCESSOR")
+      processors: EventProcessor<EventContentDTO>[],
   ) {
-    this.processors = [
-      [EventRouter.isMLSWelcomeEvent, mlsWelcomeEventProcessor],
-      [EventRouter.isNewMLSMessageEvent, mlsMessageEventProcessor],
-      [EventRouter.isNewConversationEvent, newConversationEventProcessor],
-      [EventRouter.isDeleteConversationEvent, deleteConversationEventProcessor],
-      [EventRouter.isMemberJoinEvent, memberJoinEventProcessor],
-      [EventRouter.isMemberLeaveEvent, memberLeaveEventProcessor],
-      [EventRouter.isMemberUpdateEvent, memberUpdateEventProcessor],
-      [EventRouter.isTypingEvent, this.ignoreEvent],
-    ];
+    this.processorMap = new Map(
+      processors.map(p => [p.eventType, p])
+    );
   }
 
   async route(eventResponse: EventResponse): Promise<void> {
     this.logger.debug(`Routing event:`, eventResponse.payload);
+
     if (!eventResponse.payload) return;
 
     for (const event of eventResponse.payload) {
-      const entry = this.processors
-        .find(([guard]) => guard(event));
+      const processor = this.processorMap.get(event.type);
 
-      if (entry) {
-        await entry[1].process(event);
+      if (processor) {
+        await processor.process(event as any);
       } else {
-        this.logger.info(`Received an unmapped event: ${(event as EventContentDTO).type}`);
+        this.logger.info(`Received an unmapped event: ${event.type}`);
       }
     }
-  }
-
-  private static isNewMLSMessageEvent(event: EventContentDTO): event is NewMLSMessageDTO {
-    return event.type === "conversation.mls-message-add"
-  }
-
-  private static isMLSWelcomeEvent(event: EventContentDTO): event is MLSWelcomeDTO {
-    return event.type === "conversation.mls-welcome"
-  }
-
-  private static isNewConversationEvent(event: EventContentDTO): event is NewConversationDTO {
-    return event.type === "conversation.create"
-  }
-
-  private static isDeleteConversationEvent(event: EventContentDTO): event is DeleteConversationDTO {
-    return event.type === "conversation.delete"
-  }
-
-  private static isTypingEvent(event: EventContentDTO): event is TypingDTO {
-    return event.type === "conversation.typing"
-  }
-
-  private static isMemberJoinEvent(event: EventContentDTO): event is MemberJoinDTO {
-    return event.type === "conversation.member-join"
-  }
-
-  private static isMemberLeaveEvent(event: EventContentDTO): event is MemberLeaveDTO {
-    return event.type === "conversation.member-leave"
-  }
-
-  private static isMemberUpdateEvent(event: EventContentDTO): event is MemberUpdateDTO {
-    return event.type === "conversation.member-update"
   }
 }
