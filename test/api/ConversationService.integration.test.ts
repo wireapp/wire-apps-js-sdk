@@ -29,6 +29,7 @@ import { ConversationEntity } from '../../src/db/model/ConversationEntity.js'
 import { ConversationMemberEntity } from '../../src/db/model/ConversationMemberEntity.js'
 import {AppProperties} from '../../src/service/AppProperties.js'
 import {CoreCryptoService} from '../../src/core/CoreCryptoService.js'
+import {TeamsApiClient} from "../../src/api/TeamsApiClient.js";
 
 describe('ConversationService Integration', () => {
   let testDbService: TestDatabaseService
@@ -37,6 +38,7 @@ describe('ConversationService Integration', () => {
   let conversationMemberRepository: ConversationMemberRepository
   let mockUsersApiClient: UsersApiClient
   let mockConversationsApiClient: ConversationsApiClient
+  let mockTeamsApiClient: TeamsApiClient
   let mockAppProperties: AppProperties
   let mockCoreCryptoService: CoreCryptoService
 
@@ -62,6 +64,10 @@ describe('ConversationService Integration', () => {
       getUserName: vi.fn()
     } as any
 
+    mockTeamsApiClient = {
+      deleteConversation: vi.fn()
+    } as any
+
     mockConversationsApiClient = {
       getConversation: vi.fn()
     } as any
@@ -82,6 +88,7 @@ describe('ConversationService Integration', () => {
       SELF_USER_ID.id,
       SELF_USER_ID.domain,
       mockUsersApiClient,
+      mockTeamsApiClient,
       mockConversationsApiClient,
       conversationRepository,
       conversationMemberRepository,

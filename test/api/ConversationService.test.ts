@@ -29,10 +29,12 @@ import {AppProperties} from '../../src/service/AppProperties.js'
 import {CoreCryptoService} from '../../src/core/CoreCryptoService.js'
 import {CryptoProtocol} from '../../src/model/CryptoProtocol.js'
 import {ConversationRole} from "../../src/model/conversation/ConversationRole.js";
+import {TeamsApiClient} from "../../src/api/TeamsApiClient.js";
 
 describe('ConversationService', () => {
   let conversationService: ConversationService
   let mockUsersApiClient: UsersApiClient
+  let mockTeamsApiClient: TeamsApiClient
   let mockConversationsApiClient: ConversationsApiClient
   let mockConversationRepository: ConversationRepository
   let mockConversationMemberRepository: ConversationMemberRepository
@@ -44,6 +46,10 @@ describe('ConversationService', () => {
 
     mockUsersApiClient = {
       getUserName: vi.fn()
+    } as any
+
+    mockTeamsApiClient = {
+      deleteConversation: vi.fn()
     } as any
 
     mockConversationsApiClient = {
@@ -83,6 +89,7 @@ describe('ConversationService', () => {
       SELF_USER_ID.id,
       SELF_USER_ID.domain,
       mockUsersApiClient,
+      mockTeamsApiClient,
       mockConversationsApiClient,
       mockConversationRepository,
       mockConversationMemberRepository,
