@@ -137,7 +137,9 @@ export class WireAppSdk {
     }
     this.isWebSocketRunning = true
 
-    this.webSocketClient.connect()
+    this.webSocketClient.connect().finally(() => {
+      this.isWebSocketRunning = false
+    })
 
     await this.conversationService.establishOrRejoinConversations()
   }

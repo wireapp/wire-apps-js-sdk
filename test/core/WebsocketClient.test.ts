@@ -14,7 +14,7 @@
 * along with this program. If not, see http://www.gnu.org/licenses/.
 */
 
-import {beforeEach, describe, expect, it, vi} from 'vitest'
+import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest'
 import {WebSocketClient} from '../../src/core/WebSocketClient.js'
 import {HttpClient} from '../../src/core/HttpClient.js'
 import {EventRouter} from '../../src/core/event/EventRouter.js'
@@ -67,6 +67,7 @@ beforeEach(() => {
   mockHttpClient = {
     getCachedDeviceId: vi.fn().mockReturnValue('device-id'),
     getCachedAccessToken: vi.fn().mockReturnValue('access-token'),
+    verifyAuthorizationToken: vi.fn().mockResolvedValue(undefined),
   } as any
 
   mockEventRouter = {
@@ -90,6 +91,10 @@ beforeEach(() => {
   vi.spyOn(console, 'error').mockImplementation(() => {})
 })
 
+afterEach(() => {
+  vi.useRealTimers()
+})
+
 const makeClient = () =>
   new WebSocketClient(
     "https://wire.com",
@@ -99,7 +104,17 @@ const makeClient = () =>
     mockEventRouter
   )
 
-const flushPromises = () => new Promise<void>((resolve) => setTimeout(resolve, 0))
+// Uses microtasks only — works correctly whether or not fake timers are active
+const flushPromises = async () => {
+  for (let i = 0; i < 20; i++) await Promise.resolve()
+}
+
+// Cleanly stops a connected client and awaits the connect loop to exit
+const stopClient = async (client: WebSocketClient, connectPromise: Promise<void>) => {
+  client.close()
+  mockWebSocket.onclose!()
+  await connectPromise
+}
 
 describe('WebSocketClient', () => {
   describe('syncMissedNotifications', () => {
@@ -120,8 +135,7 @@ describe('WebSocketClient', () => {
 
       await flushPromises()
       await mockWebSocket.onopen!()
-      mockWebSocket.onclose!()
-      await connectPromise
+      await stopClient(client, connectPromise)
 
       expect(mockEventRouter.route).toHaveBeenCalledTimes(2)
       expect(mockEventRouter.route).toHaveBeenCalledWith(notifications[0])
@@ -141,8 +155,7 @@ describe('WebSocketClient', () => {
 
       await flushPromises()
       await mockWebSocket.onopen!()
-      mockWebSocket.onclose!()
-      await connectPromise
+      await stopClient(client, connectPromise)
 
       expect(mockNotificationsService.getPaginatedNotifications).toHaveBeenCalledTimes(2)
       expect(mockEventRouter.route).toHaveBeenCalledTimes(2)
@@ -161,8 +174,7 @@ describe('WebSocketClient', () => {
 
       await flushPromises()
       await mockWebSocket.onopen!()
-      mockWebSocket.onclose!()
-      await connectPromise
+      await stopClient(client, connectPromise)
 
       expect(mockAppProperties.setLastNotificationId).toHaveBeenCalledWith(NOTIFICATION_ID_1)
       expect(mockAppProperties.setLastNotificationId).toHaveBeenCalledWith(NOTIFICATION_ID_2)
@@ -183,8 +195,7 @@ describe('WebSocketClient', () => {
 
       await flushPromises()
       await mockWebSocket.onopen!()
-      mockWebSocket.onclose!()
-      await connectPromise
+      await stopClient(client, connectPromise)
 
       expect(mockNotificationsService.getPaginatedNotifications).toHaveBeenCalledWith(LAST_KNOWN_ID)
     })
@@ -210,8 +221,7 @@ describe('WebSocketClient', () => {
 
       await flushPromises()
       await mockWebSocket.onopen!()
-      mockWebSocket.onclose!()
-      await connectPromise
+      await stopClient(client, connectPromise)
 
       expect(mockEventRouter.route).toHaveBeenCalledTimes(2)
     })
@@ -227,8 +237,7 @@ describe('WebSocketClient', () => {
       await flushPromises()
       await mockWebSocket.onopen!()
       await mockWebSocket.onmessage!(makeMessageEvent(makeEventBuffer(event)))
-      mockWebSocket.onclose!()
-      await connectPromise
+      await stopClient(client, connectPromise)
 
       expect(mockEventRouter.route).toHaveBeenCalledWith(expect.objectContaining({id: NOTIFICATION_ID_1}))
     })
@@ -242,8 +251,7 @@ describe('WebSocketClient', () => {
       await flushPromises()
       await mockWebSocket.onopen!()
       await mockWebSocket.onmessage!(makeMessageEvent(makeEventBuffer(event)))
-      mockWebSocket.onclose!()
-      await connectPromise
+      await stopClient(client, connectPromise)
 
       expect(mockEventRouter.route).not.toHaveBeenCalled()
     })
@@ -265,8 +273,7 @@ describe('WebSocketClient', () => {
 
       await mockWebSocket.onmessage!(makeMessageEvent(makeEventBuffer(notification)))
 
-      mockWebSocket.onclose!()
-      await connectPromise
+      await stopClient(client, connectPromise)
 
       expect(mockEventRouter.route).toHaveBeenCalledTimes(1)
     })
@@ -280,8 +287,7 @@ describe('WebSocketClient', () => {
       await flushPromises()
       await mockWebSocket.onopen!()
       await mockWebSocket.onmessage!(makeMessageEvent(makeEventBuffer(event)))
-      mockWebSocket.onclose!()
-      await connectPromise
+      await stopClient(client, connectPromise)
 
       expect(mockAppProperties.setLastNotificationId).toHaveBeenCalledWith(NOTIFICATION_ID_1)
     })
@@ -314,16 +320,17 @@ describe('WebSocketClient', () => {
       expect(mockEventRouter.route).toHaveBeenCalledTimes(1)
       expect(mockEventRouter.route).toHaveBeenCalledWith(expect.objectContaining({id: NOTIFICATION_ID_1}))
 
-      mockWebSocket.onclose!()
-      await connectPromise
+      await stopClient(client, connectPromise)
     })
   })
 
   describe('close', () => {
-    it('should close the websocket when connected', () => {
+    it('should close the websocket when connected', async () => {
       const client = makeClient()
-      client.connect()
-      client.close()
+      const connectPromise = client.connect()
+      await flushPromises()
+
+      await stopClient(client, connectPromise)
 
       expect(mockWebSocket.close).toHaveBeenCalled()
     })
@@ -331,6 +338,148 @@ describe('WebSocketClient', () => {
     it('should do nothing if websocket is not initialized', () => {
       const client = makeClient()
       expect(() => client.close()).not.toThrow()
+    })
+  })
+
+  describe('reconnection', () => {
+    it('should reconnect after an unexpected close', async () => {
+      vi.useFakeTimers()
+
+      const client = makeClient()
+      const connectPromise = client.connect()
+
+      await flushPromises()
+      await mockWebSocket.onopen!()
+
+      const firstSocket = mockWebSocket
+
+      // Server closes the connection unexpectedly (no client.close())
+      mockWebSocket.onclose!()
+
+      // Not reconnected yet — waiting for backoff delay
+      expect(mockWebSocket).toBe(firstSocket)
+
+      // Advance past the 1s initial backoff
+      await vi.advanceTimersByTimeAsync(1100)
+      await flushPromises()
+
+      // A new socket should have been created
+      expect(mockWebSocket).not.toBe(firstSocket)
+
+      await stopClient(client, connectPromise)
+    })
+
+    it('should not reconnect after intentional close', async () => {
+      const client = makeClient()
+      const connectPromise = client.connect()
+
+      await flushPromises()
+      await mockWebSocket.onopen!()
+
+      const socketBeforeClose = mockWebSocket
+      await stopClient(client, connectPromise)
+
+      // No new socket was created
+      expect(mockWebSocket).toBe(socketBeforeClose)
+    })
+
+    it('should reset backoff delay after a successful reconnect', async () => {
+      vi.useFakeTimers()
+
+      const client = makeClient()
+      const connectPromise = client.connect()
+
+      await flushPromises()
+      await mockWebSocket.onopen!()
+
+      // First unexpected close
+      mockWebSocket.onclose!()
+      await vi.advanceTimersByTimeAsync(1100)
+      await flushPromises()
+
+      // Second socket opens successfully — resets reconnect counter
+      await mockWebSocket.onopen!()
+
+      const secondSocket = mockWebSocket
+
+      // Second unexpected close — delay should be back to 1s, not 2s
+      mockWebSocket.onclose!()
+      await vi.advanceTimersByTimeAsync(1100)
+      await flushPromises()
+
+      // Third socket created within 1s window confirms backoff was reset
+      expect(mockWebSocket).not.toBe(secondSocket)
+
+      await stopClient(client, connectPromise)
+    })
+
+    it('should stop reconnecting after max attempts and resolve the connect promise', async () => {
+      vi.useFakeTimers()
+
+      const client = makeClient()
+      const connectPromise = client.connect()
+      await flushPromises()
+
+      // Initial connection fails immediately (no onopen)
+      mockWebSocket.onclose!()
+
+      // Drive through MAX_RECONNECT_ATTEMPTS (10) reconnect cycles
+      // Each cycle: advance past the longest possible delay, then fail the new socket
+      for (let i = 0; i < 10; i++) {
+        await vi.advanceTimersByTimeAsync(35_000)
+        await flushPromises()
+        mockWebSocket.onclose!()
+      }
+
+      // connect() loop should have exited cleanly
+      await expect(connectPromise).resolves.toBeUndefined()
+    })
+
+    it('should stop cleanly when close() is called during backoff delay', async () => {
+      vi.useFakeTimers()
+
+      const client = makeClient()
+      const connectPromise = client.connect()
+      await flushPromises()
+      await mockWebSocket.onopen!()
+
+      // Unexpected close — backoff delay of 1s starts
+      mockWebSocket.onclose!()
+
+      // close() is called before the delay expires
+      const socketDuringDelay = mockWebSocket
+      client.close()
+
+      // Advance past the backoff — loop should see _stopped and exit without reconnecting
+      await vi.advanceTimersByTimeAsync(1100)
+      await flushPromises()
+
+      expect(mockWebSocket).toBe(socketDuringDelay) // no new socket created
+      await expect(connectPromise).resolves.toBeUndefined()
+    })
+
+    it('should not open multiple sockets from a single onerror + onclose sequence', async () => {
+      vi.useFakeTimers()
+
+      const client = makeClient()
+      const connectPromise = client.connect()
+
+      await flushPromises()
+      await mockWebSocket.onopen!()
+
+      // onerror is always followed by onclose in the WebSocket protocol
+      mockWebSocket.onerror!(new Event('error'))
+      mockWebSocket.onclose!()
+
+      // Advance past backoff
+      await vi.advanceTimersByTimeAsync(1100)
+      await flushPromises()
+
+      // Only one reconnect should have occurred (settled flag prevents double trigger)
+      const { WebSocket: MockWS } = await import('ws')
+      expect(vi.mocked(MockWS as any)).toHaveBeenCalledTimes(2) // initial + one reconnect
+
+      await stopClient(client, connectPromise)
     })
   })
 })

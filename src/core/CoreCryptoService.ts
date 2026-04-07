@@ -252,6 +252,6 @@ export class CoreCryptoService {
   }
 
   close() {
-    return this.coreCryptoClient!.close()
+    return this.coreCryptoClient?.close()
   }
 }
