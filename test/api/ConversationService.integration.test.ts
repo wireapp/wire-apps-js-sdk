@@ -211,6 +211,81 @@ describe('ConversationService Integration', () => {
     })
   })
 
+  describe('deleteConversation', () => {
+    beforeEach(async () => {
+      // Save a conversation where SELF user is admin
+      await conversationService.saveConversationWithMembers(
+        CONVERSATION_ID,
+        CONVERSATION_RESPONSE
+      )
+    })
+
+    it('should delete conversation via Teams API and remove local data when user is admin', async () => {
+      // ensure SELF user is admin (already wire_admin in CONVERSATION_RESPONSE)
+      const deleteSpy = vi.spyOn(mockTeamsApiClient, 'deleteConversation').mockResolvedValue(undefined)
+
+      const wipeSpy = vi
+        .spyOn(conversationService as any, 'deleteAllConversationDataFromLocalStorages')
+        .mockResolvedValue(undefined)
+
+      await conversationService.deleteConversation(CONVERSATION_ID)
+
+      // verify API call
+      expect(deleteSpy).toHaveBeenCalledTimes(1)
+      expect(deleteSpy).toHaveBeenCalledWith(
+        expect.any(Object), // TeamId instance
+        CONVERSATION_ID
+      )
+
+      // verify local cleanup
+      expect(wipeSpy).toHaveBeenCalledWith(CONVERSATION_ID)
+
+      deleteSpy.mockRestore()
+      wipeSpy.mockRestore()
+    })
+
+    it('should throw error when user is not admin', async () => {
+      // overwrite members so SELF is NOT admin
+      testDbService.clearData()
+
+      const nonAdminResponse: ConversationResponse = {
+        ...CONVERSATION_RESPONSE,
+        members: {
+          others: [
+            {
+              qualified_id: USER_ID,
+              conversation_role: 'wire_member'
+            }
+          ],
+          self: {
+            qualified_id: SELF_USER_ID,
+            conversation_role: 'wire_member' // NOT admin
+          }
+        }
+      } as ConversationResponse
+
+      await conversationService.saveConversationWithMembers(CONVERSATION_ID, nonAdminResponse)
+
+      await expect(
+        conversationService.deleteConversation(CONVERSATION_ID)
+      ).rejects.toThrow("App user is not an admin in the conversation.")
+    })
+
+    it('should throw error when conversation is not GROUP', async () => {
+      testDbService.clearData()
+
+      const oneToOneResponse: ConversationResponse = {
+        ...ONE_TO_ONE_CONVERSATION_RESPONSE
+      }
+
+      await conversationService.saveConversationWithMembers(CONVERSATION_ID, oneToOneResponse)
+
+      await expect(
+        conversationService.deleteConversation(CONVERSATION_ID)
+      ).rejects.toThrow("Conversation type is not GROUP.")
+    })
+  })
+
   const TEAM_ID: string = "team-id"
   const SELF_USER_ID: QualifiedId = {
     id: "self-user-id",
