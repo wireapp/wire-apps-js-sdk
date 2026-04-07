@@ -17,7 +17,7 @@
 import {HttpClient} from "./HttpClient.js";
 import {WIRE_API_HOST} from "../utils/DependencyInjectionTokens.js";
 import {WebSocket as NodeWebSocket} from "ws";
-import {EventRouter} from "./EventRouter.js";
+import {EventRouter} from "./event/EventRouter.js";
 import {inject, singleton} from "tsyringe";
 import {LoggerFactory} from "../utils/logger/LoggerFactory.js";
 import type {EventResponse} from "../api/response/EventResponse.js";

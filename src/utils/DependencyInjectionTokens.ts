@@ -1,7 +1,7 @@
 /*
 * Wire
 * Copyright (C) 2025 Wire Swiss GmbH
-* 
+*
 * This program is free software: you can redistribute it and/or modify
 * it under the terms of the GNU General Public License as published by
 * the Free Software Foundation, either version 3 of the License, or
@@ -25,3 +25,5 @@ export const APP_CLIENT_ID = "APP_CLIENT_ID"
 export const WIRE_DATABASE_PATH = "WIRE_DATABASE_PATH" // This is to be used only internally
 
 export const WIRE_EVENTS_HANDLER = "WIRE_EVENTS_HANDLER"
+
+export const EVENT_PROCESSOR = "EVENT_PROCESSOR";

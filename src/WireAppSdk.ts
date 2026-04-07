@@ -16,6 +16,7 @@
 
 import "reflect-metadata";
 import 'fake-indexeddb/auto';
+import './core/event/processors.index.js'
 import {CoreCryptoService} from "./core/CoreCryptoService.js";
 import {
   WIRE_API_HOST,
@@ -25,7 +26,7 @@ import {
   WIRE_USER_DOMAIN,
   WIRE_USER_EMAIL,
   WIRE_USER_ID,
-  WIRE_USER_PASSWORD
+  WIRE_USER_PASSWORD,
 } from "./utils/DependencyInjectionTokens.js";
 import {WebSocketClient} from "./core/WebSocketClient.js";
 import {WireEventsHandler} from "./core/WireEventsHandler.js";
@@ -116,6 +117,7 @@ export class WireAppSdk {
     container.registerInstance(WIRE_DATABASE_PATH, DatabaseService.DEFAULT_DATABASE_PATH)
 
     container.registerInstance(WIRE_EVENTS_HANDLER, this.wireEventsHandler)
+
     this.webSocketClient = container.resolve(WebSocketClient)
     this.conversationService = container.resolve(ConversationService)
   }

@@ -17,7 +17,7 @@
 import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest'
 import {WebSocketClient} from '../../src/core/WebSocketClient.js'
 import {HttpClient} from '../../src/core/HttpClient.js'
-import {EventRouter} from '../../src/core/EventRouter.js'
+import {EventRouter} from '../../src/core/event/EventRouter.js'
 import {NotificationsService} from '../../src/service/NotificationsService.js'
 import {AppProperties} from '../../src/service/AppProperties.js'
 import type {EventResponse} from '../../src/api/response/EventResponse.js'
