@@ -84,5 +84,10 @@ export class WireApplicationManager {
     this.logger.debug('App left the conversation with id: ' + obfuscateId(conversationId.id));
   }
 
+  async deleteConversation(conversationId: QualifiedId): Promise<void> {
+    this.logger.debug('App requested to delete the conversation with id: ' + obfuscateId(conversationId.id));
+    await this.conversationService.deleteConversation(conversationId);
+    this.logger.debug('App deleted the conversation with id: ' + obfuscateId(conversationId.id));
+  }
 
 }
