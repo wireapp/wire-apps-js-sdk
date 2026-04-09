@@ -32,6 +32,7 @@ import {container, inject, singleton} from "tsyringe";
 import {LoggerFactory} from "../utils/logger/LoggerFactory.js";
 import type {QualifiedId} from "../model/QualifiedId.js";
 import {AppProperties} from "../service/AppProperties.js";
+import type {AddMembersToConversationResult} from "../api/model/AddMembersToConversationResult.js";
 
 /**
  * Service that handles initialization of CoreCrypto and provides a high-level API for:
@@ -199,6 +200,21 @@ export class CoreCryptoService {
     await this.coreCryptoClient?.joinMlsConversation(
       new GroupInfo(groupInfoBytes)
     )
+  }
+
+  async addMemberToMlsConversation(mlsGroupId: string, members: QualifiedId[]): Promise<AddMembersToConversationResult> {
+    const claimedKeyPackagesResult = await this.mlsService.claimKeyPackages(
+      members,
+      this.toHexString(this.defaultCiphersuiteCode!)
+    )
+
+    await this.coreCryptoClient?.addMemberToMlsConversation(mlsGroupId, claimedKeyPackagesResult.keyPackages)
+    // TODO: Handle custom exceptions (if needed) when introduced
+
+    return {
+      successUsers: claimedKeyPackagesResult.successUsers,
+      failedUsers: claimedKeyPackagesResult.failedUsers
+    }
   }
 
   async establishMlsConversation(

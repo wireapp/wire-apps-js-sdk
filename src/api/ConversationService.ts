@@ -36,6 +36,7 @@ import {WIRE_USER_DOMAIN, WIRE_USER_ID} from "../utils/DependencyInjectionTokens
 import {ConversationRole} from "../model/conversation/ConversationRole.js";
 import {TeamsApiClient} from "./TeamsApiClient.js";
 import {TeamId} from "../model/TeamId.js";
+import type {AddMembersToConversationResult} from "./model/AddMembersToConversationResult.js";
 
 @singleton()
 export class ConversationService {
@@ -207,6 +208,47 @@ export class ConversationService {
     this.conversationRepository.delete(conversationId.id, conversationId.domain)
 
     this.logger.info("Deleted all conversation data.", "conversationId:", obfuscateId(conversationId.id))
+  }
+
+  async addMembersToConversation(
+    conversationId: QualifiedId,
+    members: QualifiedId[]
+  ): Promise<AddMembersToConversationResult> {
+    if (members.length === 0) {
+      throw new Error("List of members cannot be empty.") // TODO: Use custom exceptions (WireException.InvalidParameter)
+    }
+
+    const conversation = await this.getConversationById(conversationId)
+
+    this.requireConversationIsGroupOrChannel(conversationId, ConversationTypeMapper.toModel(conversation.type))
+    this.requireAppIsAdminInConversation(conversationId)
+
+    let result: AddMembersToConversationResult
+    try {
+      result = await this.coreCryptoService.addMemberToMlsConversation(
+        conversation.mls_group_id,
+        members
+      )
+    } catch (error) {
+      throw new Error(`Unable to add members to MLS conversation: ${(error as Error).message}`) // TODO: Use custom exceptions
+    }
+
+    const membersToSave: ConversationMemberEntity[] = result.successUsers.map((userId) => ({
+      user_id: userId.id,
+      user_domain: userId.domain,
+      conversation_id: conversationId.id,
+      conversation_domain: conversationId.domain,
+      role: ConversationRole.MEMBER,
+      creation_date: null
+    }))
+
+    this.conversationMemberRepository.saveMany(membersToSave)
+
+    this.logger.info(`${result.successUsers.length} member(s) successfully added to the conversation. ` +
+      `conversationId: ${obfuscateId(conversationId.id)}`
+    )
+
+    return result
   }
 
   async updateMember(userId: QualifiedId, conversationId: QualifiedId, newRole: ConversationRole): Promise<void> {

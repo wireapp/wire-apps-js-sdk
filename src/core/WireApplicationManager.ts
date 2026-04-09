@@ -90,4 +90,9 @@ export class WireApplicationManager {
     this.logger.debug('App deleted the conversation with id: ' + obfuscateId(conversationId.id));
   }
 
+  async addMembersToConversation(conversationId: QualifiedId, members: QualifiedId[]){
+    this.logger.debug('App requested to add members to the conversation with id: ' + obfuscateId(conversationId.id));
+    await this.conversationService.addMembersToConversation(conversationId, members);
+    this.logger.debug('Members added to the conversation with id: ' + obfuscateId(conversationId.id));
+  }
 }
