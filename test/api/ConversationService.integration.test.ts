@@ -30,6 +30,7 @@ import { ConversationMemberEntity } from '../../src/db/model/ConversationMemberE
 import {AppProperties} from '../../src/service/AppProperties.js'
 import {CoreCryptoService} from '../../src/core/CoreCryptoService.js'
 import {TeamsApiClient} from "../../src/api/TeamsApiClient.js";
+import {ConversationRole} from "../../src/model/conversation/ConversationRole";
 
 describe('ConversationService Integration', () => {
   let testDbService: TestDatabaseService
@@ -283,6 +284,138 @@ describe('ConversationService Integration', () => {
       await expect(
         conversationService.deleteConversation(CONVERSATION_ID)
       ).rejects.toThrow("Conversation type is not GROUP.")
+    })
+  })
+
+  describe('addMembersToConversation', () => {
+    beforeEach(async () => {
+      ;(mockCoreCryptoService as any).addMemberToMlsConversation = vi.fn()
+      await conversationService.saveConversationWithMembers(CONVERSATION_ID, CONVERSATION_RESPONSE)
+    })
+
+    it('should throw when members list is empty', async () => {
+      await expect(
+        conversationService.addMembersToConversation(CONVERSATION_ID, [])
+      ).rejects.toThrow('List of members cannot be empty.')
+
+      expect((mockCoreCryptoService as any).addMemberToMlsConversation).not.toHaveBeenCalled()
+    })
+
+    it('should throw when conversation is not a GROUP', async () => {
+      testDbService.clearData()
+      await conversationService.saveConversationWithMembers(CONVERSATION_ID, ONE_TO_ONE_CONVERSATION_RESPONSE)
+
+      await expect(
+        conversationService.addMembersToConversation(CONVERSATION_ID, [USER_3_ID])
+      ).rejects.toThrow('Conversation type is not GROUP.')
+
+      expect((mockCoreCryptoService as any).addMemberToMlsConversation).not.toHaveBeenCalled()
+    })
+
+    it('should throw when app user is not an admin', async () => {
+      testDbService.clearData()
+
+      const nonAdminResponse: ConversationResponse = {
+        ...CONVERSATION_RESPONSE,
+        members: {
+          others: [
+            {
+              qualified_id: USER_ID,
+              conversation_role: 'wire_member'
+            }
+          ],
+          self: {
+            qualified_id: SELF_USER_ID,
+            conversation_role: 'wire_member'
+          }
+        }
+      } as ConversationResponse
+
+      await conversationService.saveConversationWithMembers(CONVERSATION_ID, nonAdminResponse)
+
+      await expect(
+        conversationService.addMembersToConversation(CONVERSATION_ID, [USER_3_ID])
+      ).rejects.toThrow('App user is not an admin in the conversation.')
+
+      expect((mockCoreCryptoService as any).addMemberToMlsConversation).not.toHaveBeenCalled()
+    })
+
+    it('should persist only successUsers to the database', async () => {
+      vi.mocked((mockCoreCryptoService as any).addMemberToMlsConversation).mockResolvedValue({
+        successUsers: [USER_3_ID],
+        failedUsers: [USER_4_ID]
+      })
+
+      await conversationService.addMembersToConversation(CONVERSATION_ID, [USER_3_ID, USER_4_ID])
+
+      const members = conversationService.getMembersByConversationId(CONVERSATION_ID)
+      const memberIds = members.map((m: ConversationMemberEntity) => m.user_id)
+
+      expect(memberIds).toContain(USER_3_ID.id)
+      expect(memberIds).not.toContain(USER_4_ID.id)
+    })
+
+    it('should persist successUsers with MEMBER role', async () => {
+      vi.mocked((mockCoreCryptoService as any).addMemberToMlsConversation).mockResolvedValue({
+        successUsers: [USER_3_ID],
+        failedUsers: []
+      })
+
+      await conversationService.addMembersToConversation(CONVERSATION_ID, [USER_3_ID])
+
+      const members = conversationService.getMembersByConversationId(CONVERSATION_ID)
+      const addedMember = members.find((m: ConversationMemberEntity) => m.user_id === USER_3_ID.id)
+
+      expect(addedMember).toBeDefined()
+      expect(addedMember?.role).toBe(ConversationRole.MEMBER)
+    })
+
+    it('should return successUsers and failedUsers from coreCryptoService', async () => {
+      vi.mocked((mockCoreCryptoService as any).addMemberToMlsConversation).mockResolvedValue({
+        successUsers: [USER_3_ID],
+        failedUsers: [USER_4_ID]
+      })
+
+      const result = await conversationService.addMembersToConversation(
+        CONVERSATION_ID,
+        [USER_3_ID, USER_4_ID]
+      )
+
+      expect(result.successUsers).toEqual([USER_3_ID])
+      expect(result.failedUsers).toEqual([USER_4_ID])
+    })
+
+    it('should not persist any members when coreCryptoService fails', async () => {
+      vi.mocked((mockCoreCryptoService as any).addMemberToMlsConversation).mockRejectedValue(
+        new Error('MLS error')
+      )
+
+      await expect(
+        conversationService.addMembersToConversation(CONVERSATION_ID, [USER_3_ID])
+      ).rejects.toThrow('Unable to add members to MLS conversation: MLS error')
+
+      const members = conversationService.getMembersByConversationId(CONVERSATION_ID)
+      const memberIds = members.map((m: ConversationMemberEntity) => m.user_id)
+
+      expect(memberIds).not.toContain(USER_3_ID.id)
+    })
+
+    it('should preserve existing members when adding new ones', async () => {
+      vi.mocked((mockCoreCryptoService as any).addMemberToMlsConversation).mockResolvedValue({
+        successUsers: [USER_3_ID],
+        failedUsers: []
+      })
+
+      await conversationService.addMembersToConversation(CONVERSATION_ID, [USER_3_ID])
+
+      const members = conversationService.getMembersByConversationId(CONVERSATION_ID)
+      const memberIds = members.map((m: ConversationMemberEntity) => m.user_id)
+
+      // Original members still present
+      expect(memberIds).toContain(SELF_USER_ID.id)
+      expect(memberIds).toContain(USER_ID.id)
+      // New member added
+      expect(memberIds).toContain(USER_3_ID.id)
     })
   })
 
