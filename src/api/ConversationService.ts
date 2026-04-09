@@ -233,7 +233,7 @@ export class ConversationService {
         userId: ${obfuscateId(userId.id)}, newRole: ${newRole}`)
   }
 
-  async addMembers(members: ConversationMember[], conversationId: QualifiedId): Promise<void> {
+  async syncMembersAdded(members: ConversationMember[], conversationId: QualifiedId): Promise<void> {
     this.logger.info(`Adding members to conversation. conversationId: ${obfuscateId(conversationId.id)}, members length: ${members.length}`)
 
     // TODO: Baris: In such cases we should throw custom exceptions and handle them in the upper layers instead of just logging and skipping the events.
@@ -258,7 +258,7 @@ export class ConversationService {
     this.logger.info(`Added members to conversation. conversationId: ${obfuscateId(conversationId.id)}, members length: ${members.length}`)
   }
 
-  async removeMembers(userIds: QualifiedId[], conversationId: QualifiedId): Promise<void> {
+  async syncMembersRemoved(userIds: QualifiedId[], conversationId: QualifiedId): Promise<void> {
     this.logger.info(`Removing members from conversation. conversationId: ${obfuscateId(conversationId.id)}, userIds length: ${userIds.length}`)
 
     if (this.conversationRepository.findByIdAndDomain(conversationId.id, conversationId.domain) == null) {

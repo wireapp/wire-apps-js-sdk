@@ -458,7 +458,7 @@ describe('ConversationService', () => {
         {userId: SELF_USER_ID, role: 'wire_admin'}
       ] as any
 
-      await conversationService.addMembers(members, CONVERSATION_ID)
+      await conversationService.syncMembersAdded(members, CONVERSATION_ID)
 
       expect(mockConversationMemberRepository.saveMany).toHaveBeenCalledWith([
         {
@@ -826,7 +826,7 @@ describe('ConversationService', () => {
         .spyOn(conversationService as any, 'deleteAllConversationDataFromLocalStorages')
         .mockResolvedValue(undefined)
 
-      await conversationService.removeMembers([SELF_USER_ID], CONVERSATION_ID)
+      await conversationService.syncMembersRemoved([SELF_USER_ID], CONVERSATION_ID)
 
       expect(wipeSpy).toHaveBeenCalledWith(CONVERSATION_ID)
 
@@ -838,7 +838,7 @@ describe('ConversationService', () => {
         .spyOn(conversationService as any, 'deleteAllConversationDataFromLocalStorages')
         .mockResolvedValue(undefined)
 
-      await conversationService.removeMembers([USER_ID], CONVERSATION_ID)
+      await conversationService.syncMembersRemoved([USER_ID], CONVERSATION_ID)
 
       expect((mockConversationMemberRepository as any).deleteMany).toHaveBeenCalledWith(
         [USER_ID],

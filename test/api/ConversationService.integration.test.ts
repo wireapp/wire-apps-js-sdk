@@ -188,7 +188,7 @@ describe('ConversationService Integration', () => {
         .spyOn(conversationService as any, 'deleteAllConversationDataFromLocalStorages')
         .mockResolvedValue(undefined)
 
-      await conversationService.removeMembers([SELF_USER_ID, USER_3_ID], CONVERSATION_ID)
+      await conversationService.syncMembersRemoved([SELF_USER_ID, USER_3_ID], CONVERSATION_ID)
 
       expect(wipeSpy).toHaveBeenCalledWith(CONVERSATION_ID)
 
@@ -203,7 +203,7 @@ describe('ConversationService Integration', () => {
         .spyOn(conversationService as any, 'deleteAllConversationDataFromLocalStorages')
         .mockResolvedValue(undefined)
 
-      await conversationService.removeMembers([USER_3_ID, USER_4_ID], CONVERSATION_ID)
+      await conversationService.syncMembersRemoved([USER_3_ID, USER_4_ID], CONVERSATION_ID)
 
       expect(wipeSpy).not.toHaveBeenCalled()
 
