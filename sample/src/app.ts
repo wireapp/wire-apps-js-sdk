@@ -243,6 +243,10 @@ class SampleEventsHandler extends WireEventsHandler {
         this.appLogger?.info(`[Sample App] Executing handler for: leave-group-conversation`)
         await this.manager.leaveConversation(conversationId)
       },
+      'delete-group-conversation': async (conversationId) => {
+        this.appLogger?.info(`[Sample App] Executing handler for: delete-group-conversation`)
+        await this.manager.deleteConversation(conversationId)
+      },
       // More reserved test commands will be added here
     }
   }

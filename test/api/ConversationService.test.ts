@@ -29,10 +29,13 @@ import {AppProperties} from '../../src/service/AppProperties.js'
 import {CoreCryptoService} from '../../src/core/CoreCryptoService.js'
 import {CryptoProtocol} from '../../src/model/CryptoProtocol.js'
 import {ConversationRole} from "../../src/model/conversation/ConversationRole.js";
+import {TeamsApiClient} from "../../src/api/TeamsApiClient.js";
+import {TeamId} from "../../src/model/TeamId.js";
 
 describe('ConversationService', () => {
   let conversationService: ConversationService
   let mockUsersApiClient: UsersApiClient
+  let mockTeamsApiClient: TeamsApiClient
   let mockConversationsApiClient: ConversationsApiClient
   let mockConversationRepository: ConversationRepository
   let mockConversationMemberRepository: ConversationMemberRepository
@@ -44,6 +47,10 @@ describe('ConversationService', () => {
 
     mockUsersApiClient = {
       getUserName: vi.fn()
+    } as any
+
+    mockTeamsApiClient = {
+      deleteConversation: vi.fn()
     } as any
 
     mockConversationsApiClient = {
@@ -83,6 +90,7 @@ describe('ConversationService', () => {
       SELF_USER_ID.id,
       SELF_USER_ID.domain,
       mockUsersApiClient,
+      mockTeamsApiClient,
       mockConversationsApiClient,
       mockConversationRepository,
       mockConversationMemberRepository,
@@ -982,6 +990,118 @@ describe('ConversationService', () => {
       await expect(conversationService.leaveConversation(CONVERSATION_ID)).rejects.toThrow('leave failed')
 
       expect(mockConversationsApiClient.leaveConversation).toHaveBeenCalledWith(CONVERSATION_ID)
+      expect(wipeSpy).not.toHaveBeenCalled()
+
+      wipeSpy.mockRestore()
+    })
+  })
+
+  describe('deleteConversation', () => {
+    const groupConversationEntity: ConversationEntity = {
+      id: CONVERSATION_ID.id,
+      domain: CONVERSATION_ID.domain,
+      name: 'Group Conversation',
+      team_id: TEAM_ID,
+      mls_group_id: MLS_GROUP_ID,
+      creation_date: null,
+      type: ConversationType.GROUP
+    }
+
+    const adminMember = {
+      user_id: SELF_USER_ID.id,
+      user_domain: SELF_USER_ID.domain,
+      conversation_id: CONVERSATION_ID.id,
+      conversation_domain: CONVERSATION_ID.domain,
+      role: ConversationRole.ADMIN,
+      creation_date: null
+    }
+
+    it('should delete conversation when all conditions are met', async () => {
+      vi.mocked(mockConversationRepository.findByIdAndDomain).mockReturnValue(groupConversationEntity)
+      vi.mocked(mockConversationMemberRepository.getMembersByConversationId).mockReturnValue([adminMember])
+      vi.mocked(mockTeamsApiClient.deleteConversation).mockResolvedValue(undefined)
+      const wipeSpy = vi.spyOn(conversationService as any, 'deleteAllConversationDataFromLocalStorages').mockResolvedValue(undefined)
+
+      await conversationService.deleteConversation(CONVERSATION_ID)
+
+      expect(mockTeamsApiClient.deleteConversation).toHaveBeenCalledWith(new TeamId(TEAM_ID), CONVERSATION_ID)
+      expect(wipeSpy).toHaveBeenCalledWith(CONVERSATION_ID)
+
+      wipeSpy.mockRestore()
+    })
+
+    it('should throw when conversation is not a GROUP', async () => {
+      vi.mocked(mockConversationRepository.findByIdAndDomain).mockReturnValue({
+        ...groupConversationEntity,
+        type: ConversationType.ONE_TO_ONE
+      })
+      vi.mocked(mockConversationMemberRepository.getMembersByConversationId).mockReturnValue([adminMember])
+
+      await expect(conversationService.deleteConversation(CONVERSATION_ID)).rejects.toThrow()
+
+      expect(mockTeamsApiClient.deleteConversation).not.toHaveBeenCalled()
+    })
+
+    it('should throw when team_id is null', async () => {
+      vi.mocked(mockConversationRepository.findByIdAndDomain).mockReturnValue({
+        ...groupConversationEntity,
+        team_id: null
+      })
+      vi.mocked(mockConversationMemberRepository.getMembersByConversationId).mockReturnValue([adminMember])
+
+      await expect(conversationService.deleteConversation(CONVERSATION_ID)).rejects.toThrow('Conversation teamId must not be null.')
+
+      expect(mockTeamsApiClient.deleteConversation).not.toHaveBeenCalled()
+    })
+
+    it('should throw when app user is not an admin', async () => {
+      vi.mocked(mockConversationRepository.findByIdAndDomain).mockReturnValue(groupConversationEntity)
+      vi.mocked(mockConversationMemberRepository.getMembersByConversationId).mockReturnValue([{
+        ...adminMember,
+        role: ConversationRole.MEMBER
+      }])
+
+      await expect(conversationService.deleteConversation(CONVERSATION_ID)).rejects.toThrow()
+
+      expect(mockTeamsApiClient.deleteConversation).not.toHaveBeenCalled()
+    })
+
+    it('should throw when app user domain does not match even if user_id is correct', async () => {
+      vi.mocked(mockConversationRepository.findByIdAndDomain).mockReturnValue(groupConversationEntity)
+      vi.mocked(mockConversationMemberRepository.getMembersByConversationId).mockReturnValue([
+        {
+          ...adminMember,
+          user_id: SELF_USER_ID.id,
+          user_domain: 'different-domain'
+        }
+      ])
+
+      await expect(conversationService.deleteConversation(CONVERSATION_ID)).rejects.toThrow(
+        'App user is not an admin in the conversation.'
+      )
+      expect(mockTeamsApiClient.deleteConversation).not.toHaveBeenCalled()
+    })
+
+    it('should throw when app user is not in the conversation', async () => {
+      vi.mocked(mockConversationRepository.findByIdAndDomain).mockReturnValue(groupConversationEntity)
+      vi.mocked(mockConversationMemberRepository.getMembersByConversationId).mockReturnValue([{
+        ...adminMember,
+        user_id: USER_ID.id
+      }])
+
+      await expect(conversationService.deleteConversation(CONVERSATION_ID)).rejects.toThrow()
+
+      expect(mockTeamsApiClient.deleteConversation).not.toHaveBeenCalled()
+    })
+
+    it('should not delete local data when API call fails', async () => {
+      vi.mocked(mockConversationRepository.findByIdAndDomain).mockReturnValue(groupConversationEntity)
+      vi.mocked(mockConversationMemberRepository.getMembersByConversationId).mockReturnValue([adminMember])
+      vi.mocked(mockTeamsApiClient.deleteConversation).mockRejectedValue(new Error('delete failed'))
+      const wipeSpy = vi.spyOn(conversationService as any, 'deleteAllConversationDataFromLocalStorages').mockResolvedValue(undefined)
+
+      await expect(conversationService.deleteConversation(CONVERSATION_ID)).rejects.toThrow('delete failed')
+
       expect(wipeSpy).not.toHaveBeenCalled()
 
       wipeSpy.mockRestore()

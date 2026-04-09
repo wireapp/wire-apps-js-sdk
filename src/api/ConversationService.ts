@@ -33,7 +33,9 @@ import {AppProperties} from "../service/AppProperties.js";
 import {CryptoProtocol} from "../model/CryptoProtocol.js";
 import {CoreCryptoService} from "../core/CoreCryptoService.js";
 import {WIRE_USER_DOMAIN, WIRE_USER_ID} from "../utils/DependencyInjectionTokens.js";
-import type {ConversationRole} from "../model/conversation/ConversationRole.js";
+import {ConversationRole} from "../model/conversation/ConversationRole.js";
+import {TeamsApiClient} from "./TeamsApiClient.js";
+import {TeamId} from "../model/TeamId.js";
 
 @singleton()
 export class ConversationService {
@@ -43,6 +45,7 @@ export class ConversationService {
     @inject(WIRE_USER_ID) private wireUserId: string,
     @inject(WIRE_USER_DOMAIN) private wireUserDomain: string,
     private userApiClient: UsersApiClient,
+    private teamsApiClient: TeamsApiClient,
     private conversationsApiClient: ConversationsApiClient,
     private conversationRepository: ConversationRepository,
     private conversationMemberRepository: ConversationMemberRepository,
@@ -336,6 +339,44 @@ export class ConversationService {
       })
 
       await this.coreCryptoService.establishMlsConversation(users, conversation.group_id)
+    }
+  }
+
+  async deleteConversation(conversationId: QualifiedId): Promise<void> {
+    this.logger.info("Attempting to delete conversation. conversationId:", obfuscateId(conversationId.id))
+    const conversation = await this.getConversationById(conversationId)
+
+    if (!conversation.team_id) {
+      throw new Error("Conversation teamId must not be null.")
+    }
+    this.requireConversationIsGroupOrChannel(conversationId, ConversationTypeMapper.toModel(conversation.type))
+    this.requireAppIsAdminInConversation(conversationId)
+
+    await this.teamsApiClient.deleteConversation(new TeamId(conversation.team_id), conversationId)
+    await this.deleteAllConversationDataFromLocalStorages(conversationId)
+
+    this.logger.info(`Conversation is deleted. teamId: ${obfuscateId(conversation.team_id)}, conversationId: ${obfuscateId(conversationId.id)}`)
+  }
+
+  private requireConversationIsGroupOrChannel(conversationId: QualifiedId, conversationType: ConversationType): void {
+    if (conversationType !== ConversationType.GROUP) {
+      this.logger.warn(`Skipping operation, conversation is not a GROUP or CHANNEL. conversationId: ${obfuscateId(conversationId.id)}, conversationType: ${conversationType}`)
+      throw new Error("Conversation type is not GROUP.") //TODO: Use custom exceptions
+    }
+  }
+
+  private requireAppIsAdminInConversation(conversationId: QualifiedId): void {
+    const members = this.getMembersByConversationId(conversationId)
+    const isAppAdminInConversation = members.some(
+      member =>
+        member.user_id === this.wireUserId
+        && member.user_domain === this.wireUserDomain
+        && member.role === ConversationRole.ADMIN
+    )
+
+    if (!isAppAdminInConversation) {
+      this.logger.warn(`App user is not an admin in the conversation. conversationId: ${obfuscateId(conversationId.id)}, appUserId: ${obfuscateId(this.wireUserId)}`)
+      throw new Error("App user is not an admin in the conversation.") //TODO: Use custom exceptions
     }
   }
 }
