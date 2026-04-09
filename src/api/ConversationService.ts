@@ -368,7 +368,10 @@ export class ConversationService {
   private requireAppIsAdminInConversation(conversationId: QualifiedId): void {
     const members = this.getMembersByConversationId(conversationId)
     const isAppAdminInConversation = members.some(
-      member => member.user_id === this.wireUserId && member.role === ConversationRole.ADMIN
+      member =>
+        member.user_id === this.wireUserId
+        && member.user_domain === this.wireUserDomain
+        && member.role === ConversationRole.ADMIN
     )
 
     if (!isAppAdminInConversation) {

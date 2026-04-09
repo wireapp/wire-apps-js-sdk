@@ -1066,6 +1066,22 @@ describe('ConversationService', () => {
       expect(mockTeamsApiClient.deleteConversation).not.toHaveBeenCalled()
     })
 
+    it('should throw when app user domain does not match even if user_id is correct', async () => {
+      vi.mocked(mockConversationRepository.findByIdAndDomain).mockReturnValue(groupConversationEntity)
+      vi.mocked(mockConversationMemberRepository.getMembersByConversationId).mockReturnValue([
+        {
+          ...adminMember,
+          user_id: SELF_USER_ID.id,
+          user_domain: 'different-domain'
+        }
+      ])
+
+      await expect(conversationService.deleteConversation(CONVERSATION_ID)).rejects.toThrow(
+        'App user is not an admin in the conversation.'
+      )
+      expect(mockTeamsApiClient.deleteConversation).not.toHaveBeenCalled()
+    })
+
     it('should throw when app user is not in the conversation', async () => {
       vi.mocked(mockConversationRepository.findByIdAndDomain).mockReturnValue(groupConversationEntity)
       vi.mocked(mockConversationMemberRepository.getMembersByConversationId).mockReturnValue([{
