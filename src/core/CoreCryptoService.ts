@@ -203,9 +203,13 @@ export class CoreCryptoService {
   }
 
   async addMemberToMlsConversation(mlsGroupId: string, members: QualifiedId[]): Promise<AddMembersToConversationResult> {
+    if (members.length === 0) {
+      throw new Error("List of members cannot be empty.") // TODO: Use custom exceptions (WireException.InvalidParameter)
+    }
+
     const claimedKeyPackagesResult = await this.mlsService.claimKeyPackages(
       members,
-      this.toHexString(this.defaultCiphersuiteCode!)
+      this.defaultCiphersuiteCode!
     )
 
     await this.coreCryptoClient?.addMemberToMlsConversation(mlsGroupId, claimedKeyPackagesResult.keyPackages)
@@ -246,7 +250,7 @@ export class CoreCryptoService {
 
       const claimedKeyPackagesResult = await this.mlsService.claimKeyPackages(
         users,
-        this.toHexString(this.defaultCiphersuiteCode!)
+        this.defaultCiphersuiteCode!
       )
 
       if (claimedKeyPackagesResult.keyPackages.length === 0) {
@@ -261,10 +265,6 @@ export class CoreCryptoService {
       // TODO: Map to WireException
       throw Error("No Public Keys found, skipping creating a conversation.")
     }
-  }
-
-  private toHexString(value: number, minDigits: number = 4): string {
-    return "0x" + value.toString(16).padStart(minDigits, '0')
   }
 
   close() {

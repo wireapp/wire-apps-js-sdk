@@ -45,25 +45,27 @@ export class MlsService {
 
   async getRemovalKey(ciphersuite: Ciphersuite): Promise<Uint8Array | null> {
     const publicKeysResponse = await this.mlsApiClient.getPublicKeys()
-    
+
     return getRemovalKeyFromPublicKeysResponse(publicKeysResponse, ciphersuite)
   }
 
   async claimKeyPackages(
     users: QualifiedId[],
-    ciphersuite: string
+    ciphersuite: number
   ): Promise<ClaimedKeyPackagesResult> {
 
     const claimedKeyPackages: KeyPackage[] = []
     const successUsers: QualifiedId[] = []
     const failedUsers: QualifiedId[] = []
 
+    const ciphersuiteHex = this.toHexString(ciphersuite)
+
     for (const user of users) {
       try {
         const result = await this.mlsApiClient.claimKeyPackages(
           user.id,
           user.domain,
-          ciphersuite
+          ciphersuiteHex
         )
 
         if (result.key_packages.length > 0) {
@@ -87,5 +89,9 @@ export class MlsService {
       successUsers: successUsers,
       failedUsers: failedUsers
     } as ClaimedKeyPackagesResult
+  }
+
+  private toHexString(value: number, minDigits: number = 4): string {
+    return "0x" + value.toString(16).padStart(minDigits, '0')
   }
 }
