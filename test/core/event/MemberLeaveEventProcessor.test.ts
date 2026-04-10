@@ -46,7 +46,7 @@ beforeEach(() => {
   vi.clearAllMocks()
 
   conversationService = {
-    removeMembers: vi.fn().mockResolvedValue(undefined),
+    syncMembersRemoved: vi.fn().mockResolvedValue(undefined),
   } as any
 
   wireEventsHandler = {
@@ -62,8 +62,8 @@ describe('MemberLeaveEventProcessor', () => {
       const userIds = [makeUser('user-1')]
       await processor.process(makeEvent(userIds))
 
-      expect(conversationService.removeMembers).toHaveBeenCalledTimes(1)
-      expect(conversationService.removeMembers).toHaveBeenCalledWith(userIds, qualifiedConversation)
+      expect(conversationService.syncMembersRemoved).toHaveBeenCalledTimes(1)
+      expect(conversationService.syncMembersRemoved).toHaveBeenCalledWith(userIds, qualifiedConversation)
     })
 
     it('should call onUserLeftConversation with the qualified conversation and qualified user ids', async () => {
@@ -78,21 +78,21 @@ describe('MemberLeaveEventProcessor', () => {
       const userIds = [makeUser('user-1'), makeUser('user-2'), makeUser('user-3')]
       await processor.process(makeEvent(userIds))
 
-      expect(conversationService.removeMembers).toHaveBeenCalledWith(userIds, qualifiedConversation)
+      expect(conversationService.syncMembersRemoved).toHaveBeenCalledWith(userIds, qualifiedConversation)
       expect(wireEventsHandler.onUserLeftConversation).toHaveBeenCalledWith(qualifiedConversation, userIds)
     })
 
     it('should handle an empty qualified_user_ids array', async () => {
       await processor.process(makeEvent([]))
 
-      expect(conversationService.removeMembers).toHaveBeenCalledWith([], qualifiedConversation)
+      expect(conversationService.syncMembersRemoved).toHaveBeenCalledWith([], qualifiedConversation)
       expect(wireEventsHandler.onUserLeftConversation).toHaveBeenCalledWith(qualifiedConversation, [])
     })
 
     it('should call removeMembers before onUserLeftConversation', async () => {
       const callOrder: string[] = []
 
-      vi.mocked(conversationService.removeMembers).mockImplementation(async () => {
+      vi.mocked(conversationService.syncMembersRemoved).mockImplementation(async () => {
         callOrder.push('removeMembers')
       })
       vi.mocked(wireEventsHandler.onUserLeftConversation).mockImplementation(async () => {
@@ -105,7 +105,7 @@ describe('MemberLeaveEventProcessor', () => {
     })
 
     it('should propagate errors from removeMembers and not call onUserLeftConversation', async () => {
-      vi.mocked(conversationService.removeMembers).mockRejectedValue(new Error('removeMembers failed'))
+      vi.mocked(conversationService.syncMembersRemoved).mockRejectedValue(new Error('removeMembers failed'))
 
       await expect(processor.process(makeEvent())).rejects.toThrow('removeMembers failed')
       expect(wireEventsHandler.onUserLeftConversation).not.toHaveBeenCalled()

@@ -47,7 +47,7 @@ beforeEach(() => {
   vi.clearAllMocks()
 
   conversationService = {
-    addMembers: vi.fn().mockResolvedValue(undefined),
+    syncMembersAdded: vi.fn().mockResolvedValue(undefined),
   } as any
 
   wireEventsHandler = {
@@ -64,8 +64,8 @@ describe('MemberJoinEventProcessor', () => {
 
       await processor.process(event)
 
-      expect(conversationService.addMembers).toHaveBeenCalledTimes(1)
-      expect(conversationService.addMembers).toHaveBeenCalledWith(
+      expect(conversationService.syncMembersAdded).toHaveBeenCalledTimes(1)
+      expect(conversationService.syncMembersAdded).toHaveBeenCalledWith(
         [{userId: {id: 'user-1', domain: 'example.com'}, role: ConversationRole.MEMBER}],
         qualifiedConversation
       )
@@ -95,7 +95,7 @@ describe('MemberJoinEventProcessor', () => {
         {userId: {id: 'user-1', domain: 'example.com'}, role: ConversationRole.ADMIN},
         {userId: {id: 'user-2', domain: 'example.com'}, role: ConversationRole.MEMBER},
       ]
-      expect(conversationService.addMembers).toHaveBeenCalledWith(expectedMembers, qualifiedConversation)
+      expect(conversationService.syncMembersAdded).toHaveBeenCalledWith(expectedMembers, qualifiedConversation)
       expect(wireEventsHandler.onUserJoinedConversation).toHaveBeenCalledWith(qualifiedConversation, expectedMembers)
     })
 
@@ -104,14 +104,14 @@ describe('MemberJoinEventProcessor', () => {
 
       await processor.process(event)
 
-      expect(conversationService.addMembers).toHaveBeenCalledWith([], qualifiedConversation)
+      expect(conversationService.syncMembersAdded).toHaveBeenCalledWith([], qualifiedConversation)
       expect(wireEventsHandler.onUserJoinedConversation).toHaveBeenCalledWith(qualifiedConversation, [])
     })
 
     it('should call addMembers before onUserJoinedConversation', async () => {
       const callOrder: string[] = []
 
-      vi.mocked(conversationService.addMembers).mockImplementation(async () => {
+      vi.mocked(conversationService.syncMembersAdded).mockImplementation(async () => {
         callOrder.push('addMembers')
       })
       vi.mocked(wireEventsHandler.onUserJoinedConversation).mockImplementation(async () => {
@@ -124,7 +124,7 @@ describe('MemberJoinEventProcessor', () => {
     })
 
     it('should propagate errors from addMembers and not call onUserJoinedConversation', async () => {
-      vi.mocked(conversationService.addMembers).mockRejectedValue(new Error('addMembers failed'))
+      vi.mocked(conversationService.syncMembersAdded).mockRejectedValue(new Error('addMembers failed'))
 
       await expect(processor.process(makeEvent())).rejects.toThrow('addMembers failed')
       expect(wireEventsHandler.onUserJoinedConversation).not.toHaveBeenCalled()

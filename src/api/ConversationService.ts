@@ -36,6 +36,7 @@ import {WIRE_USER_DOMAIN, WIRE_USER_ID} from "../utils/DependencyInjectionTokens
 import {ConversationRole} from "../model/conversation/ConversationRole.js";
 import {TeamsApiClient} from "./TeamsApiClient.js";
 import {TeamId} from "../model/TeamId.js";
+import type {AddMembersToConversationResult} from "./model/AddMembersToConversationResult.js";
 
 @singleton()
 export class ConversationService {
@@ -209,6 +210,47 @@ export class ConversationService {
     this.logger.info("Deleted all conversation data.", "conversationId:", obfuscateId(conversationId.id))
   }
 
+  async addMembersToConversation(
+    conversationId: QualifiedId,
+    members: QualifiedId[]
+  ): Promise<AddMembersToConversationResult> {
+    if (members.length === 0) {
+      throw new Error("List of members cannot be empty.") // TODO: Use custom exceptions (WireException.InvalidParameter)
+    }
+
+    const conversation = await this.getConversationById(conversationId)
+
+    this.requireConversationIsGroupOrChannel(conversationId, ConversationTypeMapper.toModel(conversation.type))
+    this.requireAppIsAdminInConversation(conversationId)
+
+    let result: AddMembersToConversationResult
+    try {
+      result = await this.coreCryptoService.addMemberToMlsConversation(
+        conversation.mls_group_id,
+        members
+      )
+    } catch (error) {
+      throw new Error(`Unable to add members to MLS conversation: ${(error as Error).message}`) // TODO: Use custom exceptions
+    }
+
+    const membersToSave: ConversationMemberEntity[] = result.successUsers.map((userId) => ({
+      user_id: userId.id,
+      user_domain: userId.domain,
+      conversation_id: conversationId.id,
+      conversation_domain: conversationId.domain,
+      role: ConversationRole.MEMBER,
+      creation_date: null
+    }))
+
+    this.conversationMemberRepository.saveMany(membersToSave)
+
+    this.logger.info(`${result.successUsers.length} member(s) successfully added to the conversation. ` +
+      `conversationId: ${obfuscateId(conversationId.id)}`
+    )
+
+    return result
+  }
+
   async updateMember(userId: QualifiedId, conversationId: QualifiedId, newRole: ConversationRole): Promise<void> {
     this.logger.info(`Updating member in conversation. conversationId: ${obfuscateId(conversationId.id)},
       userId: ${obfuscateId(userId.id)}, newRole: ${newRole}`)
@@ -233,7 +275,7 @@ export class ConversationService {
         userId: ${obfuscateId(userId.id)}, newRole: ${newRole}`)
   }
 
-  async addMembers(members: ConversationMember[], conversationId: QualifiedId): Promise<void> {
+  async syncMembersAdded(members: ConversationMember[], conversationId: QualifiedId): Promise<void> {
     this.logger.info(`Adding members to conversation. conversationId: ${obfuscateId(conversationId.id)}, members length: ${members.length}`)
 
     // TODO: Baris: In such cases we should throw custom exceptions and handle them in the upper layers instead of just logging and skipping the events.
@@ -258,7 +300,7 @@ export class ConversationService {
     this.logger.info(`Added members to conversation. conversationId: ${obfuscateId(conversationId.id)}, members length: ${members.length}`)
   }
 
-  async removeMembers(userIds: QualifiedId[], conversationId: QualifiedId): Promise<void> {
+  async syncMembersRemoved(userIds: QualifiedId[], conversationId: QualifiedId): Promise<void> {
     this.logger.info(`Removing members from conversation. conversationId: ${obfuscateId(conversationId.id)}, userIds length: ${userIds.length}`)
 
     if (this.conversationRepository.findByIdAndDomain(conversationId.id, conversationId.domain) == null) {

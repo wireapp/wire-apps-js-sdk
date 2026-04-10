@@ -247,19 +247,34 @@ class SampleEventsHandler extends WireEventsHandler {
         this.appLogger?.info(`[Sample App] Executing handler for: delete-group-conversation`)
         await this.manager.deleteConversation(conversationId)
       },
+      'add-members-to-conversation': async (conversationId, command) => {
+        this.appLogger?.info(`[Sample App] Executing handler for: add-members-to-conversation`)
+
+        const parts = command?.trim().split(' ')
+        const memberId = parts?.[1]
+        const memberDomain = parts?.[2]
+
+        if (!memberId || !memberDomain) {
+          this.appLogger?.info(`[Sample App] Invalid command format. Expected: add-members-to-conversation [USER_ID] [DOMAIN]`)
+          return
+        }
+
+        const members: QualifiedId[] = [{ id: memberId, domain: memberDomain }]
+        await this.manager.addMembersToConversation(conversationId, members)
+      },
       // More reserved test commands will be added here
     }
   }
 
   private isReservedTestCommand(message?: string): boolean {
     if (!message) return false
-    const cmd = message.trim()
+    const cmd = message.trim().split(' ')[0]
     return Object.prototype.hasOwnProperty.call(this.getReservedTestCommandHandlers(), cmd)
   }
 
   private async processReservedTestCommand(command: string, conversationId: QualifiedId): Promise<boolean> {
     if (!command) return false
-    const cmd = command.trim()
+    const cmd = command.trim().split(' ')[0]
     const handler = this.getReservedTestCommandHandlers()[cmd]
     if (!handler) return false
 
