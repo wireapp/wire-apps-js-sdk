@@ -419,6 +419,87 @@ describe('ConversationService Integration', () => {
     })
   })
 
+  describe('updateConversationMemberRole', () => {
+    beforeEach(async () => {
+      ;(mockConversationsApiClient as any).updateConversationMemberRole = vi.fn()
+      await conversationService.saveConversationWithMembers(CONVERSATION_ID, CONVERSATION_RESPONSE)
+    })
+
+    it('should call API and persist the updated role to the database', async () => {
+      vi.mocked((mockConversationsApiClient as any).updateConversationMemberRole).mockResolvedValue(undefined)
+
+      await conversationService.updateConversationMemberRole(CONVERSATION_ID, USER_ID, ConversationRole.ADMIN)
+
+      expect((mockConversationsApiClient as any).updateConversationMemberRole).toHaveBeenCalledWith(
+        CONVERSATION_ID,
+        USER_ID,
+        ConversationRole.ADMIN
+      )
+
+      const members = conversationService.getMembersByConversationId(CONVERSATION_ID)
+      const updatedMember = members.find((m: ConversationMemberEntity) => m.user_id === USER_ID.id)
+
+      expect(updatedMember).toBeDefined()
+      expect(updatedMember?.role).toBe(ConversationRole.ADMIN)
+    })
+
+    it('should throw when conversation is not a GROUP', async () => {
+      testDbService.clearData()
+      await conversationService.saveConversationWithMembers(CONVERSATION_ID, ONE_TO_ONE_CONVERSATION_RESPONSE)
+
+      await expect(
+        conversationService.updateConversationMemberRole(CONVERSATION_ID, USER_ID, ConversationRole.ADMIN)
+      ).rejects.toThrow('Conversation type is not GROUP.')
+
+      expect((mockConversationsApiClient as any).updateConversationMemberRole).not.toHaveBeenCalled()
+    })
+
+    it('should throw when app user is not an admin', async () => {
+      testDbService.clearData()
+
+      const nonAdminResponse: ConversationResponse = {
+        ...CONVERSATION_RESPONSE,
+        members: {
+          others: [{ qualified_id: USER_ID, conversation_role: 'wire_member' }],
+          self: { qualified_id: SELF_USER_ID, conversation_role: 'wire_member' }
+        }
+      } as ConversationResponse
+
+      await conversationService.saveConversationWithMembers(CONVERSATION_ID, nonAdminResponse)
+
+      await expect(
+        conversationService.updateConversationMemberRole(CONVERSATION_ID, USER_ID, ConversationRole.ADMIN)
+      ).rejects.toThrow('App user is not an admin in the conversation.')
+
+      expect((mockConversationsApiClient as any).updateConversationMemberRole).not.toHaveBeenCalled()
+    })
+
+    it('should not persist the updated role when API call fails', async () => {
+      vi.mocked((mockConversationsApiClient as any).updateConversationMemberRole).mockRejectedValue(new Error('update failed'))
+
+      await expect(
+        conversationService.updateConversationMemberRole(CONVERSATION_ID, USER_ID, ConversationRole.ADMIN)
+      ).rejects.toThrow('update failed')
+
+      const members = conversationService.getMembersByConversationId(CONVERSATION_ID)
+      const member = members.find((m: ConversationMemberEntity) => m.user_id === USER_ID.id)
+
+      expect(member?.role).toBe(ConversationRole.MEMBER) // unchanged from CONVERSATION_RESPONSE
+    })
+
+    it('should preserve other members when updating one member role', async () => {
+      vi.mocked((mockConversationsApiClient as any).updateConversationMemberRole).mockResolvedValue(undefined)
+
+      await conversationService.updateConversationMemberRole(CONVERSATION_ID, USER_ID, ConversationRole.ADMIN)
+
+      const members = conversationService.getMembersByConversationId(CONVERSATION_ID)
+      const memberIds = members.map((m: ConversationMemberEntity) => m.user_id)
+
+      expect(memberIds).toContain(SELF_USER_ID.id)
+      expect(memberIds).toContain(USER_ID.id)
+    })
+  })
+
   const TEAM_ID: string = "team-id"
   const SELF_USER_ID: QualifiedId = {
     id: "self-user-id",
