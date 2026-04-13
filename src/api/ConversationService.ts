@@ -262,6 +262,7 @@ export class ConversationService {
     const conversation = await this.getConversationById(conversationId)
     this.requireConversationIsGroupOrChannel(conversationId, ConversationTypeMapper.toModel(conversation.type))
     this.requireAppIsAdminInConversation(conversationId)
+    this.requireUserIsInConversation(conversationId, userId)
 
     await this.conversationsApiClient.updateConversationMemberRole(conversationId, userId, newRole)
 
@@ -448,6 +449,19 @@ export class ConversationService {
     if (!isAppAdminInConversation) {
       this.logger.warn(`App user is not an admin in the conversation. conversationId: ${obfuscateId(conversationId.id)}, appUserId: ${obfuscateId(this.wireUserId)}`)
       throw new Error("App user is not an admin in the conversation.") //TODO: Use custom exceptions
+    }
+  }
+
+  private requireUserIsInConversation(conversationId: QualifiedId, userId: QualifiedId): void {
+    const exists = this.conversationMemberRepository.exists(
+      userId.id,
+      userId.domain,
+      conversationId.id,
+      conversationId.domain)
+
+    if (!exists) {
+      this.logger.warn(`User is not in the conversation. conversationId: ${obfuscateId(conversationId.id)}, UserId: ${obfuscateId(userId.id)}`)
+      throw new Error("User is not in the conversation.") //TODO: Use custom exceptions
     }
   }
 }
