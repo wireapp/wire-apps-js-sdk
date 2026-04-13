@@ -858,7 +858,7 @@ describe('ConversationService', () => {
       (mockConversationMemberRepository as any).save = vi.fn()
 
       const newRole: ConversationRole = ConversationRole.ADMIN
-      await conversationService.updateMember(USER_ID, CONVERSATION_ID, newRole)
+      await conversationService.syncMemberUpdate(USER_ID, CONVERSATION_ID, newRole)
 
       expect((mockConversationMemberRepository as any).save).not.toHaveBeenCalled()
     })
@@ -868,7 +868,7 @@ describe('ConversationService', () => {
       ;(mockConversationMemberRepository as any).save = vi.fn()
 
       const newRole: ConversationRole = ConversationRole.ADMIN
-      await conversationService.updateMember(USER_ID, CONVERSATION_ID, newRole)
+      await conversationService.syncMemberUpdate(USER_ID, CONVERSATION_ID, newRole)
 
       expect((mockConversationMemberRepository as any).save).toHaveBeenCalledWith({
         user_id: USER_ID.id,

@@ -251,7 +251,7 @@ export class ConversationService {
     return result
   }
 
-  async updateMember(userId: QualifiedId, conversationId: QualifiedId, newRole: ConversationRole): Promise<void> {
+  async syncMemberUpdate(userId: QualifiedId, conversationId: QualifiedId, newRole: ConversationRole): Promise<void> {
     this.logger.info(`Updating member in conversation. conversationId: ${obfuscateId(conversationId.id)},
       userId: ${obfuscateId(userId.id)}, newRole: ${newRole}`)
 
