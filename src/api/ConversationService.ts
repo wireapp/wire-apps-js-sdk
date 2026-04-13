@@ -251,8 +251,37 @@ export class ConversationService {
     return result
   }
 
-  async syncMemberUpdate(userId: QualifiedId, conversationId: QualifiedId, newRole: ConversationRole): Promise<void> {
+  async updateConversationMemberRole(
+    conversationId: QualifiedId,
+    userId: QualifiedId,
+    newRole: ConversationRole
+  ): Promise<void> {
     this.logger.info(`Updating member in conversation. conversationId: ${obfuscateId(conversationId.id)},
+      userId: ${obfuscateId(userId.id)}, newRole: ${newRole}`)
+
+    const conversation = await this.getConversationById(conversationId)
+    this.requireConversationIsGroupOrChannel(conversationId, ConversationTypeMapper.toModel(conversation.type))
+    this.requireAppIsAdminInConversation(conversationId)
+
+    await this.conversationsApiClient.updateConversationMemberRole(conversationId, userId, newRole)
+
+    const memberToSave: ConversationMemberEntity = {
+      user_id: userId.id,
+      user_domain: userId.domain,
+      conversation_id: conversationId.id,
+      conversation_domain: conversationId.domain,
+      role: newRole,
+      creation_date: null
+    }
+
+    this.conversationMemberRepository.save(memberToSave)
+
+    this.logger.info(`Updated member in conversation. conversationId: ${obfuscateId(conversationId.id)},
+      userId: ${obfuscateId(userId.id)}, newRole: ${newRole}`)
+  }
+
+  async syncMemberUpdate(userId: QualifiedId, conversationId: QualifiedId, newRole: ConversationRole): Promise<void> {
+    this.logger.info(`Syncing member in conversation. conversationId: ${obfuscateId(conversationId.id)},
       userId: ${obfuscateId(userId.id)}, newRole: ${newRole}`)
 
     if (this.conversationRepository.findByIdAndDomain(conversationId.id, conversationId.domain) == null) {
@@ -271,7 +300,7 @@ export class ConversationService {
     }
 
     this.conversationMemberRepository.save(memberEntity)
-    this.logger.info(`Updated member in conversation. conversationId: ${obfuscateId(conversationId.id)},
+    this.logger.info(`Synced member in conversation. conversationId: ${obfuscateId(conversationId.id)},
         userId: ${obfuscateId(userId.id)}, newRole: ${newRole}`)
   }
 
