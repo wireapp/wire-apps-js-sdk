@@ -22,6 +22,7 @@ import { PinoLogger } from './PinoLogger.js'
 import {
   type Conversation,
   type ConversationMember,
+  type ConversationRole,
   obfuscateId,
   type QualifiedId,
   TextMessage,
@@ -261,6 +262,22 @@ class SampleEventsHandler extends WireEventsHandler {
 
         const members: QualifiedId[] = [{ id: memberId, domain: memberDomain }]
         await this.manager.addMembersToConversation(conversationId, members)
+      },
+      'update-member-role': async (conversationId, command) => {
+        this.appLogger?.info(`[Sample App] Executing handler for: update-member-role`)
+
+        const parts = command?.trim().split(' ')
+        const memberId = parts?.[1]
+        const memberDomain = parts?.[2]
+        const newRole = parts?.[3] as ConversationRole
+
+        if (!memberId || !memberDomain || !newRole) {
+          this.appLogger?.info(`[Sample App] Invalid command format. Expected: update-member-role [USER_ID] [DOMAIN] [ROLE]`)
+          return
+        }
+
+        const userId: QualifiedId = { id: memberId, domain: memberDomain }
+        await this.manager.updateConversationMemberRole(conversationId, userId, newRole)
       },
       // More reserved test commands will be added here
     }

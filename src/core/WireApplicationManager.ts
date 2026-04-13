@@ -26,6 +26,7 @@ import {LoggerFactory} from "../utils/logger/LoggerFactory.js";
 import {obfuscateId} from "../utils/ObfuscateUtil.js";
 import {AssetsTransferService} from "../api/AssetsTransferService.js";
 import type {Asset} from "../model/Asset.js";
+import type {ConversationRole} from "../model/conversation/ConversationRole.js";
 
 @singleton()
 export class WireApplicationManager {
@@ -94,5 +95,11 @@ export class WireApplicationManager {
     this.logger.debug('App requested to add members to the conversation with id: ' + obfuscateId(conversationId.id));
     await this.conversationService.addMembersToConversation(conversationId, members);
     this.logger.debug('Members added to the conversation with id: ' + obfuscateId(conversationId.id));
+  }
+
+  async updateConversationMemberRole(conversationId: QualifiedId, userId: QualifiedId, newRole: ConversationRole): Promise<void> {
+    this.logger.debug('App requested to update member\'s role in the conversation with id: ' + obfuscateId(conversationId.id));
+    await this.conversationService.updateConversationMemberRole(conversationId, userId, newRole);
+    this.logger.debug('Member\'s role is updated in the conversation with id: ' + obfuscateId(conversationId.id));
   }
 }
