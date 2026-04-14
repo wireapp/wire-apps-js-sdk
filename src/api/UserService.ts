@@ -1,6 +1,6 @@
 /*
  * Wire
- * Copyright (C) 2025 Wire Swiss GmbH
+ * Copyright (C) 2026 Wire Swiss GmbH
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,19 +14,23 @@
  * along with this program. If not, see http://www.gnu.org/licenses/.
  */
 
-import {HttpClient} from "../core/HttpClient.js";
-import type {UserResponse} from "./model/UserResponse.js";
 import {singleton} from "tsyringe";
+import type {UsersApiClient} from "./UsersApiClient.js";
+import type {QualifiedId} from "../model/QualifiedId.js";
+import type {UserResponse} from "./model/UserResponse.js";
 
 @singleton()
-export class UsersApiClient {
-  constructor(private httpClient: HttpClient) {
+export class UserService {
+  constructor(
+    private usersApiClient: UsersApiClient) {
   }
 
-  private readonly basePath = "users";
-
-  async getUser(userId: string, userDomain: string): Promise<UserResponse> {
-    const path = `${this.basePath}/${userDomain}/${userId}`
-    return await this.httpClient.getRequest<UserResponse>(path)
+  async getUser(userQualifiedId: QualifiedId): Promise<UserResponse> {
+    return await this.usersApiClient.getUser(userQualifiedId.id, userQualifiedId.domain);
   }
+
+  async getUserName(userQualifiedId: QualifiedId): Promise<string> {
+    return await this.getUser(userQualifiedId).then(user => user.name);
+  }
+
 }

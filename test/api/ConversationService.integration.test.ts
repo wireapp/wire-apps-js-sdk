@@ -17,7 +17,6 @@
 import 'reflect-metadata'
 import { describe, it, expect, beforeAll, afterAll, beforeEach, vi } from 'vitest'
 import { ConversationService } from '../../src/api/ConversationService.js'
-import { UsersApiClient } from '../../src/api/UsersApiClient.js'
 import { ConversationsApiClient } from '../../src/api/ConversationsApiClient.js'
 import { ConversationRepository } from '../../src/db/ConversationRepository.js'
 import { ConversationMemberRepository } from '../../src/db/ConversationMemberRepository.js'
@@ -31,17 +30,18 @@ import {AppProperties} from '../../src/service/AppProperties.js'
 import {CoreCryptoService} from '../../src/core/CoreCryptoService.js'
 import {TeamsApiClient} from "../../src/api/TeamsApiClient.js";
 import {ConversationRole} from "../../src/model/conversation/ConversationRole";
+import {UserService} from "../../src/api/UserService.js";
 
 describe('ConversationService Integration', () => {
   let testDbService: TestDatabaseService
   let conversationService: ConversationService
   let conversationRepository: ConversationRepository
   let conversationMemberRepository: ConversationMemberRepository
-  let mockUsersApiClient: UsersApiClient
   let mockConversationsApiClient: ConversationsApiClient
   let mockTeamsApiClient: TeamsApiClient
   let mockAppProperties: AppProperties
   let mockCoreCryptoService: CoreCryptoService
+  let mockUserService: UserService
 
   beforeAll(() => {
     testDbService = new TestDatabaseService()
@@ -60,10 +60,6 @@ describe('ConversationService Integration', () => {
 
     conversationRepository = new ConversationRepository(testDbService)
     conversationMemberRepository = new ConversationMemberRepository(testDbService)
-
-    mockUsersApiClient = {
-      getUserName: vi.fn()
-    } as any
 
     mockTeamsApiClient = {
       deleteConversation: vi.fn()
@@ -85,16 +81,20 @@ describe('ConversationService Integration', () => {
       wipeConversation: vi.fn()
     } as any
 
+    mockUserService = {
+      getUserName: vi.fn()
+    } as any
+
     conversationService = new ConversationService(
       SELF_USER_ID.id,
       SELF_USER_ID.domain,
-      mockUsersApiClient,
       mockTeamsApiClient,
       mockConversationsApiClient,
       conversationRepository,
       conversationMemberRepository,
       mockAppProperties,
-      mockCoreCryptoService
+      mockCoreCryptoService,
+      mockUserService
     )
 
     // TODO: Can remove/replace this once we have implemented a proper logger lib
@@ -130,7 +130,7 @@ describe('ConversationService Integration', () => {
 
     it('should fetch user name from API for ONE_TO_ONE conversations', async () => {
       let userNameRequested = false
-      mockUsersApiClient.getUserName = async (userId: QualifiedId) => {
+      mockUserService.getUserName = async (userId: QualifiedId) => {
         userNameRequested = true
         expect(userId.id).toBe(USER_ID.id)
         expect(userId.domain).toBe(USER_ID.domain)
