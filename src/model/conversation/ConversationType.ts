@@ -1,7 +1,7 @@
 /*
 * Wire
 * Copyright (C) 2025 Wire Swiss GmbH
-* 
+*
 * This program is free software: you can redistribute it and/or modify
 * it under the terms of the GNU General Public License as published by
 * the Free Software Foundation, either version 3 of the License, or
@@ -15,7 +15,7 @@
 */
 
 export enum ConversationType {
-  GROUP = "0",
-  SELF = "1",
-  ONE_TO_ONE = "2"
+  GROUP = 0,
+  SELF = 1,
+  ONE_TO_ONE = 2
 }

@@ -21,7 +21,6 @@ import {ConversationMemberRepository} from "../db/ConversationMemberRepository.j
 import {ConversationType} from "../model/conversation/ConversationType.js";
 import type {ConversationEntity} from "../db/model/ConversationEntity.js";
 import type {ConversationMember} from "../model/conversation/ConversationMember.js";
-import {ConversationTypeMapper} from "../mappers/conversation/ConversationTypeMapper.js";
 import type {ConversationMemberEntity} from "../db/model/ConversationMemberEntity.js";
 import {obfuscateId} from "../utils/ObfuscateUtil.js";
 import {ConversationsApiClient} from "./ConversationsApiClient.js";
@@ -36,7 +35,6 @@ import {ConversationRole} from "../model/conversation/ConversationRole.js";
 import {TeamsApiClient} from "./TeamsApiClient.js";
 import {TeamId} from "../model/TeamId.js";
 import type {AddMembersToConversationResult} from "./model/AddMembersToConversationResult.js";
-import {UserService} from "./UserService.js";
 
 @singleton()
 export class ConversationService {
@@ -50,20 +48,14 @@ export class ConversationService {
     private conversationRepository: ConversationRepository,
     private conversationMemberRepository: ConversationMemberRepository,
     private appProperties: AppProperties,
-    private coreCryptoService: CoreCryptoService,
-    private userService: UserService
+    private coreCryptoService: CoreCryptoService
   ) {
   }
 
-  private async getConversationName(conversation: ConversationResponse) {
+  private getConversationName(conversation: ConversationResponse) : string {
     if (conversation.type === ConversationType.ONE_TO_ONE && conversation.members.others.length > 0) {
-      this.logger.info(
-        "Fetching User from remote to populate Conversation name.",
-        "conversationId:", obfuscateId(conversation.qualified_id.id)
-      );
-
-      const firstUser = conversation.members.others[0] as ConversationMemberOtherResponse
-      return await this.userService.getUserName(firstUser.qualified_id)
+      const firstUser = (conversation.members.others[0] as ConversationMemberOtherResponse).qualified_id
+      return `${firstUser.id}@${firstUser.domain}`
     } else {
       return conversation.name ?? ""
     }
@@ -76,7 +68,7 @@ export class ConversationService {
     conversationId: QualifiedId,
     conversation: ConversationResponse
   ): Promise<{ conversation: ConversationEntity, members: ConversationMember[] }> {
-    const conversationName = await this.getConversationName(conversation)
+    const conversationName = this.getConversationName(conversation)
 
     const conversationEntity: ConversationEntity = {
       id: conversationId.id,
@@ -85,7 +77,7 @@ export class ConversationService {
       team_id: conversation.team,
       mls_group_id: conversation.group_id,
       creation_date: null,
-      type: ConversationTypeMapper.toModel(conversation.type)
+      type: conversation.type
     }
 
     this.conversationRepository.save(conversationEntity)
@@ -219,7 +211,7 @@ export class ConversationService {
 
     const conversation = await this.getConversationById(conversationId)
 
-    this.requireConversationIsGroupOrChannel(conversationId, ConversationTypeMapper.toModel(conversation.type))
+    this.requireConversationIsGroupOrChannel(conversationId, conversation.type)
     this.requireAppIsAdminInConversation(conversationId)
 
     let result: AddMembersToConversationResult
@@ -259,7 +251,7 @@ export class ConversationService {
       userId: ${obfuscateId(userId.id)}, newRole: ${newRole}`)
 
     const conversation = await this.getConversationById(conversationId)
-    this.requireConversationIsGroupOrChannel(conversationId, ConversationTypeMapper.toModel(conversation.type))
+    this.requireConversationIsGroupOrChannel(conversationId, conversation.type)
     this.requireAppIsAdminInConversation(conversationId)
     this.requireUserIsInConversation(conversationId, userId)
 
@@ -308,7 +300,7 @@ export class ConversationService {
     this.logger.info(`Adding members to conversation. conversationId: ${obfuscateId(conversationId.id)}, members length: ${members.length}`)
 
     // TODO: Baris: In such cases we should throw custom exceptions and handle them in the upper layers instead of just logging and skipping the events.
-    //  For example for this scenario, the Router class should not call the callback method if we didn't add the memnbers to the conversation
+    //  For example for this scenario, the Router class should not call the callback method if we didn't add the members to the conversation
     if (this.conversationRepository.findByIdAndDomain(conversationId.id, conversationId.domain) == null) {
       this.logger.warn(`Conversation does not exist locally. Skipping MemberJoin event for conversationId: ${obfuscateId(conversationId.id)}`)
       return
@@ -393,23 +385,13 @@ export class ConversationService {
       return
     }
 
-    if (conversation.epoch != null && conversation.epoch !== 0) {
+    const isAlreadyEstablishedMlsConversation = conversation.epoch != null && conversation.epoch !== 0;
+    if (isAlreadyEstablishedMlsConversation) {
       const conversationGroupInfoBytes = await this.conversationsApiClient.getConversationGroupInfo(conversation.qualified_id)
       await this.coreCryptoService.joinMlsConversation(conversationGroupInfoBytes)
+      await this.saveConversationWithMembers(conversation.qualified_id, conversation)
     } else if (conversation.type === ConversationType.SELF) {
       await this.coreCryptoService.establishMlsConversation([], conversation.group_id)
-    } else if (conversation.type === ConversationType.ONE_TO_ONE) {
-      const users = this.conversationMemberRepository.getMembersByConversationId(
-        conversation.qualified_id.id,
-        conversation.qualified_id.domain
-      ).map(member => {
-        return {
-          id: member.user_id,
-          domain: member.user_domain
-        } as QualifiedId
-      })
-
-      await this.coreCryptoService.establishMlsConversation(users, conversation.group_id)
     }
   }
 
@@ -420,7 +402,7 @@ export class ConversationService {
     if (!conversation.team_id) {
       throw new Error("Conversation teamId must not be null.")
     }
-    this.requireConversationIsGroupOrChannel(conversationId, ConversationTypeMapper.toModel(conversation.type))
+    this.requireConversationIsGroupOrChannel(conversationId, conversation.type)
     this.requireAppIsAdminInConversation(conversationId)
 
     await this.teamsApiClient.deleteConversation(new TeamId(conversation.team_id), conversationId)
