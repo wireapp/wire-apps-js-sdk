@@ -54,11 +54,6 @@ export class ConversationService {
 
   private getConversationName(conversation: ConversationResponse) : string {
     if (conversation.type === ConversationType.ONE_TO_ONE && conversation.members.others.length > 0) {
-      this.logger.info(
-        "Fetching User from remote to populate Conversation name.",
-        "conversationId:", obfuscateId(conversation.qualified_id.id)
-      );
-
       const firstUser = (conversation.members.others[0] as ConversationMemberOtherResponse).qualified_id
       return `${firstUser.id}@${firstUser.domain}`
     } else {
