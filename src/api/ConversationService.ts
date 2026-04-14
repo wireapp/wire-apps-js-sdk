@@ -385,7 +385,8 @@ export class ConversationService {
       return
     }
 
-    if (conversation.epoch != null && conversation.epoch !== 0) {
+    const isAlreadyEstablishedMlsConversation = conversation.epoch != null && conversation.epoch !== 0;
+    if (isAlreadyEstablishedMlsConversation) {
       const conversationGroupInfoBytes = await this.conversationsApiClient.getConversationGroupInfo(conversation.qualified_id)
       await this.coreCryptoService.joinMlsConversation(conversationGroupInfoBytes)
       await this.saveConversationWithMembers(conversation.qualified_id, conversation)
