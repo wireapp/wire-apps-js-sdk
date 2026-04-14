@@ -1,7 +1,7 @@
 /*
 * Wire
 * Copyright (C) 2025 Wire Swiss GmbH
-* 
+*
 * This program is free software: you can redistribute it and/or modify
 * it under the terms of the GNU General Public License as published by
 * the Free Software Foundation, either version 3 of the License, or
@@ -16,8 +16,8 @@
 
 import { describe, expect, it } from 'vitest'
 import { ConversationMapper } from '../../../src/mappers/conversation/ConversationMapper.js'
-import { ConversationEntity } from '../../../src/db/model/ConversationEntity.js'
-import { Conversation } from '../../../src/model/conversation/Conversation.js'
+import type {ConversationEntity} from '../../../src/db/model/ConversationEntity.js'
+import type {Conversation} from '../../../src/model/conversation/Conversation.js'
 import { ConversationType } from '../../../src/model/conversation/ConversationType.js'
 
 describe("Conversation Mapping", () => {
@@ -34,7 +34,7 @@ describe("Conversation Mapping", () => {
       team_id: conversationTeamId,
       mls_group_id: "dummyMlsGroupId",
       creation_date: null,
-      type: "0"
+      type: ConversationType.GROUP
     }
 
     const expected: Conversation = {

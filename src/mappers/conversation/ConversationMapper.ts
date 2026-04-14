@@ -16,7 +16,6 @@
 
 import type { ConversationEntity } from "../../db/model/ConversationEntity.js";
 import type { Conversation } from "../../model/conversation/Conversation.js";
-import { ConversationTypeMapper } from "./ConversationTypeMapper.js";
 
 export class ConversationMapper {
   static fromEntity(conversationEntity: ConversationEntity): Conversation {
@@ -24,7 +23,7 @@ export class ConversationMapper {
       id: conversationEntity.id,
       domain: conversationEntity.domain,
       name: conversationEntity.name,
-      type: ConversationTypeMapper.toModel(conversationEntity.type),
+      type: conversationEntity.type,
       teamId: conversationEntity.team_id
     }
   }

@@ -44,7 +44,7 @@ export class DatabaseService {
         team_id TEXT,
         mls_group_id TEXT NOT NULL,
         creation_date TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        type TEXT NOT NULL,
+        type INTEGER NOT NULL,
         PRIMARY KEY (id, domain)
       );
 

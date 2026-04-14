@@ -17,6 +17,7 @@
 import {DatabaseService} from "./DatabaseService.js";
 import type {ConversationEntity} from "./model/ConversationEntity.js";
 import {singleton} from "tsyringe";
+import type {ConversationType} from "../model/conversation/ConversationType.js";
 
 @singleton()
 export class ConversationRepository {
@@ -42,7 +43,7 @@ export class ConversationRepository {
     `)
 
     this.insertStmt =
-    this.database.db.prepare<[string, string, string | null, string | null, string, string], void>(`
+    this.database.db.prepare<[string, string, string | null, string | null, string, ConversationType], void>(`
       INSERT INTO conversation(id, domain, name, team_id, mls_group_id, type)
       VALUES (?, ?, ?, ?, ?, ?)
       ON CONFLICT(id, domain)

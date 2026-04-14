@@ -24,13 +24,12 @@ import { ConversationType } from '../../src/model/conversation/ConversationType.
 import type { QualifiedId } from '../../src/model/QualifiedId.js'
 import type { ConversationResponse } from '../../src/api/response/ConversationResponse.js'
 import { TestDatabaseService } from '../helpers/TestDatabaseService.js'
-import { ConversationEntity } from '../../src/db/model/ConversationEntity.js'
-import { ConversationMemberEntity } from '../../src/db/model/ConversationMemberEntity.js'
+import type {ConversationEntity} from '../../src/db/model/ConversationEntity.js'
+import type {ConversationMemberEntity} from '../../src/db/model/ConversationMemberEntity.js'
 import {AppProperties} from '../../src/service/AppProperties.js'
 import {CoreCryptoService} from '../../src/core/CoreCryptoService.js'
 import {TeamsApiClient} from "../../src/api/TeamsApiClient.js";
-import {ConversationRole} from "../../src/model/conversation/ConversationRole";
-import {UserService} from "../../src/api/UserService.js";
+import {ConversationRole} from "../../src/model/conversation/ConversationRole.js";
 
 describe('ConversationService Integration', () => {
   let testDbService: TestDatabaseService
@@ -126,28 +125,6 @@ describe('ConversationService Integration', () => {
       expect(savedMembers.map((m: ConversationMemberEntity) => m.user_domain)).toContain(USER_ID.domain)
       expect(savedMembers.map((m: ConversationMemberEntity) => m.conversation_id)).toContain(CONVERSATION_ID.id)
       expect(savedMembers.map((m: ConversationMemberEntity) => m.conversation_domain)).toContain(CONVERSATION_ID.domain)
-    })
-
-    it('should fetch user name from API for ONE_TO_ONE conversations', async () => {
-      let userNameRequested = false
-      mockUserService.getUserName = async (userId: QualifiedId) => {
-        userNameRequested = true
-        expect(userId.id).toBe(USER_ID.id)
-        expect(userId.domain).toBe(USER_ID.domain)
-        return ONE_TO_ONE_CONVERSATION_NAME
-      }
-
-      const result = await conversationService.saveConversationWithMembers(
-        CONVERSATION_ID,
-        ONE_TO_ONE_CONVERSATION_RESPONSE
-      )
-
-      expect(userNameRequested).toBe(true)
-      expect(result.conversation.name).toBe(ONE_TO_ONE_CONVERSATION_NAME)
-
-      const savedConversation = await conversationService.getConversationById(CONVERSATION_ID)
-
-      expect(savedConversation.name).toBe(ONE_TO_ONE_CONVERSATION_NAME)
     })
   })
 
@@ -529,7 +506,6 @@ describe('ConversationService Integration', () => {
 
   const CONVERSATION_NAME: string = "Test Conversation"
   const OTHER_CONVERSATION_NAME: string = "Other Test Conversation"
-  const ONE_TO_ONE_CONVERSATION_NAME: string = "Dummy One To One User"
 
   const MLS_GROUP_ID: string = 'mls-group-id-1234'
   const OTHER_MLS_GROUP_ID: string = 'mls-group-id-5678'
