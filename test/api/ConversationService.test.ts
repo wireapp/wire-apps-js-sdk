@@ -30,7 +30,6 @@ import {CryptoProtocol} from '../../src/model/CryptoProtocol.js'
 import {ConversationRole} from "../../src/model/conversation/ConversationRole.js";
 import {TeamsApiClient} from "../../src/api/TeamsApiClient.js";
 import {TeamId} from "../../src/model/TeamId.js";
-import {UserService} from "../../src/api/UserService.js";
 
 describe('ConversationService', () => {
   let conversationService: ConversationService
@@ -40,7 +39,6 @@ describe('ConversationService', () => {
   let mockConversationMemberRepository: ConversationMemberRepository
   let mockAppProperties: AppProperties
   let mockCoreCryptoService: CoreCryptoService
-  let mockUserService: UserService
 
   beforeEach(() => {
     container.clearInstances()
@@ -83,10 +81,6 @@ describe('ConversationService', () => {
       wipeConversation: vi.fn()
     } as any
 
-    mockUserService = {
-      getUserName: vi.fn()
-    } as any
-
     conversationService = new ConversationService(
       SELF_USER_ID.id,
       SELF_USER_ID.domain,
@@ -95,8 +89,7 @@ describe('ConversationService', () => {
       mockConversationRepository,
       mockConversationMemberRepository,
       mockAppProperties,
-      mockCoreCryptoService,
-      mockUserService
+      mockCoreCryptoService
     )
 
     // TODO: Can remove/replace this once we have implemented a proper logger lib

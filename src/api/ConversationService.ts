@@ -35,7 +35,6 @@ import {ConversationRole} from "../model/conversation/ConversationRole.js";
 import {TeamsApiClient} from "./TeamsApiClient.js";
 import {TeamId} from "../model/TeamId.js";
 import type {AddMembersToConversationResult} from "./model/AddMembersToConversationResult.js";
-import {UserService} from "./UserService.js";
 
 @singleton()
 export class ConversationService {
@@ -49,8 +48,7 @@ export class ConversationService {
     private conversationRepository: ConversationRepository,
     private conversationMemberRepository: ConversationMemberRepository,
     private appProperties: AppProperties,
-    private coreCryptoService: CoreCryptoService,
-    private userService: UserService
+    private coreCryptoService: CoreCryptoService
   ) {
   }
 

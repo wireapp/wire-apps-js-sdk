@@ -40,7 +40,6 @@ describe('ConversationService Integration', () => {
   let mockTeamsApiClient: TeamsApiClient
   let mockAppProperties: AppProperties
   let mockCoreCryptoService: CoreCryptoService
-  let mockUserService: UserService
 
   beforeAll(() => {
     testDbService = new TestDatabaseService()
@@ -80,10 +79,6 @@ describe('ConversationService Integration', () => {
       wipeConversation: vi.fn()
     } as any
 
-    mockUserService = {
-      getUserName: vi.fn()
-    } as any
-
     conversationService = new ConversationService(
       SELF_USER_ID.id,
       SELF_USER_ID.domain,
@@ -92,8 +87,7 @@ describe('ConversationService Integration', () => {
       conversationRepository,
       conversationMemberRepository,
       mockAppProperties,
-      mockCoreCryptoService,
-      mockUserService
+      mockCoreCryptoService
     )
 
     // TODO: Can remove/replace this once we have implemented a proper logger lib
