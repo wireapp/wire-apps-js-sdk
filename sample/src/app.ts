@@ -279,6 +279,32 @@ class SampleEventsHandler extends WireEventsHandler {
         const userId: QualifiedId = { id: memberId, domain: memberDomain }
         await this.manager.updateConversationMemberRole(conversationId, userId, newRole)
       },
+      'get-user-data': async (conversationId, command) => {
+        this.appLogger?.info(`[Sample App] Executing handler for: get-user-data`)
+
+        const parts = command?.trim().split(' ')
+        const userId = parts?.[1]
+        const userDomain = parts?.[2]
+
+        if (!userId || !userDomain) {
+          this.appLogger?.info(`[Sample App] Invalid command format. Expected: get-user-data [USER_ID] [DOMAIN]`)
+          return
+        }
+
+        const userQualifiedId: QualifiedId = {id: userId, domain: userDomain}
+        const user = await this.manager.getUser(userQualifiedId)
+
+        await this.manager.sendMessage(TextMessage.create({
+          conversationId: conversationId,
+          text: `User data for ${obfuscateId(userQualifiedId.id)}@${userQualifiedId.domain}:
+            Name: ${user.name}
+            Email: ${user.email}
+            Handle: ${user.handle}
+            Team: ${user.team}
+            Supported Protocols: ${user.supported_protocols?.join(', ') ?? 'N/A'}
+            Deleted: ${user.deleted}`
+        }))
+      },
       // More reserved test commands will be added here
     }
   }

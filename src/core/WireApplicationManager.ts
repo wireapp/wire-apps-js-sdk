@@ -27,6 +27,8 @@ import {obfuscateId} from "../utils/ObfuscateUtil.js";
 import {AssetsTransferService} from "../api/AssetsTransferService.js";
 import type {Asset} from "../model/Asset.js";
 import type {ConversationRole} from "../model/conversation/ConversationRole.js";
+import type {UserResponse} from "../api/model/UserResponse.js";
+import {UserService} from "../api/UserService.js";
 
 @singleton()
 export class WireApplicationManager {
@@ -36,7 +38,8 @@ export class WireApplicationManager {
     private coreCryptoService: CoreCryptoService,
     private conversationService: ConversationService,
     private mlsService: MlsService,
-    private assetsTransferService: AssetsTransferService
+    private assetsTransferService: AssetsTransferService,
+    private userService: UserService
   ) {
   }
 
@@ -101,5 +104,10 @@ export class WireApplicationManager {
     this.logger.debug('App requested to update member\'s role in the conversation with id: ' + obfuscateId(conversationId.id));
     await this.conversationService.updateConversationMemberRole(conversationId, userId, newRole);
     this.logger.debug('Member\'s role is updated in the conversation with id: ' + obfuscateId(conversationId.id));
+  }
+
+  async getUser(userQualifiedId: QualifiedId): Promise<UserResponse> {
+    this.logger.debug('App requested to get user info: ' + obfuscateId(userQualifiedId.id));
+    return await this.userService.getUser(userQualifiedId)
   }
 }

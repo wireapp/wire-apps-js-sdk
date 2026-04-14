@@ -24,7 +24,6 @@ import type {ConversationMember} from "../model/conversation/ConversationMember.
 import {ConversationTypeMapper} from "../mappers/conversation/ConversationTypeMapper.js";
 import type {ConversationMemberEntity} from "../db/model/ConversationMemberEntity.js";
 import {obfuscateId} from "../utils/ObfuscateUtil.js";
-import {UsersApiClient} from "./UsersApiClient.js";
 import {ConversationsApiClient} from "./ConversationsApiClient.js";
 import {inject, singleton} from "tsyringe";
 import type {ConversationMemberOtherResponse} from "./model/ConversationMemberOtherResponse.js";
@@ -37,6 +36,7 @@ import {ConversationRole} from "../model/conversation/ConversationRole.js";
 import {TeamsApiClient} from "./TeamsApiClient.js";
 import {TeamId} from "../model/TeamId.js";
 import type {AddMembersToConversationResult} from "./model/AddMembersToConversationResult.js";
+import {UserService} from "./UserService.js";
 
 @singleton()
 export class ConversationService {
@@ -45,13 +45,13 @@ export class ConversationService {
   constructor(
     @inject(WIRE_USER_ID) private wireUserId: string,
     @inject(WIRE_USER_DOMAIN) private wireUserDomain: string,
-    private userApiClient: UsersApiClient,
     private teamsApiClient: TeamsApiClient,
     private conversationsApiClient: ConversationsApiClient,
     private conversationRepository: ConversationRepository,
     private conversationMemberRepository: ConversationMemberRepository,
     private appProperties: AppProperties,
-    private coreCryptoService: CoreCryptoService
+    private coreCryptoService: CoreCryptoService,
+    private userService: UserService
   ) {
   }
 
@@ -63,8 +63,7 @@ export class ConversationService {
       );
 
       const firstUser = conversation.members.others[0] as ConversationMemberOtherResponse
-      return await this.userApiClient.getUserName(firstUser.qualified_id)
-      // TODO: Introduce UserService class, move few lines there under getUserName() method
+      return await this.userService.getUserName(firstUser.qualified_id)
     } else {
       return conversation.name ?? ""
     }

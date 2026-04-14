@@ -16,7 +16,6 @@
 
 import {beforeEach, describe, expect, it, vi} from 'vitest'
 import {ConversationService} from '../../src/api/ConversationService.js'
-import {UsersApiClient} from '../../src/api/UsersApiClient.js'
 import {ConversationsApiClient} from '../../src/api/ConversationsApiClient.js'
 import {ConversationRepository} from '../../src/db/ConversationRepository.js'
 import {ConversationMemberRepository} from '../../src/db/ConversationMemberRepository.js'
@@ -31,23 +30,20 @@ import {CryptoProtocol} from '../../src/model/CryptoProtocol.js'
 import {ConversationRole} from "../../src/model/conversation/ConversationRole.js";
 import {TeamsApiClient} from "../../src/api/TeamsApiClient.js";
 import {TeamId} from "../../src/model/TeamId.js";
+import {UserService} from "../../src/api/UserService.js";
 
 describe('ConversationService', () => {
   let conversationService: ConversationService
-  let mockUsersApiClient: UsersApiClient
   let mockTeamsApiClient: TeamsApiClient
   let mockConversationsApiClient: ConversationsApiClient
   let mockConversationRepository: ConversationRepository
   let mockConversationMemberRepository: ConversationMemberRepository
   let mockAppProperties: AppProperties
   let mockCoreCryptoService: CoreCryptoService
+  let mockUserService: UserService
 
   beforeEach(() => {
     container.clearInstances()
-
-    mockUsersApiClient = {
-      getUserName: vi.fn()
-    } as any
 
     mockTeamsApiClient = {
       deleteConversation: vi.fn()
@@ -87,16 +83,20 @@ describe('ConversationService', () => {
       wipeConversation: vi.fn()
     } as any
 
+    mockUserService = {
+      getUserName: vi.fn()
+    } as any
+
     conversationService = new ConversationService(
       SELF_USER_ID.id,
       SELF_USER_ID.domain,
-      mockUsersApiClient,
       mockTeamsApiClient,
       mockConversationsApiClient,
       mockConversationRepository,
       mockConversationMemberRepository,
       mockAppProperties,
-      mockCoreCryptoService
+      mockCoreCryptoService,
+      mockUserService
     )
 
     // TODO: Can remove/replace this once we have implemented a proper logger lib
@@ -127,14 +127,14 @@ describe('ConversationService', () => {
         }
       } as ConversationResponse
 
-      vi.mocked(mockUsersApiClient.getUserName).mockResolvedValue('Dummy User')
+      vi.mocked(mockUserService.getUserName).mockResolvedValue('Dummy User')
 
       const result = await conversationService.saveConversationWithMembers(
         CONVERSATION_ID,
         conversationResponse
       )
 
-      expect(mockUsersApiClient.getUserName).toHaveBeenCalledWith(USER_ID)
+      expect(mockUserService.getUserName).toHaveBeenCalledWith(USER_ID)
 
       expect(mockConversationRepository.save).toHaveBeenCalledWith({
         id: CONVERSATION_ID.id,
@@ -195,7 +195,7 @@ describe('ConversationService', () => {
         conversationResponse
       )
 
-      expect(mockUsersApiClient.getUserName).not.toHaveBeenCalled()
+      expect(mockUserService.getUserName).not.toHaveBeenCalled()
       expect(result.conversation.name).toBe('Test Conversation')
       expect(result.members).toHaveLength(2)
     })
