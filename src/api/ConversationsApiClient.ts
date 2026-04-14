@@ -25,6 +25,7 @@ import type {ConversationsResponse} from "./response/ConversationsResponse.js";
 import {LoggerFactory} from "../utils/logger/LoggerFactory.js";
 import {WIRE_USER_DOMAIN, WIRE_USER_ID} from "../utils/DependencyInjectionTokens.js";
 import {obfuscateId} from "../utils/ObfuscateUtil.js";
+import type {ConversationRole} from "../model/conversation/ConversationRole.js";
 
 @singleton()
 export class ConversationsApiClient {
@@ -104,6 +105,19 @@ export class ConversationsApiClient {
     this.logger.info(`Returning ${conversationListResponse.found.length} found conversations`)
 
     return conversationListResponse.found
+  }
+
+  async updateConversationMemberRole(
+    conversationId: QualifiedId,
+    userId: QualifiedId,
+    newRole: ConversationRole
+  ): Promise<void> {
+    this.logger.debug(`Updating conversation member role. conversationId: ${obfuscateId(conversationId.id)}, userId: ${obfuscateId(userId.id)}, newRole: ${newRole}`)
+
+    const path = `${this.basePath}/${conversationId.domain}/${conversationId.id}/members/${userId.domain}/${userId.id}`
+    await this.httpClient.putRequest(path, {conversation_role: newRole})
+
+    this.logger.debug(`Updated conversation member role. conversationId: ${obfuscateId(conversationId.id)}, userId: ${obfuscateId(userId.id)}, newRole: ${newRole}`)
   }
 
   async leaveConversation(conversationQualifiedId: QualifiedId): Promise<void> {

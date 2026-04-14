@@ -43,7 +43,7 @@ beforeEach(() => {
   vi.clearAllMocks()
 
   conversationService = {
-    updateMember: vi.fn().mockResolvedValue(undefined),
+    syncMemberUpdate: vi.fn().mockResolvedValue(undefined),
   } as any
 
   processor = new MemberUpdateEventProcessor(conversationService)
@@ -51,11 +51,11 @@ beforeEach(() => {
 
 describe('MemberUpdateEventProcessor', () => {
   describe('process', () => {
-    it('should call updateMember with the qualified target, qualified conversation and role', async () => {
+    it('should call syncMemberUpdate with the qualified target, qualified conversation and role', async () => {
       await processor.process(makeEvent(ConversationRole.MEMBER))
 
-      expect(conversationService.updateMember).toHaveBeenCalledTimes(1)
-      expect(conversationService.updateMember).toHaveBeenCalledWith(
+      expect(conversationService.syncMemberUpdate).toHaveBeenCalledTimes(1)
+      expect(conversationService.syncMemberUpdate).toHaveBeenCalledWith(
         qualifiedTarget,
         qualifiedConversation,
         ConversationRole.MEMBER
@@ -65,17 +65,17 @@ describe('MemberUpdateEventProcessor', () => {
     it('should pass the correct role when promoting to admin', async () => {
       await processor.process(makeEvent(ConversationRole.ADMIN))
 
-      expect(conversationService.updateMember).toHaveBeenCalledWith(
+      expect(conversationService.syncMemberUpdate).toHaveBeenCalledWith(
         qualifiedTarget,
         qualifiedConversation,
         ConversationRole.ADMIN
       )
     })
 
-    it('should propagate errors from updateMember', async () => {
-      vi.mocked(conversationService.updateMember).mockRejectedValue(new Error('updateMember failed'))
+    it('should propagate errors from syncMemberUpdate', async () => {
+      vi.mocked(conversationService.syncMemberUpdate).mockRejectedValue(new Error('syncMemberUpdate failed'))
 
-      await expect(processor.process(makeEvent())).rejects.toThrow('updateMember failed')
+      await expect(processor.process(makeEvent())).rejects.toThrow('syncMemberUpdate failed')
     })
 
     it('should resolve without a value on success', async () => {

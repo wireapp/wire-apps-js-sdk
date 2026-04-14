@@ -30,6 +30,7 @@ export class ConversationMemberRepository {
   private insertStmt
   private deleteStmt
   private deleteAllMembersInConversationStmt
+  private existsStmt
 
   constructor(private readonly database: DatabaseService) {
     this.selectAllStmt =
@@ -72,6 +73,17 @@ export class ConversationMemberRepository {
         FROM conversation_member
         WHERE conversation_id = ?
           AND conversation_domain = ?
+      `)
+
+    this.existsStmt =
+      this.database.db.prepare<[string, string, string, string], { found: number }>(`
+        SELECT 1 AS found
+        FROM conversation_member
+        WHERE user_id = ?
+          AND user_domain = ?
+          AND conversation_id = ?
+          AND conversation_domain = ?
+        LIMIT 1
       `)
   }
 
@@ -129,5 +141,21 @@ export class ConversationMemberRepository {
     this.logger.debug(`All members in the conversation will be deleted from database. conversationId: ${obfuscateId(conversationId)}, conversationDomain: ${conversationDomain}`);
     this.deleteAllMembersInConversationStmt.run(conversationId, conversationDomain);
     this.logger.debug(`All members in the conversation are deleted from database. conversationId: ${obfuscateId(conversationId)}, conversationDomain: ${conversationDomain}`);
+  }
+
+  exists(
+    userId: string,
+    userDomain: string,
+    conversationId: string,
+    conversationDomain: string
+  ): boolean {
+    const result = this.existsStmt.get(
+      userId,
+      userDomain,
+      conversationId,
+      conversationDomain
+    )
+
+    return result !== undefined
   }
 }

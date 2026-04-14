@@ -71,7 +71,8 @@ describe('ConversationService', () => {
       saveMany: vi.fn(),
       getMembersByConversationId: vi.fn(),
       deleteAllMembersInConversation: vi.fn(),
-      deleteMany: vi.fn()
+      deleteMany: vi.fn(),
+      exists: vi.fn(),
     } as any
 
     mockAppProperties = {
@@ -858,7 +859,7 @@ describe('ConversationService', () => {
       (mockConversationMemberRepository as any).save = vi.fn()
 
       const newRole: ConversationRole = ConversationRole.ADMIN
-      await conversationService.updateMember(USER_ID, CONVERSATION_ID, newRole)
+      await conversationService.syncMemberUpdate(USER_ID, CONVERSATION_ID, newRole)
 
       expect((mockConversationMemberRepository as any).save).not.toHaveBeenCalled()
     })
@@ -868,7 +869,7 @@ describe('ConversationService', () => {
       ;(mockConversationMemberRepository as any).save = vi.fn()
 
       const newRole: ConversationRole = ConversationRole.ADMIN
-      await conversationService.updateMember(USER_ID, CONVERSATION_ID, newRole)
+      await conversationService.syncMemberUpdate(USER_ID, CONVERSATION_ID, newRole)
 
       expect((mockConversationMemberRepository as any).save).toHaveBeenCalledWith({
         user_id: USER_ID.id,
@@ -1239,6 +1240,115 @@ describe('ConversationService', () => {
       ).rejects.toThrow('Unable to add members to MLS conversation: MLS error')
 
       expect(mockConversationMemberRepository.saveMany).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('updateConversationMemberRole', () => {
+    const groupConversationEntity: ConversationEntity = {
+      id: CONVERSATION_ID.id,
+      domain: CONVERSATION_ID.domain,
+      name: 'Group Conversation',
+      team_id: TEAM_ID,
+      mls_group_id: MLS_GROUP_ID,
+      creation_date: null,
+      type: ConversationType.GROUP
+    }
+
+    const adminMember = {
+      user_id: SELF_USER_ID.id,
+      user_domain: SELF_USER_ID.domain,
+      conversation_id: CONVERSATION_ID.id,
+      conversation_domain: CONVERSATION_ID.domain,
+      role: ConversationRole.ADMIN,
+      creation_date: null
+    }
+
+    beforeEach(() => {
+      ;(mockConversationsApiClient as any).updateConversationMemberRole = vi.fn()
+      ;(mockConversationMemberRepository as any).save = vi.fn()
+    })
+
+    it('should call API and save member when all conditions are met', async () => {
+      vi.mocked(mockConversationRepository.findByIdAndDomain).mockReturnValue(groupConversationEntity)
+      vi.mocked(mockConversationMemberRepository.getMembersByConversationId).mockReturnValue([adminMember])
+      vi.mocked((mockConversationMemberRepository as any).exists).mockReturnValue(true)
+      vi.mocked((mockConversationsApiClient as any).updateConversationMemberRole).mockResolvedValue(undefined)
+
+      await conversationService.updateConversationMemberRole(CONVERSATION_ID, USER_ID, ConversationRole.MEMBER)
+
+      expect((mockConversationsApiClient as any).updateConversationMemberRole).toHaveBeenCalledWith(
+        CONVERSATION_ID,
+        USER_ID,
+        ConversationRole.MEMBER
+      )
+      expect((mockConversationMemberRepository as any).save).toHaveBeenCalledWith({
+        user_id: USER_ID.id,
+        user_domain: USER_ID.domain,
+        conversation_id: CONVERSATION_ID.id,
+        conversation_domain: CONVERSATION_ID.domain,
+        role: ConversationRole.MEMBER,
+        creation_date: null
+      })
+    })
+
+    it('should throw when user is not in the conversation', async () => {
+      vi.mocked(mockConversationRepository.findByIdAndDomain).mockReturnValue(groupConversationEntity)
+      vi.mocked(mockConversationMemberRepository.getMembersByConversationId).mockReturnValue([adminMember])
+      vi.mocked((mockConversationMemberRepository as any).exists).mockReturnValue(false)
+
+      await expect(
+        conversationService.updateConversationMemberRole(
+          CONVERSATION_ID,
+          USER_ID,
+          ConversationRole.MEMBER
+        )
+      ).rejects.toThrow('User is not in the conversation.')
+
+      expect((mockConversationsApiClient as any).updateConversationMemberRole).not.toHaveBeenCalled()
+      expect((mockConversationMemberRepository as any).save).not.toHaveBeenCalled()
+    })
+
+    it('should throw when conversation is not a GROUP', async () => {
+      vi.mocked(mockConversationRepository.findByIdAndDomain).mockReturnValue({
+        ...groupConversationEntity,
+        type: ConversationType.ONE_TO_ONE
+      })
+      vi.mocked(mockConversationMemberRepository.getMembersByConversationId).mockReturnValue([adminMember])
+
+      await expect(
+        conversationService.updateConversationMemberRole(CONVERSATION_ID, USER_ID, ConversationRole.MEMBER)
+      ).rejects.toThrow('Conversation type is not GROUP.')
+
+      expect((mockConversationsApiClient as any).updateConversationMemberRole).not.toHaveBeenCalled()
+      expect((mockConversationMemberRepository as any).save).not.toHaveBeenCalled()
+    })
+
+    it('should throw when app user is not an admin', async () => {
+      vi.mocked(mockConversationRepository.findByIdAndDomain).mockReturnValue(groupConversationEntity)
+      vi.mocked(mockConversationMemberRepository.getMembersByConversationId).mockReturnValue([{
+        ...adminMember,
+        role: ConversationRole.MEMBER
+      }])
+
+      await expect(
+        conversationService.updateConversationMemberRole(CONVERSATION_ID, USER_ID, ConversationRole.ADMIN)
+      ).rejects.toThrow('App user is not an admin in the conversation.')
+
+      expect((mockConversationsApiClient as any).updateConversationMemberRole).not.toHaveBeenCalled()
+      expect((mockConversationMemberRepository as any).save).not.toHaveBeenCalled()
+    })
+
+    it('should not save member when API call fails', async () => {
+      vi.mocked(mockConversationRepository.findByIdAndDomain).mockReturnValue(groupConversationEntity)
+      vi.mocked(mockConversationMemberRepository.getMembersByConversationId).mockReturnValue([adminMember])
+      vi.mocked((mockConversationMemberRepository as any).exists).mockReturnValue(true)
+      vi.mocked((mockConversationsApiClient as any).updateConversationMemberRole).mockRejectedValue(new Error('update failed'))
+
+      await expect(
+        conversationService.updateConversationMemberRole(CONVERSATION_ID, USER_ID, ConversationRole.MEMBER)
+      ).rejects.toThrow('update failed')
+
+      expect((mockConversationMemberRepository as any).save).not.toHaveBeenCalled()
     })
   })
 
