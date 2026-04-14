@@ -36,7 +36,7 @@ import {ConversationRole} from "../model/conversation/ConversationRole.js";
 import {TeamsApiClient} from "./TeamsApiClient.js";
 import {TeamId} from "../model/TeamId.js";
 import type {AddMembersToConversationResult} from "./model/AddMembersToConversationResult.js";
-import type {UserService} from "./UserService.js";
+import {UserService} from "./UserService.js";
 
 @singleton()
 export class ConversationService {

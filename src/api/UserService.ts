@@ -15,7 +15,7 @@
  */
 
 import {singleton} from "tsyringe";
-import type {UsersApiClient} from "./UsersApiClient.js";
+import {UsersApiClient} from "./UsersApiClient.js";
 import type {QualifiedId} from "../model/QualifiedId.js";
 import type {UserResponse} from "./model/UserResponse.js";
 
