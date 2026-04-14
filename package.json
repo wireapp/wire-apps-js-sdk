@@ -59,7 +59,7 @@
     "bazinga64": "^6.5.13",
     "better-sqlite3": "^12.8.0",
     "fake-indexeddb": "^6.2.4",
-    "protobufjs": "^7.5.4",
+    "protobufjs": "^8.0.1",
     "reflect-metadata": "^0.2.2",
     "tsyringe": "^4.10.0",
     "ws": "^8.20.0"
