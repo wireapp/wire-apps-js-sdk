@@ -292,18 +292,18 @@ class SampleEventsHandler extends WireEventsHandler {
         }
 
         const userQualifiedId: QualifiedId = {id: userId, domain: userDomain}
-        await this.manager.getUser(userQualifiedId).then(user => {
-          this.manager.sendMessage(TextMessage.create({
-            conversationId: conversationId,
-            text: `User data for ${obfuscateId(userQualifiedId.id)}@${userQualifiedId.domain}:
+        const user = await this.manager.getUser(userQualifiedId)
+
+        await this.manager.sendMessage(TextMessage.create({
+          conversationId: conversationId,
+          text: `User data for ${obfuscateId(userQualifiedId.id)}@${userQualifiedId.domain}:
             Name: ${user.name}
             Email: ${user.email}
             Handle: ${user.handle}
             Team: ${user.team}
-            Supported Protocols: ${user.supported_protocols.join(', ')}
+            Supported Protocols: ${user.supported_protocols?.join(', ') ?? 'N/A'}
             Deleted: ${user.deleted}`
-          }))
-        })
+        }))
       },
       // More reserved test commands will be added here
     }
