@@ -68,20 +68,4 @@ describe('UserService', () => {
       await expect(service.getUser(qualifiedId)).rejects.toThrow('network-failure')
     })
   })
-
-  describe('getUserName', () => {
-    it('should return the name of the user', async () => {
-      vi.mocked(mockUsersApiClient.getUser).mockResolvedValue(mockUser)
-
-      const result = await service.getUserName(qualifiedId)
-
-      expect(result).toBe('John Doe')
-    })
-
-    it('should propagate errors from getUser', async () => {
-      vi.mocked(mockUsersApiClient.getUser).mockRejectedValue(new Error('network-failure'))
-
-      await expect(service.getUserName(qualifiedId)).rejects.toThrow('network-failure')
-    })
-  })
 })

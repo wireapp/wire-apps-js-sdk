@@ -28,9 +28,4 @@ export class UserService {
   async getUser(userQualifiedId: QualifiedId): Promise<UserResponse> {
     return await this.usersApiClient.getUser(userQualifiedId.id, userQualifiedId.domain);
   }
-
-  async getUserName(userQualifiedId: QualifiedId): Promise<string> {
-    return await this.getUser(userQualifiedId).then(user => user.name);
-  }
-
 }
