@@ -318,7 +318,7 @@ describe('ConversationService', () => {
 
   describe('getMembersByConversationId', () => {
     it('returns members from repository', () => {
-      const members = [
+      const memberEntities = [
         {
           user_id: 'a',
           user_domain: 'wire.com',
@@ -329,12 +329,17 @@ describe('ConversationService', () => {
         }
       ]
 
-      vi.mocked(mockConversationMemberRepository.getMembersByConversationId).mockReturnValue(members)
+      vi.mocked(mockConversationMemberRepository.getMembersByConversationId).mockReturnValue(memberEntities)
 
       const result = conversationService.getMembersByConversationId(CONVERSATION_ID)
 
       expect(mockConversationMemberRepository.getMembersByConversationId).toHaveBeenCalledWith(CONVERSATION_ID.id, CONVERSATION_ID.domain)
-      expect(result).toEqual(members)
+      expect(result).toEqual([
+        {
+          userId: {id: 'a', domain: 'wire.com'},
+          role: ConversationRole.MEMBER
+        }
+      ])
     })
   })
 

@@ -115,10 +115,8 @@ describe('ConversationService Integration', () => {
       const savedMembers = conversationService.getMembersByConversationId(CONVERSATION_ID)
 
       expect(savedMembers).toHaveLength(2)
-      expect(savedMembers.map((m: ConversationMemberEntity) => m.user_id)).toContain(USER_ID.id)
-      expect(savedMembers.map((m: ConversationMemberEntity) => m.user_domain)).toContain(USER_ID.domain)
-      expect(savedMembers.map((m: ConversationMemberEntity) => m.conversation_id)).toContain(CONVERSATION_ID.id)
-      expect(savedMembers.map((m: ConversationMemberEntity) => m.conversation_domain)).toContain(CONVERSATION_ID.domain)
+      expect(savedMembers.map(member => member.userId.id)).toContain(USER_ID.id)
+      expect(savedMembers.map(member => member.userId.domain)).toContain(USER_ID.domain)
     })
   })
 
@@ -320,7 +318,7 @@ describe('ConversationService Integration', () => {
       await conversationService.addMembersToConversation(CONVERSATION_ID, [USER_3_ID, USER_4_ID])
 
       const members = conversationService.getMembersByConversationId(CONVERSATION_ID)
-      const memberIds = members.map((m: ConversationMemberEntity) => m.user_id)
+      const memberIds = members.map(member => member.userId.id)
 
       expect(memberIds).toContain(USER_3_ID.id)
       expect(memberIds).not.toContain(USER_4_ID.id)
@@ -335,7 +333,7 @@ describe('ConversationService Integration', () => {
       await conversationService.addMembersToConversation(CONVERSATION_ID, [USER_3_ID])
 
       const members = conversationService.getMembersByConversationId(CONVERSATION_ID)
-      const addedMember = members.find((m: ConversationMemberEntity) => m.user_id === USER_3_ID.id)
+      const addedMember = members.find(member => member.userId.id === USER_3_ID.id)
 
       expect(addedMember).toBeDefined()
       expect(addedMember?.role).toBe(ConversationRole.MEMBER)
@@ -380,12 +378,10 @@ describe('ConversationService Integration', () => {
       await conversationService.addMembersToConversation(CONVERSATION_ID, [USER_3_ID])
 
       const members = conversationService.getMembersByConversationId(CONVERSATION_ID)
-      const memberIds = members.map((m: ConversationMemberEntity) => m.user_id)
+      const memberIds = members.map(member => member.userId.id)
 
-      // Original members still present
       expect(memberIds).toContain(SELF_USER_ID.id)
       expect(memberIds).toContain(USER_ID.id)
-      // New member added
       expect(memberIds).toContain(USER_3_ID.id)
     })
   })
@@ -408,9 +404,8 @@ describe('ConversationService Integration', () => {
       )
 
       const members = conversationService.getMembersByConversationId(CONVERSATION_ID)
-      const updatedMember = members.find((m: ConversationMemberEntity) => m.user_id === USER_ID.id)
+      const updatedMember = members.find(member => member.userId.id === USER_ID.id)
 
-      expect(updatedMember).toBeDefined()
       expect(updatedMember?.role).toBe(ConversationRole.ADMIN)
     })
 
@@ -453,9 +448,9 @@ describe('ConversationService Integration', () => {
       ).rejects.toThrow('update failed')
 
       const members = conversationService.getMembersByConversationId(CONVERSATION_ID)
-      const member = members.find((m: ConversationMemberEntity) => m.user_id === USER_ID.id)
+      const member = members.find(member => member.userId.id === USER_ID.id)
 
-      expect(member?.role).toBe(ConversationRole.MEMBER) // unchanged from CONVERSATION_RESPONSE
+      expect(member?.role).toBe(ConversationRole.MEMBER)
     })
 
     it('should preserve other members when updating one member role', async () => {
@@ -464,7 +459,7 @@ describe('ConversationService Integration', () => {
       await conversationService.updateConversationMemberRole(CONVERSATION_ID, USER_ID, ConversationRole.ADMIN)
 
       const members = conversationService.getMembersByConversationId(CONVERSATION_ID)
-      const memberIds = members.map((m: ConversationMemberEntity) => m.user_id)
+      const memberIds = members.map(member => member.userId.id)
 
       expect(memberIds).toContain(SELF_USER_ID.id)
       expect(memberIds).toContain(USER_ID.id)
