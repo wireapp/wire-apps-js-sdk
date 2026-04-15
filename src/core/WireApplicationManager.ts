@@ -29,6 +29,8 @@ import type {Asset} from "../model/Asset.js";
 import type {ConversationRole} from "../model/conversation/ConversationRole.js";
 import type {UserResponse} from "../api/model/UserResponse.js";
 import {UserService} from "../api/UserService.js";
+import type {Conversation} from "../model/conversation/Conversation.js";
+import type {ConversationMember} from "../model/conversation/ConversationMember.js";
 
 @singleton()
 export class WireApplicationManager {
@@ -109,5 +111,15 @@ export class WireApplicationManager {
   async getUser(userQualifiedId: QualifiedId): Promise<UserResponse> {
     this.logger.debug('App requested to get user info: ' + obfuscateId(userQualifiedId.id));
     return await this.userService.getUser(userQualifiedId)
+  }
+
+  async getAllConversations(): Promise<Conversation[]> {
+    this.logger.debug('App requested to get all conversations')
+    return this.conversationService.getAllConversations()
+  }
+
+  async getMembersInConversation(conversationId: QualifiedId): Promise<ConversationMember[]> {
+    this.logger.debug('App requested to get members of conversation. ConversationId: ' + obfuscateId(conversationId.id));
+    return this.conversationService.getMembersByConversationId(conversationId)
   }
 }

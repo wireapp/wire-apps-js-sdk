@@ -305,6 +305,49 @@ class SampleEventsHandler extends WireEventsHandler {
             Deleted: ${user.deleted}`
         }))
       },
+      'get-conversations': async (conversationId) => {
+        this.appLogger?.info(`[Sample App] Executing handler for: get-conversations`)
+
+        const conversations = await this.manager.getAllConversations()
+        const conversationList = conversations
+          .map(c => `- ${c.name ?? 'Unnamed'} (${c.id}@${c.domain})`)
+          .join('\n')
+
+        await this.manager.sendMessage(TextMessage.create({
+          conversationId: conversationId,
+          text: `Conversations (${conversations.length}):\n${conversationList}`
+        }))
+      },
+      'get-conversation-members': async (conversationId, command) => {
+        this.appLogger?.info(`[Sample App] Executing handler for: get-conversation-members`)
+
+        const parts = command?.trim().split(' ')
+        const targetConversationId = parts?.[1]
+        const targetConversationDomain = parts?.[2]
+
+        if (!targetConversationId || !targetConversationDomain) {
+          this.appLogger?.info(
+            `[Sample App] Invalid command format. Expected: get-conversation-members [CONVERSATION_ID] [DOMAIN]`
+          )
+          return
+        }
+
+        const targetQualifiedId: QualifiedId = {
+          id: targetConversationId,
+          domain: targetConversationDomain
+        }
+
+        const members = await this.manager.getMembersInConversation(targetQualifiedId)
+
+        const memberList = members
+          .map(m => `- ${obfuscateId(m.userId.id)}@${m.userId.domain} (${m.role})`)
+          .join('\n')
+
+        await this.manager.sendMessage(TextMessage.create({
+          conversationId: conversationId,
+          text: `Members in conversation ${obfuscateId(targetQualifiedId.id)}@${targetQualifiedId.domain} (${members.length}):\n${memberList}`
+        }))
+      }
       // More reserved test commands will be added here
     }
   }

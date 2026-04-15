@@ -35,6 +35,9 @@ import {ConversationRole} from "../model/conversation/ConversationRole.js";
 import {TeamsApiClient} from "./TeamsApiClient.js";
 import {TeamId} from "../model/TeamId.js";
 import type {AddMembersToConversationResult} from "./model/AddMembersToConversationResult.js";
+import type {Conversation} from "../model/conversation/Conversation.js";
+import {ConversationMapper} from "../mappers/conversation/ConversationMapper.js";
+import {ConversationMemberMapper} from "../mappers/conversation/ConversationMemberMapper.js";
 
 @singleton()
 export class ConversationService {
@@ -50,6 +53,13 @@ export class ConversationService {
     private appProperties: AppProperties,
     private coreCryptoService: CoreCryptoService
   ) {
+  }
+
+  getAllConversations(): Conversation[] {
+    return this.conversationRepository
+      .getAll()
+      .filter(conversation => conversation.type !== ConversationType.SELF)
+      .map(conversation => ConversationMapper.fromEntity(conversation))
   }
 
   private getConversationName(conversation: ConversationResponse) : string {
@@ -149,11 +159,10 @@ export class ConversationService {
     return await this.conversationsApiClient.getConversationGroupInfo(conversationId)
   }
 
-  getMembersByConversationId(conversationId: QualifiedId): ConversationMemberEntity[] {
-    return this.conversationMemberRepository.getMembersByConversationId(
-      conversationId.id,
-      conversationId.domain
-    )
+  getMembersByConversationId(conversationId: QualifiedId): ConversationMember[] {
+    return this.conversationMemberRepository
+      .getMembersByConversationId(conversationId.id, conversationId.domain)
+      .map(ConversationMemberMapper.fromEntity)
   }
 
   async leaveConversation(conversationId: QualifiedId) {
@@ -182,7 +191,9 @@ export class ConversationService {
 
   private async isAppUserMemberOfConversation(conversationId: QualifiedId): Promise<boolean> {
     const members = this.getMembersByConversationId(conversationId)
-    return members.some(member => member.user_id === this.wireUserId && member.user_domain === this.wireUserDomain)
+    return members.some(member =>
+      member.userId.id === this.wireUserId
+      && member.userId.domain === this.wireUserDomain)
   }
 
   async deleteAllConversationDataFromLocalStorages(conversationId: QualifiedId): Promise<void> {
@@ -422,8 +433,8 @@ export class ConversationService {
     const members = this.getMembersByConversationId(conversationId)
     const isAppAdminInConversation = members.some(
       member =>
-        member.user_id === this.wireUserId
-        && member.user_domain === this.wireUserDomain
+        member.userId.id === this.wireUserId
+        && member.userId.domain === this.wireUserDomain
         && member.role === ConversationRole.ADMIN
     )
 
