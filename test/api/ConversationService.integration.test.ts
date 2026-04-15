@@ -471,6 +471,78 @@ describe('ConversationService Integration', () => {
     })
   })
 
+  describe('getAllConversations', () => {
+    it('should return all conversations excluding SELF type', async () => {
+      const selfConversationResponse: ConversationResponse = {
+        qualified_id: {id: 'self-conv-id', domain: 'wire.com'},
+        type: ConversationType.SELF,
+        name: 'Self Conversation',
+        team: TEAM_ID,
+        group_id: 'mls-self',
+        members: {
+          others: [],
+          self: {
+            qualified_id: SELF_USER_ID,
+            conversation_role: 'wire_admin'
+          }
+        }
+      } as ConversationResponse
+
+      await conversationService.saveConversationWithMembers(CONVERSATION_ID, CONVERSATION_RESPONSE)
+      await conversationService.saveConversationWithMembers(OTHER_CONVERSATION_ID, OTHER_CONVERSATION_RESPONSE)
+      await conversationService.saveConversationWithMembers({
+        id: 'self-conv-id',
+        domain: 'wire.com'
+      }, selfConversationResponse)
+
+      const result = await conversationService.getAllConversations()
+
+      expect(result).toHaveLength(2)
+      expect(result.find(conversation => conversation.type === ConversationType.SELF)).toBeUndefined()
+      expect(result.find(conversation => conversation.id === CONVERSATION_ID.id)).toBeDefined()
+      expect(result.find(conversation => conversation.id === OTHER_CONVERSATION_ID.id)).toBeDefined()
+      expect(result.find(conversation => conversation.id === CONVERSATION_ID.id)).toEqual({
+        id: CONVERSATION_ID.id,
+        domain: CONVERSATION_ID.domain,
+        name: CONVERSATION_NAME,
+        type: ConversationType.GROUP,
+        teamId: TEAM_ID
+      })
+    })
+
+    it('should return empty list when only SELF conversation exists', async () => {
+      const selfConversationResponse: ConversationResponse = {
+        qualified_id: {id: 'self-conv-id', domain: 'wire.com'},
+        type: ConversationType.SELF,
+        name: 'Self Conversation',
+        team: TEAM_ID,
+        group_id: 'mls-self',
+        members: {
+          others: [],
+          self: {
+            qualified_id: SELF_USER_ID,
+            conversation_role: 'wire_admin'
+          }
+        }
+      } as ConversationResponse
+
+      await conversationService.saveConversationWithMembers({
+        id: 'self-conv-id',
+        domain: 'wire.com'
+      }, selfConversationResponse)
+
+      const result = await conversationService.getAllConversations()
+
+      expect(result).toHaveLength(0)
+    })
+
+    it('should return empty list when there are no conversations', async () => {
+      const result = await conversationService.getAllConversations()
+
+      expect(result).toHaveLength(0)
+    })
+  })
+
   const TEAM_ID: string = "team-id"
   const SELF_USER_ID: QualifiedId = {
     id: "self-user-id",

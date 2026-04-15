@@ -305,6 +305,19 @@ class SampleEventsHandler extends WireEventsHandler {
             Deleted: ${user.deleted}`
         }))
       },
+      'get-conversations': async (conversationId) => {
+        this.appLogger?.info(`[Sample App] Executing handler for: get-conversations`)
+
+        const conversations = await this.manager.getAllConversations()
+        const conversationList = conversations
+          .map(c => `- ${c.name ?? 'Unnamed'} (${c.id}@${c.domain})`)
+          .join('\n')
+
+        await this.manager.sendMessage(TextMessage.create({
+          conversationId: conversationId,
+          text: `Conversations (${conversations.length}):\n${conversationList}`
+        }))
+      },
       // More reserved test commands will be added here
     }
   }

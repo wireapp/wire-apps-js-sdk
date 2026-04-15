@@ -35,6 +35,8 @@ import {ConversationRole} from "../model/conversation/ConversationRole.js";
 import {TeamsApiClient} from "./TeamsApiClient.js";
 import {TeamId} from "../model/TeamId.js";
 import type {AddMembersToConversationResult} from "./model/AddMembersToConversationResult.js";
+import type {Conversation} from "../model/conversation/Conversation.js";
+import {ConversationMapper} from "../mappers/conversation/ConversationMapper.js";
 
 @singleton()
 export class ConversationService {
@@ -50,6 +52,13 @@ export class ConversationService {
     private appProperties: AppProperties,
     private coreCryptoService: CoreCryptoService
   ) {
+  }
+
+  async getAllConversations(): Promise<Conversation[]> {
+    return this.conversationRepository
+      .getAll()
+      .filter(conversation => conversation.type !== ConversationType.SELF)
+      .map(conversation => ConversationMapper.fromEntity(conversation))
   }
 
   private getConversationName(conversation: ConversationResponse) : string {

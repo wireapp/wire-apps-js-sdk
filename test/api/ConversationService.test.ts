@@ -58,7 +58,8 @@ describe('ConversationService', () => {
     mockConversationRepository = {
       save: vi.fn(),
       findByIdAndDomain: vi.fn(),
-      delete: vi.fn()
+      delete: vi.fn(),
+      getAll: vi.fn()
     } as any
 
     mockConversationMemberRepository = {
@@ -1320,6 +1321,74 @@ describe('ConversationService', () => {
       ).rejects.toThrow('update failed')
 
       expect((mockConversationMemberRepository as any).save).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('getConversations', () => {
+    it('should return all conversations excluding SELF type', async () => {
+      const conversations: ConversationEntity[] = [
+        {
+          id: 'conv-1',
+          domain: 'wire.com',
+          name: 'Group Conversation',
+          team_id: TEAM_ID,
+          mls_group_id: 'mls-1',
+          creation_date: null,
+          type: ConversationType.GROUP
+        },
+        {
+          id: 'conv-2',
+          domain: 'wire.com',
+          name: 'Self Conversation',
+          team_id: TEAM_ID,
+          mls_group_id: 'mls-2',
+          creation_date: null,
+          type: ConversationType.SELF
+        },
+        {
+          id: 'conv-3',
+          domain: 'wire.com',
+          name: 'One To One Conversation',
+          team_id: TEAM_ID,
+          mls_group_id: 'mls-3',
+          creation_date: null,
+          type: ConversationType.ONE_TO_ONE
+        }
+      ]
+
+      vi.mocked(mockConversationRepository.getAll).mockReturnValue(conversations)
+
+      const result = await conversationService.getAllConversations()
+
+      expect(result).toHaveLength(2)
+      expect(result[0]).toEqual({ id: 'conv-1', domain: 'wire.com', name: 'Group Conversation', type: ConversationType.GROUP, teamId: TEAM_ID })
+      expect(result[1]).toEqual({ id: 'conv-3', domain: 'wire.com', name: 'One To One Conversation', type: ConversationType.ONE_TO_ONE, teamId: TEAM_ID })
+    })
+
+    it('should return empty list when all conversations are of SELF type', async () => {
+      vi.mocked(mockConversationRepository.getAll).mockReturnValue([
+        {
+          id: 'conv-1',
+          domain: 'wire.com',
+          name: 'Self Conversation',
+          team_id: TEAM_ID,
+          mls_group_id: 'mls-1',
+          creation_date: null,
+          type: ConversationType.SELF
+        }
+      ])
+
+      const result = await conversationService.getAllConversations()
+
+      expect(result).toHaveLength(0)
+    })
+
+    it('should return empty list when there are no conversations', async () => {
+      vi.mocked(mockConversationRepository.getAll).mockReturnValue([])
+
+      const result = await conversationService.getAllConversations()
+
+      expect(result).toHaveLength(0)
     })
   })
 
