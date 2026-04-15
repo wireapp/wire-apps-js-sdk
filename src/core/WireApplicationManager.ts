@@ -115,11 +115,11 @@ export class WireApplicationManager {
 
   async getAllConversations(): Promise<Conversation[]> {
     this.logger.debug('App requested to get all conversations')
-    return await this.conversationService.getAllConversations()
+    return this.conversationService.getAllConversations()
   }
 
   async getMembersInConversation(conversationId: QualifiedId): Promise<ConversationMember[]> {
     this.logger.debug('App requested to get members of conversation. ConversationId: ' + obfuscateId(conversationId.id));
-    return await this.conversationService.getMembersByConversationId(conversationId)
+    return this.conversationService.getMembersByConversationId(conversationId)
   }
 }

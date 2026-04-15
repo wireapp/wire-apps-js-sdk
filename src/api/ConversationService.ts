@@ -55,7 +55,7 @@ export class ConversationService {
   ) {
   }
 
-  async getAllConversations(): Promise<Conversation[]> {
+  getAllConversations(): Conversation[] {
     return this.conversationRepository
       .getAll()
       .filter(conversation => conversation.type !== ConversationType.SELF)
