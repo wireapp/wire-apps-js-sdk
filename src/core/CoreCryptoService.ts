@@ -86,32 +86,49 @@ export class CoreCryptoService {
       throw new Error("CoreCryptoClient is not initialized.")
     }
 
-    // TODO: Once moved out of in-memory database, then verify for existing deviceId
     this.logger.info("Initializing Proteus Client")
     await this.coreCryptoClient.initProteusClient()
-    const proteusPreKeys = await this.coreCryptoClient.generateProteusPreKeys()
-    const proteusLastPreKey = await this.coreCryptoClient.generateProteusLastPreKey()
 
-    let registeredDeviceId;
-    try {
-      registeredDeviceId = await this.clientsService.registerClient(proteusPreKeys, proteusLastPreKey)
-    } catch (exception) {
-      throw new Error(`Error when registering client: ${(exception as Error).message}`);
+    const existingDeviceId = this.appProperties.getDeviceId()
+    let appClientId: AppClientId
+
+    if (existingDeviceId) {
+      this.logger.info(`Reusing existing registered device: ${existingDeviceId}`)
+      appClientId = AppClientId.create(
+        this.wireUserId,
+        existingDeviceId,
+        this.wireUserDomain
+      )
+    } else {
+      this.logger.info("Registering new client device")
+      const proteusPreKeys = await this.coreCryptoClient.generateProteusPreKeys()
+      const proteusLastPreKey = await this.coreCryptoClient.generateProteusLastPreKey()
+
+      let registeredDeviceId: string
+      try {
+        registeredDeviceId = await this.clientsService.registerClient(proteusPreKeys, proteusLastPreKey)
+      } catch (exception) {
+        throw new Error(`Error when registering client: ${(exception as Error).message}`)
+      }
+
+      appClientId = AppClientId.create(
+        this.wireUserId,
+        registeredDeviceId,
+        this.wireUserDomain
+      )
+      this.appProperties.setDeviceId(registeredDeviceId)
     }
 
-    const appClientId = AppClientId.create(
-      this.wireUserId,
-      registeredDeviceId,
-      this.wireUserDomain
-    )
     container.registerInstance(APP_CLIENT_ID, appClientId)
 
     this.logger.info("Initializing MLS Client")
-    await this.coreCryptoClient?.initMlsClient(appClientId)
-    await this.uploadClientWithMlsPublicKey()
-    await this.uploadMlsKeyPackages()
+    await this.coreCryptoClient.initMlsClient(appClientId)
 
-    this.appProperties.setShouldRejoinConversations(true)
+    if (!existingDeviceId) {
+      await this.uploadClientWithMlsPublicKey()
+      await this.uploadMlsKeyPackages()
+      this.appProperties.setShouldRejoinConversations(true)
+    }
   }
 
   private conversationIdFromMlsGroupId(mlsGroupId: string): ConversationId {

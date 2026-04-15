@@ -92,6 +92,52 @@ describe('AppProperties', () => {
     })
   })
 
+  describe('getDeviceId', () => {
+    it('should return the stored device ID', () => {
+      vi.mocked(mockAppPropertiesRepository.getByKey).mockReturnValue({
+        key: 'device_id',
+        value: 'abc123deviceId'
+      })
+
+      const result = appProperties.getDeviceId()
+
+      expect(mockAppPropertiesRepository.getByKey).toHaveBeenCalledWith('device_id')
+      expect(result).toBe('abc123deviceId')
+    })
+
+    it('should return undefined when no device ID is stored', () => {
+      vi.mocked(mockAppPropertiesRepository.getByKey).mockReturnValue(undefined)
+
+      const result = appProperties.getDeviceId()
+
+      expect(mockAppPropertiesRepository.getByKey).toHaveBeenCalledWith('device_id')
+      expect(result).toBeUndefined()
+    })
+
+    it('should return undefined when repository returns null', () => {
+      vi.mocked(mockAppPropertiesRepository.getByKey).mockReturnValue(null)
+
+      const result = appProperties.getDeviceId()
+
+      expect(result).toBeUndefined()
+    })
+  })
+
+  describe('setDeviceId', () => {
+    it('should save the device ID as-is', () => {
+      appProperties.setDeviceId('abc123deviceId')
+
+      expect(mockAppPropertiesRepository.save).toHaveBeenCalledWith('device_id', 'abc123deviceId')
+    })
+
+    it('should overwrite a previously stored device ID', () => {
+      appProperties.setDeviceId('first-id')
+      appProperties.setDeviceId('second-id')
+
+      expect(mockAppPropertiesRepository.save).toHaveBeenLastCalledWith('device_id', 'second-id')
+    })
+  })
+
   describe('round-trip behavior', () => {
     it('should correctly round-trip true value', () => {
       // Set to true

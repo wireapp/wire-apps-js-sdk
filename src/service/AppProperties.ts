@@ -21,6 +21,7 @@ import {AppPropertiesRepository} from "../db/AppPropertiesRepository.js";
 export class AppProperties {
   private readonly SHOULD_REJOIN_CONVERSATIONS = "should_rejoin_conversations"
   private readonly LAST_NOTIFICATION_ID = "last_notification_id"
+  private readonly DEVICE_ID = "device_id"
 
   constructor(
     private appPropertiesRepository: AppPropertiesRepository
@@ -49,6 +50,14 @@ export class AppProperties {
       this.LAST_NOTIFICATION_ID,
       lastNotificationId
     )
+  }
+
+  getDeviceId(): string | undefined {
+    return this.appPropertiesRepository.getByKey(this.DEVICE_ID)?.value
+  }
+
+  setDeviceId(deviceId: string): void {
+    this.appPropertiesRepository.save(this.DEVICE_ID, deviceId)
   }
 
   private booleanToDatabaseValue = (value: boolean): string => value ? '1' : '0'

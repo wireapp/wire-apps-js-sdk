@@ -17,7 +17,15 @@
 import "reflect-metadata";
 import 'fake-indexeddb/auto';
 import './core/event/processors.index.js'
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import {CoreCryptoService} from "./core/CoreCryptoService.js";
+
+const DEFAULT_STORAGE_DIR = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  "..",
+  "storage",
+);
 import {
   WIRE_API_HOST,
   WIRE_CRYPTO_STORAGE_PASSWORD,
@@ -45,6 +53,8 @@ export class WireAppSdk {
   private apiHost: string
   private cryptographyStoragePassword: string
 
+  private storageDir: string
+
   private isShuttingDown = false
 
   private isWebSocketRunning: boolean = false
@@ -62,7 +72,8 @@ export class WireAppSdk {
     apiHost: string,
     cryptographyStoragePassword: string,
     wireEventsHandler: WireEventsHandler,
-    logger?: Logger
+    logger?: Logger,
+    storageDir?: string
   ) {
     this.userEmail = userEmail
     this.userPassword = userPassword
@@ -71,6 +82,7 @@ export class WireAppSdk {
     this.apiHost = apiHost
     this.cryptographyStoragePassword = cryptographyStoragePassword
     this.wireEventsHandler = wireEventsHandler
+    this.storageDir = storageDir ?? DEFAULT_STORAGE_DIR
     LoggerFactory.setRootLogger(logger ?? new ConsoleLogger())
     this.logger = LoggerFactory.getLogger(this.constructor.name)
   }
@@ -84,6 +96,7 @@ export class WireAppSdk {
     cryptographyStoragePassword: string,
     wireEventsHandler: WireEventsHandler,
     logger?: Logger,
+    storageDir?: string,
   ): Promise<WireAppSdk> {
     const wireAppSdk = new WireAppSdk(
       userEmail,
@@ -93,7 +106,8 @@ export class WireAppSdk {
       apiHost,
       cryptographyStoragePassword,
       wireEventsHandler,
-      logger
+      logger,
+      storageDir
     )
 
     wireAppSdk.registerExitHandlers()
@@ -114,7 +128,7 @@ export class WireAppSdk {
     container.registerInstance(WIRE_USER_ID, this.userId)
     container.registerInstance(WIRE_USER_DOMAIN, this.userDomain)
     container.registerInstance(WIRE_CRYPTO_STORAGE_PASSWORD, this.cryptographyStoragePassword)
-    container.registerInstance(WIRE_DATABASE_PATH, DatabaseService.DEFAULT_DATABASE_PATH)
+    container.registerInstance(WIRE_DATABASE_PATH, path.join(this.storageDir, "apps.db"))
 
     container.registerInstance(WIRE_EVENTS_HANDLER, this.wireEventsHandler)
 
