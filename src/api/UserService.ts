@@ -18,9 +18,13 @@ import {singleton} from "tsyringe";
 import {UsersApiClient} from "./UsersApiClient.js";
 import type {QualifiedId} from "../model/QualifiedId.js";
 import type {UserResponse} from "./model/UserResponse.js";
+import {LoggerFactory} from "../utils/logger/LoggerFactory.js";
+import {AppClientId} from "../model/AppClientId.js";
 
 @singleton()
 export class UserService {
+  private logger = LoggerFactory.getLogger(this.constructor.name)
+
   constructor(
     private usersApiClient: UsersApiClient) {
   }
@@ -28,4 +32,24 @@ export class UserService {
   async getUser(userQualifiedId: QualifiedId): Promise<UserResponse> {
     return await this.usersApiClient.getUser(userQualifiedId.id, userQualifiedId.domain);
   }
+
+  async getClientsByUserIds(userIds: QualifiedId[]): Promise<AppClientId[]> {
+    this.logger.info(`Retrieving clients for ${userIds.length} users.`);
+
+    const usersClients =
+      userIds.length === 1
+        ? await this.usersApiClient.getClientsByUserId(userIds[0]!)
+        : await this.usersApiClient.getClientsByUserIds(userIds);
+
+    const appClientIds: AppClientId[] = [];
+
+    for (const [qualifiedId, userClientResponses] of usersClients) {
+      for (const userClientResponse of userClientResponses) {
+        appClientIds.push(AppClientId.create(qualifiedId.id, userClientResponse.id, qualifiedId.domain));
+      }
+    }
+
+    return appClientIds;
+  }
+
 }

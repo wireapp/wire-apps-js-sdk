@@ -17,6 +17,8 @@
 import {HttpClient} from "../core/HttpClient.js";
 import type {UserResponse} from "./model/UserResponse.js";
 import {singleton} from "tsyringe";
+import type {UserClientResponse} from "./model/UserClientResponse.js";
+import type {QualifiedId} from "../model/QualifiedId.js";
 
 @singleton()
 export class UsersApiClient {
@@ -29,4 +31,37 @@ export class UsersApiClient {
     const path = `${this.basePath}/${userDomain}/${userId}`
     return await this.httpClient.getRequest<UserResponse>(path)
   }
+
+  async getClientsByUserId(userId: QualifiedId): Promise<Map<QualifiedId, UserClientResponse[]>> {
+    const path = `${this.basePath}/${userId.domain}/${userId.id}/clients`;
+    const userClientResponses = await this.httpClient.getRequest<UserClientResponse[]>(path);
+
+    // Map<QualifiedId, List<UserClientResponse>>
+    return new Map([[userId, userClientResponses]]);
+  }
+
+  async getClientsByUserIds(userIds: QualifiedId[]): Promise<Map<QualifiedId, UserClientResponse[]>> {
+    const path = `${this.basePath}/list-clients`;
+    const response = await this.httpClient
+      .postRequest<Record<string, Record<string, UserClientResponse[]>>>(path, userIds);
+
+    const result = new Map<QualifiedId, UserClientResponse[]>();
+
+    for (const domain of Object.keys(response)) {
+      const usersInDomain = response[domain];
+      if (!usersInDomain) continue;
+
+      for (const userId of Object.keys(usersInDomain)) {
+        const clients = usersInDomain[userId];
+        if (!clients) continue;
+
+        const qualifiedId: QualifiedId = {id: userId, domain};
+        result.set(qualifiedId, clients);
+      }
+    }
+
+    // Map<QualifiedId, List<UserClientResponse>>
+    return result;
+  }
+
 }
