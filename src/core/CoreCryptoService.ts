@@ -225,7 +225,7 @@ export class CoreCryptoService {
   async removeMembersFromMlsConversation(mlsGroupId: string, clientIds: AppClientId[]){
     this.logger.debug(`Removing ${clientIds.length} members from MLS group id: ${obfuscateId(mlsGroupId)}`)
 
-    await this.coreCryptoClient?.removeMembersFromMlsConversation(mlsGroupId, clientIds)
+    await this.coreCryptoClient!.removeMembersFromMlsConversation(mlsGroupId, clientIds)
 
     this.logger.debug(`Removed ${clientIds.length} members from MLS group id: ${obfuscateId(mlsGroupId)}`)
   }

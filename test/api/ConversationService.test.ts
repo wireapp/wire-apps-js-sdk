@@ -30,7 +30,6 @@ import {CryptoProtocol} from '../../src/model/CryptoProtocol.js'
 import {ConversationRole} from "../../src/model/conversation/ConversationRole.js";
 import {TeamsApiClient} from "../../src/api/TeamsApiClient.js";
 import {TeamId} from "../../src/model/TeamId.js";
-import {ClientId} from "@wireapp/core-crypto";
 
 describe('ConversationService', () => {
   let conversationService: ConversationService

@@ -16,7 +16,7 @@
 
 import { obfuscateClientId } from "../utils/ObfuscateUtil.js"
 
-//TODO: It would be better no rename this class UserClientId or CryptoClientId.
+//TODO: It would be better to rename this class UserClientId or CryptoClientId.
 export class AppClientId {
   readonly value: string
 
