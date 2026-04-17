@@ -43,9 +43,16 @@ export class UserService {
 
     const clientIds: AppClientId[] = [];
 
-    for (const [qualifiedId, userClientResponses] of usersToClients) {
-      for (const userClientResponse of userClientResponses) {
-        clientIds.push(AppClientId.create(qualifiedId.id, userClientResponse.id, qualifiedId.domain));
+    for (const qualifiedUserId of userIds) {
+      const key = UsersApiClient.toKey(qualifiedUserId);
+      const userClientResponses = usersToClients.get(key);
+
+      if (userClientResponses) {
+        for (const userClientResponse of userClientResponses) {
+          clientIds.push(
+            AppClientId.create(qualifiedUserId.id, userClientResponse.id, qualifiedUserId.domain)
+          );
+        }
       }
     }
 

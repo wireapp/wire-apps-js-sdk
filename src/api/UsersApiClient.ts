@@ -27,20 +27,28 @@ export class UsersApiClient {
 
   private readonly basePath = "users";
 
+  /**
+   * Helper to create a consistent Map key from a QualifiedId
+   *
+   * TODO: Consider to moving this into QualifiedId class during WPB-24672
+   */
+  static toKey(userId: QualifiedId): string {
+    return `${userId.domain}:${userId.id}`;
+  }
+
   async getUser(userId: string, userDomain: string): Promise<UserResponse> {
     const path = `${this.basePath}/${userDomain}/${userId}`
     return await this.httpClient.getRequest<UserResponse>(path)
   }
 
-  async getClientsByUserId(userId: QualifiedId): Promise<Map<QualifiedId, UserClientResponse[]>> {
+  async getClientsByUserId(userId: QualifiedId): Promise<Map<string, UserClientResponse[]>> {
     const path = `${this.basePath}/${userId.domain}/${userId.id}/clients`;
     const userClientResponses = await this.httpClient.getRequest<UserClientResponse[]>(path);
 
-    // Map<QualifiedId, List<UserClientResponse>>
-    return new Map([[userId, userClientResponses]]);
+    return new Map([[UsersApiClient.toKey(userId), userClientResponses]]);
   }
 
-  async getClientsByUserIds(userIds: QualifiedId[]): Promise<Map<QualifiedId, UserClientResponse[]>> {
+  async getClientsByUserIds(userIds: QualifiedId[]): Promise<Map<string, UserClientResponse[]>> {
     const path = `${this.basePath}/list-clients`;
     const response = await this.httpClient
       .postRequest<{ qualified_user_map: Record<string, Record<string, UserClientResponse[]>> }>(
@@ -48,7 +56,7 @@ export class UsersApiClient {
         {qualified_users: userIds}
       );
 
-    const result = new Map<QualifiedId, UserClientResponse[]>();
+    const result = new Map<string, UserClientResponse[]>();
 
     for (const domain of Object.keys(response.qualified_user_map)) {
       const usersInDomain = response.qualified_user_map[domain];
@@ -58,12 +66,11 @@ export class UsersApiClient {
         const clients = usersInDomain[userId];
         if (!clients) continue;
 
-        const qualifiedId: QualifiedId = {id: userId, domain};
-        result.set(qualifiedId, clients);
+        const key = UsersApiClient.toKey({id: userId, domain});
+        result.set(key, clients);
       }
     }
 
-    // Map<QualifiedId, List<UserClientResponse>>
     return result;
   }
 

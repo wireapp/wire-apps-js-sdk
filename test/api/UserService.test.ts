@@ -16,7 +16,9 @@
 
 import {beforeEach, describe, expect, it, vi} from 'vitest'
 import {UserService} from '../../src/api/UserService.js'
+import {UsersApiClient} from '../../src/api/UsersApiClient.js'
 import {CryptoProtocol} from '../../src/model/CryptoProtocol.js'
+import type {QualifiedId} from "../../src/model/QualifiedId.js";
 
 describe('UserService', () => {
   let mockUsersApiClient: any
@@ -78,8 +80,11 @@ describe('UserService', () => {
     const userId1: QualifiedId = { id: 'user-1', domain: 'example.com' }
     const userId2: QualifiedId = { id: 'user-2', domain: 'example.com' }
 
+    // Use the real static method for key generation in tests
+    const toKey = UsersApiClient.toKey;
+
     it('should call getClientsByUserId when only one user is provided', async () => {
-      const mockMap = new Map([[userId1, [{ id: 'device-1' }]]])
+      const mockMap = new Map([[toKey(userId1), [{ id: 'device-1' }]]])
       vi.mocked(mockUsersApiClient.getClientsByUserId).mockResolvedValue(mockMap)
 
       await service.getUsersClientIds([userId1])
@@ -90,8 +95,8 @@ describe('UserService', () => {
 
     it('should call getClientsByUserIds when multiple users are provided', async () => {
       const mockMap = new Map([
-        [userId1, [{ id: 'device-1' }]],
-        [userId2, [{ id: 'device-2' }]]
+        [toKey(userId1), [{ id: 'device-1' }]],
+        [toKey(userId2), [{ id: 'device-2' }]]
       ])
       vi.mocked(mockUsersApiClient.getClientsByUserIds).mockResolvedValue(mockMap)
 
@@ -102,33 +107,35 @@ describe('UserService', () => {
     })
 
     it('should correctly map single user clients to AppClientIds', async () => {
-      const mockMap = new Map([[userId1, [{ id: 'device-1' }, { id: 'device-2' }]]])
+      const mockMap = new Map([[toKey(userId1), [{ id: 'device-1' }, { id: 'device-2' }]]])
       vi.mocked(mockUsersApiClient.getClientsByUserId).mockResolvedValue(mockMap)
 
       const result = await service.getUsersClientIds([userId1])
 
       expect(result).toHaveLength(2)
+      // Asserting against the value format (adjust if AppClientId.create uses different logic)
       expect(result[0].value).toBe('user-1:device-1@example.com')
       expect(result[1].value).toBe('user-1:device-2@example.com')
     })
 
     it('should correctly map multiple users clients to AppClientIds', async () => {
       const mockMap = new Map([
-        [userId1, [{ id: 'device-1' }]],
-        [userId2, [{ id: 'device-2' }, { id: 'device-3' }]]
+        [toKey(userId1), [{ id: 'device-1' }]],
+        [toKey(userId2), [{ id: 'device-2' }, { id: 'device-3' }]]
       ])
       vi.mocked(mockUsersApiClient.getClientsByUserIds).mockResolvedValue(mockMap)
 
       const result = await service.getUsersClientIds([userId1, userId2])
 
       expect(result).toHaveLength(3)
-      expect(result.map(c => c.value)).toContain('user-1:device-1@example.com')
-      expect(result.map(c => c.value)).toContain('user-2:device-2@example.com')
-      expect(result.map(c => c.value)).toContain('user-2:device-3@example.com')
+      const values = result.map(c => c.value)
+      expect(values).toContain('user-1:device-1@example.com')
+      expect(values).toContain('user-2:device-2@example.com')
+      expect(values).toContain('user-2:device-3@example.com')
     })
 
     it('should return an empty array when user has no clients', async () => {
-      const mockMap = new Map([[userId1, []]])
+      const mockMap = new Map([[toKey(userId1), []]])
       vi.mocked(mockUsersApiClient.getClientsByUserId).mockResolvedValue(mockMap)
 
       const result = await service.getUsersClientIds([userId1])

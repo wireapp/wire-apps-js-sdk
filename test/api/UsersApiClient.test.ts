@@ -118,12 +118,12 @@ describe('UsersApiClient (getClientsByUserId)', () => {
     expect(mockHttpClient.getRequest).toHaveBeenCalledWith('users/example.com/userId-1/clients')
   })
 
-  it('should return a map with the userId as key and clients as value', async () => {
+  it('should return a map with the serialized userId as key and clients as value', async () => {
     vi.mocked(mockHttpClient.getRequest).mockResolvedValue(mockClients)
 
     const result = await client.getClientsByUserId(userId)
 
-    expect(result.get(userId)).toEqual(mockClients)
+    expect(result.get(UsersApiClient.toKey(userId))).toEqual(mockClients)
   })
 
   it('should return a map with an empty clients array', async () => {
@@ -131,7 +131,7 @@ describe('UsersApiClient (getClientsByUserId)', () => {
 
     const result = await client.getClientsByUserId(userId)
 
-    expect(result.get(userId)).toEqual([])
+    expect(result.get(UsersApiClient.toKey(userId))).toEqual([])
   })
 
   it('should propagate errors from httpClient.getRequest', async () => {
@@ -181,22 +181,18 @@ describe('UsersApiClient (getClientsByUserIds)', () => {
     )
   })
 
-  it('should correctly parse the qualified_user_map into a Map', async () => {
+  it('should correctly parse the qualified_user_map into a Map with string keys', async () => {
     vi.mocked(mockHttpClient.postRequest).mockResolvedValue(mockResponse)
 
     const result = await client.getClientsByUserIds(userIds)
 
     expect(result.size).toBe(2)
 
-    const entries = Array.from(result.entries())
+    const key1 = UsersApiClient.toKey(userIds[0]);
+    const key2 = UsersApiClient.toKey(userIds[1]);
 
-    const entry1 = entries.find(([k]) => k.id === '1d51e2d6-9c70-605f-efc8-ff85c3dabdc7')
-    expect(entry1?.[0].domain).toBe('domain1.example.com')
-    expect(entry1?.[1]).toEqual([{ id: 'd0' }])
-
-    const entry2 = entries.find(([k]) => k.id === '2a62f3e7-0d81-716g-fgd9-gg96d4eced8')
-    expect(entry2?.[0].domain).toBe('domain2.example.com')
-    expect(entry2?.[1]).toEqual([{ id: 'd1' }, { id: 'd2' }])
+    expect(result.get(key1)).toEqual([{ id: 'd0' }])
+    expect(result.get(key2)).toEqual([{ id: 'd1' }, { id: 'd2' }])
   })
 
   it('should return an empty map when qualified_user_map is empty', async () => {
@@ -220,6 +216,7 @@ describe('UsersApiClient (getClientsByUserIds)', () => {
     const result = await client.getClientsByUserIds(userIds)
 
     expect(result.size).toBe(1)
+    expect(result.has(UsersApiClient.toKey(userIds[0]))).toBe(true)
   })
 
   it('should propagate errors from httpClient.postRequest', async () => {
@@ -228,4 +225,3 @@ describe('UsersApiClient (getClientsByUserIds)', () => {
     await expect(client.getClientsByUserIds(userIds)).rejects.toThrow('network-failure')
   })
 })
-
