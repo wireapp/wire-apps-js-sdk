@@ -33,23 +33,23 @@ export class UserService {
     return await this.usersApiClient.getUser(userQualifiedId.id, userQualifiedId.domain);
   }
 
-  async getClientsByUserIds(userIds: QualifiedId[]): Promise<AppClientId[]> {
+  async getUsersClientIds(userIds: QualifiedId[]): Promise<AppClientId[]> {
     this.logger.info(`Retrieving clients for ${userIds.length} users.`);
 
-    const usersClients =
+    const usersToClients =
       userIds.length === 1
         ? await this.usersApiClient.getClientsByUserId(userIds[0]!)
         : await this.usersApiClient.getClientsByUserIds(userIds);
 
-    const appClientIds: AppClientId[] = [];
+    const clientIds: AppClientId[] = [];
 
-    for (const [qualifiedId, userClientResponses] of usersClients) {
+    for (const [qualifiedId, userClientResponses] of usersToClients) {
       for (const userClientResponse of userClientResponses) {
-        appClientIds.push(AppClientId.create(qualifiedId.id, userClientResponse.id, qualifiedId.domain));
+        clientIds.push(AppClientId.create(qualifiedId.id, userClientResponse.id, qualifiedId.domain));
       }
     }
 
-    return appClientIds;
+    return clientIds;
   }
 
 }

@@ -1,7 +1,7 @@
 /*
 * Wire
 * Copyright (C) 2025 Wire Swiss GmbH
-* 
+*
 * This program is free software: you can redistribute it and/or modify
 * it under the terms of the GNU General Public License as published by
 * the Free Software Foundation, either version 3 of the License, or
@@ -16,13 +16,14 @@
 
 import { obfuscateClientId } from "../utils/ObfuscateUtil.js"
 
+//TODO: It would be better no rename this class UserClientId or CryptoClientId.
 export class AppClientId {
   readonly value: string
-  
+
   private constructor(value: string) {
     this.value = value
   }
-  
+
   toString(): string {
     return obfuscateClientId(this.value)
   }

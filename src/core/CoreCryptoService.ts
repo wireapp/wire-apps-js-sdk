@@ -33,6 +33,7 @@ import {LoggerFactory} from "../utils/logger/LoggerFactory.js";
 import type {QualifiedId} from "../model/QualifiedId.js";
 import {AppProperties} from "../service/AppProperties.js";
 import type {AddMembersToConversationResult} from "../api/model/AddMembersToConversationResult.js";
+import {obfuscateId} from "../utils/ObfuscateUtil.js";
 
 /**
  * Service that handles initialization of CoreCrypto and provides a high-level API for:
@@ -219,6 +220,14 @@ export class CoreCryptoService {
       successUsers: claimedKeyPackagesResult.successUsers,
       failedUsers: claimedKeyPackagesResult.failedUsers
     }
+  }
+
+  async removeMembersFromMlsConversation(mlsGroupId: string, clientIds: AppClientId[]){
+    this.logger.debug(`Removing ${clientIds.length} members from MLS group id: ${obfuscateId(mlsGroupId)}`)
+
+    await this.coreCryptoClient?.removeMembersFromMlsConversation(mlsGroupId, clientIds)
+
+    this.logger.debug(`Removed ${clientIds.length} members from MLS group id: ${obfuscateId(mlsGroupId)}`)
   }
 
   async establishMlsConversation(

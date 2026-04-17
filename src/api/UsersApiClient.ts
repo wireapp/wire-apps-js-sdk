@@ -43,12 +43,15 @@ export class UsersApiClient {
   async getClientsByUserIds(userIds: QualifiedId[]): Promise<Map<QualifiedId, UserClientResponse[]>> {
     const path = `${this.basePath}/list-clients`;
     const response = await this.httpClient
-      .postRequest<Record<string, Record<string, UserClientResponse[]>>>(path, userIds);
+      .postRequest<{ qualified_user_map: Record<string, Record<string, UserClientResponse[]>> }>(
+        path,
+        {qualified_users: userIds}
+      );
 
     const result = new Map<QualifiedId, UserClientResponse[]>();
 
-    for (const domain of Object.keys(response)) {
-      const usersInDomain = response[domain];
+    for (const domain of Object.keys(response.qualified_user_map)) {
+      const usersInDomain = response.qualified_user_map[domain];
       if (!usersInDomain) continue;
 
       for (const userId of Object.keys(usersInDomain)) {

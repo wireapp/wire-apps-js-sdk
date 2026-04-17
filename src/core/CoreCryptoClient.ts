@@ -33,6 +33,7 @@ import type {MlsPublicKeys} from "../model/MlsPublicKeys.js";
 import {PreKeyCrypto} from "../model/PreKeyCrypto.js";
 import {Decoder, Encoder} from "bazinga64";
 import {LoggerFactory} from "../utils/logger/LoggerFactory.js";
+import {obfuscateId} from "../utils/ObfuscateUtil.js";
 
 // TODO: Baris: If we can find a way to make this class only reachable from CoreCryptoService, that will be awesome.
 
@@ -316,6 +317,27 @@ export class CoreCryptoClient {
         keyPackages
       )
     })
+  }
+
+  async removeMembersFromMlsConversation(
+    mlsGroupId: string,
+    appClientIds: AppClientId[]
+  ) {
+    this.logger.debug(`Members will be removed from the conversation in CoreCrypto. mlsGroupId: ${obfuscateId(mlsGroupId)}`)
+
+    await this.coreCrypto.transaction(async (context) => {
+      const mlsGroupIdBytes = Decoder.fromBase64(mlsGroupId).asBytes;
+      const clientIds: ClientId[] = appClientIds.map(
+        (appClientId: AppClientId) => new ClientId(new TextEncoder().encode(appClientId.value))
+      );
+
+      await context.removeClientsFromConversation(
+        new ConversationId(mlsGroupIdBytes),
+        clientIds
+      );
+
+      this.logger.debug(`Members are removed from the conversation in CoreCrypto. mlsGroupId: ${obfuscateId(mlsGroupId)}`)
+    });
   }
 
   close() {
