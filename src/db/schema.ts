@@ -1,9 +1,10 @@
 import { sqliteTable, text, primaryKey, foreignKey } from "drizzle-orm/sqlite-core"
+import { sql } from "drizzle-orm"
 
 export const appProperties = sqliteTable("app_properties", {
   key: text().primaryKey().notNull(),
   value: text().notNull(),
-  creationDate: text("creation_date").default("sql`(CURRENT_TIMESTAMP)`").notNull(),
+  creationDate: text("creation_date").default(sql`(CURRENT_TIMESTAMP)`).notNull(),
 });
 
 export const conversation = sqliteTable("conversation", {
@@ -12,7 +13,7 @@ export const conversation = sqliteTable("conversation", {
   name: text(),
   teamId: text("team_id"),
   mlsGroupId: text("mls_group_id").notNull(),
-  creationDate: text("creation_date").default("sql`(CURRENT_TIMESTAMP)`").notNull(),
+  creationDate: text("creation_date").default(sql`(CURRENT_TIMESTAMP)`).notNull(),
   type: text().notNull(),
 },
 (table) => [
@@ -25,7 +26,7 @@ export const conversationMember = sqliteTable("conversation_member", {
   conversationId: text("conversation_id").notNull(),
   conversationDomain: text("conversation_domain").notNull(),
   role: text().notNull(),
-  creationDate: text("creation_date").default("sql`(CURRENT_TIMESTAMP)`").notNull(),
+  creationDate: text("creation_date").default(sql`(CURRENT_TIMESTAMP)`).notNull(),
 },
 (table) => [
   foreignKey({
