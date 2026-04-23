@@ -28,11 +28,11 @@ export class ConversationRepository {
   private insertStmt
   private deleteStmt
 
-  constructor(private readonly database: DatabaseService) {
-    this.selectAllStmt = this.database.db.select().from(conversation).prepare();
+  constructor(private readonly databaseService: DatabaseService) {
+    this.selectAllStmt = this.databaseService.db.select().from(conversation).prepare();
 
     this.selectByIdAndDomainStmt =
-      this.database.db.select().from(conversation).where(
+      this.databaseService.db.select().from(conversation).where(
         and(
           eq(conversation.id, sql.placeholder('id')),
           eq(conversation.domain, sql.placeholder('domain')
@@ -41,7 +41,7 @@ export class ConversationRepository {
       ).prepare();
 
     this.insertStmt =
-      this.database.db.insert(conversation).values(
+      this.databaseService.db.insert(conversation).values(
         {
           id: sql.placeholder('id'),
           domain: sql.placeholder('domain'),
@@ -62,7 +62,7 @@ export class ConversationRepository {
         }
       ).prepare();
 
-    this.deleteStmt = this.database.db.delete(conversation).where(
+    this.deleteStmt = this.databaseService.db.delete(conversation).where(
       and(
         eq(conversation.id, sql.placeholder('id')),
         eq(conversation.domain, sql.placeholder('domain'))

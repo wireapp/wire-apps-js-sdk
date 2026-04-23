@@ -25,13 +25,13 @@ export class AppPropertiesRepository {
   private selectByKeyStmt
   private insertStmt
 
-  constructor(private readonly database: DatabaseService) {
-    this.selectByKeyStmt = this.database.db.select().from(appProperties).where(
+  constructor(private readonly databaseService: DatabaseService) {
+    this.selectByKeyStmt = this.databaseService.db.select().from(appProperties).where(
       eq(appProperties.key, sql.placeholder('key'))
     ).prepare();
 
 
-    this.insertStmt = this.database.db.insert(appProperties).values({
+    this.insertStmt = this.databaseService.db.insert(appProperties).values({
       key: sql.placeholder('key'),
       value: sql.placeholder('value')
     }).onConflictDoUpdate({

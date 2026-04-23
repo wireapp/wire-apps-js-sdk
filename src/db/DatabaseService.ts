@@ -23,19 +23,19 @@ import {BetterSQLite3Database, drizzle} from 'drizzle-orm/better-sqlite3';
 @singleton()
 export class DatabaseService {
   private logger = LoggerFactory.getLogger(this.constructor.name)
-  private readonly sqlite: DB;
+  private readonly sqliteClient: DB;
   public readonly db: BetterSQLite3Database;
   static readonly DEFAULT_DATABASE_PATH = "storage/apps.db";
 
   constructor(@inject(WIRE_DATABASE_PATH) path: string) {
     this.logger.info("DatabaseService being created")
-    this.sqlite = new Database(path)
-    this.sqlite.pragma("foreign_keys = ON")
+    this.sqliteClient = new Database(path)
+    this.sqliteClient.pragma("foreign_keys = ON")
 
-    this.db = drizzle({ client: this.sqlite });
+    this.db = drizzle({ client: this.sqliteClient });
   }
 
   close() {
-    this.sqlite.close()
+    this.sqliteClient.close()
   }
 }

@@ -33,17 +33,17 @@ export class ConversationMemberRepository {
   private deleteStmt
   private deleteAllMembersInConversationStmt
 
-  constructor(private readonly database: DatabaseService) {
-    this.selectAllStmt = this.database.db.select().from(conversationMember).prepare();
+  constructor(private readonly databaseService: DatabaseService) {
+    this.selectAllStmt = this.databaseService.db.select().from(conversationMember).prepare();
 
-    this.selectByIdAndDomainStmt = this.database.db.select().from(conversationMember).where(
+    this.selectByIdAndDomainStmt = this.databaseService.db.select().from(conversationMember).where(
       and(
         eq(conversationMember.conversationId, sql.placeholder('conversationId')),
         eq(conversationMember.conversationDomain, sql.placeholder('conversationDomain')),
       )
     ).prepare();
 
-    this.insertStmt = this.database.db.insert(conversationMember).values({
+    this.insertStmt = this.databaseService.db.insert(conversationMember).values({
       userId: sql.placeholder('userId'),
       userDomain: sql.placeholder('userDomain'),
       conversationId: sql.placeholder('conversationId'),
@@ -59,7 +59,7 @@ export class ConversationMemberRepository {
       set: { role: sql.raw(`excluded.${conversationMember.role.name}`)}
     }).prepare();
 
-    this.deleteStmt = this.database.db.delete(conversationMember).where(
+    this.deleteStmt = this.databaseService.db.delete(conversationMember).where(
       and(
         eq(conversationMember.userId, sql.placeholder('userId')),
         eq(conversationMember.userDomain, sql.placeholder('userDomain')),
@@ -68,7 +68,7 @@ export class ConversationMemberRepository {
       )
     ).prepare();
 
-    this.deleteAllMembersInConversationStmt = this.database.db.delete(conversationMember).where(
+    this.deleteAllMembersInConversationStmt = this.databaseService.db.delete(conversationMember).where(
       and(
         eq(conversationMember.conversationId, sql.placeholder('conversationId')),
         eq(conversationMember.conversationDomain, sql.placeholder('conversationDomain')),
@@ -95,7 +95,7 @@ export class ConversationMemberRepository {
   }
 
   saveMany(members: ConversationMemberEntity[]) {
-    this.database.db.transaction(() => {
+    this.databaseService.db.transaction(() => {
       for (const member of members) {
         this.save(member)
       }
@@ -117,7 +117,7 @@ export class ConversationMemberRepository {
   }
 
   deleteMany(userIds: QualifiedId[], conversationId: string, conversationDomain: string) {
-    this.database.db.transaction(() => {
+    this.databaseService.db.transaction(() => {
       for (const userId of userIds) {
         this.delete(userId.id, userId.domain, conversationId, conversationDomain)
       }
