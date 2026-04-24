@@ -3,8 +3,8 @@ import { conversation, conversationMember } from "./schema.js";
 
 export const conversationMemberRelations = relations(conversationMember, ({one}) => ({
   conversation: one(conversation, {
-    fields: [conversationMember.conversationId],
-    references: [conversation.id]
+    fields: [conversationMember.conversationId, conversationMember.conversationDomain],
+    references: [conversation.id, conversation.domain]
   }),
 }));
 
