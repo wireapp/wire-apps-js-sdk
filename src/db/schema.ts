@@ -1,4 +1,4 @@
-import { sqliteTable, text, primaryKey, foreignKey } from "drizzle-orm/sqlite-core"
+import { sqliteTable, text, primaryKey, foreignKey, integer } from "drizzle-orm/sqlite-core"
 import { sql } from "drizzle-orm"
 
 export const appProperties = sqliteTable("app_properties", {
@@ -14,7 +14,7 @@ export const conversation = sqliteTable("conversation", {
   teamId: text("team_id"),
   mlsGroupId: text("mls_group_id").notNull(),
   creationDate: text("creation_date").default(sql`(CURRENT_TIMESTAMP)`).notNull(),
-  type: text().notNull(),
+  type: integer().notNull(),
 },
 (table) => [
   primaryKey({ columns: [table.id, table.domain], name: "conversation_id_domain_pk"})
