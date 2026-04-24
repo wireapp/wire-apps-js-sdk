@@ -42,27 +42,27 @@
     "@eslint/js": "^9.39.2",
     "@types/better-sqlite3": "^7.6.13",
     "@types/express": "^5.0.6",
-    "@types/node": "^25.5.0",
+    "@types/node": "^25.6.0",
     "@types/ws": "^8.18.1",
-    "@vitest/coverage-v8": "^4.1.0",
+    "@vitest/coverage-v8": "^4.1.4",
     "cpy-cli": "^7.0.0",
+    "eslint": "^10.2.0",
+    "globals": "^17.5.0",
     "drizzle-kit": "^0.31.9",
-    "eslint": "^9.39.4",
-    "fake-indexeddb": "^6.2.4",
-    "globals": "^17.4.0",
     "protobufjs-cli": "^2.0.0",
     "typescript": "^5.9.3",
-    "typescript-eslint": "^8.57.0",
-    "vitest": "^4.0.18"
+    "typescript-eslint": "^8.58.0",
+    "vitest": "^4.1.4"
   },
   "dependencies": {
     "@wireapp/core-crypto": "^9.1.2",
     "bazinga64": "^6.5.13",
-    "better-sqlite3": "^12.8.0",
+    "better-sqlite3": "^12.9.0",
+    "fake-indexeddb": "^6.2.4",
     "drizzle-orm": "^0.45.1",
     "protobufjs": "^7.5.4",
     "reflect-metadata": "^0.2.2",
     "tsyringe": "^4.10.0",
-    "ws": "^8.19.0"
+    "ws": "^8.20.0"
   }
 }

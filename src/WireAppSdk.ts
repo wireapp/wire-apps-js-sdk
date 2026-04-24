@@ -16,6 +16,7 @@
 
 import "reflect-metadata";
 import 'fake-indexeddb/auto';
+import './core/event/processors.index.js'
 import {CoreCryptoService} from "./core/CoreCryptoService.js";
 import {
   WIRE_API_HOST,
@@ -116,6 +117,7 @@ export class WireAppSdk {
     container.registerInstance(WIRE_DATABASE_PATH, DatabaseService.DEFAULT_DATABASE_PATH)
 
     container.registerInstance(WIRE_EVENTS_HANDLER, this.wireEventsHandler)
+
     this.webSocketClient = container.resolve(WebSocketClient)
     this.conversationService = container.resolve(ConversationService)
   }
@@ -135,7 +137,9 @@ export class WireAppSdk {
     }
     this.isWebSocketRunning = true
 
-    this.webSocketClient.connect()
+    this.webSocketClient.connect().finally(() => {
+      this.isWebSocketRunning = false
+    })
 
     await this.conversationService.establishOrRejoinConversations()
   }

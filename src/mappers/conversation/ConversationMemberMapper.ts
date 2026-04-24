@@ -1,6 +1,6 @@
 /*
 * Wire
-* Copyright (C) 2025 Wire Swiss GmbH
+* Copyright (C) 2026 Wire Swiss GmbH
 *
 * This program is free software: you can redistribute it and/or modify
 * it under the terms of the GNU General Public License as published by
@@ -14,17 +14,16 @@
 * along with this program. If not, see http://www.gnu.org/licenses/.
 */
 
-import type { ConversationEntity } from "../../db/model/ConversationEntity.js";
-import type { Conversation } from "../../model/conversation/Conversation.js";
 
-export class ConversationMapper {
-  static fromEntity(conversationEntity: ConversationEntity): Conversation {
+import type {ConversationMemberEntity} from "../../db/model/ConversationMemberEntity.js";
+import type {ConversationMember} from "../../model/conversation/ConversationMember.js";
+import type {ConversationRole} from "../../model/conversation/ConversationRole.js";
+
+export class ConversationMemberMapper {
+  static fromEntity(entity: ConversationMemberEntity): ConversationMember {
     return {
-      id: conversationEntity.id,
-      domain: conversationEntity.domain,
-      name: conversationEntity.name,
-      type: conversationEntity.type,
-      teamId: conversationEntity.teamId
+      userId: { id: entity.userId, domain: entity.userDomain },
+      role: entity.role as ConversationRole
     }
   }
 }

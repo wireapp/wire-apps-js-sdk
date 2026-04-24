@@ -32,6 +32,7 @@ export class ConversationMemberRepository {
   private insertStmt
   private deleteStmt
   private deleteAllMembersInConversationStmt
+  private existsStmt
 
   constructor(private readonly databaseService: DatabaseService) {
     this.selectAllStmt = this.databaseService.db.select().from(conversationMember).prepare();
@@ -74,6 +75,20 @@ export class ConversationMemberRepository {
         eq(conversationMember.conversationDomain, sql.placeholder('conversationDomain')),
       )
     ).prepare();
+
+    this.existsStmt = this.databaseService.db
+      .select({ found: sql<number>`1` })
+      .from(conversationMember)
+      .where(
+        and(
+          eq(conversationMember.userId, sql.placeholder('userId')),
+          eq(conversationMember.userDomain, sql.placeholder('userDomain')),
+          eq(conversationMember.conversationId, sql.placeholder('conversationId')),
+          eq(conversationMember.conversationDomain, sql.placeholder('conversationDomain'))
+        )
+      )
+      .limit(1)
+      .prepare();
   }
 
   getAll(): ConversationMemberEntity[] {
@@ -128,5 +143,21 @@ export class ConversationMemberRepository {
     this.logger.debug(`All members in the conversation will be deleted from database. conversationId: ${obfuscateId(conversationId)}, conversationDomain: ${conversationDomain}`);
     this.deleteAllMembersInConversationStmt.run({ conversationId, conversationDomain });
     this.logger.debug(`All members in the conversation are deleted from database. conversationId: ${obfuscateId(conversationId)}, conversationDomain: ${conversationDomain}`);
+  }
+
+  exists(
+    userId: string,
+    userDomain: string,
+    conversationId: string,
+    conversationDomain: string
+  ): boolean {
+    const result = this.existsStmt.get({
+      userId: userId,
+      userDomain: userDomain,
+      conversationId: conversationId,
+      conversationDomain: conversationDomain
+    });
+
+    return result !== undefined
   }
 }

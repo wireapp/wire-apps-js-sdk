@@ -1,7 +1,7 @@
 /*
 * Wire
-* Copyright (C) 2025 Wire Swiss GmbH
-* 
+* Copyright (C) 2026 Wire Swiss GmbH
+*
 * This program is free software: you can redistribute it and/or modify
 * it under the terms of the GNU General Public License as published by
 * the Free Software Foundation, either version 3 of the License, or
@@ -14,19 +14,12 @@
 * along with this program. If not, see http://www.gnu.org/licenses/.
 */
 
-import { ConversationType } from "../../model/conversation/ConversationType.js"
+import {obfuscateId} from "../utils/ObfuscateUtil.js";
 
-export class ConversationTypeMapper {
-  static toModel(value: string): ConversationType {
-    switch (value) {
-      case ConversationType.GROUP:
-        return ConversationType.GROUP
-      case ConversationType.SELF:
-        return ConversationType.SELF
-      case ConversationType.ONE_TO_ONE:
-        return ConversationType.ONE_TO_ONE
-      default:
-        return ConversationType.GROUP
-    }
+export class TeamId {
+  constructor(readonly value: string) {}
+
+  toString(): string {
+    return obfuscateId(this.value)
   }
 }

@@ -21,10 +21,8 @@ import {ConversationMemberRepository} from "../db/ConversationMemberRepository.j
 import {ConversationType} from "../model/conversation/ConversationType.js";
 import type {ConversationEntity} from "../db/model/ConversationEntity.js";
 import type {ConversationMember} from "../model/conversation/ConversationMember.js";
-import {ConversationTypeMapper} from "../mappers/conversation/ConversationTypeMapper.js";
 import type {ConversationMemberEntity} from "../db/model/ConversationMemberEntity.js";
 import {obfuscateId} from "../utils/ObfuscateUtil.js";
-import {UsersApiClient} from "./UsersApiClient.js";
 import {ConversationsApiClient} from "./ConversationsApiClient.js";
 import {inject, singleton} from "tsyringe";
 import type {ConversationMemberOtherResponse} from "./model/ConversationMemberOtherResponse.js";
@@ -33,7 +31,13 @@ import {AppProperties} from "../service/AppProperties.js";
 import {CryptoProtocol} from "../model/CryptoProtocol.js";
 import {CoreCryptoService} from "../core/CoreCryptoService.js";
 import {WIRE_USER_DOMAIN, WIRE_USER_ID} from "../utils/DependencyInjectionTokens.js";
-import type {ConversationRole} from "../model/conversation/ConversationRole.js";
+import {ConversationRole} from "../model/conversation/ConversationRole.js";
+import {TeamsApiClient} from "./TeamsApiClient.js";
+import {TeamId} from "../model/TeamId.js";
+import type {AddMembersToConversationResult} from "./model/AddMembersToConversationResult.js";
+import type {Conversation} from "../model/conversation/Conversation.js";
+import {ConversationMapper} from "../mappers/conversation/ConversationMapper.js";
+import {ConversationMemberMapper} from "../mappers/conversation/ConversationMemberMapper.js";
 
 @singleton()
 export class ConversationService {
@@ -42,7 +46,7 @@ export class ConversationService {
   constructor(
     @inject(WIRE_USER_ID) private wireUserId: string,
     @inject(WIRE_USER_DOMAIN) private wireUserDomain: string,
-    private userApiClient: UsersApiClient,
+    private teamsApiClient: TeamsApiClient,
     private conversationsApiClient: ConversationsApiClient,
     private conversationRepository: ConversationRepository,
     private conversationMemberRepository: ConversationMemberRepository,
@@ -51,16 +55,17 @@ export class ConversationService {
   ) {
   }
 
-  private async getConversationName(conversation: ConversationResponse) {
-    if (conversation.type === ConversationType.ONE_TO_ONE && conversation.members.others.length > 0) {
-      this.logger.info(
-        "Fetching User from remote to populate Conversation name.",
-        "conversationId:", obfuscateId(conversation.qualified_id.id)
-      );
+  getAllConversations(): Conversation[] {
+    return this.conversationRepository
+      .getAll()
+      .filter(conversation => conversation.type !== ConversationType.SELF)
+      .map(conversation => ConversationMapper.fromEntity(conversation))
+  }
 
-      const firstUser = conversation.members.others[0] as ConversationMemberOtherResponse
-      return await this.userApiClient.getUserName(firstUser.qualified_id)
-      // TODO: Introduce UserService class, move few lines there under getUserName() method
+  private getConversationName(conversation: ConversationResponse) : string {
+    if (conversation.type === ConversationType.ONE_TO_ONE && conversation.members.others.length > 0) {
+      const firstUser = (conversation.members.others[0] as ConversationMemberOtherResponse).qualified_id
+      return `${firstUser.id}@${firstUser.domain}`
     } else {
       return conversation.name ?? ""
     }
@@ -82,7 +87,7 @@ export class ConversationService {
       teamId: conversation.team,
       mlsGroupId: conversation.group_id,
       creationDate: null,
-      type: ConversationTypeMapper.toModel(conversation.type)
+      type: conversation.type
     }
 
     this.conversationRepository.save(conversationEntity)
@@ -154,11 +159,10 @@ export class ConversationService {
     return await this.conversationsApiClient.getConversationGroupInfo(conversationId)
   }
 
-  getMembersByConversationId(conversationId: QualifiedId): ConversationMemberEntity[] {
-    return this.conversationMemberRepository.getMembersByConversationId(
-      conversationId.id,
-      conversationId.domain
-    )
+  getMembersByConversationId(conversationId: QualifiedId): ConversationMember[] {
+    return this.conversationMemberRepository
+      .getMembersByConversationId(conversationId.id, conversationId.domain)
+      .map(ConversationMemberMapper.fromEntity)
   }
 
   async leaveConversation(conversationId: QualifiedId) {
@@ -187,7 +191,9 @@ export class ConversationService {
 
   private async isAppUserMemberOfConversation(conversationId: QualifiedId): Promise<boolean> {
     const members = this.getMembersByConversationId(conversationId)
-    return members.some(member => member.userId === this.wireUserId && member.userDomain === this.wireUserDomain)
+    return members.some(member =>
+      member.userId.id === this.wireUserId
+      && member.userId.domain === this.wireUserDomain)
   }
 
   async deleteAllConversationDataFromLocalStorages(conversationId: QualifiedId): Promise<void> {
@@ -206,8 +212,79 @@ export class ConversationService {
     this.logger.info("Deleted all conversation data.", "conversationId:", obfuscateId(conversationId.id))
   }
 
-  async updateMember(userId: QualifiedId, conversationId: QualifiedId, newRole: ConversationRole): Promise<void> {
+  async addMembersToConversation(
+    conversationId: QualifiedId,
+    members: QualifiedId[]
+  ): Promise<AddMembersToConversationResult> {
+    if (members.length === 0) {
+      throw new Error("List of members cannot be empty.") // TODO: Use custom exceptions (WireException.InvalidParameter)
+    }
+
+    const conversation = await this.getConversationById(conversationId)
+
+    this.requireConversationIsGroupOrChannel(conversationId, conversation.type)
+    this.requireAppIsAdminInConversation(conversationId)
+
+    let result: AddMembersToConversationResult
+    try {
+      result = await this.coreCryptoService.addMemberToMlsConversation(
+        conversation.mlsGroupId,
+        members
+      )
+    } catch (error) {
+      throw new Error(`Unable to add members to MLS conversation: ${(error as Error).message}`) // TODO: Use custom exceptions
+    }
+
+    const membersToSave: ConversationMemberEntity[] = result.successUsers.map((userId) => ({
+      userId: userId.id,
+      userDomain: userId.domain,
+      conversationId: conversationId.id,
+      conversationDomain: conversationId.domain,
+      role: ConversationRole.MEMBER,
+      creationDate: null
+    }))
+
+    this.conversationMemberRepository.saveMany(membersToSave)
+
+    this.logger.info(`${result.successUsers.length} member(s) successfully added to the conversation. ` +
+      `conversationId: ${obfuscateId(conversationId.id)}`
+    )
+
+    return result
+  }
+
+  async updateConversationMemberRole(
+    conversationId: QualifiedId,
+    userId: QualifiedId,
+    newRole: ConversationRole
+  ): Promise<void> {
     this.logger.info(`Updating member in conversation. conversationId: ${obfuscateId(conversationId.id)},
+      userId: ${obfuscateId(userId.id)}, newRole: ${newRole}`)
+
+    const conversation = await this.getConversationById(conversationId)
+    this.requireConversationIsGroupOrChannel(conversationId, conversation.type)
+    this.requireAppIsAdminInConversation(conversationId)
+    this.requireUserIsInConversation(conversationId, userId)
+
+    await this.conversationsApiClient.updateConversationMemberRole(conversationId, userId, newRole)
+
+    const memberToSave: ConversationMemberEntity = {
+      userId: userId.id,
+      userDomain: userId.domain,
+      conversationId: conversationId.id,
+      conversationDomain: conversationId.domain,
+      role: newRole,
+      creationDate: null
+    }
+
+    this.conversationMemberRepository.save(memberToSave)
+
+    this.logger.info(`Updated member in conversation. conversationId: ${obfuscateId(conversationId.id)},
+      userId: ${obfuscateId(userId.id)}, newRole: ${newRole}`)
+  }
+
+  async syncMemberUpdate(userId: QualifiedId, conversationId: QualifiedId, newRole: ConversationRole): Promise<void> {
+    this.logger.info(`Syncing member in conversation. conversationId: ${obfuscateId(conversationId.id)},
       userId: ${obfuscateId(userId.id)}, newRole: ${newRole}`)
 
     if (this.conversationRepository.findByIdAndDomain(conversationId.id, conversationId.domain) == null) {
@@ -226,15 +303,15 @@ export class ConversationService {
     }
 
     this.conversationMemberRepository.save(memberEntity)
-    this.logger.info(`Updated member in conversation. conversationId: ${obfuscateId(conversationId.id)},
+    this.logger.info(`Synced member in conversation. conversationId: ${obfuscateId(conversationId.id)},
         userId: ${obfuscateId(userId.id)}, newRole: ${newRole}`)
   }
 
-  async addMembers(members: ConversationMember[], conversationId: QualifiedId): Promise<void> {
+  async syncMembersAdded(members: ConversationMember[], conversationId: QualifiedId): Promise<void> {
     this.logger.info(`Adding members to conversation. conversationId: ${obfuscateId(conversationId.id)}, members length: ${members.length}`)
 
     // TODO: Baris: In such cases we should throw custom exceptions and handle them in the upper layers instead of just logging and skipping the events.
-    //  For example for this scenario, the Router class should not call the callback method if we didn't add the memnbers to the conversation
+    //  For example for this scenario, the Router class should not call the callback method if we didn't add the members to the conversation
     if (this.conversationRepository.findByIdAndDomain(conversationId.id, conversationId.domain) == null) {
       this.logger.warn(`Conversation does not exist locally. Skipping MemberJoin event for conversationId: ${obfuscateId(conversationId.id)}`)
       return
@@ -255,7 +332,7 @@ export class ConversationService {
     this.logger.info(`Added members to conversation. conversationId: ${obfuscateId(conversationId.id)}, members length: ${members.length}`)
   }
 
-  async removeMembers(userIds: QualifiedId[], conversationId: QualifiedId): Promise<void> {
+  async syncMembersRemoved(userIds: QualifiedId[], conversationId: QualifiedId): Promise<void> {
     this.logger.info(`Removing members from conversation. conversationId: ${obfuscateId(conversationId.id)}, userIds length: ${userIds.length}`)
 
     if (this.conversationRepository.findByIdAndDomain(conversationId.id, conversationId.domain) == null) {
@@ -319,23 +396,64 @@ export class ConversationService {
       return
     }
 
-    if (conversation.epoch != null && conversation.epoch !== 0) {
+    const isAlreadyEstablishedMlsConversation = conversation.epoch != null && conversation.epoch !== 0;
+    if (isAlreadyEstablishedMlsConversation) {
       const conversationGroupInfoBytes = await this.conversationsApiClient.getConversationGroupInfo(conversation.qualified_id)
       await this.coreCryptoService.joinMlsConversation(conversationGroupInfoBytes)
+      await this.saveConversationWithMembers(conversation.qualified_id, conversation)
     } else if (conversation.type === ConversationType.SELF) {
       await this.coreCryptoService.establishMlsConversation([], conversation.group_id)
-    } else if (conversation.type === ConversationType.ONE_TO_ONE) {
-      const users = this.conversationMemberRepository.getMembersByConversationId(
-        conversation.qualified_id.id,
-        conversation.qualified_id.domain
-      ).map(member => {
-        return {
-          id: member.userId,
-          domain: member.userDomain
-        } as QualifiedId
-      })
+    }
+  }
 
-      await this.coreCryptoService.establishMlsConversation(users, conversation.group_id)
+  async deleteConversation(conversationId: QualifiedId): Promise<void> {
+    this.logger.info("Attempting to delete conversation. conversationId:", obfuscateId(conversationId.id))
+    const conversation = await this.getConversationById(conversationId)
+
+    if (!conversation.teamId) {
+      throw new Error("Conversation teamId must not be null.")
+    }
+    this.requireConversationIsGroupOrChannel(conversationId, conversation.type)
+    this.requireAppIsAdminInConversation(conversationId)
+
+    await this.teamsApiClient.deleteConversation(new TeamId(conversation.teamId), conversationId)
+    await this.deleteAllConversationDataFromLocalStorages(conversationId)
+
+    this.logger.info(`Conversation is deleted. teamId: ${obfuscateId(conversation.teamId)}, conversationId: ${obfuscateId(conversationId.id)}`)
+  }
+
+  private requireConversationIsGroupOrChannel(conversationId: QualifiedId, conversationType: ConversationType): void {
+    if (conversationType !== ConversationType.GROUP) {
+      this.logger.warn(`Skipping operation, conversation is not a GROUP or CHANNEL. conversationId: ${obfuscateId(conversationId.id)}, conversationType: ${conversationType}`)
+      throw new Error("Conversation type is not GROUP.") //TODO: Use custom exceptions
+    }
+  }
+
+  private requireAppIsAdminInConversation(conversationId: QualifiedId): void {
+    const members = this.getMembersByConversationId(conversationId)
+    const isAppAdminInConversation = members.some(
+      member =>
+        member.userId.id === this.wireUserId
+        && member.userId.domain === this.wireUserDomain
+        && member.role === ConversationRole.ADMIN
+    )
+
+    if (!isAppAdminInConversation) {
+      this.logger.warn(`App user is not an admin in the conversation. conversationId: ${obfuscateId(conversationId.id)}, appUserId: ${obfuscateId(this.wireUserId)}`)
+      throw new Error("App user is not an admin in the conversation.") //TODO: Use custom exceptions
+    }
+  }
+
+  private requireUserIsInConversation(conversationId: QualifiedId, userId: QualifiedId): void {
+    const exists = this.conversationMemberRepository.exists(
+      userId.id,
+      userId.domain,
+      conversationId.id,
+      conversationId.domain)
+
+    if (!exists) {
+      this.logger.warn(`User is not in the conversation. conversationId: ${obfuscateId(conversationId.id)}, UserId: ${obfuscateId(userId.id)}`)
+      throw new Error("User is not in the conversation.") //TODO: Use custom exceptions
     }
   }
 }

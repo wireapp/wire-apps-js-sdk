@@ -16,8 +16,8 @@
 
 import { describe, expect, it } from 'vitest'
 import { ConversationMapper } from '../../../src/mappers/conversation/ConversationMapper.js'
-import { ConversationEntity } from '../../../src/db/model/ConversationEntity.js'
-import { Conversation } from '../../../src/model/conversation/Conversation.js'
+import type {ConversationEntity} from '../../../src/db/model/ConversationEntity.js'
+import type {Conversation} from '../../../src/model/conversation/Conversation.js'
 import { ConversationType } from '../../../src/model/conversation/ConversationType.js'
 
 describe("Conversation Mapping", () => {
@@ -34,7 +34,7 @@ describe("Conversation Mapping", () => {
       teamId: conversationTeamId,
       mlsGroupId: "dummyMlsGroupId",
       creationDate: null,
-      type: "0"
+      type: ConversationType.GROUP
     }
 
     const expected: Conversation = {

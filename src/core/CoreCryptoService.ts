@@ -32,6 +32,7 @@ import {container, inject, singleton} from "tsyringe";
 import {LoggerFactory} from "../utils/logger/LoggerFactory.js";
 import type {QualifiedId} from "../model/QualifiedId.js";
 import {AppProperties} from "../service/AppProperties.js";
+import type {AddMembersToConversationResult} from "../api/model/AddMembersToConversationResult.js";
 
 /**
  * Service that handles initialization of CoreCrypto and provides a high-level API for:
@@ -201,6 +202,25 @@ export class CoreCryptoService {
     )
   }
 
+  async addMemberToMlsConversation(mlsGroupId: string, members: QualifiedId[]): Promise<AddMembersToConversationResult> {
+    if (members.length === 0) {
+      throw new Error("List of members cannot be empty.") // TODO: Use custom exceptions (WireException.InvalidParameter)
+    }
+
+    const claimedKeyPackagesResult = await this.mlsService.claimKeyPackages(
+      members,
+      this.defaultCiphersuiteCode!
+    )
+
+    await this.coreCryptoClient?.addMemberToMlsConversation(mlsGroupId, claimedKeyPackagesResult.keyPackages)
+    // TODO: Handle custom exceptions (if needed) when introduced
+
+    return {
+      successUsers: claimedKeyPackagesResult.successUsers,
+      failedUsers: claimedKeyPackagesResult.failedUsers
+    }
+  }
+
   async establishMlsConversation(
     userIds: QualifiedId[],
     mlsGroupId: string
@@ -230,7 +250,7 @@ export class CoreCryptoService {
 
       const claimedKeyPackagesResult = await this.mlsService.claimKeyPackages(
         users,
-        this.toHexString(this.defaultCiphersuiteCode!)
+        this.defaultCiphersuiteCode!
       )
 
       if (claimedKeyPackagesResult.keyPackages.length === 0) {
@@ -247,11 +267,7 @@ export class CoreCryptoService {
     }
   }
 
-  private toHexString(value: number, minDigits: number = 4): string {
-    return "0x" + value.toString(16).padStart(minDigits, '0')
-  }
-
   close() {
-    return this.coreCryptoClient!.close()
+    return this.coreCryptoClient?.close()
   }
 }

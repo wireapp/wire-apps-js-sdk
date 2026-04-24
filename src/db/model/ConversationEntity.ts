@@ -14,6 +14,8 @@
 * along with this program. If not, see http://www.gnu.org/licenses/.
 */
 
+import type { ConversationType } from "../../model/conversation/ConversationType.js"
+
 export interface ConversationEntity {
   id: string
   domain: string
@@ -21,5 +23,5 @@ export interface ConversationEntity {
   teamId: string | null
   mlsGroupId: string
   creationDate: string | null
-  type: string
+  type: ConversationType
 }

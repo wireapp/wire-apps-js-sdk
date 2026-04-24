@@ -22,6 +22,7 @@ import { PinoLogger } from './PinoLogger.js'
 import {
   type Conversation,
   type ConversationMember,
+  type ConversationRole,
   obfuscateId,
   type QualifiedId,
   TextMessage,
@@ -100,7 +101,7 @@ class SampleEventsHandler extends WireEventsHandler {
     this.appLogger?.info(`[Sample App] App was added to conversation: ${obfuscateId(conversation.id)} with ${members.length} members`)
     const textMessage = TextMessage.create({
       conversationId: { id: conversation.id, domain: conversation.domain },
-      text: `Hello! I'm the Sample App 🙂 I've just joined this conversation 👋`
+      text: `Hello! I'm the Typescript SDK Sample App 🙂 I've just joined this conversation 👋`
     })
     await this.manager.sendMessage(textMessage)
   }
@@ -243,19 +244,123 @@ class SampleEventsHandler extends WireEventsHandler {
         this.appLogger?.info(`[Sample App] Executing handler for: leave-group-conversation`)
         await this.manager.leaveConversation(conversationId)
       },
+      'delete-group-conversation': async (conversationId) => {
+        this.appLogger?.info(`[Sample App] Executing handler for: delete-group-conversation`)
+        await this.manager.deleteConversation(conversationId)
+      },
+      'add-members-to-conversation': async (conversationId, command) => {
+        this.appLogger?.info(`[Sample App] Executing handler for: add-members-to-conversation`)
+
+        const parts = command?.trim().split(' ')
+        const memberId = parts?.[1]
+        const memberDomain = parts?.[2]
+
+        if (!memberId || !memberDomain) {
+          this.appLogger?.info(`[Sample App] Invalid command format. Expected: add-members-to-conversation [USER_ID] [DOMAIN]`)
+          return
+        }
+
+        const members: QualifiedId[] = [{ id: memberId, domain: memberDomain }]
+        await this.manager.addMembersToConversation(conversationId, members)
+      },
+      'update-member-role': async (conversationId, command) => {
+        this.appLogger?.info(`[Sample App] Executing handler for: update-member-role`)
+
+        const parts = command?.trim().split(' ')
+        const memberId = parts?.[1]
+        const memberDomain = parts?.[2]
+        const newRole = parts?.[3] as ConversationRole
+
+        if (!memberId || !memberDomain || !newRole) {
+          this.appLogger?.info(`[Sample App] Invalid command format. Expected: update-member-role [USER_ID] [DOMAIN] [ROLE]`)
+          return
+        }
+
+        const userId: QualifiedId = { id: memberId, domain: memberDomain }
+        await this.manager.updateConversationMemberRole(conversationId, userId, newRole)
+      },
+      'get-user-data': async (conversationId, command) => {
+        this.appLogger?.info(`[Sample App] Executing handler for: get-user-data`)
+
+        const parts = command?.trim().split(' ')
+        const userId = parts?.[1]
+        const userDomain = parts?.[2]
+
+        if (!userId || !userDomain) {
+          this.appLogger?.info(`[Sample App] Invalid command format. Expected: get-user-data [USER_ID] [DOMAIN]`)
+          return
+        }
+
+        const userQualifiedId: QualifiedId = {id: userId, domain: userDomain}
+        const user = await this.manager.getUser(userQualifiedId)
+
+        await this.manager.sendMessage(TextMessage.create({
+          conversationId: conversationId,
+          text: `User data for ${obfuscateId(userQualifiedId.id)}@${userQualifiedId.domain}:
+            Name: ${user.name}
+            Email: ${user.email}
+            Handle: ${user.handle}
+            Team: ${user.team}
+            Supported Protocols: ${user.supported_protocols?.join(', ') ?? 'N/A'}
+            Deleted: ${user.deleted}`
+        }))
+      },
+      'get-conversations': async (conversationId) => {
+        this.appLogger?.info(`[Sample App] Executing handler for: get-conversations`)
+
+        const conversations = await this.manager.getAllConversations()
+        const conversationList = conversations
+          .map(c => `- ${c.name ?? 'Unnamed'} (${c.id}@${c.domain})`)
+          .join('\n')
+
+        await this.manager.sendMessage(TextMessage.create({
+          conversationId: conversationId,
+          text: `Conversations (${conversations.length}):\n${conversationList}`
+        }))
+      },
+      'get-conversation-members': async (conversationId, command) => {
+        this.appLogger?.info(`[Sample App] Executing handler for: get-conversation-members`)
+
+        const parts = command?.trim().split(' ')
+        const targetConversationId = parts?.[1]
+        const targetConversationDomain = parts?.[2]
+
+        if (!targetConversationId || !targetConversationDomain) {
+          this.appLogger?.info(
+            `[Sample App] Invalid command format. Expected: get-conversation-members [CONVERSATION_ID] [DOMAIN]`
+          )
+          return
+        }
+
+        const targetQualifiedId: QualifiedId = {
+          id: targetConversationId,
+          domain: targetConversationDomain
+        }
+
+        const members = await this.manager.getMembersInConversation(targetQualifiedId)
+
+        const memberList = members
+          .map(m => `- ${obfuscateId(m.userId.id)}@${m.userId.domain} (${m.role})`)
+          .join('\n')
+
+        await this.manager.sendMessage(TextMessage.create({
+          conversationId: conversationId,
+          text: `Members in conversation ${obfuscateId(targetQualifiedId.id)}@${targetQualifiedId.domain} (${members.length}):\n${memberList}`
+        }))
+      }
       // More reserved test commands will be added here
     }
   }
 
   private isReservedTestCommand(message?: string): boolean {
     if (!message) return false
-    const cmd = message.trim()
+    const cmd = message.trim().split(' ')[0]
     return Object.prototype.hasOwnProperty.call(this.getReservedTestCommandHandlers(), cmd)
   }
 
   private async processReservedTestCommand(command: string, conversationId: QualifiedId): Promise<boolean> {
     if (!command) return false
-    const cmd = command.trim()
+    const cmd = command.trim().split(' ')[0]
     const handler = this.getReservedTestCommandHandlers()[cmd]
     if (!handler) return false
 
