@@ -22,7 +22,7 @@ import type {ConversationRole} from "../../model/conversation/ConversationRole.j
 export class ConversationMemberMapper {
   static fromEntity(entity: ConversationMemberEntity): ConversationMember {
     return {
-      userId: { id: entity.user_id, domain: entity.user_domain },
+      userId: { id: entity.userId, domain: entity.userDomain },
       role: entity.role as ConversationRole
     }
   }

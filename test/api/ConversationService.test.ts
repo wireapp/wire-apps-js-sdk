@@ -130,28 +130,28 @@ describe('ConversationService', () => {
         id: CONVERSATION_ID.id,
         domain: CONVERSATION_ID.domain,
         name: `${USER_ID.id}@${USER_ID.domain}`,
-        team_id: TEAM_ID,
-        mls_group_id: MLS_GROUP_ID,
-        creation_date: null,
+        teamId: TEAM_ID,
+        mlsGroupId: MLS_GROUP_ID,
+        creationDate: null,
         type: ConversationType.ONE_TO_ONE
       })
 
       expect(mockConversationMemberRepository.saveMany).toHaveBeenCalledWith([
         {
-          user_id: SELF_USER_ID.id,
-          user_domain: SELF_USER_ID.domain,
-          conversation_id: CONVERSATION_ID.id,
-          conversation_domain: CONVERSATION_ID.domain,
+          userId: SELF_USER_ID.id,
+          userDomain: SELF_USER_ID.domain,
+          conversationId: CONVERSATION_ID.id,
+          conversationDomain: CONVERSATION_ID.domain,
           role: 'wire_admin',
-          creation_date: null
+          creationDate: null
         },
         {
-          user_id: USER_ID.id,
-          user_domain: USER_ID.domain,
-          conversation_id: CONVERSATION_ID.id,
-          conversation_domain: CONVERSATION_ID.domain,
+          userId: USER_ID.id,
+          userDomain: USER_ID.domain,
+          conversationId: CONVERSATION_ID.id,
+          conversationDomain: CONVERSATION_ID.domain,
           role: 'wire_member',
-          creation_date: null
+          creationDate: null
         }
       ])
 
@@ -220,9 +220,9 @@ describe('ConversationService', () => {
         id: CONVERSATION_ID.id,
         domain: CONVERSATION_ID.domain,
         name: 'Existing Conversation',
-        team_id: TEAM_ID,
-        mls_group_id: MLS_GROUP_ID,
-        creation_date: null,
+        teamId: TEAM_ID,
+        mlsGroupId: MLS_GROUP_ID,
+        creationDate: null,
         type: ConversationType.GROUP
       }
 
@@ -297,14 +297,14 @@ describe('ConversationService', () => {
   })
 
   describe('getConversationMLSGroupId', () => {
-    it('should return mls_group_id from conversation', async () => {
+    it('should return mlsGroupId from conversation', async () => {
       const mockConversationEntity: ConversationEntity = {
         id: CONVERSATION_ID.id,
         domain: CONVERSATION_ID.domain,
         name: 'Test Conversation',
-        team_id: TEAM_ID,
-        mls_group_id: MLS_GROUP_ID,
-        creation_date: null,
+        teamId: TEAM_ID,
+        mlsGroupId: MLS_GROUP_ID,
+        creationDate: null,
         type: ConversationType.GROUP
       }
 
@@ -320,12 +320,12 @@ describe('ConversationService', () => {
     it('returns members from repository', () => {
       const memberEntities = [
         {
-          user_id: 'a',
-          user_domain: 'wire.com',
-          conversation_id: 'c',
-          conversation_domain: 'wire.com',
+          userId: 'a',
+          userDomain: 'wire.com',
+          conversationId: 'c',
+          conversationDomain: 'wire.com',
           role: 'wire_member',
-          creation_date: null
+          creationDate: null
         }
       ]
 
@@ -349,9 +349,9 @@ describe('ConversationService', () => {
         id: CONVERSATION_ID.id,
         domain: CONVERSATION_ID.domain,
         name: 'Test Conversation',
-        team_id: TEAM_ID,
-        mls_group_id: MLS_GROUP_ID,
-        creation_date: null,
+        teamId: TEAM_ID,
+        mlsGroupId: MLS_GROUP_ID,
+        creationDate: null,
         type: ConversationType.GROUP
       }
 
@@ -373,9 +373,9 @@ describe('ConversationService', () => {
         id: CONVERSATION_ID.id,
         domain: CONVERSATION_ID.domain,
         name: 'Test Conversation',
-        team_id: TEAM_ID,
-        mls_group_id: MLS_GROUP_ID,
-        creation_date: null,
+        teamId: TEAM_ID,
+        mlsGroupId: MLS_GROUP_ID,
+        creationDate: null,
         type: ConversationType.GROUP
       }
 
@@ -395,9 +395,9 @@ describe('ConversationService', () => {
         id: CONVERSATION_ID.id,
         domain: CONVERSATION_ID.domain,
         name: 'Test Conversation',
-        team_id: TEAM_ID,
-        mls_group_id: MLS_GROUP_ID,
-        creation_date: null,
+        teamId: TEAM_ID,
+        mlsGroupId: MLS_GROUP_ID,
+        creationDate: null,
         type: ConversationType.GROUP
       }
 
@@ -442,9 +442,9 @@ describe('ConversationService', () => {
         id: CONVERSATION_ID.id,
         domain: CONVERSATION_ID.domain,
         name: 'Existing Conversation',
-        team_id: TEAM_ID,
-        mls_group_id: MLS_GROUP_ID,
-        creation_date: null,
+        teamId: TEAM_ID,
+        mlsGroupId: MLS_GROUP_ID,
+        creationDate: null,
         type: ConversationType.GROUP
       } as any)
 
@@ -457,20 +457,20 @@ describe('ConversationService', () => {
 
       expect(mockConversationMemberRepository.saveMany).toHaveBeenCalledWith([
         {
-          user_id: USER_ID.id,
-          user_domain: USER_ID.domain,
-          conversation_id: CONVERSATION_ID.id,
-          conversation_domain: CONVERSATION_ID.domain,
+          userId: USER_ID.id,
+          userDomain: USER_ID.domain,
+          conversationId: CONVERSATION_ID.id,
+          conversationDomain: CONVERSATION_ID.domain,
           role: 'wire_member',
-          creation_date: null
+          creationDate: null
         },
         {
-          user_id: SELF_USER_ID.id,
-          user_domain: SELF_USER_ID.domain,
-          conversation_id: CONVERSATION_ID.id,
-          conversation_domain: CONVERSATION_ID.domain,
+          userId: SELF_USER_ID.id,
+          userDomain: SELF_USER_ID.domain,
+          conversationId: CONVERSATION_ID.id,
+          conversationDomain: CONVERSATION_ID.domain,
           role: 'wire_admin',
-          creation_date: null
+          creationDate: null
         }
       ])
     })
@@ -629,27 +629,27 @@ describe('ConversationService', () => {
         id: CONVERSATION_ID.id,
         domain: CONVERSATION_ID.domain,
         name: 'Rejoined Conversation',
-        team_id: TEAM_ID,
-        mls_group_id: MLS_GROUP_ID,
-        creation_date: null,
+        teamId: TEAM_ID,
+        mlsGroupId: MLS_GROUP_ID,
+        creationDate: null,
         type: ConversationType.GROUP
       })
       expect(mockConversationMemberRepository.saveMany).toHaveBeenCalledWith([
         {
-          user_id: SELF_USER_ID.id,
-          user_domain: SELF_USER_ID.domain,
-          conversation_id: CONVERSATION_ID.id,
-          conversation_domain: CONVERSATION_ID.domain,
+          userId: SELF_USER_ID.id,
+          userDomain: SELF_USER_ID.domain,
+          conversationId: CONVERSATION_ID.id,
+          conversationDomain: CONVERSATION_ID.domain,
           role: 'wire_admin',
-          creation_date: null
+          creationDate: null
         },
         {
-          user_id: USER_ID.id,
-          user_domain: USER_ID.domain,
-          conversation_id: CONVERSATION_ID.id,
-          conversation_domain: CONVERSATION_ID.domain,
+          userId: USER_ID.id,
+          userDomain: USER_ID.domain,
+          conversationId: CONVERSATION_ID.id,
+          conversationDomain: CONVERSATION_ID.domain,
           role: 'wire_member',
-          creation_date: null
+          creationDate: null
         }
       ])
     })
@@ -849,12 +849,12 @@ describe('ConversationService', () => {
       await conversationService.syncMemberUpdate(USER_ID, CONVERSATION_ID, newRole)
 
       expect((mockConversationMemberRepository as any).save).toHaveBeenCalledWith({
-        user_id: USER_ID.id,
-        user_domain: USER_ID.domain,
-        conversation_id: CONVERSATION_ID.id,
-        conversation_domain: CONVERSATION_ID.domain,
+        userId: USER_ID.id,
+        userDomain: USER_ID.domain,
+        conversationId: CONVERSATION_ID.id,
+        conversationDomain: CONVERSATION_ID.domain,
         role: newRole,
-        creation_date: null
+        creationDate: null
       })
     })
   })
@@ -891,12 +891,12 @@ describe('ConversationService', () => {
       // members do not include the app user
       vi.mocked(mockConversationMemberRepository.getMembersByConversationId).mockReturnValue([
         {
-          user_id: USER_ID.id,
-          user_domain: USER_ID.domain,
-          conversation_id: CONVERSATION_ID.id,
-          conversation_domain: CONVERSATION_ID.domain,
+          userId: USER_ID.id,
+          userDomain: USER_ID.domain,
+          conversationId: CONVERSATION_ID.id,
+          conversationDomain: CONVERSATION_ID.domain,
           role: 'wire_member',
-          creation_date: null
+          creationDate: null
         }
       ])
 
@@ -920,12 +920,12 @@ describe('ConversationService', () => {
       // include app user in members
       vi.mocked(mockConversationMemberRepository.getMembersByConversationId).mockReturnValue([
         {
-          user_id: SELF_USER_ID.id,
-          user_domain: SELF_USER_ID.domain,
-          conversation_id: CONVERSATION_ID.id,
-          conversation_domain: CONVERSATION_ID.domain,
+          userId: SELF_USER_ID.id,
+          userDomain: SELF_USER_ID.domain,
+          conversationId: CONVERSATION_ID.id,
+          conversationDomain: CONVERSATION_ID.domain,
           role: 'wire_admin',
-          creation_date: null
+          creationDate: null
         }
       ])
 
@@ -953,12 +953,12 @@ describe('ConversationService', () => {
 
       vi.mocked(mockConversationMemberRepository.getMembersByConversationId).mockReturnValue([
         {
-          user_id: SELF_USER_ID.id,
-          user_domain: SELF_USER_ID.domain,
-          conversation_id: CONVERSATION_ID.id,
-          conversation_domain: CONVERSATION_ID.domain,
+          userId: SELF_USER_ID.id,
+          userDomain: SELF_USER_ID.domain,
+          conversationId: CONVERSATION_ID.id,
+          conversationDomain: CONVERSATION_ID.domain,
           role: 'wire_admin',
-          creation_date: null
+          creationDate: null
         }
       ])
 
@@ -979,19 +979,19 @@ describe('ConversationService', () => {
       id: CONVERSATION_ID.id,
       domain: CONVERSATION_ID.domain,
       name: 'Group Conversation',
-      team_id: TEAM_ID,
-      mls_group_id: MLS_GROUP_ID,
-      creation_date: null,
+      teamId: TEAM_ID,
+      mlsGroupId: MLS_GROUP_ID,
+      creationDate: null,
       type: ConversationType.GROUP
     }
 
     const adminMember = {
-      user_id: SELF_USER_ID.id,
-      user_domain: SELF_USER_ID.domain,
-      conversation_id: CONVERSATION_ID.id,
-      conversation_domain: CONVERSATION_ID.domain,
+      userId: SELF_USER_ID.id,
+      userDomain: SELF_USER_ID.domain,
+      conversationId: CONVERSATION_ID.id,
+      conversationDomain: CONVERSATION_ID.domain,
       role: ConversationRole.ADMIN,
-      creation_date: null
+      creationDate: null
     }
 
     it('should delete conversation when all conditions are met', async () => {
@@ -1023,7 +1023,7 @@ describe('ConversationService', () => {
     it('should throw when team_id is null', async () => {
       vi.mocked(mockConversationRepository.findByIdAndDomain).mockReturnValue({
         ...groupConversationEntity,
-        team_id: null
+        teamId: null
       })
       vi.mocked(mockConversationMemberRepository.getMembersByConversationId).mockReturnValue([adminMember])
 
@@ -1049,8 +1049,8 @@ describe('ConversationService', () => {
       vi.mocked(mockConversationMemberRepository.getMembersByConversationId).mockReturnValue([
         {
           ...adminMember,
-          user_id: SELF_USER_ID.id,
-          user_domain: 'different-domain'
+          userId: SELF_USER_ID.id,
+          userDomain: 'different-domain'
         }
       ])
 
@@ -1064,7 +1064,7 @@ describe('ConversationService', () => {
       vi.mocked(mockConversationRepository.findByIdAndDomain).mockReturnValue(groupConversationEntity)
       vi.mocked(mockConversationMemberRepository.getMembersByConversationId).mockReturnValue([{
         ...adminMember,
-        user_id: USER_ID.id
+        userId: USER_ID.id
       }])
 
       await expect(conversationService.deleteConversation(CONVERSATION_ID)).rejects.toThrow()
@@ -1091,19 +1091,19 @@ describe('ConversationService', () => {
       id: CONVERSATION_ID.id,
       domain: CONVERSATION_ID.domain,
       name: 'Group Conversation',
-      team_id: TEAM_ID,
-      mls_group_id: MLS_GROUP_ID,
-      creation_date: null,
+      teamId: TEAM_ID,
+      mlsGroupId: MLS_GROUP_ID,
+      creationDate: null,
       type: ConversationType.GROUP
     }
 
     const adminMember = {
-      user_id: SELF_USER_ID.id,
-      user_domain: SELF_USER_ID.domain,
-      conversation_id: CONVERSATION_ID.id,
-      conversation_domain: CONVERSATION_ID.domain,
+      userId: SELF_USER_ID.id,
+      userDomain: SELF_USER_ID.domain,
+      conversationId: CONVERSATION_ID.id,
+      conversationDomain: CONVERSATION_ID.domain,
       role: ConversationRole.ADMIN,
-      creation_date: null
+      creationDate: null
     }
 
     beforeEach(() => {
@@ -1176,12 +1176,12 @@ describe('ConversationService', () => {
 
       expect(mockConversationMemberRepository.saveMany).toHaveBeenCalledWith([
         {
-          user_id: USER_ID.id,
-          user_domain: USER_ID.domain,
-          conversation_id: CONVERSATION_ID.id,
-          conversation_domain: CONVERSATION_ID.domain,
+          userId: USER_ID.id,
+          userDomain: USER_ID.domain,
+          conversationId: CONVERSATION_ID.id,
+          conversationDomain: CONVERSATION_ID.domain,
           role: ConversationRole.MEMBER,
-          creation_date: null
+          creationDate: null
         }
       ])
     })
@@ -1225,19 +1225,19 @@ describe('ConversationService', () => {
       id: CONVERSATION_ID.id,
       domain: CONVERSATION_ID.domain,
       name: 'Group Conversation',
-      team_id: TEAM_ID,
-      mls_group_id: MLS_GROUP_ID,
-      creation_date: null,
+      teamId: TEAM_ID,
+      mlsGroupId: MLS_GROUP_ID,
+      creationDate: null,
       type: ConversationType.GROUP
     }
 
     const adminMember = {
-      user_id: SELF_USER_ID.id,
-      user_domain: SELF_USER_ID.domain,
-      conversation_id: CONVERSATION_ID.id,
-      conversation_domain: CONVERSATION_ID.domain,
+      userId: SELF_USER_ID.id,
+      userDomain: SELF_USER_ID.domain,
+      conversationId: CONVERSATION_ID.id,
+      conversationDomain: CONVERSATION_ID.domain,
       role: ConversationRole.ADMIN,
-      creation_date: null
+      creationDate: null
     }
 
     beforeEach(() => {
@@ -1259,12 +1259,12 @@ describe('ConversationService', () => {
         ConversationRole.MEMBER
       )
       expect((mockConversationMemberRepository as any).save).toHaveBeenCalledWith({
-        user_id: USER_ID.id,
-        user_domain: USER_ID.domain,
-        conversation_id: CONVERSATION_ID.id,
-        conversation_domain: CONVERSATION_ID.domain,
+        userId: USER_ID.id,
+        userDomain: USER_ID.domain,
+        conversationId: CONVERSATION_ID.id,
+        conversationDomain: CONVERSATION_ID.domain,
         role: ConversationRole.MEMBER,
-        creation_date: null
+        creationDate: null
       })
     })
 
@@ -1336,27 +1336,27 @@ describe('ConversationService', () => {
           id: 'conv-1',
           domain: 'wire.com',
           name: 'Group Conversation',
-          team_id: TEAM_ID,
-          mls_group_id: 'mls-1',
-          creation_date: null,
+          teamId: TEAM_ID,
+          mlsGroupId: 'mls-1',
+          creationDate: null,
           type: ConversationType.GROUP
         },
         {
           id: 'conv-2',
           domain: 'wire.com',
           name: 'Self Conversation',
-          team_id: TEAM_ID,
-          mls_group_id: 'mls-2',
-          creation_date: null,
+          teamId: TEAM_ID,
+          mlsGroupId: 'mls-2',
+          creationDate: null,
           type: ConversationType.SELF
         },
         {
           id: 'conv-3',
           domain: 'wire.com',
           name: 'One To One Conversation',
-          team_id: TEAM_ID,
-          mls_group_id: 'mls-3',
-          creation_date: null,
+          teamId: TEAM_ID,
+          mlsGroupId: 'mls-3',
+          creationDate: null,
           type: ConversationType.ONE_TO_ONE
         }
       ]
@@ -1376,9 +1376,9 @@ describe('ConversationService', () => {
           id: 'conv-1',
           domain: 'wire.com',
           name: 'Self Conversation',
-          team_id: TEAM_ID,
-          mls_group_id: 'mls-1',
-          creation_date: null,
+          teamId: TEAM_ID,
+          mlsGroupId: 'mls-1',
+          creationDate: null,
           type: ConversationType.SELF
         }
       ])

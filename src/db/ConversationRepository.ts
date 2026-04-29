@@ -17,7 +17,8 @@
 import {DatabaseService} from "./DatabaseService.js";
 import type {ConversationEntity} from "./model/ConversationEntity.js";
 import {singleton} from "tsyringe";
-import type {ConversationType} from "../model/conversation/ConversationType.js";
+import {conversation} from "./schema.js";
+import {and, eq, sql} from "drizzle-orm";
 
 @singleton()
 export class ConversationRepository {
@@ -27,38 +28,46 @@ export class ConversationRepository {
   private insertStmt
   private deleteStmt
 
-
-  constructor(private readonly database: DatabaseService) {
-    this.selectAllStmt =
-    this.database.db.prepare<[], ConversationEntity>(`
-      SELECT *
-      FROM conversation
-    `)
+  constructor(private readonly databaseService: DatabaseService) {
+    this.selectAllStmt = this.databaseService.db.select().from(conversation).prepare();
 
     this.selectByIdAndDomainStmt =
-    this.database.db.prepare<[string, string], ConversationEntity>(`
-      SELECT *
-      FROM conversation
-      WHERE id = ? AND domain = ?
-    `)
+      this.databaseService.db.select().from(conversation).where(
+        and(
+          eq(conversation.id, sql.placeholder('id')),
+          eq(conversation.domain, sql.placeholder('domain')
+          )
+        )
+      ).prepare();
 
     this.insertStmt =
-    this.database.db.prepare<[string, string, string | null, string | null, string, ConversationType], void>(`
-      INSERT INTO conversation(id, domain, name, team_id, mls_group_id, type)
-      VALUES (?, ?, ?, ?, ?, ?)
-      ON CONFLICT(id, domain)
-      DO UPDATE SET
-        name = excluded.name,
-        team_id = excluded.team_id,
-        mls_group_id = excluded.mls_group_id,
-        type = excluded.type
-    `)
+      this.databaseService.db.insert(conversation).values(
+        {
+          id: sql.placeholder('id'),
+          domain: sql.placeholder('domain'),
+          name: sql.placeholder('name'),
+          teamId: sql.placeholder('teamId'),
+          mlsGroupId: sql.placeholder('mlsGroupId'),
+          type: sql.placeholder('type')
+        }
+      ).onConflictDoUpdate(
+        {
+          target: [conversation.id, conversation.domain],
+          set: {
+            name: sql.raw(`excluded.${conversation.name.name}`),
+            teamId: sql.raw(`excluded.${conversation.teamId.name}`),
+            mlsGroupId: sql.raw(`excluded.${conversation.mlsGroupId.name}`),
+            type: sql.raw(`excluded.${conversation.type.name}`),
+          }
+        }
+      ).prepare();
 
-    this.deleteStmt =
-    this.database.db.prepare<[string, string], void>(`
-      DELETE FROM conversation
-      WHERE id = ? AND domain = ?
-    `)
+    this.deleteStmt = this.databaseService.db.delete(conversation).where(
+      and(
+        eq(conversation.id, sql.placeholder('id')),
+        eq(conversation.domain, sql.placeholder('domain'))
+      )
+    ).prepare();
   }
 
   getAll(): ConversationEntity[] {
@@ -66,21 +75,27 @@ export class ConversationRepository {
   }
 
   findByIdAndDomain(id: string, domain: string): ConversationEntity | null {
-    return this.selectByIdAndDomainStmt.get(id, domain) ?? null;
+    return this.selectByIdAndDomainStmt.get({
+      id: id,
+      domain: domain
+    }) ?? null;
   }
 
   save(conv: ConversationEntity): void {
-    this.insertStmt.run(
-      conv.id,
-      conv.domain,
-      conv.name,
-      conv.team_id,
-      conv.mls_group_id,
-      conv.type
-    );
+    this.insertStmt.run({
+      id: conv.id,
+      domain: conv.domain,
+      name: conv.name,
+      teamId: conv.teamId,
+      mlsGroupId: conv.mlsGroupId,
+      type: conv.type
+    });
   }
 
   delete(id: string, domain: string): void {
-    this.deleteStmt.run(id, domain);
+    this.deleteStmt.run({
+      id: id,
+      domain: domain
+    });
   }
 }

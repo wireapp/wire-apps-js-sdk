@@ -109,8 +109,8 @@ describe('ConversationService Integration', () => {
 
       expect(savedConversation).toBeDefined()
       expect((savedConversation as ConversationEntity).name).toBe(CONVERSATION_NAME)
-      expect((savedConversation as ConversationEntity).team_id).toBe(TEAM_ID)
-      expect((savedConversation as ConversationEntity).mls_group_id).toBe(MLS_GROUP_ID)
+      expect((savedConversation as ConversationEntity).teamId).toBe(TEAM_ID)
+      expect((savedConversation as ConversationEntity).mlsGroupId).toBe(MLS_GROUP_ID)
 
       const savedMembers = conversationService.getMembersByConversationId(CONVERSATION_ID)
 
@@ -364,7 +364,7 @@ describe('ConversationService Integration', () => {
       ).rejects.toThrow('Unable to add members to MLS conversation: MLS error')
 
       const members = conversationService.getMembersByConversationId(CONVERSATION_ID)
-      const memberIds = members.map((m: ConversationMemberEntity) => m.user_id)
+      const memberIds = members.map((m: ConversationMemberEntity) => m.userId)
 
       expect(memberIds).not.toContain(USER_3_ID.id)
     })

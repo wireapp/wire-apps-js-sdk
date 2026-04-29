@@ -26,7 +26,7 @@ import {
   WIRE_USER_DOMAIN,
   WIRE_USER_EMAIL,
   WIRE_USER_ID,
-  WIRE_USER_PASSWORD,
+  WIRE_USER_PASSWORD
 } from "./utils/DependencyInjectionTokens.js";
 import {WebSocketClient} from "./core/WebSocketClient.js";
 import {WireEventsHandler} from "./core/WireEventsHandler.js";

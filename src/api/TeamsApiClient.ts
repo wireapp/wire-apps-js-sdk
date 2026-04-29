@@ -38,5 +38,4 @@ export class TeamsApiClient {
 
     this.logger.info(`Conversation is deleted in the backend. teamId: ${teamId}, conversationId: ${obfuscateId(conversationId.id)}`)
   }
-
 }

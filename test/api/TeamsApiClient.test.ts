@@ -38,5 +38,3 @@ describe('TeamsApiClient (deleteConversation)', () => {
     await expect(client.deleteConversation(teamId, conversationId)).rejects.toThrow('network-failure')
   })
 })
-
-

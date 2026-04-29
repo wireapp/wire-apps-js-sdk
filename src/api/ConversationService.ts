@@ -78,15 +78,15 @@ export class ConversationService {
     conversationId: QualifiedId,
     conversation: ConversationResponse
   ): Promise<{ conversation: ConversationEntity, members: ConversationMember[] }> {
-    const conversationName = this.getConversationName(conversation)
+    const conversationName = await this.getConversationName(conversation)
 
     const conversationEntity: ConversationEntity = {
       id: conversationId.id,
       domain: conversationId.domain,
       name: conversationName,
-      team_id: conversation.team,
-      mls_group_id: conversation.group_id,
-      creation_date: null,
+      teamId: conversation.team,
+      mlsGroupId: conversation.group_id,
+      creationDate: null,
       type: conversation.type
     }
 
@@ -99,12 +99,12 @@ export class ConversationService {
 
     const membersToSave: ConversationMemberEntity[] = members.map((member) => {
       return {
-        user_id: member.userId.id,
-        user_domain: member.userId.domain,
-        conversation_id: conversationId.id,
-        conversation_domain: conversationId.domain,
+        userId: member.userId.id,
+        userDomain: member.userId.domain,
+        conversationId: conversationId.id,
+        conversationDomain: conversationId.domain,
         role: member.role,
-        creation_date: null
+        creationDate: null
       }
     })
 
@@ -152,7 +152,7 @@ export class ConversationService {
   async getConversationMLSGroupId(conversationId: QualifiedId): Promise<string> {
     const conversation = await this.getConversationById(conversationId)
 
-    return conversation.mls_group_id
+    return conversation.mlsGroupId
   }
 
   async getConversationGroupInfo(conversationId: QualifiedId): Promise<Uint8Array> {
@@ -200,9 +200,9 @@ export class ConversationService {
     this.logger.info("Deleting all conversation data.", "conversationId:", obfuscateId(conversationId.id))
     const conversationEntity = this.conversationRepository.findByIdAndDomain(conversationId.id, conversationId.domain);
 
-    if (conversationEntity?.mls_group_id) {
-      if (await this.coreCryptoService.conversationExists(conversationEntity.mls_group_id)) {
-        await this.coreCryptoService.wipeConversation(conversationEntity.mls_group_id)
+    if (conversationEntity?.mlsGroupId) {
+      if (await this.coreCryptoService.conversationExists(conversationEntity.mlsGroupId)) {
+        await this.coreCryptoService.wipeConversation(conversationEntity.mlsGroupId)
       }
     }
 
@@ -228,7 +228,7 @@ export class ConversationService {
     let result: AddMembersToConversationResult
     try {
       result = await this.coreCryptoService.addMemberToMlsConversation(
-        conversation.mls_group_id,
+        conversation.mlsGroupId,
         members
       )
     } catch (error) {
@@ -236,12 +236,12 @@ export class ConversationService {
     }
 
     const membersToSave: ConversationMemberEntity[] = result.successUsers.map((userId) => ({
-      user_id: userId.id,
-      user_domain: userId.domain,
-      conversation_id: conversationId.id,
-      conversation_domain: conversationId.domain,
+      userId: userId.id,
+      userDomain: userId.domain,
+      conversationId: conversationId.id,
+      conversationDomain: conversationId.domain,
       role: ConversationRole.MEMBER,
-      creation_date: null
+      creationDate: null
     }))
 
     this.conversationMemberRepository.saveMany(membersToSave)
@@ -269,12 +269,12 @@ export class ConversationService {
     await this.conversationsApiClient.updateConversationMemberRole(conversationId, userId, newRole)
 
     const memberToSave: ConversationMemberEntity = {
-      user_id: userId.id,
-      user_domain: userId.domain,
-      conversation_id: conversationId.id,
-      conversation_domain: conversationId.domain,
+      userId: userId.id,
+      userDomain: userId.domain,
+      conversationId: conversationId.id,
+      conversationDomain: conversationId.domain,
       role: newRole,
-      creation_date: null
+      creationDate: null
     }
 
     this.conversationMemberRepository.save(memberToSave)
@@ -294,12 +294,12 @@ export class ConversationService {
     }
 
     const memberEntity: ConversationMemberEntity = {
-      user_id: userId.id,
-      user_domain: userId.domain,
-      conversation_id: conversationId.id,
-      conversation_domain: conversationId.domain,
+      userId: userId.id,
+      userDomain: userId.domain,
+      conversationId: conversationId.id,
+      conversationDomain: conversationId.domain,
       role: newRole,
-      creation_date: null
+      creationDate: null
     }
 
     this.conversationMemberRepository.save(memberEntity)
@@ -319,12 +319,12 @@ export class ConversationService {
 
     const membersToSave: ConversationMemberEntity[] = members.map((member) => {
       return {
-        user_id: member.userId.id,
-        user_domain: member.userId.domain,
-        conversation_id: conversationId.id,
-        conversation_domain: conversationId.domain,
+        userId: member.userId.id,
+        userDomain: member.userId.domain,
+        conversationId: conversationId.id,
+        conversationDomain: conversationId.domain,
         role: member.role,
-        creation_date: null
+        creationDate: null
       }
     })
 
@@ -410,16 +410,16 @@ export class ConversationService {
     this.logger.info("Attempting to delete conversation. conversationId:", obfuscateId(conversationId.id))
     const conversation = await this.getConversationById(conversationId)
 
-    if (!conversation.team_id) {
+    if (!conversation.teamId) {
       throw new Error("Conversation teamId must not be null.")
     }
     this.requireConversationIsGroupOrChannel(conversationId, conversation.type)
     this.requireAppIsAdminInConversation(conversationId)
 
-    await this.teamsApiClient.deleteConversation(new TeamId(conversation.team_id), conversationId)
+    await this.teamsApiClient.deleteConversation(new TeamId(conversation.teamId), conversationId)
     await this.deleteAllConversationDataFromLocalStorages(conversationId)
 
-    this.logger.info(`Conversation is deleted. teamId: ${obfuscateId(conversation.team_id)}, conversationId: ${obfuscateId(conversationId.id)}`)
+    this.logger.info(`Conversation is deleted. teamId: ${obfuscateId(conversation.teamId)}, conversationId: ${obfuscateId(conversationId.id)}`)
   }
 
   private requireConversationIsGroupOrChannel(conversationId: QualifiedId, conversationType: ConversationType): void {

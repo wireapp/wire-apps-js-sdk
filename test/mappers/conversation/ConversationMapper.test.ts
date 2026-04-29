@@ -31,9 +31,9 @@ describe("Conversation Mapping", () => {
       id: conversationId,
       domain: conversationDomain,
       name: conversationName,
-      team_id: conversationTeamId,
-      mls_group_id: "dummyMlsGroupId",
-      creation_date: null,
+      teamId: conversationTeamId,
+      mlsGroupId: "dummyMlsGroupId",
+      creationDate: null,
       type: ConversationType.GROUP
     }
 

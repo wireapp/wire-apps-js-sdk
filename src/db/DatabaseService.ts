@@ -18,59 +18,24 @@ import Database, { type Database as DB } from "better-sqlite3";
 import {inject, singleton} from "tsyringe";
 import {WIRE_DATABASE_PATH} from "../utils/DependencyInjectionTokens.js";
 import {LoggerFactory} from "../utils/logger/LoggerFactory.js";
+import {BetterSQLite3Database, drizzle} from 'drizzle-orm/better-sqlite3';
 
 @singleton()
 export class DatabaseService {
   private logger = LoggerFactory.getLogger(this.constructor.name)
-  public readonly db: DB;
+  private readonly sqliteClient: DB;
+  public readonly db: BetterSQLite3Database;
   static readonly DEFAULT_DATABASE_PATH = "storage/apps.db";
 
   constructor(@inject(WIRE_DATABASE_PATH) path: string) {
     this.logger.info("DatabaseService being created")
-    this.db = new Database(path)
-    this.db.pragma("foreign_keys = ON")
+    this.sqliteClient = new Database(path)
+    this.sqliteClient.pragma("foreign_keys = ON")
 
-    this.runMigrations()
-  }
-
-  private runMigrations() {
-    // TODO: Handle migration version
-    this.db.exec(`
-      -- Conversation table
-      CREATE TABLE IF NOT EXISTS conversation (
-        id TEXT NOT NULL,
-        domain TEXT NOT NULL,
-        name TEXT,
-        team_id TEXT,
-        mls_group_id TEXT NOT NULL,
-        creation_date TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        type INTEGER NOT NULL,
-        PRIMARY KEY (id, domain)
-      );
-
-      -- Conversation Members table
-      CREATE TABLE IF NOT EXISTS conversation_member (
-        user_id TEXT NOT NULL,
-        user_domain TEXT NOT NULL,
-        conversation_id TEXT NOT NULL,
-        conversation_domain TEXT NOT NULL,
-        role TEXT NOT NULL,
-        creation_date TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        PRIMARY KEY (user_id, user_domain, conversation_id, conversation_domain),
-        FOREIGN KEY(conversation_id, conversation_domain)
-          REFERENCES conversation(id, domain)
-      );
-
-      -- App table
-      CREATE TABLE IF NOT EXISTS app_properties (
-        key TEXT PRIMARY KEY NOT NULL,
-        value TEXT NOT NULL,
-        creation_date TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-      );
-    `)
+    this.db = drizzle({ client: this.sqliteClient });
   }
 
   close() {
-    this.db.close()
+    this.sqliteClient.close()
   }
 }

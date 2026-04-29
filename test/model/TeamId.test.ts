@@ -39,5 +39,3 @@ describe('TeamId', () => {
     expect(teamId.toString()).toBe('1234567***')
   })
 })
-
-

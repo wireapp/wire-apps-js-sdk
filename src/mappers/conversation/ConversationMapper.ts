@@ -1,7 +1,7 @@
 /*
 * Wire
 * Copyright (C) 2025 Wire Swiss GmbH
-* 
+*
 * This program is free software: you can redistribute it and/or modify
 * it under the terms of the GNU General Public License as published by
 * the Free Software Foundation, either version 3 of the License, or
@@ -24,7 +24,7 @@ export class ConversationMapper {
       domain: conversationEntity.domain,
       name: conversationEntity.name,
       type: conversationEntity.type,
-      teamId: conversationEntity.team_id
+      teamId: conversationEntity.teamId
     }
   }
 }
