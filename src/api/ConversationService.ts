@@ -271,7 +271,7 @@ export class ConversationService {
     this.requireConversationIsGroupOrChannel(conversationId, conversation.type)
     this.requireAppIsAdminInConversation(conversationId)
 
-    const clientIds =  await this.userService.getUsersClientIds(members)
+    const clientIds = await this.userService.getUsersClientIds(members)
     await this.coreCryptoService.removeMembersFromMlsConversation(
       conversation.mls_group_id,
       clientIds
