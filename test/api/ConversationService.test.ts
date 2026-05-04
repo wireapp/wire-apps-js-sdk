@@ -1407,9 +1407,9 @@ describe('ConversationService', () => {
       id: CONVERSATION_ID.id,
       domain: CONVERSATION_ID.domain,
       name: 'Group Conversation',
-      team_id: TEAM_ID,
-      mls_group_id: MLS_GROUP_ID,
-      creation_date: null,
+      teamId: TEAM_ID,
+      mlsGroupId: MLS_GROUP_ID,
+      creationDate: null,
       type: ConversationType.GROUP
     }
 

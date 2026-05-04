@@ -273,7 +273,7 @@ export class ConversationService {
 
     const clientIds = await this.userService.getUsersClientIds(members)
     await this.coreCryptoService.removeMembersFromMlsConversation(
-      conversation.mls_group_id,
+      conversation.mlsGroupId,
       clientIds
     )
 
