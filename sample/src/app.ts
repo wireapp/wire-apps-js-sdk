@@ -263,6 +263,28 @@ class SampleEventsHandler extends WireEventsHandler {
         const members: QualifiedId[] = [{ id: memberId, domain: memberDomain }]
         await this.manager.addMembersToConversation(conversationId, members)
       },
+      'remove-members-from-conversation': async (conversationId, command) => {
+        this.appLogger?.info(`[Sample App] Executing handler for: remove-members-from-conversation`)
+
+        const parts = command?.trim().split(' ')
+        parts?.shift() // remove the command name itself
+
+        if (!parts || parts.length === 0 || parts.length % 2 !== 0) {
+          this.appLogger?.info(`[Sample App] Invalid command format. Expected: remove-members-from-conversation [USER_ID] [DOMAIN] [USER_ID] [DOMAIN] ...`)
+          return
+        }
+
+        const members: QualifiedId[] = []
+        for (let i = 0; i < parts.length; i += 2) {
+          const memberId = parts[i]
+          const memberDomain = parts[i + 1]
+          if (memberId && memberDomain) {
+            members.push({ id: memberId, domain: memberDomain })
+          }
+        }
+
+        await this.manager.removeMembersFromConversation(conversationId, members)
+      },
       'update-member-role': async (conversationId, command) => {
         this.appLogger?.info(`[Sample App] Executing handler for: update-member-role`)
 

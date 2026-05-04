@@ -38,6 +38,7 @@ import type {AddMembersToConversationResult} from "./model/AddMembersToConversat
 import type {Conversation} from "../model/conversation/Conversation.js";
 import {ConversationMapper} from "../mappers/conversation/ConversationMapper.js";
 import {ConversationMemberMapper} from "../mappers/conversation/ConversationMemberMapper.js";
+import {UserService} from "./UserService.js";
 
 @singleton()
 export class ConversationService {
@@ -51,7 +52,8 @@ export class ConversationService {
     private conversationRepository: ConversationRepository,
     private conversationMemberRepository: ConversationMemberRepository,
     private appProperties: AppProperties,
-    private coreCryptoService: CoreCryptoService
+    private coreCryptoService: CoreCryptoService,
+    private userService: UserService,
   ) {
   }
 
@@ -252,6 +254,35 @@ export class ConversationService {
 
     return result
   }
+
+  async removeMembersFromConversation(
+    conversationId: QualifiedId,
+    members: QualifiedId[]
+  ): Promise<void> {
+    this.logger.info(`Attempting to remove ${members.length} member(s) from the conversation. ` +
+      `conversationId: ${obfuscateId(conversationId.id)}`
+    )
+
+    if (members.length === 0) {
+      throw new Error("List of members cannot be empty.") // TODO: Use custom exceptions (WireException.InvalidParameter)
+    }
+
+    const conversation = await this.getConversationById(conversationId)
+    this.requireConversationIsGroupOrChannel(conversationId, conversation.type)
+    this.requireAppIsAdminInConversation(conversationId)
+
+    const clientIds = await this.userService.getUsersClientIds(members)
+    await this.coreCryptoService.removeMembersFromMlsConversation(
+      conversation.mlsGroupId,
+      clientIds
+    )
+
+    this.conversationMemberRepository.deleteMany(members, conversationId.id, conversationId.domain)
+    this.logger.info(`${members.length} member(s) successfully removed from the conversation. ` +
+      `conversationId: ${obfuscateId(conversationId.id)}`
+    )
+  }
+
 
   async updateConversationMemberRole(
     conversationId: QualifiedId,

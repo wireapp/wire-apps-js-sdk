@@ -1397,6 +1397,104 @@ describe('ConversationService', () => {
     })
   })
 
+  describe('removeMembersFromConversation', () => {
+    const MEMBERS: QualifiedId[] = [
+      {id: 'user-1', domain: 'wire.com'},
+      {id: 'user-2', domain: 'wire.com'}
+    ]
+
+    const CONVERSATION = {
+      id: CONVERSATION_ID.id,
+      domain: CONVERSATION_ID.domain,
+      name: 'Group Conversation',
+      teamId: TEAM_ID,
+      mlsGroupId: MLS_GROUP_ID,
+      creationDate: null,
+      type: ConversationType.GROUP
+    }
+
+    beforeEach(() => {
+      vi.clearAllMocks()
+
+      vi.spyOn(conversationService as any, 'getConversationById')
+        .mockResolvedValue(CONVERSATION)
+
+      ;(conversationService as any).userService = {
+        getUsersClientIds: vi.fn().mockResolvedValue(['client-1', 'client-2'])
+      }
+
+      ;(conversationService as any).coreCryptoService = {
+        removeMembersFromMlsConversation: vi.fn().mockResolvedValue(undefined)
+      }
+
+      ;(conversationService as any).conversationMemberRepository = {
+        deleteMany: vi.fn()
+      }
+
+      vi.spyOn(conversationService as any, 'requireConversationIsGroupOrChannel')
+        .mockImplementation(() => {
+        })
+
+      vi.spyOn(conversationService as any, 'requireAppIsAdminInConversation')
+        .mockImplementation(() => {
+        })
+    })
+
+    it('should throw when members list is empty', async () => {
+      await expect(
+        conversationService.removeMembersFromConversation(CONVERSATION_ID, [])
+      ).rejects.toThrow('List of members cannot be empty.')
+    })
+
+    it('should remove members successfully from MLS conversation', async () => {
+      const loggerSpy = vi.spyOn(console, 'info').mockImplementation(() => {
+      })
+
+      await conversationService.removeMembersFromConversation(
+        CONVERSATION_ID,
+        MEMBERS
+      )
+
+      expect(conversationService['getConversationById'])
+        .toHaveBeenCalledWith(CONVERSATION_ID)
+
+      expect(conversationService['userService'].getUsersClientIds)
+        .toHaveBeenCalledWith(MEMBERS)
+
+      expect(
+        conversationService['coreCryptoService'].removeMembersFromMlsConversation
+      ).toHaveBeenCalledWith(
+        MLS_GROUP_ID,
+        ['client-1', 'client-2']
+      )
+
+      expect(
+        conversationService['conversationMemberRepository'].deleteMany
+      ).toHaveBeenCalledWith(
+        MEMBERS,
+        CONVERSATION_ID.id,
+        CONVERSATION_ID.domain
+      )
+
+      expect(loggerSpy).toHaveBeenCalledWith(
+        expect.stringContaining('successfully removed from the conversation')
+      )
+    })
+
+    it('should propagate error from coreCryptoService and not delete from repo', async () => {
+      ;(conversationService as any).coreCryptoService.removeMembersFromMlsConversation
+        .mockRejectedValue(new Error('crypto failed'))
+
+      await expect(
+        conversationService.removeMembersFromConversation(CONVERSATION_ID, MEMBERS)
+      ).rejects.toThrow('crypto failed')
+
+      expect(
+        conversationService['conversationMemberRepository'].deleteMany
+      ).not.toHaveBeenCalled()
+    })
+  })
+
   const TEAM_ID: string = "team-id"
   const SELF_USER_ID: QualifiedId = {
     id: "self-user-id",
