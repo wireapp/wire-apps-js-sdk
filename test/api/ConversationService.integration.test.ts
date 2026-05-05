@@ -151,8 +151,8 @@ describe('ConversationService Integration', () => {
       await conversationService.saveConversationWithMembers(CONVERSATION_ID, CONVERSATION_RESPONSE)
     })
 
-    it('calls deleteAllConversationDataFromLocalStorages when APP_CLIENT_ID is in userIds', async () => {
-      process.env["APP_CLIENT_ID"] = SELF_USER_ID.id
+    it('calls deleteAllConversationDataFromLocalStorages when CRYPTO_CLIENT_ID is in userIds', async () => {
+      process.env["CRYPTO_CLIENT_ID"] = SELF_USER_ID.id
 
       const wipeSpy = vi
         .spyOn(conversationService as any, 'deleteAllConversationDataFromLocalStorages')
@@ -163,11 +163,11 @@ describe('ConversationService Integration', () => {
       expect(wipeSpy).toHaveBeenCalledWith(CONVERSATION_ID)
 
       wipeSpy.mockRestore()
-      delete process.env["APP_CLIENT_ID"]
+      delete process.env["CRYPTO_CLIENT_ID"]
     })
 
-    it('does not call deleteAllConversationDataFromLocalStorages when APP_CLIENT_ID is not in userIds', async () => {
-      process.env["APP_CLIENT_ID"] = USER_ID.id
+    it('does not call deleteAllConversationDataFromLocalStorages when CRYPTO_CLIENT_ID is not in userIds', async () => {
+      process.env["CRYPTO_CLIENT_ID"] = USER_ID.id
 
       const wipeSpy = vi
         .spyOn(conversationService as any, 'deleteAllConversationDataFromLocalStorages')

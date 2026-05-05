@@ -23,7 +23,7 @@ import {MlsWelcomeEventProcessor} from '../../../src/core/event/MlsWelcomeEventP
 import type {WireEventsHandler} from '../../../src/core/WireEventsHandler.js'
 import {CoreCryptoService} from '../../../src/core/CoreCryptoService.js'
 import {ConversationMapper} from '../../../src/mappers/conversation/ConversationMapper.js'
-import {APP_CLIENT_ID} from '../../../src/utils/DependencyInjectionTokens.js'
+import {CRYPTO_CLIENT_ID} from '../../../src/utils/DependencyInjectionTokens.js'
 import {ConversationRole} from '../../../src/model/conversation/ConversationRole.js'
 
 vi.mock('../../../src/api/ConversationService.js')
@@ -176,7 +176,7 @@ describe('MlsWelcomeEventProcessor', () => {
         expect(mlsService.uploadMlsKeyPackages).not.toHaveBeenCalled()
       })
 
-      it('should not upload key packages when APP_CLIENT_ID is not registered', async () => {
+      it('should not upload key packages when CRYPTO_CLIENT_ID is not registered', async () => {
         vi.mocked(coreCryptoService.hasTooFewKeyPackageCount).mockResolvedValue(true)
         vi.mocked(container.isRegistered).mockReturnValue(false)
 
@@ -185,13 +185,13 @@ describe('MlsWelcomeEventProcessor', () => {
         expect(mlsService.uploadMlsKeyPackages).not.toHaveBeenCalled()
       })
 
-      it('should generate and upload key packages when count is low and APP_CLIENT_ID is registered', async () => {
+      it('should generate and upload key packages when count is low and CRYPTO_CLIENT_ID is registered', async () => {
         vi.mocked(coreCryptoService.hasTooFewKeyPackageCount).mockResolvedValue(true)
         vi.mocked(container.isRegistered).mockReturnValue(true)
 
         await processor.process(makeEvent())
 
-        expect(container.isRegistered).toHaveBeenCalledWith(APP_CLIENT_ID)
+        expect(container.isRegistered).toHaveBeenCalledWith(CRYPTO_CLIENT_ID)
         expect(coreCryptoService.mlsGenerateKeyPackages).toHaveBeenCalledTimes(1)
         expect(mlsService.uploadMlsKeyPackages).toHaveBeenCalledTimes(1)
         expect(mlsService.uploadMlsKeyPackages).toHaveBeenCalledWith(keyPackages)

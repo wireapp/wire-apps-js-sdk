@@ -27,7 +27,7 @@ import {
   initWasmModule,
   Welcome
 } from "@wireapp/core-crypto";
-import type {AppClientId} from "../model/AppClientId.js";
+import type {CryptoClientId} from "../model/CryptoClientId.js";
 import {CoreCryptoMlsTransport} from "./CoreCryptoMlsTransport.js";
 import type {MlsPublicKeys} from "../model/MlsPublicKeys.js";
 import {PreKeyCrypto} from "../model/PreKeyCrypto.js";
@@ -98,10 +98,10 @@ export class CoreCryptoClient {
     }
   }
 
-  async initMlsClient(appClientId: AppClientId) {
+  async initMlsClient(cryptoClientId: CryptoClientId) {
     await this.coreCrypto.transaction(async (context) => {
       await context.mlsInit(
-        new ClientId(new TextEncoder().encode(appClientId.value)),
+        new ClientId(new TextEncoder().encode(cryptoClientId.value)),
         [this.ciphersuite]
       )
     })
@@ -321,14 +321,14 @@ export class CoreCryptoClient {
 
   async removeMembersFromMlsConversation(
     mlsGroupId: string,
-    appClientIds: AppClientId[]
+    cryptoClientIds: CryptoClientId[]
   ) {
     this.logger.debug(`Members will be removed from the conversation in CoreCrypto. mlsGroupId: ${obfuscateId(mlsGroupId)}`)
 
     await this.coreCrypto.transaction(async (context) => {
       const mlsGroupIdBytes = Decoder.fromBase64(mlsGroupId).asBytes;
-      const clientIds: ClientId[] = appClientIds.map(
-        (appClientId: AppClientId) => new ClientId(new TextEncoder().encode(appClientId.value))
+      const clientIds: ClientId[] = cryptoClientIds.map(
+        (cryptoClientId: CryptoClientId) => new ClientId(new TextEncoder().encode(cryptoClientId.value))
       );
 
       await context.removeClientsFromConversation(

@@ -22,7 +22,7 @@ import {CoreCryptoService} from "./../CoreCryptoService.js";
 import {ConversationService} from "../../api/ConversationService.js";
 import {MlsService} from "../../api/MlsService.js";
 import {WireEventsHandler} from "./../WireEventsHandler.js";
-import {WIRE_EVENTS_HANDLER, APP_CLIENT_ID, EVENT_PROCESSOR} from "../../utils/DependencyInjectionTokens.js";
+import {WIRE_EVENTS_HANDLER, CRYPTO_CLIENT_ID, EVENT_PROCESSOR} from "../../utils/DependencyInjectionTokens.js";
 import {ConversationMapper} from "../../mappers/conversation/ConversationMapper.js";
 import {container} from "tsyringe";
 
@@ -51,7 +51,7 @@ export class MlsWelcomeEventProcessor implements EventProcessor<MLSWelcomeDTO> {
     );
 
     if (await this.coreCryptoService.hasTooFewKeyPackageCount()) {
-      if (container.isRegistered(APP_CLIENT_ID)) {
+      if (container.isRegistered(CRYPTO_CLIENT_ID)) {
         const keyPackages = await this.coreCryptoService.mlsGenerateKeyPackages();
         await this.mlsService.uploadMlsKeyPackages(keyPackages);
       }

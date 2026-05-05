@@ -16,9 +16,9 @@
 
 import {ConversationId, GroupInfo, isMlsConversationAlreadyExistsError, isMlsOrphanWelcomeError} from "@wireapp/core-crypto";
 import {ClientsService} from "../api/ClientsService.js";
-import {AppClientId} from "../model/AppClientId.js";
+import {CryptoClientId} from "../model/CryptoClientId.js";
 import {
-  APP_CLIENT_ID,
+  CRYPTO_CLIENT_ID,
   WIRE_CRYPTO_STORAGE_PASSWORD,
   WIRE_USER_DOMAIN,
   WIRE_USER_ID
@@ -80,7 +80,7 @@ export class CoreCryptoService {
    *
    * Must be called only after [this.initCoreCryptoClient] was called first.
    *
-   * @note Registers APP_CLIENT_ID token in the container after successful client registration
+   * @note Registers CRYPTO_CLIENT_ID token in the container after successful client registration
    */
   async initOrRegisterClient() {
     if (!this.coreCryptoClient) {
@@ -100,15 +100,15 @@ export class CoreCryptoService {
       throw new Error(`Error when registering client: ${(exception as Error).message}`);
     }
 
-    const appClientId = AppClientId.create(
+    const cryptoClientId = CryptoClientId.create(
       this.wireUserId,
       registeredDeviceId,
       this.wireUserDomain
     )
-    container.registerInstance(APP_CLIENT_ID, appClientId)
+    container.registerInstance(CRYPTO_CLIENT_ID, cryptoClientId)
 
     this.logger.info("Initializing MLS Client")
-    await this.coreCryptoClient?.initMlsClient(appClientId)
+    await this.coreCryptoClient?.initMlsClient(cryptoClientId)
     await this.uploadClientWithMlsPublicKey()
     await this.uploadMlsKeyPackages()
 
@@ -222,7 +222,7 @@ export class CoreCryptoService {
     }
   }
 
-  async removeMembersFromMlsConversation(mlsGroupId: string, clientIds: AppClientId[]){
+  async removeMembersFromMlsConversation(mlsGroupId: string, clientIds: CryptoClientId[]){
     this.logger.debug(`Removing ${clientIds.length} members from MLS group id: ${obfuscateId(mlsGroupId)}`)
     await this.coreCryptoClient!.removeMembersFromMlsConversation(mlsGroupId, clientIds)
     this.logger.debug(`Removed ${clientIds.length} members from MLS group id: ${obfuscateId(mlsGroupId)}`)
