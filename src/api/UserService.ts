@@ -19,7 +19,7 @@ import {UsersApiClient} from "./UsersApiClient.js";
 import type {QualifiedId} from "../model/QualifiedId.js";
 import type {UserResponse} from "./model/UserResponse.js";
 import {LoggerFactory} from "../utils/logger/LoggerFactory.js";
-import {AppClientId} from "../model/AppClientId.js";
+import {CryptoClientId} from "../model/CryptoClientId.js";
 
 @singleton()
 export class UserService {
@@ -33,7 +33,7 @@ export class UserService {
     return await this.usersApiClient.getUser(userQualifiedId.id, userQualifiedId.domain);
   }
 
-  async getUsersClientIds(userIds: QualifiedId[]): Promise<AppClientId[]> {
+  async getUsersClientIds(userIds: QualifiedId[]): Promise<CryptoClientId[]> {
     this.logger.info(`Retrieving clients for ${userIds.length} users.`);
 
     const usersToClients =
@@ -41,7 +41,7 @@ export class UserService {
         ? await this.usersApiClient.getClientsByUserId(userIds[0]!)
         : await this.usersApiClient.getClientsByUserIds(userIds);
 
-    const clientIds: AppClientId[] = [];
+    const clientIds: CryptoClientId[] = [];
 
     for (const qualifiedUserId of userIds) {
       const key = UsersApiClient.toKey(qualifiedUserId);
@@ -50,7 +50,7 @@ export class UserService {
       if (userClientResponses) {
         for (const userClientResponse of userClientResponses) {
           clientIds.push(
-            AppClientId.create(qualifiedUserId.id, userClientResponse.id, qualifiedUserId.domain)
+            CryptoClientId.create(qualifiedUserId.id, userClientResponse.id, qualifiedUserId.domain)
           );
         }
       }

@@ -16,8 +16,7 @@
 
 import { obfuscateClientId } from "../utils/ObfuscateUtil.js"
 
-//TODO: It would be better to rename this class UserClientId or CryptoClientId.
-export class AppClientId {
+export class CryptoClientId {
   readonly value: string
 
   private constructor(value: string) {
@@ -28,9 +27,9 @@ export class AppClientId {
     return obfuscateClientId(this.value)
   }
 
-  static create(userId: string, deviceId: string, userDomain: string): AppClientId {
+  static create(userId: string, deviceId: string, userDomain: string): CryptoClientId {
     const value = `${userId}:${deviceId}@${userDomain}`
-    return new AppClientId(value)
+    return new CryptoClientId(value)
   }
 }
 

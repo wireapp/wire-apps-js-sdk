@@ -106,19 +106,19 @@ describe('UserService', () => {
       expect(mockUsersApiClient.getClientsByUserId).not.toHaveBeenCalled()
     })
 
-    it('should correctly map single user clients to AppClientIds', async () => {
+    it('should correctly map single user clients to CryptoClientIds', async () => {
       const mockMap = new Map([[toKey(userId1), [{ id: 'device-1' }, { id: 'device-2' }]]])
       vi.mocked(mockUsersApiClient.getClientsByUserId).mockResolvedValue(mockMap)
 
       const result = await service.getUsersClientIds([userId1])
 
       expect(result).toHaveLength(2)
-      // Asserting against the value format (adjust if AppClientId.create uses different logic)
+      // Asserting against the value format (adjust if CryptoClientId.create uses different logic)
       expect(result[0].value).toBe('user-1:device-1@example.com')
       expect(result[1].value).toBe('user-1:device-2@example.com')
     })
 
-    it('should correctly map multiple users clients to AppClientIds', async () => {
+    it('should correctly map multiple users clients to CryptoClientIds', async () => {
       const mockMap = new Map([
         [toKey(userId1), [{ id: 'device-1' }]],
         [toKey(userId2), [{ id: 'device-2' }, { id: 'device-3' }]]
