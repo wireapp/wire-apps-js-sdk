@@ -203,7 +203,8 @@ export class CoreCryptoService {
     )
   }
 
-  async addMemberToMlsConversation(mlsGroupId: string, members: QualifiedId[]): Promise<AddMembersToConversationResult> {
+  async addClientsToMlsConversation(mlsGroupId: string, members: QualifiedId[]): Promise<AddMembersToConversationResult> {
+    this.logger.debug(`Adding ${members.length} clients to MLS group id: ${obfuscateId(mlsGroupId)}`)
     if (members.length === 0) {
       throw new Error("List of members cannot be empty.") // TODO: Use custom exceptions (WireException.InvalidParameter)
     }
@@ -213,19 +214,20 @@ export class CoreCryptoService {
       this.defaultCiphersuiteCode!
     )
 
-    await this.coreCryptoClient?.addMemberToMlsConversation(mlsGroupId, claimedKeyPackagesResult.keyPackages)
+    await this.coreCryptoClient?.addClientsToMlsConversation(mlsGroupId, claimedKeyPackagesResult.keyPackages)
     // TODO: Handle custom exceptions (if needed) when introduced
 
+    this.logger.debug(`Added ${claimedKeyPackagesResult.successUsers.length} clients to MLS group id: ${obfuscateId(mlsGroupId)}`)
     return {
       successUsers: claimedKeyPackagesResult.successUsers,
       failedUsers: claimedKeyPackagesResult.failedUsers
     }
   }
 
-  async removeMembersFromMlsConversation(mlsGroupId: string, clientIds: CryptoClientId[]){
-    this.logger.debug(`Removing ${clientIds.length} members from MLS group id: ${obfuscateId(mlsGroupId)}`)
-    await this.coreCryptoClient!.removeMembersFromMlsConversation(mlsGroupId, clientIds)
-    this.logger.debug(`Removed ${clientIds.length} members from MLS group id: ${obfuscateId(mlsGroupId)}`)
+  async removeClientsFromMlsConversation(mlsGroupId: string, clientIds: CryptoClientId[]){
+    this.logger.debug(`Removing ${clientIds.length} clients from MLS group id: ${obfuscateId(mlsGroupId)}`)
+    await this.coreCryptoClient!.removeClientsFromMlsConversation(mlsGroupId, clientIds)
+    this.logger.debug(`Removed ${clientIds.length} clients from MLS group id: ${obfuscateId(mlsGroupId)}`)
   }
 
   async establishMlsConversation(
@@ -263,7 +265,7 @@ export class CoreCryptoService {
       if (claimedKeyPackagesResult.keyPackages.length === 0) {
         await this.coreCryptoClient!.updateKeyingMaterial(mlsGroupId)
       } else {
-        await this.coreCryptoClient?.addMemberToMlsConversation(
+        await this.coreCryptoClient?.addClientsToMlsConversation(
           mlsGroupId,
           claimedKeyPackagesResult.keyPackages
         )

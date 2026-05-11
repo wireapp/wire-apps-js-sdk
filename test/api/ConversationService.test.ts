@@ -1107,7 +1107,7 @@ describe('ConversationService', () => {
     }
 
     beforeEach(() => {
-      ;(mockCoreCryptoService as any).addMemberToMlsConversation = vi.fn()
+      ;(mockCoreCryptoService as any).addClientsToMlsConversation = vi.fn()
     })
 
     it('should throw when members list is empty', async () => {
@@ -1115,7 +1115,7 @@ describe('ConversationService', () => {
         conversationService.addMembersToConversation(CONVERSATION_ID, [])
       ).rejects.toThrow('List of members cannot be empty.')
 
-      expect((mockCoreCryptoService as any).addMemberToMlsConversation).not.toHaveBeenCalled()
+      expect((mockCoreCryptoService as any).addClientsToMlsConversation).not.toHaveBeenCalled()
     })
 
     it('should throw when conversation is not a GROUP', async () => {
@@ -1129,7 +1129,7 @@ describe('ConversationService', () => {
         conversationService.addMembersToConversation(CONVERSATION_ID, [USER_ID])
       ).rejects.toThrow('Conversation type is not GROUP.')
 
-      expect((mockCoreCryptoService as any).addMemberToMlsConversation).not.toHaveBeenCalled()
+      expect((mockCoreCryptoService as any).addClientsToMlsConversation).not.toHaveBeenCalled()
     })
 
     it('should throw when app user is not an admin', async () => {
@@ -1143,20 +1143,20 @@ describe('ConversationService', () => {
         conversationService.addMembersToConversation(CONVERSATION_ID, [USER_ID])
       ).rejects.toThrow('App user is not an admin in the conversation.')
 
-      expect((mockCoreCryptoService as any).addMemberToMlsConversation).not.toHaveBeenCalled()
+      expect((mockCoreCryptoService as any).addClientsToMlsConversation).not.toHaveBeenCalled()
     })
 
     it('should call coreCryptoService with mls_group_id and members', async () => {
       vi.mocked(mockConversationRepository.findByIdAndDomain).mockReturnValue(groupConversationEntity)
       vi.mocked(mockConversationMemberRepository.getMembersByConversationId).mockReturnValue([adminMember])
-      vi.mocked((mockCoreCryptoService as any).addMemberToMlsConversation).mockResolvedValue({
+      vi.mocked((mockCoreCryptoService as any).addClientsToMlsConversation).mockResolvedValue({
         successUsers: [USER_ID],
         failedUsers: []
       })
 
       await conversationService.addMembersToConversation(CONVERSATION_ID, [USER_ID])
 
-      expect((mockCoreCryptoService as any).addMemberToMlsConversation).toHaveBeenCalledWith(
+      expect((mockCoreCryptoService as any).addClientsToMlsConversation).toHaveBeenCalledWith(
         MLS_GROUP_ID,
         [USER_ID]
       )
@@ -1167,7 +1167,7 @@ describe('ConversationService', () => {
 
       vi.mocked(mockConversationRepository.findByIdAndDomain).mockReturnValue(groupConversationEntity)
       vi.mocked(mockConversationMemberRepository.getMembersByConversationId).mockReturnValue([adminMember])
-      vi.mocked((mockCoreCryptoService as any).addMemberToMlsConversation).mockResolvedValue({
+      vi.mocked((mockCoreCryptoService as any).addClientsToMlsConversation).mockResolvedValue({
         successUsers: [USER_ID],
         failedUsers: [anotherUserId]
       })
@@ -1191,7 +1191,7 @@ describe('ConversationService', () => {
 
       vi.mocked(mockConversationRepository.findByIdAndDomain).mockReturnValue(groupConversationEntity)
       vi.mocked(mockConversationMemberRepository.getMembersByConversationId).mockReturnValue([adminMember])
-      vi.mocked((mockCoreCryptoService as any).addMemberToMlsConversation).mockResolvedValue({
+      vi.mocked((mockCoreCryptoService as any).addClientsToMlsConversation).mockResolvedValue({
         successUsers: [USER_ID],
         failedUsers: [anotherUserId]
       })
@@ -1208,7 +1208,7 @@ describe('ConversationService', () => {
     it('should throw and not save members when coreCryptoService fails', async () => {
       vi.mocked(mockConversationRepository.findByIdAndDomain).mockReturnValue(groupConversationEntity)
       vi.mocked(mockConversationMemberRepository.getMembersByConversationId).mockReturnValue([adminMember])
-      vi.mocked((mockCoreCryptoService as any).addMemberToMlsConversation).mockRejectedValue(
+      vi.mocked((mockCoreCryptoService as any).addClientsToMlsConversation).mockRejectedValue(
         new Error('MLS error')
       )
 
@@ -1424,7 +1424,7 @@ describe('ConversationService', () => {
       }
 
       ;(conversationService as any).coreCryptoService = {
-        removeMembersFromMlsConversation: vi.fn().mockResolvedValue(undefined)
+        removeClientsFromMlsConversation: vi.fn().mockResolvedValue(undefined)
       }
 
       ;(conversationService as any).conversationMemberRepository = {
@@ -1462,7 +1462,7 @@ describe('ConversationService', () => {
         .toHaveBeenCalledWith(MEMBERS)
 
       expect(
-        conversationService['coreCryptoService'].removeMembersFromMlsConversation
+        conversationService['coreCryptoService'].removeClientsFromMlsConversation
       ).toHaveBeenCalledWith(
         MLS_GROUP_ID,
         ['client-1', 'client-2']
@@ -1482,7 +1482,7 @@ describe('ConversationService', () => {
     })
 
     it('should propagate error from coreCryptoService and not delete from repo', async () => {
-      ;(conversationService as any).coreCryptoService.removeMembersFromMlsConversation
+      ;(conversationService as any).coreCryptoService.removeClientsFromMlsConversation
         .mockRejectedValue(new Error('crypto failed'))
 
       await expect(
