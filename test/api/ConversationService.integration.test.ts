@@ -258,7 +258,7 @@ describe('ConversationService Integration', () => {
 
   describe('addMembersToConversation', () => {
     beforeEach(async () => {
-      ;(mockCoreCryptoService as any).addMemberToMlsConversation = vi.fn()
+      ;(mockCoreCryptoService as any).addClientsToMlsConversation = vi.fn()
       await conversationService.saveConversationWithMembers(CONVERSATION_ID, CONVERSATION_RESPONSE)
     })
 
@@ -267,7 +267,7 @@ describe('ConversationService Integration', () => {
         conversationService.addMembersToConversation(CONVERSATION_ID, [])
       ).rejects.toThrow('List of members cannot be empty.')
 
-      expect((mockCoreCryptoService as any).addMemberToMlsConversation).not.toHaveBeenCalled()
+      expect((mockCoreCryptoService as any).addClientsToMlsConversation).not.toHaveBeenCalled()
     })
 
     it('should throw when conversation is not a GROUP', async () => {
@@ -278,7 +278,7 @@ describe('ConversationService Integration', () => {
         conversationService.addMembersToConversation(CONVERSATION_ID, [USER_3_ID])
       ).rejects.toThrow('Conversation type is not GROUP.')
 
-      expect((mockCoreCryptoService as any).addMemberToMlsConversation).not.toHaveBeenCalled()
+      expect((mockCoreCryptoService as any).addClientsToMlsConversation).not.toHaveBeenCalled()
     })
 
     it('should throw when app user is not an admin', async () => {
@@ -306,11 +306,11 @@ describe('ConversationService Integration', () => {
         conversationService.addMembersToConversation(CONVERSATION_ID, [USER_3_ID])
       ).rejects.toThrow('App user is not an admin in the conversation.')
 
-      expect((mockCoreCryptoService as any).addMemberToMlsConversation).not.toHaveBeenCalled()
+      expect((mockCoreCryptoService as any).addClientsToMlsConversation).not.toHaveBeenCalled()
     })
 
     it('should persist only successUsers to the database', async () => {
-      vi.mocked((mockCoreCryptoService as any).addMemberToMlsConversation).mockResolvedValue({
+      vi.mocked((mockCoreCryptoService as any).addClientsToMlsConversation).mockResolvedValue({
         successUsers: [USER_3_ID],
         failedUsers: [USER_4_ID]
       })
@@ -325,7 +325,7 @@ describe('ConversationService Integration', () => {
     })
 
     it('should persist successUsers with MEMBER role', async () => {
-      vi.mocked((mockCoreCryptoService as any).addMemberToMlsConversation).mockResolvedValue({
+      vi.mocked((mockCoreCryptoService as any).addClientsToMlsConversation).mockResolvedValue({
         successUsers: [USER_3_ID],
         failedUsers: []
       })
@@ -340,7 +340,7 @@ describe('ConversationService Integration', () => {
     })
 
     it('should return successUsers and failedUsers from coreCryptoService', async () => {
-      vi.mocked((mockCoreCryptoService as any).addMemberToMlsConversation).mockResolvedValue({
+      vi.mocked((mockCoreCryptoService as any).addClientsToMlsConversation).mockResolvedValue({
         successUsers: [USER_3_ID],
         failedUsers: [USER_4_ID]
       })
@@ -355,7 +355,7 @@ describe('ConversationService Integration', () => {
     })
 
     it('should not persist any members when coreCryptoService fails', async () => {
-      vi.mocked((mockCoreCryptoService as any).addMemberToMlsConversation).mockRejectedValue(
+      vi.mocked((mockCoreCryptoService as any).addClientsToMlsConversation).mockRejectedValue(
         new Error('MLS error')
       )
 
@@ -370,7 +370,7 @@ describe('ConversationService Integration', () => {
     })
 
     it('should preserve existing members when adding new ones', async () => {
-      vi.mocked((mockCoreCryptoService as any).addMemberToMlsConversation).mockResolvedValue({
+      vi.mocked((mockCoreCryptoService as any).addClientsToMlsConversation).mockResolvedValue({
         successUsers: [USER_3_ID],
         failedUsers: []
       })

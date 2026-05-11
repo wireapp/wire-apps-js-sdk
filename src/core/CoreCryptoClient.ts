@@ -302,11 +302,11 @@ export class CoreCryptoClient {
   }
 
   /**
-   * Alternative way to add a member to an MLS conversation.
+   * Alternative way to add members (clients) to an MLS conversation.
    * Instead of creating a join request accepted by the new client,
-   * this method directly adds a member to a conversation.
+   * this method directly adds members (clients) to a conversation.
    */
-  async addMemberToMlsConversation(
+  async addClientsToMlsConversation(
     mlsGroupId: string,
     keyPackages: Uint8Array[]
   ) {
@@ -319,11 +319,11 @@ export class CoreCryptoClient {
     })
   }
 
-  async removeMembersFromMlsConversation(
+  async removeClientsFromMlsConversation(
     mlsGroupId: string,
     cryptoClientIds: CryptoClientId[]
   ) {
-    this.logger.debug(`Members will be removed from the conversation in CoreCrypto. mlsGroupId: ${obfuscateId(mlsGroupId)}`)
+    this.logger.debug(`Clients will be removed from the conversation in CoreCrypto. mlsGroupId: ${obfuscateId(mlsGroupId)}`)
 
     await this.coreCrypto.transaction(async (context) => {
       const mlsGroupIdBytes = Decoder.fromBase64(mlsGroupId).asBytes;
@@ -336,7 +336,7 @@ export class CoreCryptoClient {
         clientIds
       );
 
-      this.logger.debug(`Members are removed from the conversation in CoreCrypto. mlsGroupId: ${obfuscateId(mlsGroupId)}`)
+      this.logger.debug(`Clients are removed from the conversation in CoreCrypto. mlsGroupId: ${obfuscateId(mlsGroupId)}`)
     });
   }
 

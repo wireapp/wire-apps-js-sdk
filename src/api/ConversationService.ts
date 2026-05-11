@@ -229,7 +229,7 @@ export class ConversationService {
 
     let result: AddMembersToConversationResult
     try {
-      result = await this.coreCryptoService.addMemberToMlsConversation(
+      result = await this.coreCryptoService.addClientsToMlsConversation(
         conversation.mlsGroupId,
         members
       )
@@ -272,7 +272,7 @@ export class ConversationService {
     this.requireAppIsAdminInConversation(conversationId)
 
     const clientIds = await this.userService.getUsersClientIds(members)
-    await this.coreCryptoService.removeMembersFromMlsConversation(
+    await this.coreCryptoService.removeClientsFromMlsConversation(
       conversation.mlsGroupId,
       clientIds
     )
