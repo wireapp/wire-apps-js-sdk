@@ -302,9 +302,9 @@ export class CoreCryptoClient {
   }
 
   /**
-   * Alternative way to add a members (clients) to an MLS conversation.
+   * Alternative way to add members (clients) to an MLS conversation.
    * Instead of creating a join request accepted by the new client,
-   * this method directly adds a members (clients) to a conversation.
+   * this method directly adds members (clients) to a conversation.
    */
   async addClientsToMlsConversation(
     mlsGroupId: string,
