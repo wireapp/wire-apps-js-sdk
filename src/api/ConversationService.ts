@@ -14,7 +14,7 @@
 * along with this program. If not, see http://www.gnu.org/licenses/.
 */
 
-import type {QualifiedId} from "../model/QualifiedId.js";
+import {QualifiedId} from "../model/QualifiedId.js";
 import type {ConversationResponse} from "./response/ConversationResponse.js";
 import {ConversationRepository} from "../db/ConversationRepository.js";
 import {ConversationMemberRepository} from "../db/ConversationMemberRepository.js";
@@ -120,18 +120,22 @@ export class ConversationService {
 
   // TODO: Baris: Rename this to getOrFetchConversation to better reflect what it does.
   //  The name should indicate that it might fetch the conversation if it's not found locally.
-  async getConversationById(conversationId: QualifiedId): Promise<ConversationEntity> {
-    this.logger.info("Getting Conversation. conversationId:", obfuscateId(conversationId.id))
-    const conversationEntity = this.conversationRepository.findByIdAndDomain(conversationId.id, conversationId.domain)
+  async getConversationById(conversationId: QualifiedId | { id: string; domain: string }): Promise<ConversationEntity> {
+    const qualifiedIdInstance = conversationId instanceof QualifiedId
+      ? conversationId
+      : new QualifiedId(conversationId.id, conversationId.domain);
+
+    this.logger.info(`Getting Conversation. conversationId: ${qualifiedIdInstance}`)
+    const conversationEntity = this.conversationRepository.findByIdAndDomain(qualifiedIdInstance.id, qualifiedIdInstance.domain)
 
     if (conversationEntity) {
-      this.logger.info("Returning Conversation from the Database.", "conversationId:", obfuscateId(conversationId.id))
+      this.logger.info(`Returning Conversation from the Database. conversationId: ${qualifiedIdInstance}`)
       return conversationEntity
     } else {
-      this.logger.info("Fetching Conversation from remote.", "conversationId:", obfuscateId(conversationId.id))
-      const conversationResponse = await this.fetchConversationById(conversationId)
+      this.logger.info(`Fetching Conversation from remote. conversationId: ${qualifiedIdInstance}`)
+      const conversationResponse = await this.fetchConversationById(qualifiedIdInstance)
       const {conversation} = await this.saveConversationWithMembers(
-        conversationId,
+        qualifiedIdInstance,
         conversationResponse
       )
       // TODO: If we're passing ConversationResponse object to different layer,
