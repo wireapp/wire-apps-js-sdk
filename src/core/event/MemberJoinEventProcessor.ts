@@ -22,7 +22,7 @@ import {WireEventsHandler} from "../WireEventsHandler.js";
 import {EVENT_PROCESSOR, WIRE_EVENTS_HANDLER} from "../../utils/DependencyInjectionTokens.js";
 import type {ConversationMember} from "../../model/conversation/ConversationMember.js";
 import {LoggerFactory} from "../../utils/logger/LoggerFactory.js";
-import {obfuscateId} from "../../utils/ObfuscateUtil.js";
+import {QualifiedId} from "../../model/QualifiedId.js";
 
 @injectable({token: EVENT_PROCESSOR})
 export class MemberJoinEventProcessor implements EventProcessor<MemberJoinDTO> {
@@ -37,17 +37,19 @@ export class MemberJoinEventProcessor implements EventProcessor<MemberJoinDTO> {
   }
 
   async process(event: MemberJoinDTO): Promise<void> {
-    this.logger.info(`Processing MemberJoin event for conversationId: ${obfuscateId(event.qualified_conversation.id)}`);
+    const qualifiedConversationId = new QualifiedId(event.qualified_conversation.id, event.qualified_conversation.domain);
+
+    this.logger.info(`Processing MemberJoin event for conversationId: ${qualifiedConversationId}`);
 
     const members: ConversationMember[] = (event.data.users || []).map(user => ({
       userId: user.qualified_id,
       role: user.conversation_role
     }));
 
-    this.logger.info(`New members to be added: ${members.map(member => obfuscateId(member.userId.id)).join()}`);
-    await this.conversationService.syncMembersAdded(members, event.qualified_conversation);
+    this.logger.info(`New members to be added: ${members.map(member => new QualifiedId(member.userId.id, member.userId.domain)).join()}`);
+    await this.conversationService.syncMembersAdded(members, qualifiedConversationId);
     await this.wireEventsHandler.onUserJoinedConversation(event.qualified_conversation, members);
 
-    this.logger.info(`Processed MemberJoin event for conversationId: ${obfuscateId(event.qualified_conversation.id)}`);
+    this.logger.info(`Processed MemberJoin event for conversationId: ${qualifiedConversationId}`);
   }
 }

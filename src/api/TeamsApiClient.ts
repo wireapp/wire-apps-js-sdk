@@ -18,7 +18,6 @@ import {HttpClient} from "../core/HttpClient.js";
 import type {QualifiedId} from "../model/QualifiedId.js";
 import {singleton} from "tsyringe";
 import {LoggerFactory} from "../utils/logger/LoggerFactory.js";
-import {obfuscateId} from "../utils/ObfuscateUtil.js";
 import type {TeamId} from "../model/TeamId.js";
 
 @singleton()
@@ -31,11 +30,11 @@ export class TeamsApiClient {
   private readonly basePath = "teams";
 
   async deleteConversation(teamId: TeamId, conversationId: QualifiedId): Promise<void> {
-    this.logger.info(`Conversation will be deleted in the backend. teamId: ${teamId}, conversationId: ${obfuscateId(conversationId.id)}`)
+    this.logger.info(`Conversation will be deleted in the backend. teamId: ${teamId}, conversationId: ${conversationId}`)
 
     const path = `${this.basePath}/${teamId.value}/conversations/${conversationId.id}`
     await this.httpClient.deleteRequest(path)
 
-    this.logger.info(`Conversation is deleted in the backend. teamId: ${teamId}, conversationId: ${obfuscateId(conversationId.id)}`)
+    this.logger.info(`Conversation is deleted in the backend. teamId: ${teamId}, conversationId: ${conversationId}`)
   }
 }

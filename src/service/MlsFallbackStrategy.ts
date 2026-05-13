@@ -19,7 +19,6 @@ import {LoggerFactory} from "../utils/logger/LoggerFactory.js";
 import type {QualifiedId} from "../model/QualifiedId.js";
 import {CoreCryptoService} from "../core/CoreCryptoService.js";
 import {ConversationService} from "../api/ConversationService.js";
-import {obfuscateId} from "../utils/ObfuscateUtil.js";
 
 @singleton()
 export class MlsFallbackStrategy {
@@ -40,7 +39,7 @@ export class MlsFallbackStrategy {
     const isEpochBehind = localConversationEpoch < remoteConversationEpoch
 
     this.logger.info(
-      `Verifying Fallback Strategy for conversationId: ${obfuscateId(conversationId.id)}, ` +
+      `Verifying Fallback Strategy for conversationId: ${conversationId}, ` +
         `exists: ${conversationExists} ` +
         `epoch: local[${localConversationEpoch}] < remote[${remoteConversationEpoch}]`
     )

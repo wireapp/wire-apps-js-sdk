@@ -18,8 +18,7 @@ import type {ConversationMemberEntity} from "./model/ConversationMemberEntity.js
 import {DatabaseService} from "./DatabaseService.js";
 import {singleton} from "tsyringe";
 import {LoggerFactory} from "../utils/logger/LoggerFactory.js";
-import {obfuscateId} from "../utils/ObfuscateUtil.js";
-import type {QualifiedId} from "../model/QualifiedId.js";
+import {QualifiedId} from "../model/QualifiedId.js";
 import {conversationMember} from "./schema.js";
 import {and, eq, sql} from "drizzle-orm";
 
@@ -140,9 +139,10 @@ export class ConversationMemberRepository {
   }
 
   deleteAllMembersInConversation(conversationId: string, conversationDomain: string) {
-    this.logger.debug(`All members in the conversation will be deleted from database. conversationId: ${obfuscateId(conversationId)}, conversationDomain: ${conversationDomain}`);
+    const qualifiedConversationId = new QualifiedId(conversationId, conversationDomain);
+    this.logger.debug(`All members in the conversation will be deleted from database. conversationId: ${qualifiedConversationId}`);
     this.deleteAllMembersInConversationStmt.run({ conversationId, conversationDomain });
-    this.logger.debug(`All members in the conversation are deleted from database. conversationId: ${obfuscateId(conversationId)}, conversationDomain: ${conversationDomain}`);
+    this.logger.debug(`All members in the conversation are deleted from database. conversationId: ${qualifiedConversationId}`);
   }
 
   exists(
