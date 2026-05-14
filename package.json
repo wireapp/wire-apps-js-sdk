@@ -60,7 +60,7 @@
     "better-sqlite3": "^12.9.0",
     "fake-indexeddb": "^6.2.4",
     "drizzle-orm": "^0.45.1",
-    "protobufjs": "^7.5.8",
+    "protobufjs": "^8.3.0",
     "reflect-metadata": "^0.2.2",
     "tsyringe": "^4.10.0",
     "ws": "^8.20.0"
