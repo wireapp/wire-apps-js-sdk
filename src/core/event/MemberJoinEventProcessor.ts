@@ -37,9 +37,8 @@ export class MemberJoinEventProcessor implements EventProcessor<MemberJoinDTO> {
   }
 
   async process(event: MemberJoinDTO): Promise<void> {
-    const qualifiedConversationId = new QualifiedId(event.qualified_conversation.id, event.qualified_conversation.domain);
-
-    this.logger.info(`Processing MemberJoin event for conversationId: ${qualifiedConversationId}`);
+    const conversationId = new QualifiedId(event.qualified_conversation.id, event.qualified_conversation.domain);
+    this.logger.info(`Processing MemberJoin event for conversationId: ${conversationId}`);
 
     const members: ConversationMember[] = (event.data.users || []).map(user => ({
       userId: new QualifiedId(user.qualified_id.id, user.qualified_id.domain),
@@ -47,9 +46,9 @@ export class MemberJoinEventProcessor implements EventProcessor<MemberJoinDTO> {
     }));
 
     this.logger.info(`New members to be added: ${members.map(member => member.userId).join()}`);
-    await this.conversationService.syncMembersAdded(members, qualifiedConversationId);
+    await this.conversationService.syncMembersAdded(members, conversationId);
     await this.wireEventsHandler.onUserJoinedConversation(event.qualified_conversation, members);
 
-    this.logger.info(`Processed MemberJoin event for conversationId: ${qualifiedConversationId}`);
+    this.logger.info(`Processed MemberJoin event for conversationId: ${conversationId}`);
   }
 }

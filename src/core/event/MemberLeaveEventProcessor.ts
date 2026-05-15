@@ -36,13 +36,12 @@ export class MemberLeaveEventProcessor implements EventProcessor<MemberLeaveDTO>
   }
 
   async process(event: MemberLeaveDTO): Promise<void> {
-    const qualifiedConversationId = new QualifiedId(event.qualified_conversation.id, event.qualified_conversation.domain);
+    const conversationId = new QualifiedId(event.qualified_conversation.id, event.qualified_conversation.domain);
+    this.logger.info(`Processing MemberLeave event for conversationId: ${conversationId}`);
 
-    this.logger.info(`Processing MemberLeave event for conversationId: ${qualifiedConversationId}`);
+    await this.conversationService.syncMembersRemoved(event.data.qualified_user_ids, conversationId);
+    await this.wireEventsHandler.onUserLeftConversation(conversationId, event.data.qualified_user_ids);
 
-    await this.conversationService.syncMembersRemoved(event.data.qualified_user_ids, qualifiedConversationId);
-    await this.wireEventsHandler.onUserLeftConversation(event.qualified_conversation, event.data.qualified_user_ids);
-
-    this.logger.info(`Processed MemberLeave event for conversationId: ${qualifiedConversationId}`);
+    this.logger.info(`Processed MemberLeave event for conversationId: ${conversationId}`);
   }
 }

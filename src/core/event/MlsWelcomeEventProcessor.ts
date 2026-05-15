@@ -25,6 +25,7 @@ import {WireEventsHandler} from "./../WireEventsHandler.js";
 import {WIRE_EVENTS_HANDLER, CRYPTO_CLIENT_ID, EVENT_PROCESSOR} from "../../utils/DependencyInjectionTokens.js";
 import {ConversationMapper} from "../../mappers/conversation/ConversationMapper.js";
 import {container} from "tsyringe";
+import {QualifiedId} from "../../model/QualifiedId.js";
 
 @injectable({token: EVENT_PROCESSOR})
 export class MlsWelcomeEventProcessor implements EventProcessor<MLSWelcomeDTO> {
@@ -44,9 +45,11 @@ export class MlsWelcomeEventProcessor implements EventProcessor<MLSWelcomeDTO> {
     const groupInfoBytes = await this.conversationService.getConversationGroupInfo(event.qualified_conversation);
     await this.coreCryptoService.processWelcomeMessage(welcomeEventInBytes, groupInfoBytes);
 
-    const conversationResponse = await this.conversationService.fetchConversationById(event.qualified_conversation);
+    const conversationId = new QualifiedId(event.qualified_conversation.id, event.qualified_conversation.domain);
+
+    const conversationResponse = await this.conversationService.fetchConversationById(conversationId);
     const {conversation, members} = await this.conversationService.saveConversationWithMembers(
-      event.qualified_conversation,
+      conversationId,
       conversationResponse
     );
 

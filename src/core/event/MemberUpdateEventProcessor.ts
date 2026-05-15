@@ -32,13 +32,13 @@ export class MemberUpdateEventProcessor implements EventProcessor<MemberUpdateDT
   }
 
   async process(event: MemberUpdateDTO): Promise<void> {
-    const qualifiedConversationId = new QualifiedId(event.qualified_conversation.id, event.qualified_conversation.domain);
-    const qualifiedUserId = new QualifiedId(event.data.qualified_target.id, event.data.qualified_target.domain);
+    const conversationId = new QualifiedId(event.qualified_conversation.id, event.qualified_conversation.domain);
+    const userId = new QualifiedId(event.data.qualified_target.id, event.data.qualified_target.domain);
 
-    this.logger.info(`Processing MemberUpdate event for conversationId: ${qualifiedConversationId}`);
+    this.logger.info(`Processing MemberUpdate event for conversationId: ${conversationId}`);
 
-    await this.conversationService.syncMemberUpdate(qualifiedUserId, qualifiedConversationId, event.data.conversation_role);
+    await this.conversationService.syncMemberUpdate(userId, conversationId, event.data.conversation_role);
 
-    this.logger.info(`Processed MemberUpdate event for conversationId: ${qualifiedConversationId}`);
+    this.logger.info(`Processed MemberUpdate event for conversationId: ${conversationId}`);
   }
 }

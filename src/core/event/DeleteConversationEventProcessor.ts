@@ -21,7 +21,7 @@ import {ConversationService} from "../../api/ConversationService.js";
 import {WireEventsHandler} from "../WireEventsHandler.js";
 import {EVENT_PROCESSOR, WIRE_EVENTS_HANDLER} from "../../utils/DependencyInjectionTokens.js";
 import {LoggerFactory} from "../../utils/logger/LoggerFactory.js";
-import {obfuscateId} from "../../utils/ObfuscateUtil.js";
+import {QualifiedId} from "../../model/QualifiedId.js";
 
 @injectable({token: EVENT_PROCESSOR})
 export class DeleteConversationEventProcessor implements EventProcessor<DeleteConversationDTO> {
@@ -36,11 +36,12 @@ export class DeleteConversationEventProcessor implements EventProcessor<DeleteCo
   }
 
   async process(event: DeleteConversationDTO): Promise<void> {
-    this.logger.info(`Processing DeleteConversation event for conversationId: ${obfuscateId(event.qualified_conversation.id)}`);
+    const conversationId = new QualifiedId(event.qualified_conversation.id, event.qualified_conversation.domain);
+    this.logger.info(`Processing DeleteConversation event for conversationId: ${conversationId}`);
 
-    await this.conversationService.deleteAllConversationDataFromLocalStorages(event.qualified_conversation);
-    await this.wireEventsHandler.onConversationDeleted(event.qualified_conversation);
+    await this.conversationService.deleteAllConversationDataFromLocalStorages(conversationId);
+    await this.wireEventsHandler.onConversationDeleted(conversationId);
 
-    this.logger.info(`Processed DeleteConversation event for conversationId: ${obfuscateId(event.qualified_conversation.id)}`);
+    this.logger.info(`Processed DeleteConversation event for conversationId: ${conversationId}`);
   }
 }
