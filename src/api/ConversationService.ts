@@ -22,6 +22,7 @@ import {ConversationType} from "../model/conversation/ConversationType.js";
 import type {ConversationEntity} from "../db/model/ConversationEntity.js";
 import type {ConversationMember} from "../model/conversation/ConversationMember.js";
 import type {ConversationMemberEntity} from "../db/model/ConversationMemberEntity.js";
+import {obfuscateId} from "../utils/ObfuscateUtil.js";
 import {ConversationsApiClient} from "./ConversationsApiClient.js";
 import {inject, singleton} from "tsyringe";
 import type {ConversationMemberOtherResponse} from "./model/ConversationMemberOtherResponse.js";
@@ -415,8 +416,7 @@ export class ConversationService {
 
   private async establishOrJoinMlsConversation(conversation: ConversationResponse): Promise<void> {
     if (await this.coreCryptoService.conversationExists(conversation.group_id)) {
-      const qualifiedConversationId = new QualifiedId(conversation.qualified_id.id, conversation.qualified_id.domain);
-      this.logger.info(`Conversation ${qualifiedConversationId} already exists, skipping it`)
+      this.logger.info(`Conversation ${obfuscateId(conversation.qualified_id.id)} already exists, skipping it`)
       return
     }
 
@@ -464,8 +464,7 @@ export class ConversationService {
     )
 
     if (!isAppAdminInConversation) {
-      const appUserId = new QualifiedId(this.wireUserId, this.wireUserDomain);
-      this.logger.warn(`App user is not an admin in the conversation. conversationId: ${conversationId}, appUserId: ${appUserId}`)
+      this.logger.warn(`App user is not an admin in the conversation. conversationId: ${obfuscateId(conversationId.id)}, appUserId: ${obfuscateId(this.wireUserId)}`)
       throw new Error("App user is not an admin in the conversation.") //TODO: Use custom exceptions
     }
   }
