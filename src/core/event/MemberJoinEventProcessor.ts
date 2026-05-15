@@ -42,11 +42,11 @@ export class MemberJoinEventProcessor implements EventProcessor<MemberJoinDTO> {
     this.logger.info(`Processing MemberJoin event for conversationId: ${qualifiedConversationId}`);
 
     const members: ConversationMember[] = (event.data.users || []).map(user => ({
-      userId: user.qualified_id,
+      userId: new QualifiedId(user.qualified_id.id, user.qualified_id.domain),
       role: user.conversation_role
     }));
 
-    this.logger.info(`New members to be added: ${members.map(member => new QualifiedId(member.userId.id, member.userId.domain)).join()}`);
+    this.logger.info(`New members to be added: ${members.map(member => member.userId).join()}`);
     await this.conversationService.syncMembersAdded(members, qualifiedConversationId);
     await this.wireEventsHandler.onUserJoinedConversation(event.qualified_conversation, members);
 
