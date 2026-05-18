@@ -55,7 +55,7 @@
     "vitest": "^4.1.4"
   },
   "dependencies": {
-    "@wireapp/core-crypto": "^9.1.2",
+    "@wireapp/core-crypto": "^9.3.4",
     "bazinga64": "^6.5.13",
     "better-sqlite3": "^12.9.0",
     "fake-indexeddb": "^6.2.4",
