@@ -42,10 +42,10 @@ export class MlsWelcomeEventProcessor implements EventProcessor<MLSWelcomeDTO> {
 
   async process(event: MLSWelcomeDTO): Promise<void> {
     const welcomeEventInBytes = Decoder.fromBase64(event.data).asBytes;
-    const groupInfoBytes = await this.conversationService.getConversationGroupInfo(event.qualified_conversation);
-    await this.coreCryptoService.processWelcomeMessage(welcomeEventInBytes, groupInfoBytes);
-
     const conversationId = new QualifiedId(event.qualified_conversation.id, event.qualified_conversation.domain);
+
+    const groupInfoBytes = await this.conversationService.getConversationGroupInfo(conversationId);
+    await this.coreCryptoService.processWelcomeMessage(welcomeEventInBytes, groupInfoBytes);
 
     const conversationResponse = await this.conversationService.fetchConversationById(conversationId);
     const {conversation, members} = await this.conversationService.saveConversationWithMembers(
