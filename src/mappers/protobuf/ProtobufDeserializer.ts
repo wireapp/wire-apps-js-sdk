@@ -15,7 +15,7 @@
 */
 
 import rootMessage, { type IGenericMessage } from "../../generated/messages.js";
-import { QualifiedId } from "../../model/QualifiedId.js";
+import type { QualifiedId } from "../../model/QualifiedId.js";
 const { GenericMessage } = rootMessage;
 import {
   TextMessage,
@@ -41,19 +41,14 @@ export const ProtobufDeserializer = {
    */
   toWireMessage: (
     message: Uint8Array,
-    qualifiedConversation: QualifiedId | { id: string; domain: string }
+    qualifiedConversation: QualifiedId
   ): WireMessage => {
     const genericMessage = GenericMessage.decode(message)
 
-    // Ensure qualifiedConversation is a QualifiedId instance
-    const conversationId = qualifiedConversation instanceof QualifiedId
-      ? qualifiedConversation
-      : new QualifiedId(qualifiedConversation.id, qualifiedConversation.domain);
-
     if (genericMessage.text) {
-      return unpackTextMessage(genericMessage, conversationId)
+      return unpackTextMessage(genericMessage, qualifiedConversation)
     } else if (genericMessage.asset) {
-      return unpackAssetMessage(genericMessage, conversationId)
+      return unpackAssetMessage(genericMessage, qualifiedConversation)
     } else {
       return new Unknown()
     }

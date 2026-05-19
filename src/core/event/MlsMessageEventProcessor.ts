@@ -69,7 +69,8 @@ export class MlsMessageEventProcessor implements EventProcessor<NewMLSMessageDTO
   }
 
   private async forwardMessage(message: Uint8Array, event: NewMLSMessageDTO): Promise<void> {
-    const wireMessage = ProtobufDeserializer.toWireMessage(message, event.qualified_conversation);
+    const conversationId = new QualifiedId(event.qualified_conversation.id, event.qualified_conversation.domain)
+    const wireMessage = ProtobufDeserializer.toWireMessage(message, conversationId);
 
     switch (wireMessage.type) {
       case 'text':
