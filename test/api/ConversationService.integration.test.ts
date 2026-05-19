@@ -309,10 +309,10 @@ describe('ConversationService Integration', () => {
       expect((mockCoreCryptoService as any).addClientsToMlsConversation).not.toHaveBeenCalled()
     })
 
-    it('should persist only successUsers to the database', async () => {
+    it('should persist only membersAdded to the database', async () => {
       vi.mocked((mockCoreCryptoService as any).addClientsToMlsConversation).mockResolvedValue({
-        successUsers: [USER_3_ID],
-        failedUsers: [USER_4_ID]
+        membersAdded: [USER_3_ID],
+        membersFailedToAdd: [USER_4_ID]
       })
 
       await conversationService.addMembersToConversation(CONVERSATION_ID, [USER_3_ID, USER_4_ID])
@@ -326,8 +326,8 @@ describe('ConversationService Integration', () => {
 
     it('should persist successUsers with MEMBER role', async () => {
       vi.mocked((mockCoreCryptoService as any).addClientsToMlsConversation).mockResolvedValue({
-        successUsers: [USER_3_ID],
-        failedUsers: []
+        membersAdded: [USER_3_ID],
+        membersFailedToAdd: []
       })
 
       await conversationService.addMembersToConversation(CONVERSATION_ID, [USER_3_ID])
@@ -341,8 +341,8 @@ describe('ConversationService Integration', () => {
 
     it('should return successUsers and failedUsers from coreCryptoService', async () => {
       vi.mocked((mockCoreCryptoService as any).addClientsToMlsConversation).mockResolvedValue({
-        successUsers: [USER_3_ID],
-        failedUsers: [USER_4_ID]
+        membersAdded: [USER_3_ID],
+        membersFailedToAdd: [USER_4_ID]
       })
 
       const result = await conversationService.addMembersToConversation(
@@ -350,8 +350,8 @@ describe('ConversationService Integration', () => {
         [USER_3_ID, USER_4_ID]
       )
 
-      expect(result.successUsers).toEqual([USER_3_ID])
-      expect(result.failedUsers).toEqual([USER_4_ID])
+      expect(result.membersAdded).toEqual([USER_3_ID])
+      expect(result.membersFailedToAdd).toEqual([USER_4_ID])
     })
 
     it('should not persist any members when coreCryptoService fails', async () => {
@@ -371,8 +371,8 @@ describe('ConversationService Integration', () => {
 
     it('should preserve existing members when adding new ones', async () => {
       vi.mocked((mockCoreCryptoService as any).addClientsToMlsConversation).mockResolvedValue({
-        successUsers: [USER_3_ID],
-        failedUsers: []
+        membersAdded: [USER_3_ID],
+        membersFailedToAdd: []
       })
 
       await conversationService.addMembersToConversation(CONVERSATION_ID, [USER_3_ID])

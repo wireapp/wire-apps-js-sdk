@@ -237,7 +237,7 @@ export class ConversationService {
       throw new Error(`Unable to add members to MLS conversation: ${(error as Error).message}`) // TODO: Use custom exceptions
     }
 
-    const membersToSave: ConversationMemberEntity[] = result.successUsers.map((userId) => ({
+    const membersToSave: ConversationMemberEntity[] = result.membersAdded.map((userId) => ({
       userId: userId.id,
       userDomain: userId.domain,
       conversationId: conversationId.id,
@@ -248,7 +248,7 @@ export class ConversationService {
 
     this.conversationMemberRepository.saveMany(membersToSave)
 
-    this.logger.info(`${result.successUsers.length} member(s) successfully added to the conversation. conversationId: ${conversationId}`)
+    this.logger.info(`${result.membersAdded.length} member(s) successfully added to the conversation. conversationId: ${conversationId}`)
 
     return result
   }

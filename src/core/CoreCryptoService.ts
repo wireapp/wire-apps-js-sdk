@@ -219,8 +219,8 @@ export class CoreCryptoService {
 
     this.logger.debug(`Added ${claimedKeyPackagesResult.successUsers.length} clients to MLS group id: ${obfuscateId(mlsGroupId)}`)
     return {
-      successUsers: claimedKeyPackagesResult.successUsers,
-      failedUsers: claimedKeyPackagesResult.failedUsers
+      membersAdded: claimedKeyPackagesResult.successUsers,
+      membersFailedToAdd: claimedKeyPackagesResult.failedUsers
     }
   }
 
