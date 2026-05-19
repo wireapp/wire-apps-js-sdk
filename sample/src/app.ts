@@ -319,7 +319,36 @@ class SampleEventsHandler extends WireEventsHandler {
           }
         }
 
-        await this.manager.removeMembersFromConversation(conversationId, members)
+        const result = await this.manager.removeMembersFromConversation(conversationId, members)
+
+        // Send feedback about the removal operation
+        let feedbackMessage = '🔄 Member Removal Results:\n\n'
+
+        if (result.membersRemoved.length > 0) {
+          feedbackMessage += `✅ Successfully removed (${result.membersRemoved.length}):\n`
+          feedbackMessage += result.membersRemoved
+            .map(m => `  • ${obfuscateId(m.id)}@${m.domain}`)
+            .join('\n')
+          feedbackMessage += '\n\n'
+        }
+
+        if (result.membersFailedToRemove.length > 0) {
+          feedbackMessage += `❌ Failed to remove (${result.membersFailedToRemove.length}):\n`
+          feedbackMessage += result.membersFailedToRemove
+            .map(m => `  • ${obfuscateId(m.id)}@${m.domain}`)
+            .join('\n')
+        }
+
+        if (result.membersRemoved.length === 0 && result.membersFailedToRemove.length === 0) {
+          feedbackMessage += '⚠️ No members were processed.'
+        }
+
+        await this.manager.sendMessage(TextMessage.create({
+          conversationId: conversationId,
+          text: feedbackMessage
+        }))
+
+        this.appLogger?.info(`[Sample App] Removal completed: ${result.membersRemoved.length} removed, ${result.membersFailedToRemove.length} failed`)
       },
       'update-member-role': async (conversationId, command) => {
         this.appLogger?.info(`[Sample App] Executing handler for: update-member-role`)
