@@ -114,7 +114,7 @@ describe('UserService', () => {
       expect(mockUsersApiClient.getClientsByUserId).not.toHaveBeenCalled()
     })
 
-    it('should return Map with QualifiedId keys and CryptoClientId arrays as values', async () => {
+    it('should return Map with string keys and CryptoClientId arrays as values', async () => {
       const mockMap = new Map([[toKey(userId1), [{ id: 'device-1' }, { id: 'device-2' }]]])
       vi.mocked(mockUsersApiClient.getClientsByUserId).mockResolvedValue(mockMap)
 
@@ -123,14 +123,15 @@ describe('UserService', () => {
       expect(result).toBeInstanceOf(Map)
       expect(result.size).toBe(1)
 
-      const clientIds = result.get(userId1)
+      const key = toKey(userId1)
+      const clientIds = result.get(key)
       expect(clientIds).toBeDefined()
       expect(clientIds).toHaveLength(2)
       expect(clientIds![0].value).toBe('user-1:device-1@example.com')
       expect(clientIds![1].value).toBe('user-1:device-2@example.com')
     })
 
-    it('should correctly map multiple users to their CryptoClientIds', async () => {
+    it('should correctly map multiple users to their CryptoClientIds with string keys', async () => {
       const mockMap = new Map([
         [toKey(userId1), [{ id: 'device-1' }]],
         [toKey(userId2), [{ id: 'device-2' }, { id: 'device-3' }]]
@@ -141,11 +142,13 @@ describe('UserService', () => {
 
       expect(result.size).toBe(2)
 
-      const user1Clients = result.get(userId1)
+      const key1 = toKey(userId1)
+      const user1Clients = result.get(key1)
       expect(user1Clients).toHaveLength(1)
       expect(user1Clients![0].value).toBe('user-1:device-1@example.com')
 
-      const user2Clients = result.get(userId2)
+      const key2 = toKey(userId2)
+      const user2Clients = result.get(key2)
       expect(user2Clients).toHaveLength(2)
       expect(user2Clients![0].value).toBe('user-2:device-2@example.com')
       expect(user2Clients![1].value).toBe('user-2:device-3@example.com')
@@ -158,7 +161,8 @@ describe('UserService', () => {
       const result = await service.getUsersClientIds([userId1])
 
       expect(result.size).toBe(1)
-      const clientIds = result.get(userId1)
+      const key = toKey(userId1)
+      const clientIds = result.get(key)
       expect(clientIds).toEqual([])
     })
 
@@ -169,7 +173,8 @@ describe('UserService', () => {
       const result = await service.getUsersClientIds([userId1])
 
       expect(result.size).toBe(1)
-      const clientIds = result.get(userId1)
+      const key = toKey(userId1)
+      const clientIds = result.get(key)
       expect(clientIds).toEqual([])
     })
 

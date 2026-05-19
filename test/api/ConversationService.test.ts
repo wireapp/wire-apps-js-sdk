@@ -31,6 +31,7 @@ import {ConversationRole} from "../../src/model/conversation/ConversationRole.js
 import {TeamsApiClient} from "../../src/api/TeamsApiClient.js";
 import {TeamId} from "../../src/model/TeamId.js";
 import {UserService} from "../../src/api/UserService.js";
+import {UsersApiClient} from "../../src/api/UsersApiClient.js";
 
 describe('ConversationService', () => {
   let conversationService: ConversationService
@@ -1515,19 +1516,19 @@ describe('ConversationService', () => {
       const mockClientId1 = { value: 'user-1:device-1@wire.com' }
       const mockClientId2 = { value: 'user-2:device-1@wire.com' }
 
-      // Mock userService.getUsersClientIds to return Map<QualifiedId, CryptoClientId[]>
+      // Mock userService.getUsersClientIds to return Map<string, CryptoClientId[]>
       mockUserService.getUsersClientIds.mockResolvedValue(
         new Map([
-          [MEMBERS[0], [mockClientId1]],
-          [MEMBERS[1], [mockClientId2]]
+          [UsersApiClient.toKey(MEMBERS[0]!), [mockClientId1]],
+          [UsersApiClient.toKey(MEMBERS[1]!), [mockClientId2]]
         ])
       )
 
       // Mock coreCryptoService
-      mockCoreCryptoService.removeClientsFromMlsConversation.mockResolvedValue(undefined)
+      vi.mocked(mockCoreCryptoService.removeClientsFromMlsConversation).mockResolvedValue(undefined)
 
       // Mock conversationMemberRepository
-      mockConversationMemberRepository.exists.mockReturnValue(true)
+      vi.mocked(mockConversationMemberRepository.exists).mockReturnValue(true)
 
       // Mock permission checks
       vi.spyOn(conversationService as any, 'requireConversationIsGroupOrChannel')
@@ -1604,8 +1605,8 @@ describe('ConversationService', () => {
       // Mock getUsersClientIds to return empty arrays for all users
       mockUserService.getUsersClientIds.mockResolvedValue(
         new Map([
-          [MEMBERS[0], []],
-          [MEMBERS[1], []]
+          [UsersApiClient.toKey(MEMBERS[0]!), []],
+          [UsersApiClient.toKey(MEMBERS[1]!), []]
         ])
       )
 
@@ -1626,8 +1627,8 @@ describe('ConversationService', () => {
       // Only first user has clients
       mockUserService.getUsersClientIds.mockResolvedValue(
         new Map([
-          [MEMBERS[0], [mockClientId1]],
-          [MEMBERS[1], []] // No clients
+          [UsersApiClient.toKey(MEMBERS[0]!), [mockClientId1]],
+          [UsersApiClient.toKey(MEMBERS[1]!), []] // No clients
         ])
       )
 
@@ -1645,7 +1646,7 @@ describe('ConversationService', () => {
     })
 
     it('should handle MLS removal failure and return all as failed', async () => {
-      mockCoreCryptoService.removeClientsFromMlsConversation
+      vi.mocked(mockCoreCryptoService.removeClientsFromMlsConversation)
         .mockRejectedValue(new Error('MLS removal failed'))
 
       const result = await conversationService.removeMembersFromConversation(

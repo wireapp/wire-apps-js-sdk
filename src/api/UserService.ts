@@ -33,11 +33,11 @@ export class UserService {
     return await this.usersApiClient.getUser(userQualifiedId.id, userQualifiedId.domain);
   }
 
-  async getUsersClientIds(userIds: QualifiedId[]): Promise<Map<QualifiedId, CryptoClientId[]>> {
+  async getUsersClientIds(userIds: QualifiedId[]): Promise<Map<string, CryptoClientId[]>> {
     this.logger.info(`Retrieving clients for ${userIds.length} users.`);
 
     if (userIds.length === 0) {
-      return new Map<QualifiedId, CryptoClientId[]>();
+      return new Map<string, CryptoClientId[]>();
     }
 
     const usersToClients =
@@ -45,7 +45,7 @@ export class UserService {
         ? await this.usersApiClient.getClientsByUserId(userIds[0]!)
         : await this.usersApiClient.getClientsByUserIds(userIds);
 
-    const userIdToClientIds = new Map<QualifiedId, CryptoClientId[]>();
+    const userIdToClientIds = new Map<string, CryptoClientId[]>();
 
     for (const qualifiedUserId of userIds) {
       const key = UsersApiClient.toKey(qualifiedUserId);
@@ -53,7 +53,7 @@ export class UserService {
 
       if (!userClientResponses || userClientResponses.length === 0) {
         this.logger.warn(`User has no clients returned from API. userId: ${qualifiedUserId}`);
-        userIdToClientIds.set(qualifiedUserId, []);
+        userIdToClientIds.set(key, []);
         continue;
       }
 
@@ -62,7 +62,7 @@ export class UserService {
         clientIds.push(CryptoClientId.create(qualifiedUserId.id, userClientResponse.id, qualifiedUserId.domain));
       }
 
-      userIdToClientIds.set(qualifiedUserId, clientIds);
+      userIdToClientIds.set(key, clientIds);
     }
 
     return userIdToClientIds;

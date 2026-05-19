@@ -41,6 +41,7 @@ import {ConversationMapper} from "../mappers/conversation/ConversationMapper.js"
 import {ConversationMemberMapper} from "../mappers/conversation/ConversationMemberMapper.js";
 import {UserService} from "./UserService.js";
 import type {CryptoClientId} from "../model/CryptoClientId.js";
+import {UsersApiClient} from "./UsersApiClient.js";
 
 @singleton()
 export class ConversationService {
@@ -302,28 +303,35 @@ export class ConversationService {
     // Get the clientIds of the members in the conversation
     const userIdToClientIds = await this.userService.getUsersClientIds(membersInTheConversation)
     const clientIdsToRemove: CryptoClientId[] = []
-    const membersRemoved: QualifiedId[] = []
+    const membersWithClients: QualifiedId[] = []
 
     // Filter the members who have clients (Defensive)
-    for (const [qualifiedUserId, clientIds] of userIdToClientIds.entries()) {
-      if (clientIds.length > 0) {
+    for (const qualifiedUserId of membersInTheConversation) {
+      const key = UsersApiClient.toKey(qualifiedUserId)
+      const clientIds = userIdToClientIds.get(key)
+
+      if (clientIds && clientIds.length > 0) {
         clientIdsToRemove.push(...clientIds)
-        membersRemoved.push(qualifiedUserId)
+        membersWithClients.push(qualifiedUserId)
       } else {
         this.logger.warn(`Member has no clients, cannot remove from MLS conversation. userId: ${qualifiedUserId}`)
       }
     }
 
+    let mlsRemovalSucceeded = false
+
     // Remove members who have clients from MLS conversation
-    if (membersRemoved.length > 0) {
+    if (membersWithClients.length > 0) {
       try {
         await this.coreCryptoService.removeClientsFromMlsConversation(conversation.mlsGroupId, clientIdsToRemove)
-        this.conversationMemberRepository.deleteMany(membersRemoved, conversationId.id, conversationId.domain)
+        this.conversationMemberRepository.deleteMany(membersWithClients, conversationId.id, conversationId.domain)
+        mlsRemovalSucceeded = true
       } catch (error) {
         this.logger.error(`Failed to remove clients from MLS conversation: ${(error as Error).message}`)
-        membersRemoved.length = 0 // Clear the removedUsers list as the operation failed
       }
     }
+
+    const membersRemoved = mlsRemovalSucceeded ? membersWithClients : []
 
     // membersFailedToRemove = members - membersRemoved
     const membersFailedToRemove = members.filter(member =>
