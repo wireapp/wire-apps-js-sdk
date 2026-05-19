@@ -19,7 +19,7 @@ import type {EventProcessor} from "./EventProcessor.js";
 import type {MemberUpdateDTO} from "../../model/EventContentDTO.js";
 import {ConversationService} from "../../api/ConversationService.js";
 import {LoggerFactory} from "../../utils/logger/LoggerFactory.js";
-import {obfuscateId} from "../../utils/ObfuscateUtil.js";
+import {QualifiedId} from "../../model/QualifiedId.js";
 import {EVENT_PROCESSOR} from "../../utils/DependencyInjectionTokens.js";
 
 @injectable({token: EVENT_PROCESSOR})
@@ -32,10 +32,13 @@ export class MemberUpdateEventProcessor implements EventProcessor<MemberUpdateDT
   }
 
   async process(event: MemberUpdateDTO): Promise<void> {
-    this.logger.info(`Processing MemberUpdate event for conversationId: ${obfuscateId(event.qualified_conversation.id)}`);
+    const conversationId = new QualifiedId(event.qualified_conversation.id, event.qualified_conversation.domain);
+    const userId = new QualifiedId(event.data.qualified_target.id, event.data.qualified_target.domain);
 
-    await this.conversationService.syncMemberUpdate(event.data.qualified_target, event.qualified_conversation, event.data.conversation_role);
+    this.logger.info(`Processing MemberUpdate event for conversationId: ${conversationId}`);
 
-    this.logger.info(`Processed MemberUpdate event for conversationId: ${obfuscateId(event.qualified_conversation.id)}`);
+    await this.conversationService.syncMemberUpdate(userId, conversationId, event.data.conversation_role);
+
+    this.logger.info(`Processed MemberUpdate event for conversationId: ${conversationId}`);
   }
 }

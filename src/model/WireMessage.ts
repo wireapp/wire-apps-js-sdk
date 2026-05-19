@@ -14,7 +14,7 @@
 * along with this program. If not, see http://www.gnu.org/licenses/.
 */
 
-import type { QualifiedId } from "./QualifiedId.js";
+import { QualifiedId } from "./QualifiedId.js";
 import { MessageEncryptionAlgorithm } from "./protobuf/MessageEncryptionAlgorithm.js";
 import Long from "long";
 
@@ -100,10 +100,7 @@ export const TextMessage = {
       type: 'text',
       id: crypto.randomUUID(),
       conversationId: params.conversationId,
-      sender: {
-        id: crypto.randomUUID(),
-        domain: crypto.randomUUID(),
-      },
+      sender: new QualifiedId(crypto.randomUUID(), crypto.randomUUID()),
       text: params.text,
       mentions: params.mentions ?? [],
       linkPreviews: params.linkPreviews ?? [],
@@ -138,10 +135,7 @@ export const AssetMessage = {
       type: 'asset',
       id: crypto.randomUUID(),
       conversationId: params.conversationId,
-      sender: {
-        id: crypto.randomUUID(),
-        domain: crypto.randomUUID(),
-      },
+      sender: new QualifiedId(crypto.randomUUID(), crypto.randomUUID()),
       timestamp: new Date(),
       sizeInBytes: params.sizeInBytes,
       name: params.name ?? null,

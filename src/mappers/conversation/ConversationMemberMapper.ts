@@ -18,11 +18,12 @@
 import type {ConversationMemberEntity} from "../../db/model/ConversationMemberEntity.js";
 import type {ConversationMember} from "../../model/conversation/ConversationMember.js";
 import type {ConversationRole} from "../../model/conversation/ConversationRole.js";
+import {QualifiedId} from "../../model/QualifiedId.js";
 
 export class ConversationMemberMapper {
   static fromEntity(entity: ConversationMemberEntity): ConversationMember {
     return {
-      userId: { id: entity.userId, domain: entity.userDomain },
+      userId: new QualifiedId(entity.userId, entity.userDomain),
       role: entity.role as ConversationRole
     }
   }

@@ -21,7 +21,7 @@ import {ConversationService} from "../../api/ConversationService.js";
 import {WireEventsHandler} from "./../WireEventsHandler.js";
 import {EVENT_PROCESSOR, WIRE_EVENTS_HANDLER} from "../../utils/DependencyInjectionTokens.js";
 import {LoggerFactory} from "../../utils/logger/LoggerFactory.js";
-import {obfuscateId} from "../../utils/ObfuscateUtil.js";
+import {QualifiedId} from "../../model/QualifiedId.js";
 
 @injectable({token: EVENT_PROCESSOR})
 export class MemberLeaveEventProcessor implements EventProcessor<MemberLeaveDTO> {
@@ -36,11 +36,12 @@ export class MemberLeaveEventProcessor implements EventProcessor<MemberLeaveDTO>
   }
 
   async process(event: MemberLeaveDTO): Promise<void> {
-    this.logger.info(`Processing MemberLeave event for conversationId: ${obfuscateId(event.qualified_conversation.id)}`);
+    const conversationId = new QualifiedId(event.qualified_conversation.id, event.qualified_conversation.domain);
+    this.logger.info(`Processing MemberLeave event for conversationId: ${conversationId}`);
 
-    await this.conversationService.syncMembersRemoved(event.data.qualified_user_ids, event.qualified_conversation);
-    await this.wireEventsHandler.onUserLeftConversation(event.qualified_conversation, event.data.qualified_user_ids);
+    await this.conversationService.syncMembersRemoved(event.data.qualified_user_ids, conversationId);
+    await this.wireEventsHandler.onUserLeftConversation(conversationId, event.data.qualified_user_ids);
 
-    this.logger.info(`Processed MemberLeave event for conversationId: ${obfuscateId(event.qualified_conversation.id)}`);
+    this.logger.info(`Processed MemberLeave event for conversationId: ${conversationId}`);
   }
 }

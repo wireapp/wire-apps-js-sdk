@@ -22,7 +22,7 @@ import {WireEventsHandler} from "../WireEventsHandler.js";
 import {EVENT_PROCESSOR, WIRE_EVENTS_HANDLER} from "../../utils/DependencyInjectionTokens.js";
 import type {ConversationMember} from "../../model/conversation/ConversationMember.js";
 import {LoggerFactory} from "../../utils/logger/LoggerFactory.js";
-import {obfuscateId} from "../../utils/ObfuscateUtil.js";
+import {QualifiedId} from "../../model/QualifiedId.js";
 
 @injectable({token: EVENT_PROCESSOR})
 export class MemberJoinEventProcessor implements EventProcessor<MemberJoinDTO> {
@@ -37,17 +37,18 @@ export class MemberJoinEventProcessor implements EventProcessor<MemberJoinDTO> {
   }
 
   async process(event: MemberJoinDTO): Promise<void> {
-    this.logger.info(`Processing MemberJoin event for conversationId: ${obfuscateId(event.qualified_conversation.id)}`);
+    const conversationId = new QualifiedId(event.qualified_conversation.id, event.qualified_conversation.domain);
+    this.logger.info(`Processing MemberJoin event for conversationId: ${conversationId}`);
 
     const members: ConversationMember[] = (event.data.users || []).map(user => ({
-      userId: user.qualified_id,
+      userId: new QualifiedId(user.qualified_id.id, user.qualified_id.domain),
       role: user.conversation_role
     }));
 
-    this.logger.info(`New members to be added: ${members.map(member => obfuscateId(member.userId.id)).join()}`);
-    await this.conversationService.syncMembersAdded(members, event.qualified_conversation);
-    await this.wireEventsHandler.onUserJoinedConversation(event.qualified_conversation, members);
+    this.logger.info(`New members to be added: ${members.map(member => member.userId).join()}`);
+    await this.conversationService.syncMembersAdded(members, conversationId);
+    await this.wireEventsHandler.onUserJoinedConversation(conversationId, members);
 
-    this.logger.info(`Processed MemberJoin event for conversationId: ${obfuscateId(event.qualified_conversation.id)}`);
+    this.logger.info(`Processed MemberJoin event for conversationId: ${conversationId}`);
   }
 }

@@ -14,7 +14,7 @@
 * along with this program. If not, see http://www.gnu.org/licenses/.
 */
 
-import type {QualifiedId} from "../model/QualifiedId.js";
+import {QualifiedId} from "../model/QualifiedId.js";
 import type {ConversationResponse} from "./response/ConversationResponse.js";
 import {ConversationRepository} from "../db/ConversationRepository.js";
 import {ConversationMemberRepository} from "../db/ConversationMemberRepository.js";
@@ -121,14 +121,14 @@ export class ConversationService {
   // TODO: Baris: Rename this to getOrFetchConversation to better reflect what it does.
   //  The name should indicate that it might fetch the conversation if it's not found locally.
   async getConversationById(conversationId: QualifiedId): Promise<ConversationEntity> {
-    this.logger.info("Getting Conversation. conversationId:", obfuscateId(conversationId.id))
+    this.logger.info(`Getting Conversation. conversationId: ${conversationId}`)
     const conversationEntity = this.conversationRepository.findByIdAndDomain(conversationId.id, conversationId.domain)
 
     if (conversationEntity) {
-      this.logger.info("Returning Conversation from the Database.", "conversationId:", obfuscateId(conversationId.id))
+      this.logger.info(`Returning Conversation from the Database. conversationId: ${conversationId}`)
       return conversationEntity
     } else {
-      this.logger.info("Fetching Conversation from remote.", "conversationId:", obfuscateId(conversationId.id))
+      this.logger.info(`Fetching Conversation from remote. conversationId: ${conversationId}`)
       const conversationResponse = await this.fetchConversationById(conversationId)
       const {conversation} = await this.saveConversationWithMembers(
         conversationId,
@@ -168,22 +168,22 @@ export class ConversationService {
   }
 
   async leaveConversation(conversationId: QualifiedId) {
-    this.logger.info("Leaving the conversation. conversationId:" + obfuscateId(conversationId.id))
+    this.logger.info(`Leaving the conversation. conversationId: ${conversationId}`)
 
     if (!await this.isGroupConversation(conversationId)) {
-      this.logger.warn("You cannot leave a non-group conversation. conversationId:" + obfuscateId(conversationId.id))
+      this.logger.warn(`You cannot leave a non-group conversation. conversationId: ${conversationId}`)
       return // TODO: Baris: We should throw an exception here instead of just logging and returning.
     }
 
     if (!await this.isAppUserMemberOfConversation(conversationId)) {
-      this.logger.warn("You cannot leave a conversation that you are not a member of. conversationId:" + obfuscateId(conversationId.id))
+      this.logger.warn(`You cannot leave a conversation that you are not a member of. conversationId: ${conversationId}`)
       return // TODO: Baris: We should throw an exception here instead of just logging and returning.
     }
 
     await this.conversationsApiClient.leaveConversation(conversationId)
     await this.deleteAllConversationDataFromLocalStorages(conversationId)
 
-    this.logger.info("App user left the conversation. conversationId:" + obfuscateId(conversationId.id))
+    this.logger.info(`App user left the conversation. conversationId: ${conversationId}`)
   }
 
   private async isGroupConversation(conversationId: QualifiedId): Promise<boolean> {
@@ -199,7 +199,7 @@ export class ConversationService {
   }
 
   async deleteAllConversationDataFromLocalStorages(conversationId: QualifiedId): Promise<void> {
-    this.logger.info("Deleting all conversation data.", "conversationId:", obfuscateId(conversationId.id))
+    this.logger.info(`Deleting all conversation data. conversationId: ${conversationId}`)
     const conversationEntity = this.conversationRepository.findByIdAndDomain(conversationId.id, conversationId.domain);
 
     if (conversationEntity?.mlsGroupId) {
@@ -211,7 +211,7 @@ export class ConversationService {
     this.conversationMemberRepository.deleteAllMembersInConversation(conversationId.id, conversationId.domain)
     this.conversationRepository.delete(conversationId.id, conversationId.domain)
 
-    this.logger.info("Deleted all conversation data.", "conversationId:", obfuscateId(conversationId.id))
+    this.logger.info(`Deleted all conversation data. conversationId: ${conversationId}`)
   }
 
   async addMembersToConversation(
@@ -248,9 +248,7 @@ export class ConversationService {
 
     this.conversationMemberRepository.saveMany(membersToSave)
 
-    this.logger.info(`${result.successUsers.length} member(s) successfully added to the conversation. ` +
-      `conversationId: ${obfuscateId(conversationId.id)}`
-    )
+    this.logger.info(`${result.successUsers.length} member(s) successfully added to the conversation. conversationId: ${conversationId}`)
 
     return result
   }
@@ -259,9 +257,7 @@ export class ConversationService {
     conversationId: QualifiedId,
     members: QualifiedId[]
   ): Promise<void> {
-    this.logger.info(`Attempting to remove ${members.length} member(s) from the conversation. ` +
-      `conversationId: ${obfuscateId(conversationId.id)}`
-    )
+    this.logger.info(`Attempting to remove ${members.length} member(s) from the conversation. conversationId: ${conversationId}`)
 
     if (members.length === 0) {
       throw new Error("List of members cannot be empty.") // TODO: Use custom exceptions (WireException.InvalidParameter)
@@ -278,9 +274,7 @@ export class ConversationService {
     )
 
     this.conversationMemberRepository.deleteMany(members, conversationId.id, conversationId.domain)
-    this.logger.info(`${members.length} member(s) successfully removed from the conversation. ` +
-      `conversationId: ${obfuscateId(conversationId.id)}`
-    )
+    this.logger.info(`${members.length} member(s) successfully removed from the conversation. conversationId: ${conversationId}`)
   }
 
 
@@ -289,8 +283,7 @@ export class ConversationService {
     userId: QualifiedId,
     newRole: ConversationRole
   ): Promise<void> {
-    this.logger.info(`Updating member in conversation. conversationId: ${obfuscateId(conversationId.id)},
-      userId: ${obfuscateId(userId.id)}, newRole: ${newRole}`)
+    this.logger.info(`Updating member in conversation. conversationId: ${conversationId}, userId: ${userId}, newRole: ${newRole}`)
 
     const conversation = await this.getConversationById(conversationId)
     this.requireConversationIsGroupOrChannel(conversationId, conversation.type)
@@ -310,17 +303,14 @@ export class ConversationService {
 
     this.conversationMemberRepository.save(memberToSave)
 
-    this.logger.info(`Updated member in conversation. conversationId: ${obfuscateId(conversationId.id)},
-      userId: ${obfuscateId(userId.id)}, newRole: ${newRole}`)
+    this.logger.info(`Updated member in conversation. conversationId: ${conversationId}, userId: ${userId}, newRole: ${newRole}`)
   }
 
   async syncMemberUpdate(userId: QualifiedId, conversationId: QualifiedId, newRole: ConversationRole): Promise<void> {
-    this.logger.info(`Syncing member in conversation. conversationId: ${obfuscateId(conversationId.id)},
-      userId: ${obfuscateId(userId.id)}, newRole: ${newRole}`)
+    this.logger.info(`Syncing member in conversation. conversationId: ${conversationId}, userId: ${userId}, newRole: ${newRole}`)
 
     if (this.conversationRepository.findByIdAndDomain(conversationId.id, conversationId.domain) == null) {
-      this.logger.warn(`Conversation does not exist locally. Skipping updating member
-        for conversationId: ${obfuscateId(conversationId.id)}, userId: ${obfuscateId(userId.id)}`)
+      this.logger.warn(`Conversation does not exist locally. Skipping updating member for conversationId: ${conversationId}, userId: ${userId}`)
       return
     }
 
@@ -334,17 +324,16 @@ export class ConversationService {
     }
 
     this.conversationMemberRepository.save(memberEntity)
-    this.logger.info(`Synced member in conversation. conversationId: ${obfuscateId(conversationId.id)},
-        userId: ${obfuscateId(userId.id)}, newRole: ${newRole}`)
+    this.logger.info(`Synced member in conversation. conversationId: ${conversationId}, userId: ${userId}, newRole: ${newRole}`)
   }
 
   async syncMembersAdded(members: ConversationMember[], conversationId: QualifiedId): Promise<void> {
-    this.logger.info(`Adding members to conversation. conversationId: ${obfuscateId(conversationId.id)}, members length: ${members.length}`)
+    this.logger.info(`Adding members to conversation. conversationId: ${conversationId}, members length: ${members.length}`)
 
     // TODO: Baris: In such cases we should throw custom exceptions and handle them in the upper layers instead of just logging and skipping the events.
     //  For example for this scenario, the Router class should not call the callback method if we didn't add the members to the conversation
     if (this.conversationRepository.findByIdAndDomain(conversationId.id, conversationId.domain) == null) {
-      this.logger.warn(`Conversation does not exist locally. Skipping MemberJoin event for conversationId: ${obfuscateId(conversationId.id)}`)
+      this.logger.warn(`Conversation does not exist locally. Skipping MemberJoin event for conversationId: ${conversationId}`)
       return
     }
 
@@ -360,24 +349,24 @@ export class ConversationService {
     })
 
     this.conversationMemberRepository.saveMany(membersToSave)
-    this.logger.info(`Added members to conversation. conversationId: ${obfuscateId(conversationId.id)}, members length: ${members.length}`)
+    this.logger.info(`Added members to conversation. conversationId: ${conversationId}, members length: ${members.length}`)
   }
 
   async syncMembersRemoved(userIds: QualifiedId[], conversationId: QualifiedId): Promise<void> {
-    this.logger.info(`Removing members from conversation. conversationId: ${obfuscateId(conversationId.id)}, userIds length: ${userIds.length}`)
+    this.logger.info(`Removing members from conversation. conversationId: ${conversationId}, userIds length: ${userIds.length}`)
 
     if (this.conversationRepository.findByIdAndDomain(conversationId.id, conversationId.domain) == null) {
-      this.logger.warn(`Conversation does not exist locally. Skipping MemberLeave event for conversationId: ${obfuscateId(conversationId.id)}`)
+      this.logger.warn(`Conversation does not exist locally. Skipping MemberLeave event for conversationId: ${conversationId}`)
       return
     }
 
     if (this.containsAppUser(userIds)) {
-      this.logger.info(`List of members to be removed contains the Wire user. Deleting all conversation data for conversationId: ${obfuscateId(conversationId.id)}`)
+      this.logger.info(`List of members to be removed contains the Wire user. Deleting all conversation data for conversationId: ${conversationId}`)
       await this.deleteAllConversationDataFromLocalStorages(conversationId)
     } else {
       this.conversationMemberRepository.deleteMany(userIds, conversationId.id, conversationId.domain)
     }
-    this.logger.info(`Removed members from conversation. conversationId: ${obfuscateId(conversationId.id)}, userIds length: ${userIds.length}`)
+    this.logger.info(`Removed members from conversation. conversationId: ${conversationId}, userIds length: ${userIds.length}`)
   }
 
   private containsAppUser(userIds: QualifiedId[]): boolean {
@@ -438,7 +427,7 @@ export class ConversationService {
   }
 
   async deleteConversation(conversationId: QualifiedId): Promise<void> {
-    this.logger.info("Attempting to delete conversation. conversationId:", obfuscateId(conversationId.id))
+    this.logger.info(`Attempting to delete conversation. conversationId: ${conversationId}`)
     const conversation = await this.getConversationById(conversationId)
 
     if (!conversation.teamId) {
@@ -447,15 +436,16 @@ export class ConversationService {
     this.requireConversationIsGroupOrChannel(conversationId, conversation.type)
     this.requireAppIsAdminInConversation(conversationId)
 
-    await this.teamsApiClient.deleteConversation(new TeamId(conversation.teamId), conversationId)
+    const teamId = new TeamId(conversation.teamId);
+    await this.teamsApiClient.deleteConversation(teamId, conversationId)
     await this.deleteAllConversationDataFromLocalStorages(conversationId)
 
-    this.logger.info(`Conversation is deleted. teamId: ${obfuscateId(conversation.teamId)}, conversationId: ${obfuscateId(conversationId.id)}`)
+    this.logger.info(`Conversation is deleted. teamId: ${teamId}, conversationId: ${conversationId}`)
   }
 
   private requireConversationIsGroupOrChannel(conversationId: QualifiedId, conversationType: ConversationType): void {
     if (conversationType !== ConversationType.GROUP) {
-      this.logger.warn(`Skipping operation, conversation is not a GROUP or CHANNEL. conversationId: ${obfuscateId(conversationId.id)}, conversationType: ${conversationType}`)
+      this.logger.warn(`Skipping operation, conversation is not a GROUP or CHANNEL. conversationId: ${conversationId}, conversationType: ${conversationType}`)
       throw new Error("Conversation type is not GROUP.") //TODO: Use custom exceptions
     }
   }
@@ -483,7 +473,7 @@ export class ConversationService {
       conversationId.domain)
 
     if (!exists) {
-      this.logger.warn(`User is not in the conversation. conversationId: ${obfuscateId(conversationId.id)}, UserId: ${obfuscateId(userId.id)}`)
+      this.logger.warn(`User is not in the conversation. conversationId: ${conversationId}, userId: ${userId}`)
       throw new Error("User is not in the conversation.") //TODO: Use custom exceptions
     }
   }

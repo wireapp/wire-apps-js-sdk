@@ -26,6 +26,7 @@ import {isCoreCryptoMlsException} from "../../model/exception/CoreCryptoMlsExcep
 import {isMlsException} from "../../model/exception/MlsException.js";
 import {LoggerFactory} from "../../utils/logger/LoggerFactory.js";
 import {MlsFallbackStrategy} from "../../service/MlsFallbackStrategy.js";
+import {QualifiedId} from "../../model/QualifiedId.js";
 
 @injectable({token: EVENT_PROCESSOR})
 export class MlsMessageEventProcessor implements EventProcessor<NewMLSMessageDTO> {
@@ -42,7 +43,8 @@ export class MlsMessageEventProcessor implements EventProcessor<NewMLSMessageDTO
   }
 
   async process(event: NewMLSMessageDTO): Promise<void> {
-    const mlsGroupId = await this.conversationService.getConversationMLSGroupId(event.qualified_conversation);
+    const conversationId = new QualifiedId(event.qualified_conversation.id, event.qualified_conversation.domain)
+    const mlsGroupId = await this.conversationService.getConversationMLSGroupId(conversationId);
 
     try {
       const message = await this.coreCryptoService.decryptMls(mlsGroupId, event.data);
@@ -56,10 +58,10 @@ export class MlsMessageEventProcessor implements EventProcessor<NewMLSMessageDTO
     } catch (exception) {
       if (isMlsException(exception)) {
         this.logger.debug("Message decryption failed, MlsException:", exception);
-        await this.mlsFallbackStrategy.verifyConversationOutOfSync(mlsGroupId, event.qualified_conversation);
+        await this.mlsFallbackStrategy.verifyConversationOutOfSync(mlsGroupId, conversationId);
       } else if (isCoreCryptoMlsException(exception)) {
         this.logger.debug("Message decryption failed, CoreCryptoException.Mls:", exception);
-        await this.mlsFallbackStrategy.verifyConversationOutOfSync(mlsGroupId, event.qualified_conversation);
+        await this.mlsFallbackStrategy.verifyConversationOutOfSync(mlsGroupId, conversationId);
       } else {
         throw exception;
       }
@@ -67,7 +69,8 @@ export class MlsMessageEventProcessor implements EventProcessor<NewMLSMessageDTO
   }
 
   private async forwardMessage(message: Uint8Array, event: NewMLSMessageDTO): Promise<void> {
-    const wireMessage = ProtobufDeserializer.toWireMessage(message, event.qualified_conversation);
+    const conversationId = new QualifiedId(event.qualified_conversation.id, event.qualified_conversation.domain)
+    const wireMessage = ProtobufDeserializer.toWireMessage(message, conversationId);
 
     switch (wireMessage.type) {
       case 'text':

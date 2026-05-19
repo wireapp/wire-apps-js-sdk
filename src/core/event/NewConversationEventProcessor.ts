@@ -19,8 +19,8 @@ import type {EventProcessor} from "./EventProcessor.js";
 import type {NewConversationDTO} from "../../model/EventContentDTO.js";
 import {ConversationService} from "../../api/ConversationService.js";
 import {LoggerFactory} from "../../utils/logger/LoggerFactory.js";
-import {obfuscateId} from "../../utils/ObfuscateUtil.js";
 import {EVENT_PROCESSOR} from "../../utils/DependencyInjectionTokens.js";
+import {QualifiedId} from "../../model/QualifiedId.js";
 
 @injectable({token: EVENT_PROCESSOR})
 export class NewConversationEventProcessor implements EventProcessor<NewConversationDTO> {
@@ -32,10 +32,11 @@ export class NewConversationEventProcessor implements EventProcessor<NewConversa
   }
 
   async process(event: NewConversationDTO): Promise<void> {
-    this.logger.info(`Processing NewConversation event for conversationId: ${obfuscateId(event.qualified_conversation.id)}`);
+    const conversationId = new QualifiedId(event.qualified_conversation.id, event.qualified_conversation.domain);
+    this.logger.info(`Processing NewConversation event for conversationId: ${conversationId}`);
 
-    await this.conversationService.saveConversationWithMembers(event.qualified_conversation, event.data);
+    await this.conversationService.saveConversationWithMembers(conversationId, event.data);
 
-    this.logger.info(`Processed NewConversation event for conversationId: ${obfuscateId(event.qualified_conversation.id)}`);
+    this.logger.info(`Processed NewConversation event for conversationId: ${conversationId}`);
   }
 }

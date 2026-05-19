@@ -24,7 +24,7 @@ import {
   type ConversationMember,
   type ConversationRole,
   obfuscateId,
-  type QualifiedId,
+  QualifiedId,
   TextMessage,
   AssetMessage,
   type Audio,
@@ -100,7 +100,7 @@ class SampleEventsHandler extends WireEventsHandler {
   public override async onAppAddedToConversation(conversation: Conversation, members: ConversationMember[]): Promise<void> {
     this.appLogger?.info(`[Sample App] App was added to conversation: ${obfuscateId(conversation.id)} with ${members.length} members`)
     const textMessage = TextMessage.create({
-      conversationId: { id: conversation.id, domain: conversation.domain },
+      conversationId: new QualifiedId(conversation.id, conversation.domain),
       text: `Hello! I'm the Typescript SDK Sample App 🙂 I've just joined this conversation 👋`
     })
     await this.manager.sendMessage(textMessage)
@@ -260,7 +260,7 @@ class SampleEventsHandler extends WireEventsHandler {
           return
         }
 
-        const members: QualifiedId[] = [{ id: memberId, domain: memberDomain }]
+        const members: QualifiedId[] = [new QualifiedId(memberId, memberDomain)]
         await this.manager.addMembersToConversation(conversationId, members)
       },
       'remove-members-from-conversation': async (conversationId, command) => {
@@ -279,7 +279,7 @@ class SampleEventsHandler extends WireEventsHandler {
           const memberId = parts[i]
           const memberDomain = parts[i + 1]
           if (memberId && memberDomain) {
-            members.push({ id: memberId, domain: memberDomain })
+            members.push(new QualifiedId(memberId, memberDomain))
           }
         }
 
@@ -298,7 +298,7 @@ class SampleEventsHandler extends WireEventsHandler {
           return
         }
 
-        const userId: QualifiedId = { id: memberId, domain: memberDomain }
+        const userId: QualifiedId = new QualifiedId(memberId, memberDomain)
         await this.manager.updateConversationMemberRole(conversationId, userId, newRole)
       },
       'get-user-data': async (conversationId, command) => {
@@ -313,7 +313,7 @@ class SampleEventsHandler extends WireEventsHandler {
           return
         }
 
-        const userQualifiedId: QualifiedId = {id: userId, domain: userDomain}
+        const userQualifiedId: QualifiedId = new QualifiedId(userId, userDomain)
         const user = await this.manager.getUser(userQualifiedId)
 
         await this.manager.sendMessage(TextMessage.create({
@@ -354,11 +354,7 @@ class SampleEventsHandler extends WireEventsHandler {
           return
         }
 
-        const targetQualifiedId: QualifiedId = {
-          id: targetConversationId,
-          domain: targetConversationDomain
-        }
-
+        const targetQualifiedId: QualifiedId = new QualifiedId(targetConversationId, targetConversationDomain)
         const members = await this.manager.getMembersInConversation(targetQualifiedId)
 
         const memberList = members
