@@ -286,7 +286,7 @@ export class HttpClient {
     })).data
   }
 
-  private API_HOST_VERSION: string = "v12"
+  private API_HOST_VERSION: string = "v15"
   private TOKEN_EXPIRATION_MS = 14 * 60 * 1000 // 14 minutes in milliseconds
   private HEADER_DEFAULT_CONTENT_TYPE = "application/json"
   private HEADER_DEFAULT_ACCEPT = "application/json"

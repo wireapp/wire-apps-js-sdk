@@ -198,6 +198,26 @@ export class ConversationService {
       && member.userId.domain === this.wireUserDomain)
   }
 
+  /**
+   * Resets the MLS group of a conversation. Called when receiving a conversation.mls-reset event.
+   * If the conversation already has the new MLS groupId, no-op (idempotent for duplicate events).
+   * Otherwise wipes the old MLS group from CoreCrypto and deletes the conversation (and its
+   * members) from local storage. It will be re-established on the next interaction.
+   */
+  async resetMlsConversation(conversationId: QualifiedId, newGroupId: string): Promise<void> {
+    const conversationEntity = this.conversationRepository.findByIdAndDomain(conversationId.id, conversationId.domain)
+    if (!conversationEntity) {
+      this.logger.warn(`Conversation not found in storage during MLS reset. Already deleted? conversationId: ${conversationId}`)
+      return
+    }
+    if (conversationEntity.mlsGroupId === newGroupId) {
+      this.logger.info(`Conversation already has the new MLS Group ID, skipping reset. conversationId: ${conversationId}`)
+      return
+    }
+    await this.deleteAllConversationDataFromLocalStorages(conversationId)
+    this.logger.info(`MLS conversation reset. conversationId: ${conversationId}`)
+  }
+
   async deleteAllConversationDataFromLocalStorages(conversationId: QualifiedId): Promise<void> {
     this.logger.info(`Deleting all conversation data. conversationId: ${conversationId}`)
     const conversationEntity = this.conversationRepository.findByIdAndDomain(conversationId.id, conversationId.domain);

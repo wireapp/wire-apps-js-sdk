@@ -38,6 +38,7 @@ let router: EventRouter
 
 let mlsWelcomeEventProcessor: EventProcessor<any>
 let mlsMessageEventProcessor: EventProcessor<any>
+let mlsResetEventProcessor: EventProcessor<any>
 let newConversationEventProcessor: EventProcessor<any>
 let deleteConversationEventProcessor: EventProcessor<any>
 let memberJoinEventProcessor: EventProcessor<any>
@@ -50,6 +51,7 @@ beforeEach(() => {
 
   mlsWelcomeEventProcessor = createProcessorMock('conversation.mls-welcome')
   mlsMessageEventProcessor = createProcessorMock('conversation.mls-message-add')
+  mlsResetEventProcessor = createProcessorMock('conversation.mls-reset')
   newConversationEventProcessor = createProcessorMock('conversation.create')
   deleteConversationEventProcessor = createProcessorMock('conversation.delete')
   memberJoinEventProcessor = createProcessorMock('conversation.member-join')
@@ -61,6 +63,7 @@ beforeEach(() => {
   processors = [
     mlsWelcomeEventProcessor,
     mlsMessageEventProcessor,
+    mlsResetEventProcessor,
     newConversationEventProcessor,
     deleteConversationEventProcessor,
     memberJoinEventProcessor,
@@ -117,6 +120,14 @@ describe('EventRouter', () => {
       expect(mlsWelcomeEventProcessor.process).toHaveBeenCalledWith(welcome)
       expect(memberJoinEventProcessor.process).toHaveBeenCalledWith(memberJoin)
       expect(newConversationEventProcessor.process).toHaveBeenCalledWith(newConversation)
+    })
+
+    it('should route mls-reset events to the MlsResetEventProcessor', async () => {
+      const event = makeEvent('conversation.mls-reset')
+
+      await router.route(makeEventResponse([event]))
+
+      expect(mlsResetEventProcessor.process).toHaveBeenCalledWith(event)
     })
 
     it('should process events sequentially', async () => {
