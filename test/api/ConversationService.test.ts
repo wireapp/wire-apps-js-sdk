@@ -1150,8 +1150,8 @@ describe('ConversationService', () => {
       vi.mocked(mockConversationRepository.findByIdAndDomain).mockReturnValue(groupConversationEntity)
       vi.mocked(mockConversationMemberRepository.getMembersByConversationId).mockReturnValue([adminMember])
       vi.mocked((mockCoreCryptoService as any).addClientsToMlsConversation).mockResolvedValue({
-        successUsers: [USER_ID],
-        failedUsers: []
+        membersAdded: [USER_ID],
+        membersFailedToAdd: []
       })
 
       await conversationService.addMembersToConversation(CONVERSATION_ID, [USER_ID])
@@ -1168,8 +1168,8 @@ describe('ConversationService', () => {
       vi.mocked(mockConversationRepository.findByIdAndDomain).mockReturnValue(groupConversationEntity)
       vi.mocked(mockConversationMemberRepository.getMembersByConversationId).mockReturnValue([adminMember])
       vi.mocked((mockCoreCryptoService as any).addClientsToMlsConversation).mockResolvedValue({
-        successUsers: [USER_ID],
-        failedUsers: [anotherUserId]
+        membersAdded: [USER_ID],
+        membersFailedToAdd: [anotherUserId]
       })
 
       await conversationService.addMembersToConversation(CONVERSATION_ID, [USER_ID, anotherUserId])
@@ -1192,8 +1192,8 @@ describe('ConversationService', () => {
       vi.mocked(mockConversationRepository.findByIdAndDomain).mockReturnValue(groupConversationEntity)
       vi.mocked(mockConversationMemberRepository.getMembersByConversationId).mockReturnValue([adminMember])
       vi.mocked((mockCoreCryptoService as any).addClientsToMlsConversation).mockResolvedValue({
-        successUsers: [USER_ID],
-        failedUsers: [anotherUserId]
+        membersAdded: [USER_ID],
+        membersFailedToAdd: [anotherUserId]
       })
 
       const result = await conversationService.addMembersToConversation(
@@ -1201,8 +1201,8 @@ describe('ConversationService', () => {
         [USER_ID, anotherUserId]
       )
 
-      expect(result.successUsers).toEqual([USER_ID])
-      expect(result.failedUsers).toEqual([anotherUserId])
+      expect(result.membersAdded).toEqual([USER_ID])
+      expect(result.membersFailedToAdd).toEqual([anotherUserId])
     })
 
     it('should throw and not save members when coreCryptoService fails', async () => {

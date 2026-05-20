@@ -17,6 +17,6 @@
 import type {QualifiedId} from "../../model/QualifiedId.js";
 
 export interface AddMembersToConversationResult {
-  successUsers: QualifiedId[]
-  failedUsers: QualifiedId[]
+  membersAdded: QualifiedId[]
+  membersFailedToAdd: QualifiedId[]
 }

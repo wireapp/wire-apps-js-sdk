@@ -31,6 +31,7 @@ import type {UserResponse} from "../api/model/UserResponse.js";
 import {UserService} from "../api/UserService.js";
 import type {Conversation} from "../model/conversation/Conversation.js";
 import type {ConversationMember} from "../model/conversation/ConversationMember.js";
+import type {AddMembersToConversationResult} from "../api/model/AddMembersToConversationResult.js";
 
 @singleton()
 export class WireApplicationManager {
@@ -96,10 +97,11 @@ export class WireApplicationManager {
     this.logger.debug('App deleted the conversation with id: ' + obfuscateId(conversationId.id));
   }
 
-  async addMembersToConversation(conversationId: QualifiedId, members: QualifiedId[]){
+  async addMembersToConversation(conversationId: QualifiedId, members: QualifiedId[]): Promise<AddMembersToConversationResult> {
     this.logger.debug('App requested to add members to the conversation with id: ' + obfuscateId(conversationId.id));
-    await this.conversationService.addMembersToConversation(conversationId, members);
+    const result = await this.conversationService.addMembersToConversation(conversationId, members);
     this.logger.debug('Members added to the conversation with id: ' + obfuscateId(conversationId.id));
+    return result;
   }
 
   async removeMembersFromConversation(conversationId: QualifiedId, members: QualifiedId[]){

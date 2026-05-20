@@ -252,16 +252,52 @@ class SampleEventsHandler extends WireEventsHandler {
         this.appLogger?.info(`[Sample App] Executing handler for: add-members-to-conversation`)
 
         const parts = command?.trim().split(' ')
-        const memberId = parts?.[1]
-        const memberDomain = parts?.[2]
+        parts?.shift() // remove the command name itself
 
-        if (!memberId || !memberDomain) {
-          this.appLogger?.info(`[Sample App] Invalid command format. Expected: add-members-to-conversation [USER_ID] [DOMAIN]`)
+        if (!parts || parts.length === 0 || parts.length % 2 !== 0) {
+          this.appLogger?.info(`[Sample App] Invalid command format. Expected: add-members-to-conversation [USER_ID] [DOMAIN] [USER_ID] [DOMAIN] ...`)
           return
         }
 
-        const members: QualifiedId[] = [new QualifiedId(memberId, memberDomain)]
-        await this.manager.addMembersToConversation(conversationId, members)
+        const members: QualifiedId[] = []
+        for (let i = 0; i < parts.length; i += 2) {
+          const memberId = parts[i]
+          const memberDomain = parts[i + 1]
+          if (memberId && memberDomain) {
+            members.push(new QualifiedId(memberId, memberDomain))
+          }
+        }
+
+        const result = await this.manager.addMembersToConversation(conversationId, members)
+
+        // Send feedback about the add operation
+        let feedbackMessage = '➕ Member Addition Results:\n\n'
+
+        if (result.membersAdded.length > 0) {
+          feedbackMessage += `✅ Successfully added (${result.membersAdded.length}):\n`
+          feedbackMessage += result.membersAdded
+            .map(m => `  • ${obfuscateId(m.id)}@${m.domain}`)
+            .join('\n')
+          feedbackMessage += '\n\n'
+        }
+
+        if (result.membersFailedToAdd.length > 0) {
+          feedbackMessage += `❌ Failed to add (${result.membersFailedToAdd.length}):\n`
+          feedbackMessage += result.membersFailedToAdd
+            .map(m => `  • ${obfuscateId(m.id)}@${m.domain}`)
+            .join('\n')
+        }
+
+        if (result.membersAdded.length === 0 && result.membersFailedToAdd.length === 0) {
+          feedbackMessage += '⚠️ No members were processed.'
+        }
+
+        await this.manager.sendMessage(TextMessage.create({
+          conversationId: conversationId,
+          text: feedbackMessage
+        }))
+
+        this.appLogger?.info(`[Sample App] Addition completed: ${result.membersAdded.length} added, ${result.membersFailedToAdd.length} failed`)
       },
       'remove-members-from-conversation': async (conversationId, command) => {
         this.appLogger?.info(`[Sample App] Executing handler for: remove-members-from-conversation`)
