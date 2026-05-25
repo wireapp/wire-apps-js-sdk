@@ -14,12 +14,45 @@
 * along with this program. If not, see http://www.gnu.org/licenses/.
 */
 
-import { describe, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { HttpClient } from '../../src/core/HttpClient.js';
+import { http, HttpResponse } from "msw";
+import { setupServer } from "msw/node";
+
+const TEST_API_HOST = 'https://test.api.host'
+const TEST_ACCESS_TOKEN = 'test-access-token'
+const COOKIE = 'test-cookie'
+const httpClient = new HttpClient(TEST_API_HOST, 'login', 'password')
+
+export const restHandlers = [
+  http.post(`${TEST_API_HOST}/access`, ({ cookies }) => {
+    if (cookies['zuid'] != COOKIE)
+      return new HttpResponse(null, { status: 403 })
+    return HttpResponse.json({
+      access_token: TEST_ACCESS_TOKEN,
+      expires_in: 900,
+      token_type: 'Bearer',
+      user: 'test-uuid'
+    })
+  })
+]
+
+const server = setupServer(...restHandlers)
 
 describe('HttpClient', () => {
-  describe('Access token', () => {
-    it('should be set after successful response to `/access` endpoint', () => {
+  beforeAll(() => server.listen({ onUnhandledRequest: 'error' }))
+  afterAll(() => server.close())
+  afterEach(() => server.resetHandlers())
 
+  describe('Access token', () => {
+    it('should be set after successful response to `/access` endpoint', async () => {
+      // given cookie is set
+
+      // when
+      await httpClient.verifyAuthorizationToken()
+
+      // then
+      expect(httpClient.getCachedAccessToken()).toEqual(TEST_ACCESS_TOKEN)
     });
     it('should be updated with client ID when it is registered', () => {
 
