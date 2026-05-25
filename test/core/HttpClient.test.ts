@@ -26,7 +26,7 @@ const COOKIE = 'test-cookie'
 const createHttpClient = (cookie: string) => new HttpClient(TEST_API_HOST, cookie)
 
 export const restHandlers = [
-  http.post(`${TEST_API_HOST}/access`, ({ cookies }) => {
+  http.post(`${TEST_API_HOST}/v*/access`, ({ cookies }) => {
     if (cookies['zuid'] != COOKIE)
       return new HttpResponse(null, { status: 403 })
     return HttpResponse.json({
