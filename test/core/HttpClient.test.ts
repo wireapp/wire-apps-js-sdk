@@ -22,7 +22,8 @@ import { setupServer } from "msw/node";
 const TEST_API_HOST = 'https://test.api.host'
 const TEST_ACCESS_TOKEN = 'test-access-token'
 const COOKIE = 'test-cookie'
-const httpClient = new HttpClient(TEST_API_HOST, 'login', 'password')
+
+const createHttpClient = (cookie: string) => new HttpClient(TEST_API_HOST, cookie)
 
 export const restHandlers = [
   http.post(`${TEST_API_HOST}/access`, ({ cookies }) => {
@@ -46,7 +47,8 @@ describe('HttpClient', () => {
 
   describe('Access token', () => {
     it('should be set after successful response to `/access` endpoint', async () => {
-      // given cookie is set
+      // given
+      const httpClient = createHttpClient(COOKIE)
 
       // when
       await httpClient.verifyAuthorizationToken()

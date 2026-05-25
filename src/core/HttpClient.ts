@@ -14,8 +14,7 @@
 * along with this program. If not, see http://www.gnu.org/licenses/.
 */
 
-import type {AccessResponse} from "../api/response/AccessResponse.js"
-import {WIRE_API_HOST, WIRE_USER_EMAIL, WIRE_USER_PASSWORD} from "../utils/DependencyInjectionTokens.js"
+import {WIRE_API_HOST, WIRE_SDK_API_TOKEN} from "../utils/DependencyInjectionTokens.js"
 import type {WireApiError} from "../model/exception/WireApiError.js"
 import {inject, singleton} from "tsyringe"
 import {LoggerFactory} from "../utils/logger/LoggerFactory.js";
@@ -32,12 +31,15 @@ export class HttpClient {
 
   constructor(
     @inject(WIRE_API_HOST) private wireApiHost: string,
-    @inject(WIRE_USER_EMAIL) private wireUserEmail: string,
-    @inject(WIRE_USER_PASSWORD) private wireUserPassword: string
+    @inject(WIRE_SDK_API_TOKEN) private apiToken: string
   ) {}
 
   private setAuthorizationToken(token: string) {
     this.headers["Authorization"] = `Bearer ${token}`
+  }
+
+  clearAuthorizationToken() {
+    this.cachedAccessToken = null
   }
 
   getApiHostVersion(): string {
@@ -80,46 +82,28 @@ export class HttpClient {
       this.logger.info("Access token expired, getting a new one.")
     }
 
-    // TODO: Move to Token retrieval once backend tickets are done.
-    const loginResponse = (await this.request<Record<string, unknown>>("login", {
+    const path = this.cachedDeviceId
+      ? `access?client_id=${this.cachedDeviceId}`
+      : `access`
+    const accessResponse = (await this.request<Record<string, unknown>>(path, {
       method: "POST",
-      body: JSON.stringify({
-        email: this.wireUserEmail,
-        password: this.wireUserPassword
-      }),
       headers: {
-        "Content-Type": this.HEADER_DEFAULT_CONTENT_TYPE,
+        "Cookie": `zuid=${this.apiToken}` // TODO: cookie will change therefore new variable needs to be introduced
       }
     }))
 
-    if (this.cachedDeviceId != null) {
-      const setCookieHeaders: string[] = loginResponse.response.headers.getSetCookie();
-      const zuidCookie = setCookieHeaders
-        ?.find((cookie: string) => cookie.startsWith('zuid='))
-        ?.split(';')[0];
+    // TODO: save new cookie
+    // const setCookieHeaders: string[] = accessResponse.response.headers.getSetCookie();
+    // const zuidCookie = setCookieHeaders
+    //   ?.find((cookie: string) => cookie.startsWith('zuid='))
+    //   ?.split(';')[0];
 
-      const path = this.cachedDeviceId
-        ? `access?client_id=${this.cachedDeviceId}`
-        : `access`
-      const jsonAccessResponse = (await this.request<Record<string, unknown>>(path, {
-        method: "POST",
-        headers: {
-          "Cookie": `${zuidCookie}`
-        }
-      })).data
+    const accessToken = accessResponse.data['access_token'] as string
 
-      const accessResponse: AccessResponse = {
-        accessToken: jsonAccessResponse["access_token"] as string,
-        expiresIn: jsonAccessResponse["expires_in"] as number
-      }
+    this.cachedAccessToken = accessToken
+    this.tokenTimestamp = currentTime
 
-      this.cachedAccessToken = accessResponse.accessToken
-      this.tokenTimestamp = currentTime
-
-      this.setAuthorizationToken(accessResponse.accessToken)
-    } else {
-      this.setAuthorizationToken(loginResponse.data["access_token"] as string)
-    }
+    this.setAuthorizationToken(accessToken)
   }
 
   async request<T>(

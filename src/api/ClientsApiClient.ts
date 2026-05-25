@@ -19,16 +19,13 @@ import type {RegisterClientResponse} from "./response/RegisterClientResponse.js"
 import {RegisterClientRequest} from "./request/RegisterClientRequest.js";
 import type {MlsPublicKeys} from "../model/MlsPublicKeys.js";
 import type {ClientUpdateRequest} from "./request/ClientUpdateRequest.js";
-import {WIRE_USER_PASSWORD} from "../utils/DependencyInjectionTokens.js";
 import {mapToPreKeyRequest} from "../mappers/PreKeyMapper.js";
 import type {PreKeyCrypto} from "../model/PreKeyCrypto.js";
-import { inject, singleton } from "tsyringe";
+import {singleton} from "tsyringe";
 
 @singleton()
 export class ClientsApiClient {
-  constructor(
-    private httpClient: HttpClient,
-    @inject(WIRE_USER_PASSWORD) private wireUserPassword: string) {
+  constructor(private httpClient: HttpClient) {
   }
 
   private readonly basePath = "clients";
@@ -39,7 +36,6 @@ export class ClientsApiClient {
   ): Promise<string> {
 
     const requestPayload = new RegisterClientRequest(
-      this.wireUserPassword,
       mapToPreKeyRequest(proteusLastPreKey),
       proteusPreKeys.map((preKey) =>
         mapToPreKeyRequest(preKey)
@@ -50,6 +46,10 @@ export class ClientsApiClient {
       this.basePath,
       requestPayload
     )
+
+    // Register client is performed with an access_token having limited scope.
+    // Clear the token to force a refresh with the full-scope token for next requests.
+    this.httpClient.clearAuthorizationToken()
 
     this.httpClient.setDeviceId(response.id)
     return response.id

@@ -1,7 +1,7 @@
 /*
 * Wire
 * Copyright (C) 2025 Wire Swiss GmbH
-* 
+*
 * This program is free software: you can redistribute it and/or modify
 * it under the terms of the GNU General Public License as published by
 * the Free Software Foundation, either version 3 of the License, or
@@ -18,7 +18,6 @@ import { CapabilitiesRequest } from "./CapabilitiesRequest.js"
 import type { PreKeyRequest } from "./PreKeyRequest.js"
 
 export class RegisterClientRequest {
-  password: string
   lastkey: PreKeyRequest
   prekeys: PreKeyRequest[]
   capabilities: CapabilitiesRequest[]
@@ -26,14 +25,12 @@ export class RegisterClientRequest {
   model: string
 
   constructor(
-    password: string,
     lastKey: PreKeyRequest,
     preKeys: PreKeyRequest[],
     capabilities: CapabilitiesRequest[] = this.DEFAULT_CAPABILITIES,
     type: string = this.DEFAULT_CLIENT_TYPE,
     model: string = this.DEFAULT_CLIENT_MODEL
   ) {
-    this.password = password
     this.lastkey = lastKey
     this.prekeys = preKeys
     this.capabilities = capabilities

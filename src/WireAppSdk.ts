@@ -24,9 +24,8 @@ import {
   WIRE_DATABASE_PATH,
   WIRE_EVENTS_HANDLER,
   WIRE_USER_DOMAIN,
-  WIRE_USER_EMAIL,
   WIRE_USER_ID,
-  WIRE_USER_PASSWORD
+  WIRE_SDK_API_TOKEN
 } from "./utils/DependencyInjectionTokens.js";
 import {WebSocketClient} from "./core/WebSocketClient.js";
 import {WireEventsHandler} from "./core/WireEventsHandler.js";
@@ -38,9 +37,8 @@ import {ConsoleLogger} from "./utils/logger/ConsoleLogger.js";
 import {ConversationService} from "./api/ConversationService.js";
 
 export class WireAppSdk {
-  private userEmail: string
-  private userPassword: string
   private userId: string
+  private apiToken: string
   private userDomain: string
   private apiHost: string
   private cryptographyStoragePassword: string
@@ -55,18 +53,16 @@ export class WireAppSdk {
   private logger: Logger
 
   private constructor(
-    userEmail: string,
-    userPassword: string,
     userId: string,
+    apiToken: string,
     userDomain: string,
     apiHost: string,
     cryptographyStoragePassword: string,
     wireEventsHandler: WireEventsHandler,
     logger?: Logger
   ) {
-    this.userEmail = userEmail
-    this.userPassword = userPassword
     this.userId = userId
+    this.apiToken = apiToken
     this.userDomain = userDomain
     this.apiHost = apiHost
     this.cryptographyStoragePassword = cryptographyStoragePassword
@@ -76,9 +72,8 @@ export class WireAppSdk {
   }
 
   static async create(
-    userEmail: string,
-    userPassword: string,
     userId: string,
+    apiToken: string,
     userDomain: string,
     apiHost: string,
     cryptographyStoragePassword: string,
@@ -86,9 +81,8 @@ export class WireAppSdk {
     logger?: Logger,
   ): Promise<WireAppSdk> {
     const wireAppSdk = new WireAppSdk(
-      userEmail,
-      userPassword,
       userId,
+      apiToken,
       userDomain,
       apiHost,
       cryptographyStoragePassword,
@@ -109,8 +103,7 @@ export class WireAppSdk {
 
   private configureDependencies() {
     container.registerInstance(WIRE_API_HOST, this.apiHost)
-    container.registerInstance(WIRE_USER_EMAIL, this.userEmail)
-    container.registerInstance(WIRE_USER_PASSWORD, this.userPassword)
+    container.registerInstance(WIRE_SDK_API_TOKEN, this.apiToken)
     container.registerInstance(WIRE_USER_ID, this.userId)
     container.registerInstance(WIRE_USER_DOMAIN, this.userDomain)
     container.registerInstance(WIRE_CRYPTO_STORAGE_PASSWORD, this.cryptographyStoragePassword)

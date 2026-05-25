@@ -54,9 +54,8 @@ To be done
 Environment Variables can be checked from: `.env.example` file
 
 ```
-WIRE_SDK_USER_EMAIL=youremail@yourdomain.com
-WIRE_SDK_USER_PASSWORD=YourP@ssw0rd
 WIRE_SDK_USER_ID=your-user-ID-UUID-format
+WIRE_SDK_API_TOKEN=your-api-token
 WIRE_SDK_USER_DOMAIN=yourdomain
 WIRE_SDK_API_HOST=https://your-api.host
 WIRE_SDK_CRYPTO_PASSWORD=YourCryptographyStoragePassword
