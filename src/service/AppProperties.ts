@@ -1,7 +1,7 @@
 /*
 * Wire
 * Copyright (C) 2026 Wire Swiss GmbH
-* 
+*
 * This program is free software: you can redistribute it and/or modify
 * it under the terms of the GNU General Public License as published by
 * the Free Software Foundation, either version 3 of the License, or
@@ -21,6 +21,7 @@ import {AppPropertiesRepository} from "../db/AppPropertiesRepository.js";
 export class AppProperties {
   private readonly SHOULD_REJOIN_CONVERSATIONS = "should_rejoin_conversations"
   private readonly LAST_NOTIFICATION_ID = "last_notification_id"
+  static readonly BACKEND_COOKIE = "backend_cookie"
 
   constructor(
     private appPropertiesRepository: AppPropertiesRepository
@@ -29,7 +30,7 @@ export class AppProperties {
   getShouldRejoinConversations(): boolean {
     const value = this.appPropertiesRepository.getByKey(this.SHOULD_REJOIN_CONVERSATIONS)?.value
     const booleanValue = this.databaseValueToBoolean(value)
-    
+
     return booleanValue ?? true
   }
 
@@ -49,6 +50,22 @@ export class AppProperties {
       this.LAST_NOTIFICATION_ID,
       lastNotificationId
     )
+  }
+
+  // TODO: Add decryption
+  getBackendCookie(): string | undefined {
+    return this.appPropertiesRepository.getByKey(AppProperties.BACKEND_COOKIE)?.value
+  }
+
+  // TODO: Add encryption
+  saveBackendCookie(cookie: string) {
+    this.appPropertiesRepository.save(AppProperties.BACKEND_COOKIE, cookie)
+  }
+
+  saveBackendCookieIfMissing(cookie: string) {
+    if (!this.getBackendCookie()) {
+      this.saveBackendCookie(cookie)
+    }
   }
 
   private booleanToDatabaseValue = (value: boolean): string => value ? '1' : '0'
