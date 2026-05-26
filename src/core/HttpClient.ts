@@ -14,10 +14,11 @@
 * along with this program. If not, see http://www.gnu.org/licenses/.
 */
 
-import {WIRE_API_HOST, WIRE_SDK_API_TOKEN} from "../utils/DependencyInjectionTokens.js"
+import {WIRE_API_HOST} from "../utils/DependencyInjectionTokens.js"
 import type {WireApiError} from "../model/exception/WireApiError.js"
 import {inject, singleton} from "tsyringe"
 import {LoggerFactory} from "../utils/logger/LoggerFactory.js";
+import {AppProperties} from "../service/AppProperties.js";
 
 @singleton()
 export class HttpClient {
@@ -31,7 +32,7 @@ export class HttpClient {
 
   constructor(
     @inject(WIRE_API_HOST) private wireApiHost: string,
-    @inject(WIRE_SDK_API_TOKEN) private apiToken: string
+    private appProperties: AppProperties
   ) {}
 
   private setAuthorizationToken(token: string) {
@@ -88,7 +89,7 @@ export class HttpClient {
     const accessResponse = (await this.request<Record<string, unknown>>(path, {
       method: "POST",
       headers: {
-        "Cookie": `zuid=${this.apiToken}` // TODO: cookie will change therefore new variable needs to be introduced
+        "Cookie": `zuid=${this.appProperties.getBackendCookie()}` // TODO: cookie will change therefore new variable needs to be introduced
       }
     }))
 
