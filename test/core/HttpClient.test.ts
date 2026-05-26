@@ -20,9 +20,12 @@ import { http, HttpResponse } from "msw";
 import { setupServer } from "msw/node";
 import { AppProperties } from "../../src/service/AppProperties.js";
 import { container } from "tsyringe";
+import { ClientsApiClient } from "../../src/api/ClientsApiClient.js";
+import { PreKeyCrypto } from "../../src/model/PreKeyCrypto.js";
 
 const TEST_API_HOST = 'https://test.api.host'
 const TEST_ACCESS_TOKEN = 'test-access-token'
+const FULL_FLEDGED_ACCESS_TOKEN = 'test-access-token-with-client-id'
 const COOKIE = 'test-cookie'
 const NEW_COOKIE = 'new-test-cookie'
 
@@ -30,11 +33,15 @@ const createHttpClient = (appProperties: AppProperties) =>
   new HttpClient(TEST_API_HOST, appProperties)
 
 export const restHandlers = [
-  http.post(`${TEST_API_HOST}/v*/access`, ({ cookies }) => {
+  http.post(`${TEST_API_HOST}/v*/access`, ({ request, cookies }) => {
     if (cookies['zuid'] != COOKIE)
       return new HttpResponse(null, { status: 403 })
+    const url = new URL(request.url)
+    const clientId = url.searchParams.get('client_id')
+    const accessToken = clientId ? FULL_FLEDGED_ACCESS_TOKEN : TEST_ACCESS_TOKEN
+
     return HttpResponse.json({
-      access_token: TEST_ACCESS_TOKEN,
+      access_token: accessToken,
       expires_in: 900,
       token_type: 'Bearer',
       user: 'test-uuid'
@@ -42,6 +49,9 @@ export const restHandlers = [
     {
      headers: {'set-cookie': `zuid=${NEW_COOKIE}; Path=/access; HttpOnly; Secure`}
     })
+  }),
+  http.post(`${TEST_API_HOST}/v*/clients`, () => {
+    return HttpResponse.json({id: 'test-client-id'})
   })
 ]
 
@@ -81,12 +91,20 @@ describe('HttpClient', () => {
       expect(httpClient.getCachedAccessToken()).toEqual(TEST_ACCESS_TOKEN)
     });
 
-    it('should be updated with client ID when it is registered', () => {
-      // given cookie is set
+    it('should be updated with client ID when it is registered', async () => {
+      // given
+      vi.mocked(mockAppProperties.getBackendCookie).mockReturnValue(COOKIE)
+      const httpClient = createHttpClient(mockAppProperties)
 
-      // when client is registered
+      // when
+      const clientsApiClient = new ClientsApiClient(httpClient)
+      const testPreKeys: PreKeyCrypto[] = [new PreKeyCrypto(1, 'foo')]
+      await clientsApiClient.registerClient(testPreKeys, testPreKeys[0]!)
 
-      // then full-fledged cookie should be set
+      await httpClient.verifyAuthorizationToken()
+
+      // then
+      expect(httpClient.getCachedAccessToken()).toEqual(FULL_FLEDGED_ACCESS_TOKEN)
     })
   })
   describe('App token', () => {
@@ -108,14 +126,14 @@ describe('HttpClient', () => {
     });
 
     it('should be replaced when a new cookie is available', async () => {
-      // given cookie is set
+      // given
       vi.mocked(mockAppProperties.getBackendCookie).mockReturnValue(COOKIE)
       const httpClient = createHttpClient(mockAppProperties)
 
-      // when new cookie comes in access cookie header
+      // when
       await httpClient.verifyAuthorizationToken()
 
-      // then it should replace the old one
+      // then
       expect(storedCookie).toEqual(NEW_COOKIE)
     });
 
@@ -125,15 +143,6 @@ describe('HttpClient', () => {
       // when access endpoint is called and it fails
 
       // then cookie should be erased from storage
-    });
-  })
-  describe('Query param `client_id`', () => {
-    it('should be set when stored', () => {
-
-    });
-
-    it('should be omitted when not stored', () => {
-
     });
   })
 })
