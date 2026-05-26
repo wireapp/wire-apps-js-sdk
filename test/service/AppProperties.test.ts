@@ -92,11 +92,41 @@ describe('AppProperties', () => {
     })
   })
 
+  describe('saveBackendCookieIfMissing', () => {
+    const API_TOKEN = 'test-cookie'
+
+    it('should be saved from constructor param when token is not in DB', () => {
+      // given
+      vi.mocked(mockAppPropertiesRepository.getByKey).mockReturnValue(undefined)
+
+      // when
+      appProperties.saveBackendCookieIfMissing(API_TOKEN)
+
+      // then
+      expect(mockAppPropertiesRepository.getByKey).toHaveBeenCalledWith(AppProperties.BACKEND_COOKIE)
+      expect(mockAppPropertiesRepository.save).toHaveBeenCalledWith(AppProperties.BACKEND_COOKIE, API_TOKEN)
+    })
+
+    it('should not overwrite token when one already exists in DB', () => {
+      // given
+      vi.mocked(mockAppPropertiesRepository.getByKey).mockReturnValue({
+        key: AppProperties.BACKEND_COOKIE,
+        value: 'refreshed-cookie-from-back-end'
+      })
+
+      // when
+      appProperties.saveBackendCookieIfMissing(API_TOKEN)
+
+      // then
+      expect(mockAppPropertiesRepository.save).not.toHaveBeenCalled()
+    })
+  })
+
   describe('round-trip behavior', () => {
     it('should correctly round-trip true value', () => {
       // Set to true
       appProperties.setShouldRejoinConversations(true)
-      
+
       expect(mockAppPropertiesRepository.save).toHaveBeenCalledWith('should_rejoin_conversations', '1')
 
       // Mock the get to return what was saved
@@ -112,7 +142,7 @@ describe('AppProperties', () => {
     it('should correctly round-trip false value', () => {
       // Set to false
       appProperties.setShouldRejoinConversations(false)
-      
+
       expect(mockAppPropertiesRepository.save).toHaveBeenCalledWith('should_rejoin_conversations', '0')
 
       // Mock the get to return what was saved
