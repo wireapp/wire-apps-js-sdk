@@ -110,6 +110,7 @@ export class HttpClient {
       this.setAuthorizationToken(accessToken)
     } catch (exception) {
       this.logger.error('Unable to retrieve access token, Error:', exception)
+      // TODO: Once WireException is introduced, verify if the response label is 'invalid-credentials'
       this.appProperties.deleteBackendCookie()
 
       // TODO Can't recover from this, need to restart the app with a valid api token
