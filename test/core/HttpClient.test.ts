@@ -14,16 +14,19 @@
 * along with this program. If not, see http://www.gnu.org/licenses/.
 */
 
-import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { HttpClient } from '../../src/core/HttpClient.js';
 import { http, HttpResponse } from "msw";
 import { setupServer } from "msw/node";
+import { AppProperties } from "../../src/service/AppProperties.js";
+import { container } from "tsyringe";
 
 const TEST_API_HOST = 'https://test.api.host'
 const TEST_ACCESS_TOKEN = 'test-access-token'
 const COOKIE = 'test-cookie'
 
-const createHttpClient = (cookie: string) => new HttpClient(TEST_API_HOST, cookie)
+const createHttpClient = (appProperties: AppProperties) =>
+  new HttpClient(TEST_API_HOST, appProperties)
 
 export const restHandlers = [
   http.post(`${TEST_API_HOST}/v*/access`, ({ cookies }) => {
@@ -41,6 +44,16 @@ export const restHandlers = [
 const server = setupServer(...restHandlers)
 
 describe('HttpClient', () => {
+  let mockAppProperties: AppProperties
+
+  beforeEach(() => {
+    container.clearInstances()
+
+    mockAppProperties = {
+      getBackendCookie: vi.fn()
+    } as any
+  })
+
   beforeAll(() => server.listen({ onUnhandledRequest: 'error' }))
   afterAll(() => server.close())
   afterEach(() => server.resetHandlers())
@@ -48,7 +61,8 @@ describe('HttpClient', () => {
   describe('Access token', () => {
     it('should be set after successful response to `/access` endpoint', async () => {
       // given
-      const httpClient = createHttpClient(COOKIE)
+      vi.mocked(mockAppProperties.getBackendCookie).mockReturnValue(COOKIE)
+      const httpClient = createHttpClient(mockAppProperties)
 
       // when
       await httpClient.verifyAuthorizationToken()
@@ -57,18 +71,43 @@ describe('HttpClient', () => {
       expect(httpClient.getCachedAccessToken()).toEqual(TEST_ACCESS_TOKEN)
     });
     it('should be updated with client ID when it is registered', () => {
+      // given cookie is set
 
+      // when client is registered
+
+      // then full-fledged cookie should be set
     })
   })
   describe('App token', () => {
-    it('should be set in Cookie header in request to `/access` endpoint', () => {
+    it('should be set in Cookie header in request to `/access` endpoint', async () => {
+      const requestPromise = new Promise<Request>(resolve => {
+        server.events.on('request:match', ({ request }) => resolve(request.clone()))
+      })
 
+      // given
+      vi.mocked(mockAppProperties.getBackendCookie).mockReturnValue(COOKIE)
+      const httpClient = createHttpClient(mockAppProperties)
+
+      // when
+      await httpClient.verifyAuthorizationToken()
+
+      // then
+      const capturedRequest = await requestPromise
+      expect(capturedRequest.headers.get('Cookie')).toContain(`zuid=${COOKIE}`)
     });
     it('should be replaced when a new cookie is available', () => {
+      // given cookie is set
 
+      // when new cookie comes in access cookie header
+
+      // then it should replace the old one
     });
     it('should be deleted when expired', () => {
+      // given cookie is set
 
+      // when access endpoint is called and it fails
+
+      // then cookie should be erased from storage
     });
   })
   describe('Query param `client_id`', () => {
