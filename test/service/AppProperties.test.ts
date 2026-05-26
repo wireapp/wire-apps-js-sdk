@@ -60,7 +60,7 @@ describe('AppProperties', () => {
     })
 
     it('should return false when key does not exist', () => {
-      vi.mocked(mockAppPropertiesRepository.getByKey).mockReturnValue(null)
+      vi.mocked(mockAppPropertiesRepository.getByKey).mockReturnValue(undefined)
 
       const result = appProperties.getShouldRejoinConversations()
 
