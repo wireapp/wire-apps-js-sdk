@@ -14,8 +14,10 @@
 * along with this program. If not, see http://www.gnu.org/licenses/.
 */
 
-import {singleton} from "tsyringe";
+import {inject, singleton} from "tsyringe";
 import {AppPropertiesRepository} from "../db/AppPropertiesRepository.js";
+import {WIRE_CRYPTO_STORAGE_PASSWORD} from "../utils/DependencyInjectionTokens.js";
+import {AESUtils} from "../utils/AESUtils.js";
 
 @singleton()
 export class AppProperties {
@@ -24,7 +26,8 @@ export class AppProperties {
   static readonly BACKEND_COOKIE = "backend_cookie"
 
   constructor(
-    private appPropertiesRepository: AppPropertiesRepository
+    private appPropertiesRepository: AppPropertiesRepository,
+    @inject(WIRE_CRYPTO_STORAGE_PASSWORD) private wireCryptoStoragePassword: string,
   ) {}
 
   getShouldRejoinConversations(): boolean {
@@ -52,14 +55,18 @@ export class AppProperties {
     )
   }
 
-  // TODO: Add decryption
   getBackendCookie(): string | undefined {
-    return this.appPropertiesRepository.getByKey(AppProperties.BACKEND_COOKIE)?.value
+    const encryptedData = this.appPropertiesRepository.getByKey(AppProperties.BACKEND_COOKIE)?.value
+    const key = Buffer.from(this.wireCryptoStoragePassword)
+
+    return encryptedData ? AESUtils.decryptData(Buffer.from(encryptedData, 'base64'), key).toString() : undefined
   }
 
-  // TODO: Add encryption
   saveBackendCookie(cookie: string) {
-    this.appPropertiesRepository.save(AppProperties.BACKEND_COOKIE, cookie)
+    const key = Buffer.from(this.wireCryptoStoragePassword)
+    const encryptedCookie = AESUtils.encryptData(Buffer.from(cookie), key).toString('base64')
+
+    this.appPropertiesRepository.save(AppProperties.BACKEND_COOKIE, encryptedCookie)
   }
 
   saveBackendCookieIfMissing(cookie: string) {

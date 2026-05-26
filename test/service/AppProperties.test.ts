@@ -18,6 +18,9 @@ import {beforeEach, describe, expect, it, vi} from 'vitest'
 import {AppProperties} from '../../src/service/AppProperties.js'
 import {AppPropertiesRepository} from '../../src/db/AppPropertiesRepository.js'
 import {container} from 'tsyringe'
+import {AESUtils} from "../../src/utils/AESUtils.js";
+
+const CRYPTO_STORAGE_PASSWORD = 'test-crypto-key-of-32-characters'
 
 describe('AppProperties', () => {
   let appProperties: AppProperties
@@ -31,7 +34,7 @@ describe('AppProperties', () => {
       save: vi.fn()
     } as any
 
-    appProperties = new AppProperties(mockAppPropertiesRepository)
+    appProperties = new AppProperties(mockAppPropertiesRepository, CRYPTO_STORAGE_PASSWORD)
   })
 
   describe('getShouldRejoinConversations', () => {
@@ -94,6 +97,7 @@ describe('AppProperties', () => {
 
   describe('saveBackendCookieIfMissing', () => {
     const API_TOKEN = 'test-cookie'
+    const encryptedApiToken = AESUtils.encryptData(Buffer.from(API_TOKEN), Buffer.from(CRYPTO_STORAGE_PASSWORD))
 
     it('should be saved from constructor param when token is not in DB', () => {
       // given
@@ -104,14 +108,14 @@ describe('AppProperties', () => {
 
       // then
       expect(mockAppPropertiesRepository.getByKey).toHaveBeenCalledWith(AppProperties.BACKEND_COOKIE)
-      expect(mockAppPropertiesRepository.save).toHaveBeenCalledWith(AppProperties.BACKEND_COOKIE, API_TOKEN)
+      expect(mockAppPropertiesRepository.save).toHaveBeenCalledWith(AppProperties.BACKEND_COOKIE, encryptedApiToken.toString('base64'))
     })
 
     it('should not overwrite token when one already exists in DB', () => {
       // given
       vi.mocked(mockAppPropertiesRepository.getByKey).mockReturnValue({
         key: AppProperties.BACKEND_COOKIE,
-        value: 'refreshed-cookie-from-back-end'
+        value: encryptedApiToken.toString('base64')
       })
 
       // when
