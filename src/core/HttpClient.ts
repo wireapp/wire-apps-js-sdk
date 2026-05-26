@@ -86,27 +86,36 @@ export class HttpClient {
     const path = this.cachedDeviceId
       ? `access?client_id=${this.cachedDeviceId}`
       : `access`
-    const accessResponse = (await this.request<Record<string, unknown>>(path, {
-      method: "POST",
-      headers: {
-        "Cookie": `zuid=${this.appProperties.getBackendCookie()}`
-      }
-    }))
+    try {
+      const accessResponse = (await this.request<Record<string, unknown>>(path, {
+        method: "POST",
+        headers: {
+          "Cookie": `zuid=${this.appProperties.getBackendCookie()}`
+        }
+      }))
 
-    const setCookieHeaders: string[] = accessResponse.response.headers.getSetCookie();
-    const zuidCookie = setCookieHeaders
-      ?.find((cookie: string) => cookie.startsWith('zuid='))
-      ?.split(';')[0]
-      ?.slice(5); // remove "zuid="
-    if (zuidCookie)
-      this.appProperties.saveBackendCookie(zuidCookie)
+      const setCookieHeaders: string[] = accessResponse.response.headers.getSetCookie();
+      const zuidCookie = setCookieHeaders
+        ?.find((cookie: string) => cookie.startsWith('zuid='))
+        ?.split(';')[0]
+        ?.slice(5); // remove "zuid="
+      if (zuidCookie)
+        this.appProperties.saveBackendCookie(zuidCookie)
 
-    const accessToken = accessResponse.data['access_token'] as string
+      const accessToken = accessResponse.data['access_token'] as string
 
-    this.cachedAccessToken = accessToken
-    this.tokenTimestamp = currentTime
+      this.cachedAccessToken = accessToken
+      this.tokenTimestamp = currentTime
 
-    this.setAuthorizationToken(accessToken)
+      this.setAuthorizationToken(accessToken)
+    } catch (exception) {
+      this.logger.error('Unable to retrieve access token, Error:', exception)
+      this.appProperties.deleteBackendCookie()
+
+      // TODO Can't recover from this, need to restart the app with a valid api token
+      // TODO: Map to WireException
+      throw new Error("Current cookie/api-token is expired. Get a apiToken and restart the App")
+    }
   }
 
   async request<T>(

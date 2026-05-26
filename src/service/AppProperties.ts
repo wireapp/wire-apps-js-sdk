@@ -75,6 +75,10 @@ export class AppProperties {
     }
   }
 
+  deleteBackendCookie() {
+    this.appPropertiesRepository.delete(AppProperties.BACKEND_COOKIE)
+  }
+
   private booleanToDatabaseValue = (value: boolean): string => value ? '1' : '0'
   private databaseValueToBoolean = (value?: string): boolean | undefined => {
     if (value === undefined) return undefined
