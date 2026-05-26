@@ -24,6 +24,7 @@ import { container } from "tsyringe";
 const TEST_API_HOST = 'https://test.api.host'
 const TEST_ACCESS_TOKEN = 'test-access-token'
 const COOKIE = 'test-cookie'
+const NEW_COOKIE = 'new-test-cookie'
 
 const createHttpClient = (appProperties: AppProperties) =>
   new HttpClient(TEST_API_HOST, appProperties)
@@ -37,6 +38,9 @@ export const restHandlers = [
       expires_in: 900,
       token_type: 'Bearer',
       user: 'test-uuid'
+    },
+    {
+     headers: {'set-cookie': `zuid=${NEW_COOKIE}; Path=/access; HttpOnly; Secure`}
     })
   })
 ]
@@ -45,12 +49,18 @@ const server = setupServer(...restHandlers)
 
 describe('HttpClient', () => {
   let mockAppProperties: AppProperties
+  let storedCookie: string | undefined
 
   beforeEach(() => {
     container.clearInstances()
 
+    storedCookie = undefined
+
     mockAppProperties = {
-      getBackendCookie: vi.fn()
+      getBackendCookie: vi.fn(() => storedCookie),
+      saveBackendCookie: vi.fn((cookie) => {
+        storedCookie = cookie
+      }),
     } as any
   })
 
@@ -70,6 +80,7 @@ describe('HttpClient', () => {
       // then
       expect(httpClient.getCachedAccessToken()).toEqual(TEST_ACCESS_TOKEN)
     });
+
     it('should be updated with client ID when it is registered', () => {
       // given cookie is set
 
@@ -95,13 +106,19 @@ describe('HttpClient', () => {
       const capturedRequest = await requestPromise
       expect(capturedRequest.headers.get('Cookie')).toContain(`zuid=${COOKIE}`)
     });
-    it('should be replaced when a new cookie is available', () => {
+
+    it('should be replaced when a new cookie is available', async () => {
       // given cookie is set
+      vi.mocked(mockAppProperties.getBackendCookie).mockReturnValue(COOKIE)
+      const httpClient = createHttpClient(mockAppProperties)
 
       // when new cookie comes in access cookie header
+      await httpClient.verifyAuthorizationToken()
 
       // then it should replace the old one
+      expect(storedCookie).toEqual(NEW_COOKIE)
     });
+
     it('should be deleted when expired', () => {
       // given cookie is set
 
@@ -114,6 +131,7 @@ describe('HttpClient', () => {
     it('should be set when stored', () => {
 
     });
+
     it('should be omitted when not stored', () => {
 
     });
