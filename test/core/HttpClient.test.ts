@@ -71,6 +71,7 @@ describe('HttpClient', () => {
       saveBackendCookie: vi.fn((cookie) => {
         storedCookie = cookie
       }),
+      deleteBackendCookie: vi.fn()
     } as any
   })
 
@@ -137,12 +138,14 @@ describe('HttpClient', () => {
       expect(storedCookie).toEqual(NEW_COOKIE)
     });
 
-    it('should be deleted when expired', () => {
+    it('should be deleted when expired', async () => {
       // given cookie is set
+      storedCookie = 'test-expired-cookie'
+      const httpClient = createHttpClient(mockAppProperties)
 
-      // when access endpoint is called and it fails
-
-      // then cookie should be erased from storage
-    });
+      // when & then
+      await expect(httpClient.verifyAuthorizationToken()).rejects.toThrow()
+      expect(mockAppProperties.deleteBackendCookie).toHaveBeenCalled()
+    })
   })
 })
