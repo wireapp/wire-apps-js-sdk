@@ -89,15 +89,17 @@ export class HttpClient {
     const accessResponse = (await this.request<Record<string, unknown>>(path, {
       method: "POST",
       headers: {
-        "Cookie": `zuid=${this.appProperties.getBackendCookie()}` // TODO: cookie will change therefore new variable needs to be introduced
+        "Cookie": `zuid=${this.appProperties.getBackendCookie()}`
       }
     }))
 
-    // TODO: save new cookie
-    // const setCookieHeaders: string[] = accessResponse.response.headers.getSetCookie();
-    // const zuidCookie = setCookieHeaders
-    //   ?.find((cookie: string) => cookie.startsWith('zuid='))
-    //   ?.split(';')[0];
+    const setCookieHeaders: string[] = accessResponse.response.headers.getSetCookie();
+    const zuidCookie = setCookieHeaders
+      ?.find((cookie: string) => cookie.startsWith('zuid='))
+      ?.split(';')[0]
+      ?.slice(5); // remove "zuid="
+    if (zuidCookie)
+      this.appProperties.saveBackendCookie(zuidCookie)
 
     const accessToken = accessResponse.data['access_token'] as string
 
