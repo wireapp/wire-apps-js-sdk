@@ -35,6 +35,7 @@ import type {Logger} from "./utils/logger/Logger.js";
 import {LoggerFactory} from "./utils/logger/LoggerFactory.js";
 import {ConsoleLogger} from "./utils/logger/ConsoleLogger.js";
 import {ConversationService} from "./api/ConversationService.js";
+import {AppProperties} from "./service/AppProperties.js";
 
 export class WireAppSdk {
   private userId: string
@@ -48,6 +49,7 @@ export class WireAppSdk {
   private isWebSocketRunning: boolean = false
   private webSocketClient!: WebSocketClient
   private conversationService!: ConversationService
+  private appProperties!: AppProperties
 
   private wireEventsHandler: WireEventsHandler
   private logger: Logger
@@ -92,12 +94,16 @@ export class WireAppSdk {
 
     wireAppSdk.registerExitHandlers()
     await wireAppSdk.init()
-
     return wireAppSdk
   }
 
   private async init() {
     this.configureDependencies()
+
+    // Save cookie from constructor paramter only at first application start.
+    // Once BE provides new token, the one stored in `apiToken` will be obsolte.
+    this.appProperties.saveBackendCookieIfMissing(this.apiToken)
+
     await this.initCryptoClient()
   }
 
@@ -113,6 +119,7 @@ export class WireAppSdk {
 
     this.webSocketClient = container.resolve(WebSocketClient)
     this.conversationService = container.resolve(ConversationService)
+    this.appProperties = container.resolve(AppProperties)
   }
 
   private async initCryptoClient() {
