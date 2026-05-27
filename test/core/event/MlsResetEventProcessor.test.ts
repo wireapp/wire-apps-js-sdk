@@ -20,7 +20,7 @@ import {ConversationService} from "../../../src/api/ConversationService.js";
 import {MlsResetEventProcessor} from "../../../src/core/event/MlsResetEventProcessor.js";
 import {QualifiedId} from "../../../src/model/QualifiedId.js";
 
-vi.mock('../../api/ConversationService.js')
+vi.mock('../../../src/api/ConversationService.js')
 
 const qualifiedConversation = {id: 'conv-123', domain: 'example.com'}
 const qualifiedFrom = {id: 'user-456', domain: 'example.com'}

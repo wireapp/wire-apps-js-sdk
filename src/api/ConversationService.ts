@@ -215,7 +215,7 @@ export class ConversationService {
       return
     }
     await this.deleteAllConversationDataFromLocalStorages(conversationId)
-    this.logger.info(`MLS conversation reset. conversationId: ${conversationId}`)
+    this.logger.info(`MLS conversation reset is completed. conversationId: ${conversationId}`)
   }
 
   async deleteAllConversationDataFromLocalStorages(conversationId: QualifiedId): Promise<void> {
