@@ -154,28 +154,22 @@ describe('UserService', () => {
       expect(user2Clients![1].value).toBe('user-2:device-3@example.com')
     })
 
-    it('should return empty array for user with no clients', async () => {
+    it('should return empty map for user with no clients', async () => {
       const mockMap = new Map([[toKey(userId1), []]])
       vi.mocked(mockUsersApiClient.getClientsByUserId).mockResolvedValue(mockMap)
 
       const result = await service.getUsersClientIds([userId1])
 
-      expect(result.size).toBe(1)
-      const key = toKey(userId1)
-      const clientIds = result.get(key)
-      expect(clientIds).toEqual([])
+      expect(result.size).toBe(0)
     })
 
-    it('should log warning and return empty array when user not in response', async () => {
+    it('should log warning and return empty map when user not in response', async () => {
       const mockMap = new Map() // Empty map - user not returned
       vi.mocked(mockUsersApiClient.getClientsByUserId).mockResolvedValue(mockMap)
 
       const result = await service.getUsersClientIds([userId1])
 
-      expect(result.size).toBe(1)
-      const key = toKey(userId1)
-      const clientIds = result.get(key)
-      expect(clientIds).toEqual([])
+      expect(result.size).toBe(0)
     })
 
     it('should propagate errors from getClientsByUserId', async () => {

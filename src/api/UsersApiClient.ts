@@ -36,6 +36,11 @@ export class UsersApiClient {
     return `${userId.domain}:${userId.id}`;
   }
 
+  static fromKey(key: string): QualifiedId {
+    const [domain, id] = key.split(':');
+    return { id: id!, domain: domain! };
+  }
+
   async getUser(userId: string, userDomain: string): Promise<UserResponse> {
     const path = `${this.basePath}/${userDomain}/${userId}`
     return await this.httpClient.getRequest<UserResponse>(path)

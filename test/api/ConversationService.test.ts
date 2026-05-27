@@ -1544,16 +1544,14 @@ describe('ConversationService', () => {
       ).rejects.toThrow('List of members cannot be empty.')
     })
 
-    it('should return result with membersRemoved and membersFailedToRemove', async () => {
+    it('should return result with membersRemoved', async () => {
       const result = await conversationService.removeMembersFromConversation(
         CONVERSATION_ID,
         MEMBERS
       )
 
       expect(result).toHaveProperty('membersRemoved')
-      expect(result).toHaveProperty('membersFailedToRemove')
       expect(result.membersRemoved).toEqual(MEMBERS)
-      expect(result.membersFailedToRemove).toEqual([])
     })
 
     it('should remove members successfully from MLS conversation', async () => {
@@ -1585,7 +1583,7 @@ describe('ConversationService', () => {
         )
     })
 
-    it('should return failed users when members are not in conversation', async () => {
+    it('should return empty result when members are not in conversation', async () => {
       // Mock filterMembersInConversation to return empty array (no valid members)
       vi.spyOn(conversationService as any, 'filterMembersInConversation')
         .mockReturnValue([])
@@ -1596,19 +1594,13 @@ describe('ConversationService', () => {
       )
 
       expect(result.membersRemoved).toEqual([])
-      expect(result.membersFailedToRemove).toEqual(MEMBERS)
       expect(mockCoreCryptoService.removeClientsFromMlsConversation).not.toHaveBeenCalled()
       expect(mockConversationMemberRepository.deleteMany).not.toHaveBeenCalled()
     })
 
-    it('should return failed users when members have no clients', async () => {
-      // Mock getUsersClientIds to return empty arrays for all users
-      mockUserService.getUsersClientIds.mockResolvedValue(
-        new Map([
-          [UsersApiClient.toKey(MEMBERS[0]!), []],
-          [UsersApiClient.toKey(MEMBERS[1]!), []]
-        ])
-      )
+    it('should return empty result when members have no clients', async () => {
+      // Mock getUsersClientIds to return empty map (users have no clients)
+      mockUserService.getUsersClientIds.mockResolvedValue(new Map())
 
       const result = await conversationService.removeMembersFromConversation(
         CONVERSATION_ID,
@@ -1616,7 +1608,6 @@ describe('ConversationService', () => {
       )
 
       expect(result.membersRemoved).toEqual([])
-      expect(result.membersFailedToRemove).toEqual(MEMBERS)
       expect(mockCoreCryptoService.removeClientsFromMlsConversation).not.toHaveBeenCalled()
       expect(mockConversationMemberRepository.deleteMany).not.toHaveBeenCalled()
     })
@@ -1624,11 +1615,10 @@ describe('ConversationService', () => {
     it('should handle partial success when some users have no clients', async () => {
       const mockClientId1 = { value: 'user-1:device-1@wire.com' }
 
-      // Only first user has clients
+      // Only first user has clients (second user not in map since they have no clients)
       mockUserService.getUsersClientIds.mockResolvedValue(
         new Map([
-          [UsersApiClient.toKey(MEMBERS[0]!), [mockClientId1]],
-          [UsersApiClient.toKey(MEMBERS[1]!), []] // No clients
+          [UsersApiClient.toKey(MEMBERS[0]!), [mockClientId1]]
         ])
       )
 
@@ -1638,14 +1628,13 @@ describe('ConversationService', () => {
       )
 
       expect(result.membersRemoved).toEqual([MEMBERS[0]])
-      expect(result.membersFailedToRemove).toEqual([MEMBERS[1]])
       expect(mockCoreCryptoService.removeClientsFromMlsConversation)
         .toHaveBeenCalledWith(MLS_GROUP_ID, [mockClientId1])
       expect(mockConversationMemberRepository.deleteMany)
         .toHaveBeenCalledWith([MEMBERS[0]], CONVERSATION_ID.id, CONVERSATION_ID.domain)
     })
 
-    it('should handle MLS removal failure and return all as failed', async () => {
+    it('should handle MLS removal failure and return empty result', async () => {
       vi.mocked(mockCoreCryptoService.removeClientsFromMlsConversation)
         .mockRejectedValue(new Error('MLS removal failed'))
 
@@ -1655,7 +1644,6 @@ describe('ConversationService', () => {
       )
 
       expect(result.membersRemoved).toEqual([])
-      expect(result.membersFailedToRemove).toEqual(MEMBERS)
       expect(mockConversationMemberRepository.deleteMany).not.toHaveBeenCalled()
     })
   })

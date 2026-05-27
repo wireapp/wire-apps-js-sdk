@@ -53,16 +53,12 @@ export class UserService {
 
       if (!userClientResponses || userClientResponses.length === 0) {
         this.logger.warn(`User has no clients returned from API. userId: ${qualifiedUserId}`);
-        userIdToClientIds.set(key, []);
-        continue;
+      } else {
+        const clientIds = userClientResponses.map(userClientResponse =>
+          CryptoClientId.create(qualifiedUserId.id, userClientResponse.id, qualifiedUserId.domain)
+        );
+        userIdToClientIds.set(key, clientIds);
       }
-
-      const clientIds: CryptoClientId[] = [];
-      for (const userClientResponse of userClientResponses) {
-        clientIds.push(CryptoClientId.create(qualifiedUserId.id, userClientResponse.id, qualifiedUserId.domain));
-      }
-
-      userIdToClientIds.set(key, clientIds);
     }
 
     return userIdToClientIds;

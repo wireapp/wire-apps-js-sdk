@@ -294,10 +294,7 @@ export class ConversationService {
     const membersInTheConversation = this.filterMembersInConversation(conversationId, members)
     if (membersInTheConversation.length === 0) {
       this.logger.warn(`No valid members to remove from the conversation. conversationId: ${conversationId}`)
-      return {
-        membersRemoved: [],
-        membersFailedToRemove: members
-      }
+      return {membersRemoved: []}
     }
 
     // Get the clientIds of the members in the conversation
@@ -305,60 +302,43 @@ export class ConversationService {
     const clientIdsToRemove: CryptoClientId[] = []
     const membersWithClients: QualifiedId[] = []
 
-    // Filter the members who have clients (Defensive)
-    for (const qualifiedUserId of membersInTheConversation) {
-      const key = UsersApiClient.toKey(qualifiedUserId)
-      const clientIds = userIdToClientIds.get(key)
-
-      if (clientIds && clientIds.length > 0) {
-        clientIdsToRemove.push(...clientIds)
-        membersWithClients.push(qualifiedUserId)
-      } else {
-        this.logger.warn(`Member has no clients, cannot remove from MLS conversation. userId: ${qualifiedUserId}`)
-      }
+    // Build the list of members with clients and their client IDs
+    for (const [userKey, clientIds] of userIdToClientIds.entries()) {
+      clientIdsToRemove.push(...clientIds)
+      membersWithClients.push(UsersApiClient.fromKey(userKey))
     }
 
-    let mlsRemovalSucceeded = false
-
-    // Remove members who have clients from MLS conversation
-    if (membersWithClients.length > 0) {
-      try {
-        await this.coreCryptoService.removeClientsFromMlsConversation(conversation.mlsGroupId, clientIdsToRemove)
-        this.conversationMemberRepository.deleteMany(membersWithClients, conversationId.id, conversationId.domain)
-        mlsRemovalSucceeded = true
-      } catch (error) {
-        this.logger.error(`Failed to remove clients from MLS conversation: ${(error as Error).message}`)
-      }
+    if (membersWithClients.length === 0) {
+      this.logger.warn(`All members have no clients, cannot remove from MLS conversation. conversationId: ${conversationId}`)
+      return {membersRemoved: []}
     }
 
-    const membersRemoved = mlsRemovalSucceeded ? membersWithClients : []
-
-    // membersFailedToRemove = members - membersRemoved
-    const membersFailedToRemove = members.filter(member =>
-      !membersRemoved.some(removed => removed.id === member.id && removed.domain === member.domain)
-    )
-
-    this.logger.info(`Removal of members from the conversation is completed. Removed: ${membersRemoved.length}, Failed: ${membersFailedToRemove.length}. conversationId: ${conversationId}`)
-
-    return {
-      membersRemoved: membersRemoved,
-      membersFailedToRemove: membersFailedToRemove
+    let membersRemoved: QualifiedId[] = []
+    try {
+      await this.coreCryptoService.removeClientsFromMlsConversation(conversation.mlsGroupId, clientIdsToRemove)
+      this.conversationMemberRepository.deleteMany(membersWithClients, conversationId.id, conversationId.domain)
+      membersRemoved = membersWithClients
+    } catch (error) {
+      this.logger.error(`Failed to remove clients from MLS conversation: ${(error as Error).message}`)
     }
+
+    this.logger.info(`Removal of members from the conversation is completed. Removed: ${membersRemoved.length}. conversationId: ${conversationId}`)
+    return {membersRemoved}
   }
 
   private filterMembersInConversation(conversationId: QualifiedId, members: QualifiedId[]): QualifiedId[] {
-    const validMembers: QualifiedId[] = []
+    const membersInConversation: QualifiedId[] = []
 
     for (const member of members) {
       const isMemberInConversation = this.conversationMemberRepository.exists(member.id, member.domain, conversationId.id, conversationId.domain)
       if (isMemberInConversation) {
-        validMembers.push(member)
+        membersInConversation.push(member)
       } else {
         this.logger.warn(`Member is not in the conversation. conversationId: ${conversationId}, userId: ${member}`)
       }
     }
 
-    return validMembers
+    return membersInConversation
   }
 
   async updateConversationMemberRole(

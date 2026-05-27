@@ -18,5 +18,4 @@ import type {QualifiedId} from "../../model/QualifiedId.js";
 
 export interface RemoveMembersFromConversationResult {
   membersRemoved: QualifiedId[]
-  membersFailedToRemove: QualifiedId[]
 }
