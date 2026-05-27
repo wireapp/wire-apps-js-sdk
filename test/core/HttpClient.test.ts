@@ -35,7 +35,14 @@ const createHttpClient = (appProperties: AppProperties) =>
 export const restHandlers = [
   http.post(`${TEST_API_HOST}/v*/access`, ({ request, cookies }) => {
     if (cookies['zuid'] != COOKIE)
-      return new HttpResponse(null, { status: 403 })
+      return HttpResponse.json({
+        code: 403,
+        label: 'invalid-credentials',
+        message: 'Authentication failed'
+      },
+      {
+        status: 403
+      })
     const url = new URL(request.url)
     const clientId = url.searchParams.get('client_id')
     const accessToken = clientId ? FULL_FLEDGED_ACCESS_TOKEN : TEST_ACCESS_TOKEN
@@ -146,6 +153,6 @@ describe('HttpClient', () => {
       // when & then
       await expect(httpClient.verifyAuthorizationToken()).rejects.toThrow()
       expect(mockAppProperties.deleteBackendCookie).toHaveBeenCalled()
-    })
+    });
   })
 })

@@ -19,6 +19,7 @@ import type {WireApiError} from "../model/exception/WireApiError.js"
 import {inject, singleton} from "tsyringe"
 import {LoggerFactory} from "../utils/logger/LoggerFactory.js";
 import {AppProperties} from "../service/AppProperties.js";
+import {WireApiException} from "../model/exception/WireApiException.js";
 
 @singleton()
 export class HttpClient {
@@ -110,8 +111,9 @@ export class HttpClient {
       this.setAuthorizationToken(accessToken)
     } catch (exception) {
       this.logger.error('Unable to retrieve access token, Error:', exception)
-      // TODO: Once WireException is introduced, verify if the response label is 'invalid-credentials'
-      this.appProperties.deleteBackendCookie()
+      if (exception instanceof WireApiException && exception.isCredentialsInvalid()) {
+        this.appProperties.deleteBackendCookie()
+      }
 
       // TODO Can't recover from this, need to restart the app with a valid api token
       // TODO: Map to WireException
@@ -139,23 +141,24 @@ export class HttpClient {
     const response = await fetch(url, optionsAndHeaders)
 
     if (!response.ok) {
-      let errorDetails = ''
+      let standardError: WireApiError | undefined
 
-      try {
-        const contentType = response.headers.get("content-type")
-        if (contentType?.includes("application/json")) {
-          const errorBody = await response.json() as Partial<WireApiError>
-          if (errorBody.label && errorBody.message) {
-            this.logger.error(`API Error - Label: ${errorBody.label}, Message: ${errorBody.message}`)
-            errorDetails = ` [${errorBody.label}]: ${errorBody.message}`
-          }
+      const contentType = response.headers.get("content-type")
+      if (contentType?.includes("application/json")) {
+        try {
+          standardError = await response.json() as WireApiError
+        } catch (exception) {
+          this.logger.error(`Could not parse error response: ${exception}`)
         }
-      } catch (exception) {
-        this.logger.error(`Could not parse error response: ${exception}`)
+      }
+
+      if (standardError?.label && standardError?.message) {
+        this.logger.error(`WireApiException - Label: ${standardError.label}, Message: ${standardError.message}`)
+        throw new WireApiException(standardError)
       }
 
       // TODO: Map to WireException
-      throw new Error(`HTTP ${response.status} for ${path}${errorDetails || ': ' + response.statusText}`)
+      throw new Error(`HTTP ${response.status} for ${path}: ${response.statusText}`)
     }
 
     const contentType = response.headers.get("content-type")
