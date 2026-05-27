@@ -57,10 +57,10 @@ export class MlsMessageEventProcessor implements EventProcessor<NewMLSMessageDTO
       await this.forwardMessage(message, event);
     } catch (exception) {
       if (isMlsException(exception)) {
-        this.logger.warn("Message decryption failed, MlsException:", exception);
+        this.logger.warn("Message decryption failed, exception:", exception);
         await this.mlsFallbackStrategy.verifyConversationOutOfSync(mlsGroupId, conversationId);
       } else if (isCoreCryptoMlsException(exception)) {
-        this.logger.warn("Message decryption failed, CoreCryptoException.Mls:", exception);
+        this.logger.warn("Message decryption failed, exception:", exception);
         await this.mlsFallbackStrategy.verifyConversationOutOfSync(mlsGroupId, conversationId);
       } else {
         throw exception;
