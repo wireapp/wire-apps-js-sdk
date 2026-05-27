@@ -117,7 +117,7 @@ export class HttpClient {
 
       // TODO Can't recover from this, need to restart the app with a valid api token
       // TODO: Map to WireException
-      throw new Error("Current cookie/api-token is expired. Get a apiToken and restart the App")
+      throw new Error("Current cookie/api-token is expired. Get a new apiToken and restart the App")
     }
   }
 

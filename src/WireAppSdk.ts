@@ -100,8 +100,8 @@ export class WireAppSdk {
   private async init() {
     this.configureDependencies()
 
-    // Save cookie from constructor paramter only at first application start.
-    // Once BE provides new token, the one stored in `apiToken` will be obsolte.
+    // Save cookie from constructor parameter only at first application start.
+    // Once BE provides new token, the one stored in `apiToken` will be obsolete.
     this.appProperties.saveBackendCookieIfMissing(this.apiToken)
 
     await this.initCryptoClient()
