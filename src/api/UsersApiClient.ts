@@ -30,12 +30,16 @@ export class UsersApiClient {
   /**
    * Helper to create a consistent Map key from a QualifiedId
    *
-   * TODO: Consider to moving this into QualifiedId class during WPB-24672
+   * TODO: Baris: Move this into QualifiedId class in a separate PR.
    */
   static toKey(userId: QualifiedId): string {
     return `${userId.domain}:${userId.id}`;
   }
 
+  /**
+   *
+   * TODO: Baris: Move this into QualifiedId class  in a separate PR.
+   */
   static fromKey(key: string): QualifiedId {
     const [domain, id] = key.split(':');
     return { id: id!, domain: domain! };
