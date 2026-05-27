@@ -20,8 +20,8 @@ import {ConversationService} from "../../../src/api/ConversationService.js";
 import {DeleteConversationEventProcessor} from "../../../src/core/event/DeleteConversationEventProcessor.js";
 import type { WireEventsHandler } from "../../../src/core/WireEventsHandler.js";
 
-vi.mock('../../api/ConversationService.js')
-vi.mock('../WireEventsHandler.js')
+vi.mock('../../../src/api/ConversationService.js')
+vi.mock('../../../src/core/WireEventsHandler.js')
 
 const qualifiedConversation = {id: 'conv-123', domain: 'example.com'}
 const qualifiedFrom = {id: 'user-456', domain: 'example.com'}

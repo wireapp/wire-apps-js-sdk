@@ -97,6 +97,19 @@ interface MemberRoleChangeData {
   conversation_role: ConversationRole
 }
 
+export interface MlsResetDTO {
+  type: string
+  time: Date
+  data: MlsConversationResetData
+  qualified_conversation: QualifiedId
+  qualified_from: QualifiedId
+}
+
+interface MlsConversationResetData {
+  group_id: string,
+  new_group_id: string
+}
+
 export type EventContentDTO =
   MLSWelcomeDTO
   | NewMLSMessageDTO
@@ -106,4 +119,5 @@ export type EventContentDTO =
   | MemberJoinDTO
   | MemberLeaveDTO
   | MemberUpdateDTO
+  | MlsResetDTO
 

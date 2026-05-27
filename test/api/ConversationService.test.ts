@@ -30,6 +30,7 @@ import {CryptoProtocol} from '../../src/model/CryptoProtocol.js'
 import {ConversationRole} from "../../src/model/conversation/ConversationRole.js";
 import {TeamsApiClient} from "../../src/api/TeamsApiClient.js";
 import {TeamId} from "../../src/model/TeamId.js";
+import {UserService} from "../../src/api/UserService.js";
 
 describe('ConversationService', () => {
   let conversationService: ConversationService
@@ -39,6 +40,7 @@ describe('ConversationService', () => {
   let mockConversationMemberRepository: ConversationMemberRepository
   let mockAppProperties: AppProperties
   let mockCoreCryptoService: CoreCryptoService
+  let mockUserService: UserService
 
   beforeEach(() => {
     container.clearInstances()
@@ -82,6 +84,10 @@ describe('ConversationService', () => {
       wipeConversation: vi.fn()
     } as any
 
+    mockUserService = {
+      getUsersClientIds: vi.fn()
+    } as any
+
     conversationService = new ConversationService(
       SELF_USER_ID.id,
       SELF_USER_ID.domain,
@@ -90,7 +96,8 @@ describe('ConversationService', () => {
       mockConversationRepository,
       mockConversationMemberRepository,
       mockAppProperties,
-      mockCoreCryptoService
+      mockCoreCryptoService,
+      mockUserService
     )
 
     // TODO: Can remove/replace this once we have implemented a proper logger lib
@@ -407,6 +414,85 @@ describe('ConversationService', () => {
 
       await expect(conversationService.deleteAllConversationDataFromLocalStorages(CONVERSATION_ID)).rejects.toThrow('wipe failed')
 
+      expect(mockConversationMemberRepository.deleteAllMembersInConversation).not.toHaveBeenCalled()
+      expect(mockConversationRepository.delete).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('resetMlsConversation', () => {
+    const NEW_GROUP_ID = 'new-mls-group-id-5678'
+
+    it('wipes old group from crypto and deletes conversation from local storage', async () => {
+      const mockConversationEntity: ConversationEntity = {
+        id: CONVERSATION_ID.id,
+        domain: CONVERSATION_ID.domain,
+        name: 'Test Conversation',
+        teamId: TEAM_ID,
+        mlsGroupId: MLS_GROUP_ID,
+        creationDate: null,
+        type: ConversationType.GROUP
+      }
+
+      vi.mocked(mockConversationRepository.findByIdAndDomain).mockReturnValue(mockConversationEntity)
+      vi.mocked(mockCoreCryptoService.conversationExists).mockResolvedValue(true)
+      vi.mocked(mockCoreCryptoService.wipeConversation).mockResolvedValue(undefined)
+
+      await conversationService.resetMlsConversation(CONVERSATION_ID, NEW_GROUP_ID)
+
+      expect(mockCoreCryptoService.wipeConversation).toHaveBeenCalledWith(MLS_GROUP_ID)
+      expect(mockConversationMemberRepository.deleteAllMembersInConversation).toHaveBeenCalledWith(CONVERSATION_ID.id, CONVERSATION_ID.domain)
+      expect(mockConversationRepository.delete).toHaveBeenCalledWith(CONVERSATION_ID.id, CONVERSATION_ID.domain)
+    })
+
+    it('skips wipe but still deletes from storage when crypto group does not exist', async () => {
+      const mockConversationEntity: ConversationEntity = {
+        id: CONVERSATION_ID.id,
+        domain: CONVERSATION_ID.domain,
+        name: 'Test Conversation',
+        teamId: TEAM_ID,
+        mlsGroupId: MLS_GROUP_ID,
+        creationDate: null,
+        type: ConversationType.GROUP
+      }
+
+      vi.mocked(mockConversationRepository.findByIdAndDomain).mockReturnValue(mockConversationEntity)
+      vi.mocked(mockCoreCryptoService.conversationExists).mockResolvedValue(false)
+
+      await conversationService.resetMlsConversation(CONVERSATION_ID, NEW_GROUP_ID)
+
+      expect(mockCoreCryptoService.wipeConversation).not.toHaveBeenCalled()
+      expect(mockConversationMemberRepository.deleteAllMembersInConversation).toHaveBeenCalledWith(CONVERSATION_ID.id, CONVERSATION_ID.domain)
+      expect(mockConversationRepository.delete).toHaveBeenCalledWith(CONVERSATION_ID.id, CONVERSATION_ID.domain)
+    })
+
+    it('is idempotent and skips reset when conversation already has the new groupId', async () => {
+      const mockConversationEntity: ConversationEntity = {
+        id: CONVERSATION_ID.id,
+        domain: CONVERSATION_ID.domain,
+        name: 'Test Conversation',
+        teamId: TEAM_ID,
+        mlsGroupId: NEW_GROUP_ID,
+        creationDate: null,
+        type: ConversationType.GROUP
+      }
+
+      vi.mocked(mockConversationRepository.findByIdAndDomain).mockReturnValue(mockConversationEntity)
+
+      await conversationService.resetMlsConversation(CONVERSATION_ID, NEW_GROUP_ID)
+
+      expect(mockCoreCryptoService.conversationExists).not.toHaveBeenCalled()
+      expect(mockCoreCryptoService.wipeConversation).not.toHaveBeenCalled()
+      expect(mockConversationMemberRepository.deleteAllMembersInConversation).not.toHaveBeenCalled()
+      expect(mockConversationRepository.delete).not.toHaveBeenCalled()
+    })
+
+    it('returns early without deleting when conversation is not found in storage', async () => {
+      vi.mocked(mockConversationRepository.findByIdAndDomain).mockReturnValue(null)
+
+      await conversationService.resetMlsConversation(CONVERSATION_ID, NEW_GROUP_ID)
+
+      expect(mockCoreCryptoService.conversationExists).not.toHaveBeenCalled()
+      expect(mockCoreCryptoService.wipeConversation).not.toHaveBeenCalled()
       expect(mockConversationMemberRepository.deleteAllMembersInConversation).not.toHaveBeenCalled()
       expect(mockConversationRepository.delete).not.toHaveBeenCalled()
     })

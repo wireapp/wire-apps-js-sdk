@@ -230,10 +230,10 @@ export class CoreCryptoClient {
   }
 
   async wipeConversation(mlsGroupId: ConversationId) {
-    this.logger.debug("Conversation will be deleted from CoreCrypto. mlsGroupId: {}", mlsGroupId)
+    this.logger.debug("Conversation will be deleted from CoreCrypto. mlsGroupId: {}", obfuscateId(String(mlsGroupId)))
     await this.coreCrypto.transaction(async (context) => {
       await context.wipeConversation(mlsGroupId)
-      this.logger.debug("Conversation is deleted from CoreCrypto. mlsGroupId: {}", mlsGroupId)
+      this.logger.debug("Conversation is deleted from CoreCrypto. mlsGroupId: {}", obfuscateId(String(mlsGroupId)))
     })
   }
 
