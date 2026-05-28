@@ -18,9 +18,11 @@ import {inject, singleton} from "tsyringe";
 import {AppPropertiesRepository} from "../db/AppPropertiesRepository.js";
 import {WIRE_CRYPTO_STORAGE_PASSWORD} from "../utils/DependencyInjectionTokens.js";
 import {AESUtils} from "../utils/AESUtils.js";
+import {LoggerFactory} from "../utils/logger/LoggerFactory.js";
 
 @singleton()
 export class AppProperties {
+  private logger = LoggerFactory.getLogger(this.constructor.name)
   private readonly SHOULD_REJOIN_CONVERSATIONS = "should_rejoin_conversations"
   private readonly LAST_NOTIFICATION_ID = "last_notification_id"
   static readonly BACKEND_COOKIE = "backend_cookie"
@@ -71,6 +73,7 @@ export class AppProperties {
 
   saveBackendCookieIfMissing(cookie: string) {
     if (!this.getBackendCookie()) {
+      this.logger.info("Initializing API Token")
       this.saveBackendCookie(cookie)
     }
   }
