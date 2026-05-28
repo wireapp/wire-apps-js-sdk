@@ -30,22 +30,24 @@ export class UsersApiClient {
   /**
    * Helper to create a consistent Map key from a QualifiedId
    *
-   * TODO: Consider to moving this into QualifiedId class during WPB-24672
+   * TODO: Baris: Move this into QualifiedId class in a separate PR.
    */
   static toKey(userId: QualifiedId): string {
     return `${userId.domain}:${userId.id}`;
   }
 
+  /**
+   *
+   * TODO: Baris: Move this into QualifiedId class  in a separate PR.
+   */
+  static fromKey(key: string): QualifiedId {
+    const [domain, id] = key.split(':');
+    return { id: id!, domain: domain! };
+  }
+
   async getUser(userId: string, userDomain: string): Promise<UserResponse> {
     const path = `${this.basePath}/${userDomain}/${userId}`
     return await this.httpClient.getRequest<UserResponse>(path)
-  }
-
-  async getClientsByUserId(userId: QualifiedId): Promise<Map<string, UserClientResponse[]>> {
-    const path = `${this.basePath}/${userId.domain}/${userId.id}/clients`;
-    const userClientResponses = await this.httpClient.getRequest<UserClientResponse[]>(path);
-
-    return new Map([[UsersApiClient.toKey(userId), userClientResponses]]);
   }
 
   async getClientsByUserIds(userIds: QualifiedId[]): Promise<Map<string, UserClientResponse[]>> {

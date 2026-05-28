@@ -33,30 +33,29 @@ export class UserService {
     return await this.usersApiClient.getUser(userQualifiedId.id, userQualifiedId.domain);
   }
 
-  async getUsersClientIds(userIds: QualifiedId[]): Promise<CryptoClientId[]> {
+  async getUsersClientIds(userIds: QualifiedId[]): Promise<Map<string, CryptoClientId[]>> {
     this.logger.info(`Retrieving clients for ${userIds.length} users.`);
+    if (userIds.length === 0) return new Map();
 
-    const usersToClients =
-      userIds.length === 1
-        ? await this.usersApiClient.getClientsByUserId(userIds[0]!)
-        : await this.usersApiClient.getClientsByUserIds(userIds);
+    const usersToClients = await this.usersApiClient.getClientsByUserIds(userIds);
 
-    const clientIds: CryptoClientId[] = [];
+    return new Map(
+      userIds.flatMap(qualifiedUserId => {
+        const key = UsersApiClient.toKey(qualifiedUserId);
+        const userClientResponses = usersToClients.get(key);
 
-    for (const qualifiedUserId of userIds) {
-      const key = UsersApiClient.toKey(qualifiedUserId);
-      const userClientResponses = usersToClients.get(key);
-
-      if (userClientResponses) {
-        for (const userClientResponse of userClientResponses) {
-          clientIds.push(
-            CryptoClientId.create(qualifiedUserId.id, userClientResponse.id, qualifiedUserId.domain)
-          );
+        if (!userClientResponses?.length) {
+          this.logger.warn(`User has no clients returned from API. userId: ${qualifiedUserId}`);
+          return [];
         }
-      }
-    }
 
-    return clientIds;
+        const clientIds = userClientResponses.map(({id}) =>
+          CryptoClientId.create(qualifiedUserId.id, id, qualifiedUserId.domain)
+        );
+
+        return [[key, clientIds]] as const;
+      })
+    );
   }
 
 }

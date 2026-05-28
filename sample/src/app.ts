@@ -319,7 +319,26 @@ class SampleEventsHandler extends WireEventsHandler {
           }
         }
 
-        await this.manager.removeMembersFromConversation(conversationId, members)
+        const result = await this.manager.removeMembersFromConversation(conversationId, members)
+
+        // Send feedback about the removal operation
+        let feedbackMessage = '📣 Member Removal Results:\n\n'
+
+        if (result.membersRemoved.length > 0) {
+          feedbackMessage += `✅ Successfully removed (${result.membersRemoved.length}):\n`
+          feedbackMessage += result.membersRemoved
+            .map(m => `  • ${obfuscateId(m.id)}@${m.domain}`)
+            .join('\n')
+        } else {
+          feedbackMessage += '⚠️ No members were removed.'
+        }
+
+        await this.manager.sendMessage(TextMessage.create({
+          conversationId: conversationId,
+          text: feedbackMessage
+        }))
+
+        this.appLogger?.info(`[Sample App] Removal completed: ${result.membersRemoved.length} removed`)
       },
       'update-member-role': async (conversationId, command) => {
         this.appLogger?.info(`[Sample App] Executing handler for: update-member-role`)

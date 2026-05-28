@@ -31,6 +31,7 @@ import {ConversationRole} from "../../src/model/conversation/ConversationRole.js
 import {TeamsApiClient} from "../../src/api/TeamsApiClient.js";
 import {TeamId} from "../../src/model/TeamId.js";
 import {UserService} from "../../src/api/UserService.js";
+import {UsersApiClient} from "../../src/api/UsersApiClient.js";
 
 describe('ConversationService', () => {
   let conversationService: ConversationService
@@ -81,7 +82,8 @@ describe('ConversationService', () => {
       conversationExists: vi.fn(),
       joinMlsConversation: vi.fn(),
       establishMlsConversation: vi.fn(),
-      wipeConversation: vi.fn()
+      wipeConversation: vi.fn(),
+      removeClientsFromMlsConversation: vi.fn()
     } as any
 
     mockUserService = {
@@ -1502,28 +1504,38 @@ describe('ConversationService', () => {
     beforeEach(() => {
       vi.clearAllMocks()
 
+      // Mock getConversationById
       vi.spyOn(conversationService as any, 'getConversationById')
         .mockResolvedValue(CONVERSATION)
 
-      ;(conversationService as any).userService = {
-        getUsersClientIds: vi.fn().mockResolvedValue(['client-1', 'client-2'])
-      }
+      // Mock filterMembersInConversation to return all members (valid scenario)
+      vi.spyOn(conversationService as any, 'filterMembersInConversation')
+        .mockReturnValue(MEMBERS)
 
-      ;(conversationService as any).coreCryptoService = {
-        removeClientsFromMlsConversation: vi.fn().mockResolvedValue(undefined)
-      }
+      // Create mock CryptoClientId objects
+      const mockClientId1 = { value: 'user-1:device-1@wire.com' }
+      const mockClientId2 = { value: 'user-2:device-1@wire.com' }
 
-      ;(conversationService as any).conversationMemberRepository = {
-        deleteMany: vi.fn()
-      }
+      // Mock userService.getUsersClientIds to return Map<string, CryptoClientId[]>
+      mockUserService.getUsersClientIds.mockResolvedValue(
+        new Map([
+          [UsersApiClient.toKey(MEMBERS[0]!), [mockClientId1]],
+          [UsersApiClient.toKey(MEMBERS[1]!), [mockClientId2]]
+        ])
+      )
 
+      // Mock coreCryptoService
+      vi.mocked(mockCoreCryptoService.removeClientsFromMlsConversation).mockResolvedValue(undefined)
+
+      // Mock conversationMemberRepository
+      vi.mocked(mockConversationMemberRepository.exists).mockReturnValue(true)
+
+      // Mock permission checks
       vi.spyOn(conversationService as any, 'requireConversationIsGroupOrChannel')
-        .mockImplementation(() => {
-        })
+        .mockImplementation(() => {})
 
       vi.spyOn(conversationService as any, 'requireAppIsAdminInConversation')
-        .mockImplementation(() => {
-        })
+        .mockImplementation(() => {})
     })
 
     it('should throw when members list is empty', async () => {
@@ -1532,9 +1544,19 @@ describe('ConversationService', () => {
       ).rejects.toThrow('List of members cannot be empty.')
     })
 
+    it('should return result with membersRemoved', async () => {
+      const result = await conversationService.removeMembersFromConversation(
+        CONVERSATION_ID,
+        MEMBERS
+      )
+
+      expect(result).toHaveProperty('membersRemoved')
+      expect(result.membersRemoved).toEqual(MEMBERS)
+    })
+
     it('should remove members successfully from MLS conversation', async () => {
-      const loggerSpy = vi.spyOn(console, 'info').mockImplementation(() => {
-      })
+      const mockClientId1 = { value: 'user-1:device-1@wire.com' }
+      const mockClientId2 = { value: 'user-2:device-1@wire.com' }
 
       await conversationService.removeMembersFromConversation(
         CONVERSATION_ID,
@@ -1544,40 +1566,85 @@ describe('ConversationService', () => {
       expect(conversationService['getConversationById'])
         .toHaveBeenCalledWith(CONVERSATION_ID)
 
-      expect(conversationService['userService'].getUsersClientIds)
+      expect(mockUserService.getUsersClientIds)
         .toHaveBeenCalledWith(MEMBERS)
 
-      expect(
-        conversationService['coreCryptoService'].removeClientsFromMlsConversation
-      ).toHaveBeenCalledWith(
-        MLS_GROUP_ID,
-        ['client-1', 'client-2']
-      )
+      expect(mockCoreCryptoService.removeClientsFromMlsConversation)
+        .toHaveBeenCalledWith(
+          MLS_GROUP_ID,
+          expect.arrayContaining([mockClientId1, mockClientId2])
+        )
 
-      expect(
-        conversationService['conversationMemberRepository'].deleteMany
-      ).toHaveBeenCalledWith(
-        MEMBERS,
-        CONVERSATION_ID.id,
-        CONVERSATION_ID.domain
-      )
-
-      expect(loggerSpy).toHaveBeenCalledWith(
-        expect.stringContaining('successfully removed from the conversation')
-      )
+      expect(mockConversationMemberRepository.deleteMany)
+        .toHaveBeenCalledWith(
+          MEMBERS,
+          CONVERSATION_ID.id,
+          CONVERSATION_ID.domain
+        )
     })
 
-    it('should propagate error from coreCryptoService and not delete from repo', async () => {
-      ;(conversationService as any).coreCryptoService.removeClientsFromMlsConversation
-        .mockRejectedValue(new Error('crypto failed'))
+    it('should return empty result when members are not in conversation', async () => {
+      // Mock filterMembersInConversation to return empty array (no valid members)
+      vi.spyOn(conversationService as any, 'filterMembersInConversation')
+        .mockReturnValue([])
 
-      await expect(
-        conversationService.removeMembersFromConversation(CONVERSATION_ID, MEMBERS)
-      ).rejects.toThrow('crypto failed')
+      const result = await conversationService.removeMembersFromConversation(
+        CONVERSATION_ID,
+        MEMBERS
+      )
 
-      expect(
-        conversationService['conversationMemberRepository'].deleteMany
-      ).not.toHaveBeenCalled()
+      expect(result.membersRemoved).toEqual([])
+      expect(mockCoreCryptoService.removeClientsFromMlsConversation).not.toHaveBeenCalled()
+      expect(mockConversationMemberRepository.deleteMany).not.toHaveBeenCalled()
+    })
+
+    it('should return empty result when members have no clients', async () => {
+      // Mock getUsersClientIds to return empty map (users have no clients)
+      mockUserService.getUsersClientIds.mockResolvedValue(new Map())
+
+      const result = await conversationService.removeMembersFromConversation(
+        CONVERSATION_ID,
+        MEMBERS
+      )
+
+      expect(result.membersRemoved).toEqual([])
+      expect(mockCoreCryptoService.removeClientsFromMlsConversation).not.toHaveBeenCalled()
+      expect(mockConversationMemberRepository.deleteMany).not.toHaveBeenCalled()
+    })
+
+    it('should handle partial success when some users have no clients', async () => {
+      const mockClientId1 = { value: 'user-1:device-1@wire.com' }
+
+      // Only first user has clients (second user not in map since they have no clients)
+      mockUserService.getUsersClientIds.mockResolvedValue(
+        new Map([
+          [UsersApiClient.toKey(MEMBERS[0]!), [mockClientId1]]
+        ])
+      )
+
+      const result = await conversationService.removeMembersFromConversation(
+        CONVERSATION_ID,
+        MEMBERS
+      )
+
+      expect(result.membersRemoved).toEqual([MEMBERS[0]])
+      expect(mockCoreCryptoService.removeClientsFromMlsConversation)
+        .toHaveBeenCalledWith(MLS_GROUP_ID, [mockClientId1])
+      expect(mockConversationMemberRepository.deleteMany)
+        .toHaveBeenCalledWith([MEMBERS[0]], CONVERSATION_ID.id, CONVERSATION_ID.domain)
+    })
+
+    it('should handle MLS removal failure and return empty result', async () => {
+      vi.mocked(mockCoreCryptoService.removeClientsFromMlsConversation)
+        .mockRejectedValue(new Error('MLS removal failed'))
+
+      const result = await conversationService.removeMembersFromConversation(
+        CONVERSATION_ID,
+        MEMBERS
+      )
+
+      expect(result.membersRemoved).toEqual([])
+      expect(mockConversationMemberRepository.deleteMany).not.toHaveBeenCalled()
     })
   })
 

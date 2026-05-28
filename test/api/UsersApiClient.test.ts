@@ -91,55 +91,6 @@ describe('UsersApiClient (getUser)', () => {
   })
 })
 
-describe('UsersApiClient (getClientsByUserId)', () => {
-  let mockHttpClient: any
-  let client: UsersApiClient
-
-  beforeEach(() => {
-    mockHttpClient = {
-      getRequest: vi.fn()
-    }
-
-    client = new UsersApiClient(mockHttpClient)
-  })
-
-  const userId: QualifiedId = { id: 'userId-1', domain: 'example.com' }
-
-  const mockClients: UserClientResponse[] = [
-    { id: 'd0' },
-    { id: 'd1' }
-  ]
-
-  it('should call httpClient.getRequest with the correct path', async () => {
-    vi.mocked(mockHttpClient.getRequest).mockResolvedValue(mockClients)
-
-    await client.getClientsByUserId(userId)
-
-    expect(mockHttpClient.getRequest).toHaveBeenCalledWith('users/example.com/userId-1/clients')
-  })
-
-  it('should return a map with the serialized userId as key and clients as value', async () => {
-    vi.mocked(mockHttpClient.getRequest).mockResolvedValue(mockClients)
-
-    const result = await client.getClientsByUserId(userId)
-
-    expect(result.get(UsersApiClient.toKey(userId))).toEqual(mockClients)
-  })
-
-  it('should return a map with an empty clients array', async () => {
-    vi.mocked(mockHttpClient.getRequest).mockResolvedValue([])
-
-    const result = await client.getClientsByUserId(userId)
-
-    expect(result.get(UsersApiClient.toKey(userId))).toEqual([])
-  })
-
-  it('should propagate errors from httpClient.getRequest', async () => {
-    vi.mocked(mockHttpClient.getRequest).mockRejectedValue(new Error('network-failure'))
-
-    await expect(client.getClientsByUserId(userId)).rejects.toThrow('network-failure')
-  })
-})
 
 describe('UsersApiClient (getClientsByUserIds)', () => {
   let mockHttpClient: any

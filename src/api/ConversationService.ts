@@ -35,10 +35,12 @@ import {ConversationRole} from "../model/conversation/ConversationRole.js";
 import {TeamsApiClient} from "./TeamsApiClient.js";
 import {TeamId} from "../model/TeamId.js";
 import type {AddMembersToConversationResult} from "./model/AddMembersToConversationResult.js";
+import type {RemoveMembersFromConversationResult} from "./model/RemoveMembersFromConversationResult.js";
 import type {Conversation} from "../model/conversation/Conversation.js";
 import {ConversationMapper} from "../mappers/conversation/ConversationMapper.js";
 import {ConversationMemberMapper} from "../mappers/conversation/ConversationMemberMapper.js";
 import {UserService} from "./UserService.js";
+import {UsersApiClient} from "./UsersApiClient.js";
 
 @singleton()
 export class ConversationService {
@@ -276,7 +278,7 @@ export class ConversationService {
   async removeMembersFromConversation(
     conversationId: QualifiedId,
     members: QualifiedId[]
-  ): Promise<void> {
+  ): Promise<RemoveMembersFromConversationResult> {
     this.logger.info(`Attempting to remove ${members.length} member(s) from the conversation. conversationId: ${conversationId}`)
 
     if (members.length === 0) {
@@ -287,16 +289,46 @@ export class ConversationService {
     this.requireConversationIsGroupOrChannel(conversationId, conversation.type)
     this.requireAppIsAdminInConversation(conversationId)
 
-    const clientIds = await this.userService.getUsersClientIds(members)
-    await this.coreCryptoService.removeClientsFromMlsConversation(
-      conversation.mlsGroupId,
-      clientIds
-    )
+    const membersInTheConversation = this.filterMembersInConversation(conversationId, members)
+    if (membersInTheConversation.length === 0) {
+      this.logger.warn(`No valid members to remove from the conversation. conversationId: ${conversationId}`)
+      return {membersRemoved: []}
+    }
 
-    this.conversationMemberRepository.deleteMany(members, conversationId.id, conversationId.domain)
-    this.logger.info(`${members.length} member(s) successfully removed from the conversation. conversationId: ${conversationId}`)
+    const userIdToClientIds = await this.userService.getUsersClientIds(membersInTheConversation)
+    if (userIdToClientIds.size === 0) {
+      this.logger.warn(`All members have no clients, cannot remove from MLS conversation. conversationId: ${conversationId}`)
+      return {membersRemoved: []}
+    }
+
+    const clientIdsToRemove = [...userIdToClientIds.values()].flat()
+
+    try {
+      const membersRemoved = [...userIdToClientIds.keys()].map(UsersApiClient.fromKey)
+      await this.coreCryptoService.removeClientsFromMlsConversation(conversation.mlsGroupId, clientIdsToRemove)
+      this.conversationMemberRepository.deleteMany(membersRemoved, conversationId.id, conversationId.domain)
+      this.logger.info(`Removal of members from the conversation is completed. Removed: ${membersRemoved.length}. conversationId: ${conversationId}`)
+      return {membersRemoved}
+    } catch (error) {
+      this.logger.error(`Failed to remove clients from MLS conversation: ${(error as Error).message}`)
+      return {membersRemoved: []}
+    }
   }
 
+  private filterMembersInConversation(conversationId: QualifiedId, members: QualifiedId[]): QualifiedId[] {
+    const membersInConversation: QualifiedId[] = []
+
+    for (const member of members) {
+      const isMemberInConversation = this.conversationMemberRepository.exists(member.id, member.domain, conversationId.id, conversationId.domain)
+      if (isMemberInConversation) {
+        membersInConversation.push(member)
+      } else {
+        this.logger.warn(`Member is not in the conversation. conversationId: ${conversationId}, userId: ${member}`)
+      }
+    }
+
+    return membersInConversation
+  }
 
   async updateConversationMemberRole(
     conversationId: QualifiedId,
