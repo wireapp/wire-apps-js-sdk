@@ -35,33 +35,30 @@ export class UserService {
 
   async getUsersClientIds(userIds: QualifiedId[]): Promise<Map<string, CryptoClientId[]>> {
     this.logger.info(`Retrieving clients for ${userIds.length} users.`);
-
-    if (userIds.length === 0) {
-      return new Map<string, CryptoClientId[]>();
-    }
+    if (userIds.length === 0) return new Map();
 
     const usersToClients =
       userIds.length === 1
         ? await this.usersApiClient.getClientsByUserId(userIds[0]!)
         : await this.usersApiClient.getClientsByUserIds(userIds);
 
-    const userIdToClientIds = new Map<string, CryptoClientId[]>();
+    return new Map(
+      userIds.flatMap(qualifiedUserId => {
+        const key = UsersApiClient.toKey(qualifiedUserId);
+        const userClientResponses = usersToClients.get(key);
 
-    for (const qualifiedUserId of userIds) {
-      const key = UsersApiClient.toKey(qualifiedUserId);
-      const userClientResponses = usersToClients.get(key);
+        if (!userClientResponses?.length) {
+          this.logger.warn(`User has no clients returned from API. userId: ${qualifiedUserId}`);
+          return [];
+        }
 
-      if (!userClientResponses || userClientResponses.length === 0) {
-        this.logger.warn(`User has no clients returned from API. userId: ${qualifiedUserId}`);
-      } else {
-        const clientIds = userClientResponses.map(userClientResponse =>
-          CryptoClientId.create(qualifiedUserId.id, userClientResponse.id, qualifiedUserId.domain)
+        const clientIds = userClientResponses.map(({id}) =>
+          CryptoClientId.create(qualifiedUserId.id, id, qualifiedUserId.domain)
         );
-        userIdToClientIds.set(key, clientIds);
-      }
-    }
 
-    return userIdToClientIds;
+        return [[key, clientIds]] as const;
+      })
+    );
   }
 
 }

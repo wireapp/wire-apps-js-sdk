@@ -40,7 +40,6 @@ import type {Conversation} from "../model/conversation/Conversation.js";
 import {ConversationMapper} from "../mappers/conversation/ConversationMapper.js";
 import {ConversationMemberMapper} from "../mappers/conversation/ConversationMemberMapper.js";
 import {UserService} from "./UserService.js";
-import type {CryptoClientId} from "../model/CryptoClientId.js";
 import {UsersApiClient} from "./UsersApiClient.js";
 
 @singleton()
@@ -290,40 +289,30 @@ export class ConversationService {
     this.requireConversationIsGroupOrChannel(conversationId, conversation.type)
     this.requireAppIsAdminInConversation(conversationId)
 
-    // Filter the members in the conversations (Defensive)
     const membersInTheConversation = this.filterMembersInConversation(conversationId, members)
     if (membersInTheConversation.length === 0) {
       this.logger.warn(`No valid members to remove from the conversation. conversationId: ${conversationId}`)
       return {membersRemoved: []}
     }
 
-    // Get the clientIds of the members in the conversation
     const userIdToClientIds = await this.userService.getUsersClientIds(membersInTheConversation)
-    const clientIdsToRemove: CryptoClientId[] = []
-    const membersWithClients: QualifiedId[] = []
-
-    // Build the list of members with clients and their client IDs
-    for (const [userKey, clientIds] of userIdToClientIds.entries()) {
-      clientIdsToRemove.push(...clientIds)
-      membersWithClients.push(UsersApiClient.fromKey(userKey))
-    }
-
-    if (membersWithClients.length === 0) {
+    if (userIdToClientIds.size === 0) {
       this.logger.warn(`All members have no clients, cannot remove from MLS conversation. conversationId: ${conversationId}`)
       return {membersRemoved: []}
     }
 
-    let membersRemoved: QualifiedId[] = []
+    const clientIdsToRemove = [...userIdToClientIds.values()].flat()
+
     try {
+      const membersRemoved = [...userIdToClientIds.keys()].map(UsersApiClient.fromKey)
       await this.coreCryptoService.removeClientsFromMlsConversation(conversation.mlsGroupId, clientIdsToRemove)
-      this.conversationMemberRepository.deleteMany(membersWithClients, conversationId.id, conversationId.domain)
-      membersRemoved = membersWithClients
+      this.conversationMemberRepository.deleteMany(membersRemoved, conversationId.id, conversationId.domain)
+      this.logger.info(`Removal of members from the conversation is completed. Removed: ${membersRemoved.length}. conversationId: ${conversationId}`)
+      return {membersRemoved}
     } catch (error) {
       this.logger.error(`Failed to remove clients from MLS conversation: ${(error as Error).message}`)
+      return {membersRemoved: []}
     }
-
-    this.logger.info(`Removal of members from the conversation is completed. Removed: ${membersRemoved.length}. conversationId: ${conversationId}`)
-    return {membersRemoved}
   }
 
   private filterMembersInConversation(conversationId: QualifiedId, members: QualifiedId[]): QualifiedId[] {
