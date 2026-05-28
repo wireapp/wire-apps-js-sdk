@@ -50,13 +50,6 @@ export class UsersApiClient {
     return await this.httpClient.getRequest<UserResponse>(path)
   }
 
-  async getClientsByUserId(userId: QualifiedId): Promise<Map<string, UserClientResponse[]>> {
-    const path = `${this.basePath}/${userId.domain}/${userId.id}/clients`;
-    const userClientResponses = await this.httpClient.getRequest<UserClientResponse[]>(path);
-
-    return new Map([[UsersApiClient.toKey(userId), userClientResponses]]);
-  }
-
   async getClientsByUserIds(userIds: QualifiedId[]): Promise<Map<string, UserClientResponse[]>> {
     const path = `${this.basePath}/list-clients`;
     const response = await this.httpClient

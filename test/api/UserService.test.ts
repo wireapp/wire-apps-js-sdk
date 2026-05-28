@@ -73,7 +73,6 @@ describe('UserService', () => {
 
   describe('getUsersClientIds', () => {
     beforeEach(() => {
-      mockUsersApiClient.getClientsByUserId = vi.fn()
       mockUsersApiClient.getClientsByUserIds = vi.fn()
     })
 
@@ -87,18 +86,16 @@ describe('UserService', () => {
       const result = await service.getUsersClientIds([])
 
       expect(result.size).toBe(0)
-      expect(mockUsersApiClient.getClientsByUserId).not.toHaveBeenCalled()
       expect(mockUsersApiClient.getClientsByUserIds).not.toHaveBeenCalled()
     })
 
-    it('should call getClientsByUserId when only one user is provided', async () => {
+    it('should call getClientsByUserIds for single user', async () => {
       const mockMap = new Map([[toKey(userId1), [{ id: 'device-1' }]]])
-      vi.mocked(mockUsersApiClient.getClientsByUserId).mockResolvedValue(mockMap)
+      vi.mocked(mockUsersApiClient.getClientsByUserIds).mockResolvedValue(mockMap)
 
       await service.getUsersClientIds([userId1])
 
-      expect(mockUsersApiClient.getClientsByUserId).toHaveBeenCalledWith(userId1)
-      expect(mockUsersApiClient.getClientsByUserIds).not.toHaveBeenCalled()
+      expect(mockUsersApiClient.getClientsByUserIds).toHaveBeenCalledWith([userId1])
     })
 
     it('should call getClientsByUserIds when multiple users are provided', async () => {
@@ -111,12 +108,11 @@ describe('UserService', () => {
       await service.getUsersClientIds([userId1, userId2])
 
       expect(mockUsersApiClient.getClientsByUserIds).toHaveBeenCalledWith([userId1, userId2])
-      expect(mockUsersApiClient.getClientsByUserId).not.toHaveBeenCalled()
     })
 
     it('should return Map with string keys and CryptoClientId arrays as values', async () => {
       const mockMap = new Map([[toKey(userId1), [{ id: 'device-1' }, { id: 'device-2' }]]])
-      vi.mocked(mockUsersApiClient.getClientsByUserId).mockResolvedValue(mockMap)
+      vi.mocked(mockUsersApiClient.getClientsByUserIds).mockResolvedValue(mockMap)
 
       const result = await service.getUsersClientIds([userId1])
 
@@ -156,7 +152,7 @@ describe('UserService', () => {
 
     it('should return empty map for user with no clients', async () => {
       const mockMap = new Map([[toKey(userId1), []]])
-      vi.mocked(mockUsersApiClient.getClientsByUserId).mockResolvedValue(mockMap)
+      vi.mocked(mockUsersApiClient.getClientsByUserIds).mockResolvedValue(mockMap)
 
       const result = await service.getUsersClientIds([userId1])
 
@@ -165,18 +161,13 @@ describe('UserService', () => {
 
     it('should log warning and return empty map when user not in response', async () => {
       const mockMap = new Map() // Empty map - user not returned
-      vi.mocked(mockUsersApiClient.getClientsByUserId).mockResolvedValue(mockMap)
+      vi.mocked(mockUsersApiClient.getClientsByUserIds).mockResolvedValue(mockMap)
 
       const result = await service.getUsersClientIds([userId1])
 
       expect(result.size).toBe(0)
     })
 
-    it('should propagate errors from getClientsByUserId', async () => {
-      vi.mocked(mockUsersApiClient.getClientsByUserId).mockRejectedValue(new Error('network-failure'))
-
-      await expect(service.getUsersClientIds([userId1])).rejects.toThrow('network-failure')
-    })
 
     it('should propagate errors from getClientsByUserIds', async () => {
       vi.mocked(mockUsersApiClient.getClientsByUserIds).mockRejectedValue(new Error('network-failure'))

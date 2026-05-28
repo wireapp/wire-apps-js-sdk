@@ -37,10 +37,7 @@ export class UserService {
     this.logger.info(`Retrieving clients for ${userIds.length} users.`);
     if (userIds.length === 0) return new Map();
 
-    const usersToClients =
-      userIds.length === 1
-        ? await this.usersApiClient.getClientsByUserId(userIds[0]!)
-        : await this.usersApiClient.getClientsByUserIds(userIds);
+    const usersToClients = await this.usersApiClient.getClientsByUserIds(userIds);
 
     return new Map(
       userIds.flatMap(qualifiedUserId => {
