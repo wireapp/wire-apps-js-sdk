@@ -25,7 +25,7 @@ export class AppProperties {
   private logger = LoggerFactory.getLogger(this.constructor.name)
   private readonly SHOULD_REJOIN_CONVERSATIONS = "should_rejoin_conversations"
   private readonly LAST_NOTIFICATION_ID = "last_notification_id"
-  static readonly BACKEND_COOKIE = "backend_cookie"
+  private readonly BACKEND_COOKIE = "backend_cookie"
 
   constructor(
     private appPropertiesRepository: AppPropertiesRepository,
@@ -58,7 +58,7 @@ export class AppProperties {
   }
 
   getBackendCookie(): string | undefined {
-    const encryptedData = this.appPropertiesRepository.getByKey(AppProperties.BACKEND_COOKIE)?.value
+    const encryptedData = this.appPropertiesRepository.getByKey(this.BACKEND_COOKIE)?.value
     const key = Buffer.from(this.wireCryptoStoragePassword)
 
     return encryptedData ? AESUtils.decryptData(Buffer.from(encryptedData, 'base64'), key).toString() : undefined
@@ -67,8 +67,7 @@ export class AppProperties {
   saveBackendCookie(cookie: string) {
     const key = Buffer.from(this.wireCryptoStoragePassword)
     const encryptedCookie = AESUtils.encryptData(Buffer.from(cookie), key).toString('base64')
-
-    this.appPropertiesRepository.save(AppProperties.BACKEND_COOKIE, encryptedCookie)
+    this.appPropertiesRepository.save(this.BACKEND_COOKIE, encryptedCookie)
   }
 
   saveBackendCookieIfMissing(cookie: string) {
@@ -79,7 +78,7 @@ export class AppProperties {
   }
 
   deleteBackendCookie() {
-    this.appPropertiesRepository.delete(AppProperties.BACKEND_COOKIE)
+    this.appPropertiesRepository.delete(this.BACKEND_COOKIE)
   }
 
   private booleanToDatabaseValue = (value: boolean): string => value ? '1' : '0'

@@ -107,14 +107,14 @@ describe('AppProperties', () => {
       appProperties.saveBackendCookieIfMissing(API_TOKEN)
 
       // then
-      expect(mockAppPropertiesRepository.getByKey).toHaveBeenCalledWith(AppProperties.BACKEND_COOKIE)
-      expect(mockAppPropertiesRepository.save).toHaveBeenCalledWith(AppProperties.BACKEND_COOKIE, encryptedApiToken.toString('base64'))
+      expect(mockAppPropertiesRepository.getByKey).toHaveBeenCalledWith('backend_cookie')
+      expect(mockAppPropertiesRepository.save).toHaveBeenCalledWith('backend_cookie', encryptedApiToken.toString('base64'))
     })
 
     it('should not overwrite token when one already exists in DB', () => {
       // given
       vi.mocked(mockAppPropertiesRepository.getByKey).mockReturnValue({
-        key: AppProperties.BACKEND_COOKIE,
+        key: 'backend_cookie',
         value: encryptedApiToken.toString('base64')
       })
 
