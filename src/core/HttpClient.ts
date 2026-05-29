@@ -118,11 +118,19 @@ export class HttpClient {
     }
   }
 
+  private isAuthenticatedPath(path: string): boolean {
+    return !this.unauthenticatedPaths.some(prefix =>
+      path.startsWith(prefix)
+    );
+  }
+
   async request<T>(
     path: string,
     options: RequestInit = {},
     includeApiVersion: boolean = true
   ): Promise<{ data: T; response: Response }> {
+    if (this.isAuthenticatedPath(path))
+      await this.verifyAuthorizationToken()
     const optionsAndHeaders = {
       ...options,
       headers: {
@@ -183,8 +191,6 @@ export class HttpClient {
       additionalHeaders?: Record<string, string>
     }
   ): Promise<T> {
-    await this.verifyAuthorizationToken()
-
     const {
       headerContentType = this.HEADER_DEFAULT_CONTENT_TYPE,
       headerAccept = this.HEADER_DEFAULT_ACCEPT,
@@ -242,7 +248,6 @@ export class HttpClient {
     headerContentType: string = this.HEADER_DEFAULT_CONTENT_TYPE,
     headerAccept: string = this.HEADER_DEFAULT_ACCEPT
   ): Promise<T> {
-    await this.verifyAuthorizationToken()
     return (await this.request<T>(path, {
       method: "PUT",
       body: JSON.stringify(body),
@@ -261,8 +266,6 @@ export class HttpClient {
       headerAccept?: string;
     }
   ): Promise<T> {
-    await this.verifyAuthorizationToken()
-
     const {
       headerContentType = this.HEADER_DEFAULT_CONTENT_TYPE,
       headerAccept = this.HEADER_DEFAULT_ACCEPT
@@ -286,4 +289,5 @@ export class HttpClient {
   private API_HOST_VERSION: string = "v15"
   private HEADER_DEFAULT_CONTENT_TYPE = "application/json"
   private HEADER_DEFAULT_ACCEPT = "application/json"
+  private readonly unauthenticatedPaths = ['access', 'api-version']
 }
