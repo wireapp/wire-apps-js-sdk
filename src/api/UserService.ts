@@ -16,7 +16,7 @@
 
 import {singleton} from "tsyringe";
 import {UsersApiClient} from "./UsersApiClient.js";
-import type {QualifiedId} from "../model/QualifiedId.js";
+import {QualifiedId} from "../model/QualifiedId.js";
 import type {UserResponse} from "./model/UserResponse.js";
 import {LoggerFactory} from "../utils/logger/LoggerFactory.js";
 import {CryptoClientId} from "../model/CryptoClientId.js";
@@ -41,7 +41,7 @@ export class UserService {
 
     return new Map(
       userIds.flatMap(qualifiedUserId => {
-        const key = UsersApiClient.toKey(qualifiedUserId);
+        const key = QualifiedId.toKey(qualifiedUserId);
         const userClientResponses = usersToClients.get(key);
 
         if (!userClientResponses?.length) {

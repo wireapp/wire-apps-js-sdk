@@ -18,7 +18,7 @@ import {HttpClient} from "../core/HttpClient.js";
 import type {UserResponse} from "./model/UserResponse.js";
 import {singleton} from "tsyringe";
 import type {UserClientResponse} from "./model/UserClientResponse.js";
-import type {QualifiedId} from "../model/QualifiedId.js";
+import {QualifiedId} from "../model/QualifiedId.js";
 
 @singleton()
 export class UsersApiClient {
@@ -26,24 +26,6 @@ export class UsersApiClient {
   }
 
   private readonly basePath = "users";
-
-  /**
-   * Helper to create a consistent Map key from a QualifiedId
-   *
-   * TODO: Baris: Move this into QualifiedId class in a separate PR.
-   */
-  static toKey(userId: QualifiedId): string {
-    return `${userId.domain}:${userId.id}`;
-  }
-
-  /**
-   *
-   * TODO: Baris: Move this into QualifiedId class  in a separate PR.
-   */
-  static fromKey(key: string): QualifiedId {
-    const [domain, id] = key.split(':');
-    return { id: id!, domain: domain! };
-  }
 
   async getUser(userId: string, userDomain: string): Promise<UserResponse> {
     const path = `${this.basePath}/${userDomain}/${userId}`
@@ -68,7 +50,7 @@ export class UsersApiClient {
         const clients = usersInDomain[userId];
         if (!clients) continue;
 
-        const key = UsersApiClient.toKey({id: userId, domain});
+        const key = QualifiedId.toKey(new QualifiedId(userId, domain));
         result.set(key, clients);
       }
     }

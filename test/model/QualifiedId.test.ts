@@ -106,5 +106,131 @@ describe('QualifiedId', () => {
       expect(plainObject instanceof QualifiedId).toBe(false)
     })
   })
+
+  describe('toKey', () => {
+    it('should create a consistent string key from QualifiedId', () => {
+      const qualifiedId = new QualifiedId('user-123', 'example.com')
+
+      const key = QualifiedId.toKey(qualifiedId)
+
+      expect(key).toBe('user-123:example.com')
+    })
+
+    it('should handle UUID ids correctly', () => {
+      const qualifiedId = new QualifiedId('550e8400-e29b-41d4-a716-446655440000', 'staging.zinfra.io')
+
+      const key = QualifiedId.toKey(qualifiedId)
+
+      expect(key).toBe('550e8400-e29b-41d4-a716-446655440000:staging.zinfra.io')
+    })
+
+    it('should create same key for identical QualifiedIds', () => {
+      const qualifiedId1 = new QualifiedId('user-id', 'example.com')
+      const qualifiedId2 = new QualifiedId('user-id', 'example.com')
+
+      const key1 = QualifiedId.toKey(qualifiedId1)
+      const key2 = QualifiedId.toKey(qualifiedId2)
+
+      expect(key1).toBe(key2)
+    })
+
+    it('should create different keys for different domains', () => {
+      const qualifiedId1 = new QualifiedId('user-id', 'example.com')
+      const qualifiedId2 = new QualifiedId('user-id', 'other.com')
+
+      const key1 = QualifiedId.toKey(qualifiedId1)
+      const key2 = QualifiedId.toKey(qualifiedId2)
+
+      expect(key1).not.toBe(key2)
+      expect(key1).toBe('user-id:example.com')
+      expect(key2).toBe('user-id:other.com')
+    })
+
+    it('should create different keys for different user ids', () => {
+      const qualifiedId1 = new QualifiedId('user-1', 'example.com')
+      const qualifiedId2 = new QualifiedId('user-2', 'example.com')
+
+      const key1 = QualifiedId.toKey(qualifiedId1)
+      const key2 = QualifiedId.toKey(qualifiedId2)
+
+      expect(key1).not.toBe(key2)
+      expect(key1).toBe('user-1:example.com')
+      expect(key2).toBe('user-2:example.com')
+    })
+  })
+
+  describe('fromKey', () => {
+    it('should reconstruct QualifiedId from a key string', () => {
+      const key = 'user-123:example.com'
+
+      const qualifiedId = QualifiedId.fromKey(key)
+
+      expect(qualifiedId.id).toBe('user-123')
+      expect(qualifiedId.domain).toBe('example.com')
+      expect(qualifiedId instanceof QualifiedId).toBe(true)
+    })
+
+    it('should handle UUID ids in key correctly', () => {
+      const key = '550e8400-e29b-41d4-a716-446655440000:staging.zinfra.io'
+
+      const qualifiedId = QualifiedId.fromKey(key)
+
+      expect(qualifiedId.id).toBe('550e8400-e29b-41d4-a716-446655440000')
+      expect(qualifiedId.domain).toBe('staging.zinfra.io')
+    })
+
+    it('should handle subdomain in key correctly', () => {
+      const key = 'user-id:subdomain.example.co.uk'
+
+      const qualifiedId = QualifiedId.fromKey(key)
+
+      expect(qualifiedId.id).toBe('user-id')
+      expect(qualifiedId.domain).toBe('subdomain.example.co.uk')
+    })
+  })
+
+  describe('toKey and fromKey round-trip', () => {
+    it('should correctly round-trip a QualifiedId through key conversion', () => {
+      const original = new QualifiedId('user-123', 'example.com')
+
+      const key = QualifiedId.toKey(original)
+      const reconstructed = QualifiedId.fromKey(key)
+
+      expect(reconstructed.id).toBe(original.id)
+      expect(reconstructed.domain).toBe(original.domain)
+    })
+
+    it('should work with UUID ids', () => {
+      const original = new QualifiedId('550e8400-e29b-41d4-a716-446655440000', 'staging.zinfra.io')
+
+      const key = QualifiedId.toKey(original)
+      const reconstructed = QualifiedId.fromKey(key)
+
+      expect(reconstructed.id).toBe(original.id)
+      expect(reconstructed.domain).toBe(original.domain)
+    })
+
+    it('should work with complex domain names', () => {
+      const original = new QualifiedId('user-id', 'subdomain.example.co.uk')
+
+      const key = QualifiedId.toKey(original)
+      const reconstructed = QualifiedId.fromKey(key)
+
+      expect(reconstructed.id).toBe(original.id)
+      expect(reconstructed.domain).toBe(original.domain)
+    })
+
+    it('should allow using reconstructed QualifiedId as Map key', () => {
+      const original = new QualifiedId('user-id', 'example.com')
+      const map = new Map<string, string>()
+
+      const key1 = QualifiedId.toKey(original)
+      map.set(key1, 'value1')
+
+      const key2 = QualifiedId.toKey(QualifiedId.fromKey(key1))
+
+      expect(map.get(key2)).toBe('value1')
+    })
+  })
 })
 

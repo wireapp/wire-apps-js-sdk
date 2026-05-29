@@ -20,7 +20,7 @@ import {ConversationsApiClient} from '../../src/api/ConversationsApiClient.js'
 import {ConversationRepository} from '../../src/db/ConversationRepository.js'
 import {ConversationMemberRepository} from '../../src/db/ConversationMemberRepository.js'
 import {ConversationType} from '../../src/model/conversation/ConversationType.js'
-import type {QualifiedId} from '../../src/model/QualifiedId.js'
+import {QualifiedId} from '../../src/model/QualifiedId.js'
 import type {ConversationResponse} from '../../src/api/response/ConversationResponse.js'
 import type {ConversationEntity} from '../../src/db/model/ConversationEntity.js'
 import {container} from 'tsyringe'
@@ -31,7 +31,6 @@ import {ConversationRole} from "../../src/model/conversation/ConversationRole.js
 import {TeamsApiClient} from "../../src/api/TeamsApiClient.js";
 import {TeamId} from "../../src/model/TeamId.js";
 import {UserService} from "../../src/api/UserService.js";
-import {UsersApiClient} from "../../src/api/UsersApiClient.js";
 
 describe('ConversationService', () => {
   let conversationService: ConversationService
@@ -1519,8 +1518,8 @@ describe('ConversationService', () => {
       // Mock userService.getUsersClientIds to return Map<string, CryptoClientId[]>
       mockUserService.getUsersClientIds.mockResolvedValue(
         new Map([
-          [UsersApiClient.toKey(MEMBERS[0]!), [mockClientId1]],
-          [UsersApiClient.toKey(MEMBERS[1]!), [mockClientId2]]
+          [QualifiedId.toKey(MEMBERS[0]!), [mockClientId1]],
+          [QualifiedId.toKey(MEMBERS[1]!), [mockClientId2]]
         ])
       )
 
@@ -1618,7 +1617,7 @@ describe('ConversationService', () => {
       // Only first user has clients (second user not in map since they have no clients)
       mockUserService.getUsersClientIds.mockResolvedValue(
         new Map([
-          [UsersApiClient.toKey(MEMBERS[0]!), [mockClientId1]]
+          [QualifiedId.toKey(MEMBERS[0]!), [mockClientId1]]
         ])
       )
 

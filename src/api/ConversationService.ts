@@ -40,7 +40,6 @@ import type {Conversation} from "../model/conversation/Conversation.js";
 import {ConversationMapper} from "../mappers/conversation/ConversationMapper.js";
 import {ConversationMemberMapper} from "../mappers/conversation/ConversationMemberMapper.js";
 import {UserService} from "./UserService.js";
-import {UsersApiClient} from "./UsersApiClient.js";
 
 @singleton()
 export class ConversationService {
@@ -304,7 +303,7 @@ export class ConversationService {
     const clientIdsToRemove = [...userIdToClientIds.values()].flat()
 
     try {
-      const membersRemoved = [...userIdToClientIds.keys()].map(UsersApiClient.fromKey)
+      const membersRemoved = [...userIdToClientIds.keys()].map(QualifiedId.fromKey)
       await this.coreCryptoService.removeClientsFromMlsConversation(conversation.mlsGroupId, clientIdsToRemove)
       this.conversationMemberRepository.deleteMany(membersRemoved, conversationId.id, conversationId.domain)
       this.logger.info(`Removal of members from the conversation is completed. Removed: ${membersRemoved.length}. conversationId: ${conversationId}`)
