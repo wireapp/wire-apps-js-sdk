@@ -20,11 +20,12 @@ import {inject, singleton} from "tsyringe"
 import {LoggerFactory} from "../utils/logger/LoggerFactory.js";
 import {AppProperties} from "../service/AppProperties.js";
 import {WireApiException} from "../model/exception/WireApiException.js";
+import type {AccessResponse} from "../api/response/AccessResponse.js";
 
 @singleton()
 export class HttpClient {
   private logger = LoggerFactory.getLogger(this.constructor.name)
-  private tokenTimestamp: number | null = null
+  private tokenExpirationTimestamp: number | null = null
   private cachedAccessToken: string | null = null
   private cachedDeviceId: string | null = null
   private headers: Record<string, string> = {
@@ -74,21 +75,18 @@ export class HttpClient {
     const currentTime = Date.now()
 
     // Check if token is valid (not null and not expired)
-    if (this.cachedAccessToken != null && this.tokenTimestamp != null) {
-      const timeSinceTokenIssued = currentTime - this.tokenTimestamp
-      if (timeSinceTokenIssued < this.TOKEN_EXPIRATION_MS) {
-        this.setAuthorizationToken(this.cachedAccessToken)
-        return
-      }
-
-      this.logger.info("Access token expired, getting a new one.")
-    }
+    if (
+      this.cachedAccessToken != null &&
+      this.tokenExpirationTimestamp != null &&
+      currentTime < this.tokenExpirationTimestamp
+    ) { return }
+    this.logger.info("Access token expired, getting a new one.")
 
     const path = this.cachedDeviceId
       ? `access?client_id=${this.cachedDeviceId}`
       : `access`
     try {
-      const accessResponse = (await this.request<Record<string, unknown>>(path, {
+      const accessResponse = (await this.request<AccessResponse>(path, {
         method: "POST",
         headers: {
           "Cookie": `zuid=${this.appProperties.getBackendCookie()}`
@@ -103,10 +101,10 @@ export class HttpClient {
       if (zuidCookie)
         this.appProperties.saveBackendCookie(zuidCookie)
 
-      const accessToken = accessResponse.data['access_token'] as string
+      const accessToken = accessResponse.data.access_token
 
       this.cachedAccessToken = accessToken
-      this.tokenTimestamp = currentTime
+      this.tokenExpirationTimestamp = currentTime + (accessResponse.data.expires_in * 1000) // seconds to milliseconds
 
       this.setAuthorizationToken(accessToken)
     } catch (exception) {
@@ -287,7 +285,6 @@ export class HttpClient {
   }
 
   private API_HOST_VERSION: string = "v15"
-  private TOKEN_EXPIRATION_MS = 14 * 60 * 1000 // 14 minutes in milliseconds
   private HEADER_DEFAULT_CONTENT_TYPE = "application/json"
   private HEADER_DEFAULT_ACCEPT = "application/json"
 }
