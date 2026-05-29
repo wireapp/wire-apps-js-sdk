@@ -17,8 +17,7 @@
 import {beforeEach, describe, expect, it, vi} from 'vitest'
 import {UsersApiClient} from '../../src/api/UsersApiClient.js'
 import {CryptoProtocol} from '../../src/model/CryptoProtocol.js'
-import {UserClientResponse} from "../../src/api/model/UserClientResponse.js";
-import type {QualifiedId} from "../../src/model/QualifiedId.js";
+import {QualifiedId} from "../../src/model/QualifiedId.js";
 
 describe('UsersApiClient (getUser)', () => {
   let mockHttpClient: any
@@ -139,8 +138,8 @@ describe('UsersApiClient (getClientsByUserIds)', () => {
 
     expect(result.size).toBe(2)
 
-    const key1 = UsersApiClient.toKey(userIds[0]);
-    const key2 = UsersApiClient.toKey(userIds[1]);
+    const key1 = QualifiedId.toKey(userIds[0]);
+    const key2 = QualifiedId.toKey(userIds[1]);
 
     expect(result.get(key1)).toEqual([{ id: 'd0' }])
     expect(result.get(key2)).toEqual([{ id: 'd1' }, { id: 'd2' }])
@@ -167,7 +166,7 @@ describe('UsersApiClient (getClientsByUserIds)', () => {
     const result = await client.getClientsByUserIds(userIds)
 
     expect(result.size).toBe(1)
-    expect(result.has(UsersApiClient.toKey(userIds[0]))).toBe(true)
+    expect(result.has(QualifiedId.toKey(userIds[0]))).toBe(true)
   })
 
   it('should propagate errors from httpClient.postRequest', async () => {

@@ -25,4 +25,21 @@ export class QualifiedId {
   toString(): string {
     return `${obfuscateId(this.id)}@${this.domain}`
   }
+
+  /**
+   * Creates a consistent string key from a QualifiedId for use in Maps and other data structures.
+   * Format: "domain:id"
+   */
+  static toKey(qualifiedId: QualifiedId): string {
+    return `${qualifiedId.domain}:${qualifiedId.id}`;
+  }
+
+  /**
+   * Reconstructs a QualifiedId object from a string key.
+   * Expected format: "domain:id"
+   */
+  static fromKey(key: string): QualifiedId {
+    const [domain, id] = key.split(':');
+    return new QualifiedId(id!, domain!);
+  }
 }
