@@ -111,11 +111,10 @@ export class HttpClient {
       this.logger.error('Unable to retrieve access token, Error:', exception)
       if (exception instanceof WireApiException && exception.isCredentialsInvalid()) {
         this.appProperties.deleteBackendCookie()
-      }
 
-      // TODO Can't recover from this, need to restart the app with a valid api token
-      // TODO: Map to WireException
-      throw new Error("Current cookie/api-token is expired. Get a new apiToken and restart the App")
+        // TODO: Map to WireException
+        throw new Error("Current cookie/api-token is expired. Get a new apiToken and restart the App")
+      }
     }
   }
 
