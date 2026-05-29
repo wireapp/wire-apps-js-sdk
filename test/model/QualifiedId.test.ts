@@ -113,7 +113,7 @@ describe('QualifiedId', () => {
 
       const key = QualifiedId.toKey(qualifiedId)
 
-      expect(key).toBe('example.com:user-123')
+      expect(key).toBe('user-123:example.com')
     })
 
     it('should handle UUID ids correctly', () => {
@@ -121,7 +121,7 @@ describe('QualifiedId', () => {
 
       const key = QualifiedId.toKey(qualifiedId)
 
-      expect(key).toBe('staging.zinfra.io:550e8400-e29b-41d4-a716-446655440000')
+      expect(key).toBe('550e8400-e29b-41d4-a716-446655440000:staging.zinfra.io')
     })
 
     it('should create same key for identical QualifiedIds', () => {
@@ -142,8 +142,8 @@ describe('QualifiedId', () => {
       const key2 = QualifiedId.toKey(qualifiedId2)
 
       expect(key1).not.toBe(key2)
-      expect(key1).toBe('example.com:user-id')
-      expect(key2).toBe('other.com:user-id')
+      expect(key1).toBe('user-id:example.com')
+      expect(key2).toBe('user-id:other.com')
     })
 
     it('should create different keys for different user ids', () => {
@@ -154,14 +154,14 @@ describe('QualifiedId', () => {
       const key2 = QualifiedId.toKey(qualifiedId2)
 
       expect(key1).not.toBe(key2)
-      expect(key1).toBe('example.com:user-1')
-      expect(key2).toBe('example.com:user-2')
+      expect(key1).toBe('user-1:example.com')
+      expect(key2).toBe('user-2:example.com')
     })
   })
 
   describe('fromKey', () => {
     it('should reconstruct QualifiedId from a key string', () => {
-      const key = 'example.com:user-123'
+      const key = 'user-123:example.com'
 
       const qualifiedId = QualifiedId.fromKey(key)
 
@@ -171,7 +171,7 @@ describe('QualifiedId', () => {
     })
 
     it('should handle UUID ids in key correctly', () => {
-      const key = 'staging.zinfra.io:550e8400-e29b-41d4-a716-446655440000'
+      const key = '550e8400-e29b-41d4-a716-446655440000:staging.zinfra.io'
 
       const qualifiedId = QualifiedId.fromKey(key)
 
@@ -180,7 +180,7 @@ describe('QualifiedId', () => {
     })
 
     it('should handle subdomain in key correctly', () => {
-      const key = 'subdomain.example.co.uk:user-id'
+      const key = 'user-id:subdomain.example.co.uk'
 
       const qualifiedId = QualifiedId.fromKey(key)
 
