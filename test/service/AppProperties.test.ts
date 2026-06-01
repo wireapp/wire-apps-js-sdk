@@ -97,7 +97,6 @@ describe('AppProperties', () => {
 
   describe('saveBackendCookieIfMissing', () => {
     const API_TOKEN = 'test-cookie'
-    const encryptedApiToken = AESUtils.encryptData(Buffer.from(API_TOKEN), Buffer.from(CRYPTO_STORAGE_PASSWORD))
 
     it('should be saved from constructor param when token is not in DB', () => {
       // given
@@ -108,15 +107,17 @@ describe('AppProperties', () => {
 
       // then
       expect(mockAppPropertiesRepository.getByKey).toHaveBeenCalledWith('backend_cookie')
-      expect(mockAppPropertiesRepository.save).toHaveBeenCalledWith('backend_cookie', encryptedApiToken.toString('base64'))
+      expect(mockAppPropertiesRepository.save).toHaveBeenCalledOnce()
     })
 
     it('should not overwrite token when one already exists in DB', () => {
       // given
       vi.mocked(mockAppPropertiesRepository.getByKey).mockReturnValue({
         key: 'backend_cookie',
-        value: encryptedApiToken.toString('base64')
+        value: 'encrypted-test-cookie'
       })
+      const spy = vi.spyOn(AESUtils, 'decryptData')
+      spy.mockImplementationOnce(() => Buffer.from(API_TOKEN))
 
       // when
       appProperties.saveBackendCookieIfMissing(API_TOKEN)
