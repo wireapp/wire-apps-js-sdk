@@ -100,6 +100,12 @@ export class WireAppSdk {
   private async init() {
     this.configureDependencies()
 
+    // TODO: Remove when core-crypto client is persisted in storage
+    // Workaround: Trigger api token to be loaded from the .env
+    // Required as the core-crypto client is initialized for each program execution.
+    // The api token contains client id (in `i=...` param) from previous program execution.
+    this.appProperties.deleteBackendCookie()
+
     // Save cookie from constructor parameter only at first application start.
     // Once BE provides new token, the one stored in `apiToken` will be obsolete.
     this.appProperties.saveBackendCookieIfMissing(this.apiToken)
