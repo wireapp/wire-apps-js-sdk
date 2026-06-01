@@ -14,14 +14,16 @@
 * along with this program. If not, see http://www.gnu.org/licenses/.
 */
 
-import rootMessage, {
-  type IText,
-  type IGenericMessage,
-  type IAsset,
-  type Asset
+import rootMessage from "../../generated/messages.js";
+import type {
+  IText,
+  IGenericMessage,
+  IAsset,
+  Asset
 } from "../../generated/messages.js";
 const { GenericMessage } = rootMessage;
 import { type WireMessage, TextMessage, AssetMessage } from '../../model/WireMessage.js';
+import {MessageLinkPreviewMapper} from "./MessageLinkPreviewMapper.js";
 
 /**
  * Utility object responsible for serializing WireMessage to GenericMessage
@@ -76,7 +78,11 @@ function packTextMessage(
       start: mention.offset,
       length: mention.length
     })) || [],
-    linkPreview: [], // TODO: Add proper mapping for LinkPreview / LinkPreviewAsset
+    linkPreview: wireMessage.linkPreviews
+      ?.flatMap(it => {
+        const mapped = MessageLinkPreviewMapper.toProtobuf(it);
+        return mapped != null ? [mapped] : [];
+      }) ?? [],
     expectsReadConfirmation: false,
     legalHoldStatus: null
   };

@@ -14,7 +14,8 @@
 * along with this program. If not, see http://www.gnu.org/licenses/.
 */
 
-import rootMessage, { type IGenericMessage } from "../../generated/messages.js";
+import rootMessage from "../../generated/messages.js";
+import type {IGenericMessage} from "../../generated/messages.js";
 import type { QualifiedId } from "../../model/QualifiedId.js";
 const { GenericMessage } = rootMessage;
 import {
@@ -31,6 +32,7 @@ import type {
   AssetRemoteData
 } from "../../model/WireMessage.js";
 import {MessageEncryptionAlgorithm} from "../../model/protobuf/MessageEncryptionAlgorithm.js";
+import {MessageLinkPreviewMapper} from "./MessageLinkPreviewMapper.js";
 
 /**
  * Utility object responsible for mapping a GenericMessage to WireMessage
@@ -61,7 +63,12 @@ function unpackTextMessage(
 ): TextMessage {
   return TextMessage.create({
     conversationId: qualifiedConversation,
-    text: genericMessage.text!.content
+    text: genericMessage.text!.content,
+    linkPreviews: genericMessage.text!.linkPreview
+      ?.flatMap(it => {
+        const mapped = MessageLinkPreviewMapper.fromProtobuf(it);
+        return mapped != null ? [mapped] : [];
+      }) ?? []
     // TODO: Map other fields
   })
 }
