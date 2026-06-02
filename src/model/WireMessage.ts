@@ -18,7 +18,7 @@ import { QualifiedId } from "./QualifiedId.js";
 import { MessageEncryptionAlgorithm } from "./protobuf/MessageEncryptionAlgorithm.js";
 import Long from "long";
 
-type Item = object
+export type Item = object
 
 interface Ephemeral {
   expiresAfterMillis?: number | null
@@ -187,6 +187,28 @@ export interface AssetRemoteData {
   assetDomain: string
   encryptionAlgorithm?: MessageEncryptionAlgorithm | null
 }
+
+export interface CompositeButton extends Item {
+  type: 'composite_button'
+  id: string
+  text: string
+}
+
+export const CompositeButton = {
+  create(
+    params: {
+      text: string
+      id : string | undefined
+    }
+  ): CompositeButton {
+    return {
+      type: 'composite_button',
+      id: params.id ?? crypto.randomUUID(),
+      text: params.text
+    }
+  }
+}
+
 
 export type WireMessage =
   | Unknown

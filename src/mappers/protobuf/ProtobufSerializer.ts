@@ -21,8 +21,8 @@ import type {
   IAsset,
   Asset
 } from "../../generated/messages.js";
-const { GenericMessage } = rootMessage;
-import { type WireMessage, TextMessage, AssetMessage } from '../../model/WireMessage.js';
+const { GenericMessage, Composite } = rootMessage;
+import { type WireMessage, TextMessage, AssetMessage, type Item, CompositeButton } from '../../model/WireMessage.js';
 import {MessageLinkPreviewMapper} from "./MessageLinkPreviewMapper.js";
 
 /**
@@ -70,6 +70,17 @@ function packTextMessage(
   wireMessage: TextMessage,
   genericMessage: Partial<IGenericMessage>
 ): IGenericMessage {
+  const textContent = packText(wireMessage)
+
+  return {
+    ...genericMessage,
+    text: textContent,
+  } as IGenericMessage;
+}
+
+function packText(
+  wireMessage: TextMessage
+) {
   const textContent: IText = {
     content: wireMessage.text,
     // Add other text-specific fields
@@ -90,10 +101,7 @@ function packTextMessage(
     };
   }
 
-  return {
-    ...genericMessage,
-    text: textContent,
-  } as IGenericMessage;
+  return textContent
 }
 
 function packAssetMessage(
@@ -161,4 +169,27 @@ function packAssetMessage(
       asset
     } as IGenericMessage;
   }
+}
+
+// @ts-expect-error TS6133 - will be used in a follow-up PR
+function _packItemsList(itemsList: Item[]): Composite.Item[] {
+  return itemsList.flatMap((item) => {
+    switch ((item as TextMessage | CompositeButton).type) {
+      case 'composite_button': {
+        const button = item as CompositeButton
+        return [Composite.Item.create({
+          content: 'button',
+          button: { id: button.id, text: button.text }
+        })]
+      }
+      case 'text': {
+        return [Composite.Item.create({
+          content: 'text',
+          text: packText(item as TextMessage)
+        })]
+      }
+      default:
+        return []
+    }
+  })
 }
