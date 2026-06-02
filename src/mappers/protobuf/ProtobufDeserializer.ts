@@ -15,13 +15,14 @@
 */
 
 import rootMessage from "../../generated/messages.js";
-import type {IGenericMessage} from "../../generated/messages.js";
+import type {Composite, IGenericMessage} from "../../generated/messages.js";
 import type { QualifiedId } from "../../model/QualifiedId.js";
 const { GenericMessage } = rootMessage;
 import {
   TextMessage,
   Unknown,
-  AssetMessage
+  AssetMessage,
+  CompositeButton
 } from '../../model/WireMessage.js';
 import type {
   WireMessage,
@@ -105,5 +106,22 @@ function unpackAssetMessage(
     name: original?.name ?? null,
     remoteData: remoteData,
     sizeInBytes: original?.size ?? 0
+  })
+}
+
+// @ts-expect-error TS6133 - will be used in a follow-up PR
+function _unpackItemList(
+  conversationId: QualifiedId,
+  compositeItemList: Composite.Item[]
+): (TextMessage | CompositeButton)[] {
+  return compositeItemList.flatMap((item): (TextMessage | CompositeButton)[] => {
+    switch (item.content) {
+      case 'text':
+        return item.text ? [TextMessage.create({ conversationId, text: item.text.content })] : []
+      case 'button':
+        return item.button ? [CompositeButton.create({ id: item.button.id, text: item.button.text })] : []
+      default:
+        return []
+    }
   })
 }
