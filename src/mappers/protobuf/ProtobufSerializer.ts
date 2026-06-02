@@ -16,6 +16,7 @@
 
 import rootMessage from "../../generated/messages.js";
 import type {
+  Composite as ProtobufComposite,
   IText,
   IGenericMessage,
   IAsset,
@@ -172,7 +173,7 @@ function packAssetMessage(
 }
 
 // @ts-expect-error TS6133 - will be used in a follow-up PR
-function _packItemsList(itemsList: Item[]): Composite.Item[] {
+function _packItemsList(itemsList: Item[]): ProtobufComposite.Item[] {
   return itemsList.flatMap((item) => {
     switch ((item as TextMessage | CompositeButton).type) {
       case 'composite_button': {
