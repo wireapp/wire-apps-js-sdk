@@ -38,6 +38,7 @@ export {
   type WireMessage,
   TextMessage,
   AssetMessage,
+  type LinkPreview,
   type Audio,
   type Image,
   type Video

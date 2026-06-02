@@ -35,17 +35,28 @@ export interface Mention {
 }
 
 export interface LinkPreview {
-  url: string
   urlOffset: number
+  url: string
   permanentUrl?: string | null
   title?: string | null
   summary?: string | null
   image?: LinkPreviewAsset | null
 }
 
-interface LinkPreviewAsset {
-  name?: string | null
-  // TODO: Add other fields
+export interface LinkPreviewAsset {
+  mimeType: string
+  metadata?: AssetMetadata | null
+  assetDataPath?: string | null
+  assetDataSize: number | Long
+  assetHeight: number
+  assetWidth: number
+  assetName?: string | null
+  assetKey?: string | null
+  assetToken?: string | null
+  assetDomain?: string | null
+  otrKey: Uint8Array
+  sha256Key: Uint8Array
+  encryptionAlgorithm: MessageEncryptionAlgorithm
 }
 
 export interface WireMessageBase {
