@@ -78,11 +78,7 @@ function packTextMessage(
       start: mention.offset,
       length: mention.length
     })) || [],
-    linkPreview: wireMessage.linkPreviews
-      ?.flatMap(it => {
-        const mapped = MessageLinkPreviewMapper.toProtobuf(it);
-        return mapped != null ? [mapped] : [];
-      }) ?? [],
+    linkPreview: wireMessage.linkPreviews?.map(it => MessageLinkPreviewMapper.toProtobuf(it)) ?? [],
     expectsReadConfirmation: false,
     legalHoldStatus: null
   };

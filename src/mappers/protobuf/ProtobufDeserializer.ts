@@ -64,11 +64,7 @@ function unpackTextMessage(
   return TextMessage.create({
     conversationId: qualifiedConversation,
     text: genericMessage.text!.content,
-    linkPreviews: genericMessage.text!.linkPreview
-      ?.flatMap(it => {
-        const mapped = MessageLinkPreviewMapper.fromProtobuf(it);
-        return mapped != null ? [mapped] : [];
-      }) ?? []
+    linkPreviews: genericMessage.text!.linkPreview?.map(it => MessageLinkPreviewMapper.fromProtobuf(it)) ?? []
     // TODO: Map other fields
   })
 }

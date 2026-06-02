@@ -85,6 +85,25 @@ describe('MessageLinkPreviewMapper', () => {
     })
   })
 
+  it('defaults when LinkPreview image encryption cannot be mapped to protobuf', () => {
+    const linkPreview: LinkPreview = {
+      url: wireBlogUrl,
+      urlOffset: 7,
+      image: {
+        mimeType: 'image/png',
+        assetDataSize: 1234,
+        assetHeight: 480,
+        assetWidth: 640,
+        otrKey: new Uint8Array([1, 2, 3]),
+        sha256Key: new Uint8Array([4, 5, 6]),
+        encryptionAlgorithm: 99 as never
+      }
+    }
+
+    expect(MessageLinkPreviewMapper.toProtobuf(linkPreview).image?.uploaded?.encryption)
+      .toBe(EncryptionAlgorithm.AES_CBC)
+  })
+
   it('maps LinkPreview without image to domain', () => {
     const linkPreview: ILinkPreview = {
       url: wireBlogUrl,

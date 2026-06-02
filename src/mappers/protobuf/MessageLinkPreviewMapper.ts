@@ -15,12 +15,11 @@
 */
 
 import type {Asset, ILinkPreview} from "../../generated/messages.js";
-import {MessageEncryptionAlgorithm} from "../../model/protobuf/MessageEncryptionAlgorithm.js";
 import type {LinkPreview} from "../../model/WireMessage.js";
 import {EncryptionAlgorithmMapper} from "./EncryptionAlgorithmMapper.js";
 
 export class MessageLinkPreviewMapper {
-  static fromProtobuf(linkPreview: ILinkPreview): LinkPreview | null {
+  static fromProtobuf(linkPreview: ILinkPreview): LinkPreview {
     const hasImage = linkPreview.image != null
 
     return {
@@ -44,7 +43,6 @@ export class MessageLinkPreviewMapper {
           otrKey: linkPreview.image?.uploaded?.otrKey ?? new Uint8Array(0),
           sha256Key: linkPreview.image?.uploaded?.sha256 ?? new Uint8Array(0),
           encryptionAlgorithm: EncryptionAlgorithmMapper.fromProtobufModel(linkPreview.image?.uploaded?.encryption)
-            ?? MessageEncryptionAlgorithm.AES_CBC
         } : null
     }
   }
@@ -71,7 +69,7 @@ export class MessageLinkPreviewMapper {
         name: image.assetName ?? null
       }
 
-      const uploaded = {
+      const uploaded: Asset.IRemoteData = {
         otrKey: image.otrKey,
         sha256: image.sha256Key,
         assetId: image.assetKey ?? null,

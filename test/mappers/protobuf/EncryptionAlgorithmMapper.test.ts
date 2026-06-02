@@ -25,14 +25,12 @@ describe('EncryptionAlgorithmMapper', () => {
   it('maps protobuf encryption algorithms to domain algorithms', () => {
     expect(EncryptionAlgorithmMapper.fromProtobufModel(EncryptionAlgorithm.AES_CBC)).toBe(MessageEncryptionAlgorithm.AES_CBC)
     expect(EncryptionAlgorithmMapper.fromProtobufModel(EncryptionAlgorithm.AES_GCM)).toBe(MessageEncryptionAlgorithm.AES_GCM)
-    expect(EncryptionAlgorithmMapper.fromProtobufModel(null)).toBeNull()
-    expect(EncryptionAlgorithmMapper.fromProtobufModel(undefined)).toBeNull()
+    expect(EncryptionAlgorithmMapper.fromProtobufModel(null)).toBe(MessageEncryptionAlgorithm.AES_CBC)
+    expect(EncryptionAlgorithmMapper.fromProtobufModel(undefined)).toBe(MessageEncryptionAlgorithm.AES_CBC)
   })
 
   it('maps domain encryption algorithms to protobuf algorithms', () => {
     expect(EncryptionAlgorithmMapper.toProtobufModel(MessageEncryptionAlgorithm.AES_CBC)).toBe(EncryptionAlgorithm.AES_CBC)
     expect(EncryptionAlgorithmMapper.toProtobufModel(MessageEncryptionAlgorithm.AES_GCM)).toBe(EncryptionAlgorithm.AES_GCM)
-    expect(EncryptionAlgorithmMapper.toProtobufModel(null)).toBeNull()
-    expect(EncryptionAlgorithmMapper.toProtobufModel(undefined)).toBeNull()
   })
 })

@@ -21,19 +21,19 @@ import {MessageEncryptionAlgorithm} from "../../model/protobuf/MessageEncryption
 const {EncryptionAlgorithm} = rootMessage;
 
 export class EncryptionAlgorithmMapper {
-  static fromProtobufModel(encryptionAlgorithm: ProtobufEncryptionAlgorithm | null | undefined): MessageEncryptionAlgorithm | null {
+  static fromProtobufModel(encryptionAlgorithm: ProtobufEncryptionAlgorithm | null | undefined): MessageEncryptionAlgorithm {
     switch (encryptionAlgorithm) {
       case EncryptionAlgorithm.AES_CBC: return MessageEncryptionAlgorithm.AES_CBC;
       case EncryptionAlgorithm.AES_GCM: return MessageEncryptionAlgorithm.AES_GCM;
-      default: return null;
+      default: return MessageEncryptionAlgorithm.AES_CBC;
     }
   }
 
-  static toProtobufModel(encryptionAlgorithm: MessageEncryptionAlgorithm | null | undefined): ProtobufEncryptionAlgorithm | null {
+  static toProtobufModel(encryptionAlgorithm: MessageEncryptionAlgorithm): ProtobufEncryptionAlgorithm {
     switch (encryptionAlgorithm) {
       case MessageEncryptionAlgorithm.AES_CBC: return EncryptionAlgorithm.AES_CBC;
       case MessageEncryptionAlgorithm.AES_GCM: return EncryptionAlgorithm.AES_GCM;
-      default: return null;
+      default: return EncryptionAlgorithm.AES_CBC;
     }
   }
 }
