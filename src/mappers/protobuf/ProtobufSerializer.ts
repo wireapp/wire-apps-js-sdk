@@ -173,7 +173,7 @@ function packAssetMessage(
 }
 
 // @ts-expect-error TS6133 - will be used in a follow-up PR
-function _packItemsList(itemsList: Item[]): ProtobufComposite.Item[] {
+function _packItemList(itemsList: Item[]): ProtobufComposite.Item[] {
   return itemsList.flatMap((item) => {
     switch ((item as TextMessage | CompositeButton).type) {
       case 'composite_button': {

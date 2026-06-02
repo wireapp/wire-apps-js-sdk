@@ -198,7 +198,7 @@ export const CompositeButton = {
   create(
     params: {
       text: string
-      id : string | undefined
+      id: string | undefined
     }
   ): CompositeButton {
     return {
