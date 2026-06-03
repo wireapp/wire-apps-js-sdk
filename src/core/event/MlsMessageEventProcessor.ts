@@ -70,18 +70,21 @@ export class MlsMessageEventProcessor implements EventProcessor<NewMLSMessageDTO
 
   private async forwardMessage(message: Uint8Array, event: NewMLSMessageDTO): Promise<void> {
     const conversationId = new QualifiedId(event.qualified_conversation.id, event.qualified_conversation.domain)
-    const wireMessage = ProtobufDeserializer.toWireMessage(message, conversationId);
+    const wireMessage = ProtobufDeserializer.toWireMessage(message, conversationId)
 
     switch (wireMessage.type) {
       case 'text':
-        await this.wireEventsHandler.onTextMessageReceived(wireMessage);
-        break;
+        await this.wireEventsHandler.onTextMessageReceived(wireMessage)
+        break
       case 'asset':
-        await this.wireEventsHandler.onAssetMessageReceived(wireMessage);
-        break;
+        await this.wireEventsHandler.onAssetMessageReceived(wireMessage)
+        break
+      case 'composite_button_action':
+        await this.wireEventsHandler.onButtonClicked(wireMessage)
+        break
       case 'unknown':
       default:
-        this.logger.info("Unknown event received.");
+        this.logger.info("Unknown event received.")
     }
   }
 }

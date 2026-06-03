@@ -22,7 +22,8 @@ import {
   TextMessage,
   Unknown,
   AssetMessage,
-  CompositeButton
+  CompositeButton,
+  CompositeButtonAction
 } from '../../model/WireMessage.js';
 import type {
   WireMessage,
@@ -52,6 +53,8 @@ export const ProtobufDeserializer = {
       return unpackTextMessage(genericMessage, qualifiedConversation)
     } else if (genericMessage.asset) {
       return unpackAssetMessage(genericMessage, qualifiedConversation)
+    } else if (genericMessage.buttonAction) {
+      return unpackCompositeButtonAction(genericMessage, qualifiedConversation)
     } else {
       return new Unknown()
     }
@@ -63,6 +66,7 @@ function unpackTextMessage(
   qualifiedConversation: QualifiedId
 ): TextMessage {
   return TextMessage.create({
+    // TODO(alexandre): add messageId
     conversationId: qualifiedConversation,
     text: genericMessage.text!.content,
     linkPreviews: genericMessage.text!.linkPreview?.map(it => MessageLinkPreviewMapper.fromProtobuf(it)) ?? []
@@ -123,5 +127,17 @@ function _unpackItemList(
       default:
         return []
     }
+  })
+}
+
+function unpackCompositeButtonAction(
+  genericMessage: IGenericMessage,
+  qualifiedConversation: QualifiedId
+): CompositeButtonAction {
+  return CompositeButtonAction.create({
+    messageId: genericMessage.messageId,
+    conversationId: qualifiedConversation,
+    referenceMessageId: genericMessage.buttonAction!.referenceMessageId,
+    buttonId: genericMessage.buttonAction!.buttonId
   })
 }

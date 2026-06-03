@@ -20,10 +20,11 @@ import type {
   IText,
   IGenericMessage,
   IAsset,
+  IButtonAction,
   Asset
 } from "../../generated/messages.js";
 const { GenericMessage, Composite } = rootMessage;
-import { type WireMessage, TextMessage, AssetMessage, type Item, CompositeButton } from '../../model/WireMessage.js';
+import { type WireMessage, TextMessage, AssetMessage, type Item, CompositeButton, CompositeButtonAction } from '../../model/WireMessage.js';
 import {MessageLinkPreviewMapper} from "./MessageLinkPreviewMapper.js";
 
 /**
@@ -46,12 +47,16 @@ export const ProtobufSerializer = {
 
     switch (wireMessage.type) {
       case 'text':
-        builtMessage = packTextMessage(wireMessage, genericMessage);
-        break;
+        builtMessage = packTextMessage(wireMessage, genericMessage)
+        break
 
       case 'asset':
-        builtMessage = packAssetMessage(wireMessage, genericMessage);
-        break;
+        builtMessage = packAssetMessage(wireMessage, genericMessage)
+        break
+      
+      case 'composite_button_action':
+        builtMessage = packCompositeButtonAction(wireMessage, genericMessage)
+        break
 
         // TODO: Add other message types here
 
@@ -193,4 +198,19 @@ function _packItemList(itemsList: Item[]): ProtobufComposite.Item[] {
         return []
     }
   })
+}
+
+function packCompositeButtonAction(
+  wireMessage: CompositeButtonAction,
+  genericMessage: Partial<IGenericMessage>
+): IGenericMessage {
+  const buttonAct: IButtonAction = {
+    referenceMessageId: wireMessage.referenceMessageId,
+    buttonId: wireMessage.buttonId
+  }
+
+  return {
+    ...genericMessage,
+    buttonAction: buttonAct
+  } as IGenericMessage;
 }

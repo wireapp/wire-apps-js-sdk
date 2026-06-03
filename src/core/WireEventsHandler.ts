@@ -15,7 +15,7 @@
  */
 
 import {WireApplicationManager} from "./WireApplicationManager.js";
-import type {AssetMessage, TextMessage} from "../model/WireMessage.js";
+import type {AssetMessage, CompositeButtonAction, TextMessage} from "../model/WireMessage.js";
 import type {Conversation} from "../model/conversation/Conversation.js";
 import type {ConversationMember} from "../model/conversation/ConversationMember.js";
 import {obfuscateId} from "../utils/ObfuscateUtil.js";
@@ -49,6 +49,10 @@ export abstract class WireEventsHandler {
 
   public async onAssetMessageReceived(wireMessage: AssetMessage): Promise<void> {
     this.logger.info(`Received onAssetMessageReceived, ID: ${wireMessage.id}`)
+  }
+
+  public async onButtonClicked(wireMessage: CompositeButtonAction): Promise<void> {
+    this.logger.info(`Received onButtonClicked, ID: ${wireMessage.id}`)
   }
 
   public async onAppAddedToConversation(
