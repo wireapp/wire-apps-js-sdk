@@ -18,6 +18,8 @@ import {beforeEach, describe, expect, it, vi} from 'vitest'
 import {UserService} from '../../src/api/UserService.js'
 import {CryptoProtocol} from '../../src/model/CryptoProtocol.js'
 import {QualifiedId} from "../../src/model/QualifiedId.js";
+import {WireUser} from "../../src/model/WireUser.js";
+import {TeamId} from "../../src/model/TeamId.js";
 
 describe('UserService', () => {
   let mockUsersApiClient: any
@@ -55,12 +57,36 @@ describe('UserService', () => {
       expect(mockUsersApiClient.getUser).toHaveBeenCalledWith('user-1', 'example.com')
     })
 
-    it('should return the user response', async () => {
+    it('should return a WireUser mapped from the API response', async () => {
       vi.mocked(mockUsersApiClient.getUser).mockResolvedValue(mockUser)
 
       const result = await service.getUser(qualifiedId)
 
-      expect(result).toEqual(mockUser)
+      expect(result).toBeInstanceOf(WireUser)
+      expect(result.id).toEqual(new QualifiedId('user-1', 'example.com'))
+      expect(result.name).toBe('John Doe')
+      expect(result.email).toBe('john@example.com')
+      expect(result.handle).toBe('johndoe')
+      expect(result.teamId).toEqual(new TeamId('team-1'))
+      expect(result.deleted).toBe(false)
+    })
+
+    it('should map undefined optional fields when not present in API response', async () => {
+      const minimalUser = {
+        qualified_id: qualifiedId,
+        name: 'Jane Doe',
+        supported_protocols: [CryptoProtocol.PROTEUS],
+        deleted: false
+      }
+      vi.mocked(mockUsersApiClient.getUser).mockResolvedValue(minimalUser)
+
+      const result = await service.getUser(qualifiedId)
+
+      expect(result).toBeInstanceOf(WireUser)
+      expect(result.name).toBe('Jane Doe')
+      expect(result.email).toBeUndefined()
+      expect(result.handle).toBeUndefined()
+      expect(result.teamId).toBeUndefined()
     })
 
     it('should propagate errors from usersApiClient.getUser', async () => {

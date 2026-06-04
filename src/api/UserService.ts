@@ -20,6 +20,8 @@ import {QualifiedId} from "../model/QualifiedId.js";
 import type {UserResponse} from "./model/UserResponse.js";
 import {LoggerFactory} from "../utils/logger/LoggerFactory.js";
 import {CryptoClientId} from "../model/CryptoClientId.js";
+import {WireUser} from "../model/WireUser.js";
+import {TeamId} from "../model/TeamId.js";
 
 @singleton()
 export class UserService {
@@ -29,8 +31,20 @@ export class UserService {
     private usersApiClient: UsersApiClient) {
   }
 
-  async getUser(userQualifiedId: QualifiedId): Promise<UserResponse> {
-    return await this.usersApiClient.getUser(userQualifiedId.id, userQualifiedId.domain);
+  async getUser(userQualifiedId: QualifiedId): Promise<WireUser> {
+    const response = await this.usersApiClient.getUser(userQualifiedId.id, userQualifiedId.domain);
+    return this.mapUserResponseToWireUser(response);
+  }
+
+  private mapUserResponseToWireUser(response: UserResponse): WireUser {
+    return new WireUser(
+      new QualifiedId(response.qualified_id.id, response.qualified_id.domain),
+      response.name,
+      response.email,
+      response.handle,
+      response.team ? new TeamId(response.team) : undefined,
+      response.deleted
+    );
   }
 
   async getUsersClientIds(userIds: QualifiedId[]): Promise<Map<string, CryptoClientId[]>> {
