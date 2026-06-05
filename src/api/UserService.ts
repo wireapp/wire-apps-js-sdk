@@ -33,17 +33,17 @@ export class UserService {
 
   async getUser(userQualifiedId: QualifiedId): Promise<WireUser> {
     const response = await this.usersApiClient.getUser(userQualifiedId.id, userQualifiedId.domain);
-    return this.mapUserResponseToWireUser(response);
+    return this.mapToWireUser(response);
   }
 
-  private mapUserResponseToWireUser(response: UserResponse): WireUser {
+  private mapToWireUser(userResponse: UserResponse): WireUser {
     return new WireUser(
-      new QualifiedId(response.qualified_id.id, response.qualified_id.domain),
-      response.name,
-      response.email,
-      response.handle,
-      response.team ? new TeamId(response.team) : undefined,
-      response.deleted
+      new QualifiedId(userResponse.qualified_id.id, userResponse.qualified_id.domain),
+      userResponse.name,
+      userResponse.deleted,
+      userResponse.email,
+      userResponse.handle,
+      userResponse.team ? new TeamId(userResponse.team) : undefined,
     );
   }
 

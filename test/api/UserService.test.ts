@@ -84,6 +84,7 @@ describe('UserService', () => {
 
       expect(result).toBeInstanceOf(WireUser)
       expect(result.name).toBe('Jane Doe')
+      expect(result.deleted).toBe(false)
       expect(result.email).toBeUndefined()
       expect(result.handle).toBeUndefined()
       expect(result.teamId).toBeUndefined()

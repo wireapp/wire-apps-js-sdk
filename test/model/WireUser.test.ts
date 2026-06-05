@@ -25,42 +25,47 @@ describe('WireUser', () => {
 
   describe('constructor', () => {
     it('should store all provided properties', () => {
-      const user = new WireUser(qualifiedId, 'John Doe', 'john@example.com', 'johndoe', teamId, false)
+      const user = new WireUser(qualifiedId, 'John Doe', false, 'john@example.com', 'johndoe', teamId)
 
       expect(user.id).toBe(qualifiedId)
       expect(user.name).toBe('John Doe')
+      expect(user.deleted).toBe(false)
       expect(user.email).toBe('john@example.com')
       expect(user.handle).toBe('johndoe')
       expect(user.teamId).toBe(teamId)
-      expect(user.deleted).toBe(false)
     })
 
     it('should allow optional fields to be undefined', () => {
-      const user = new WireUser(qualifiedId, 'Jane Doe', undefined, undefined, undefined, undefined)
+      const user = new WireUser(qualifiedId, 'Jane Doe', false, undefined, undefined, undefined)
 
       expect(user.id).toBe(qualifiedId)
       expect(user.name).toBe('Jane Doe')
+      expect(user.deleted).toBe(false)
       expect(user.email).toBeUndefined()
       expect(user.handle).toBeUndefined()
       expect(user.teamId).toBeUndefined()
-      expect(user.deleted).toBeUndefined()
     })
 
     it('should store deleted as true when user is deleted', () => {
-      const user = new WireUser(qualifiedId, 'Deleted User', undefined, undefined, undefined, true)
+      const user = new WireUser(qualifiedId, 'Deleted User', true)
 
+      expect(user.id).toBe(qualifiedId)
+      expect(user.name).toBe('Deleted User')
       expect(user.deleted).toBe(true)
+      expect(user.email).toBeUndefined()
+      expect(user.handle).toBeUndefined()
+      expect(user.teamId).toBeUndefined()
     })
 
     it('should correctly reference the QualifiedId', () => {
-      const user = new WireUser(qualifiedId, 'John Doe', undefined, undefined, undefined, undefined)
+      const user = new WireUser(qualifiedId, 'John Doe', false, undefined, undefined, undefined)
 
       expect(user.id.id).toBe('user-123')
       expect(user.id.domain).toBe('example.com')
     })
 
     it('should correctly reference the TeamId', () => {
-      const user = new WireUser(qualifiedId, 'John Doe', undefined, undefined, teamId, undefined)
+      const user = new WireUser(qualifiedId, 'John Doe', false, undefined, undefined, teamId)
 
       expect(user.teamId?.value).toBe('team-456')
     })

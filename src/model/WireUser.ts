@@ -21,10 +21,10 @@ export class WireUser {
   constructor(
     readonly id: QualifiedId,
     readonly name: string,
-    readonly email: string | undefined,
-    readonly handle: string | undefined,
-    readonly teamId: TeamId | undefined,
-    readonly deleted: boolean | undefined
+    readonly deleted: boolean,
+    readonly email?: string,
+    readonly handle?: string,
+    readonly teamId?: TeamId,
   ) {}
 }
 
