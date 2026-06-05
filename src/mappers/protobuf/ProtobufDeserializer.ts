@@ -14,13 +14,16 @@
 * along with this program. If not, see http://www.gnu.org/licenses/.
 */
 
-import rootMessage, { type IGenericMessage } from "../../generated/messages.js";
+import rootMessage from "../../generated/messages.js";
+import type {Composite, IGenericMessage} from "../../generated/messages.js";
 import type { QualifiedId } from "../../model/QualifiedId.js";
 const { GenericMessage } = rootMessage;
 import {
   TextMessage,
   Unknown,
-  AssetMessage
+  AssetMessage,
+  CompositeButton,
+  CompositeButtonAction
 } from '../../model/WireMessage.js';
 import type {
   WireMessage,
@@ -31,6 +34,7 @@ import type {
   AssetRemoteData
 } from "../../model/WireMessage.js";
 import {MessageEncryptionAlgorithm} from "../../model/protobuf/MessageEncryptionAlgorithm.js";
+import {MessageLinkPreviewMapper} from "./MessageLinkPreviewMapper.js";
 
 /**
  * Utility object responsible for mapping a GenericMessage to WireMessage
@@ -49,6 +53,8 @@ export const ProtobufDeserializer = {
       return unpackTextMessage(genericMessage, qualifiedConversation)
     } else if (genericMessage.asset) {
       return unpackAssetMessage(genericMessage, qualifiedConversation)
+    } else if (genericMessage.buttonAction) {
+      return unpackCompositeButtonAction(genericMessage, qualifiedConversation)
     } else {
       return new Unknown()
     }
@@ -60,8 +66,10 @@ function unpackTextMessage(
   qualifiedConversation: QualifiedId
 ): TextMessage {
   return TextMessage.create({
+    // TODO(alexandre): add messageId
     conversationId: qualifiedConversation,
-    text: genericMessage.text!.content
+    text: genericMessage.text!.content,
+    linkPreviews: genericMessage.text!.linkPreview?.map(it => MessageLinkPreviewMapper.fromProtobuf(it)) ?? []
     // TODO: Map other fields
   })
 }
@@ -102,5 +110,34 @@ function unpackAssetMessage(
     name: original?.name ?? null,
     remoteData: remoteData,
     sizeInBytes: original?.size ?? 0
+  })
+}
+
+// @ts-expect-error TS6133 - will be used in a follow-up PR
+function _unpackItemList(
+  conversationId: QualifiedId,
+  compositeItemList: Composite.Item[]
+): (TextMessage | CompositeButton)[] {
+  return compositeItemList.flatMap((item): (TextMessage | CompositeButton)[] => {
+    switch (item.content) {
+      case 'text':
+        return item.text ? [TextMessage.create({ conversationId, text: item.text.content })] : []
+      case 'button':
+        return item.button ? [CompositeButton.create({ id: item.button.id, text: item.button.text })] : []
+      default:
+        return []
+    }
+  })
+}
+
+function unpackCompositeButtonAction(
+  genericMessage: IGenericMessage,
+  qualifiedConversation: QualifiedId
+): CompositeButtonAction {
+  return CompositeButtonAction.create({
+    messageId: genericMessage.messageId,
+    conversationId: qualifiedConversation,
+    referenceMessageId: genericMessage.buttonAction!.referenceMessageId,
+    buttonId: genericMessage.buttonAction!.buttonId
   })
 }

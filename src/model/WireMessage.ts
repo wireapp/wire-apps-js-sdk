@@ -18,7 +18,7 @@ import { QualifiedId } from "./QualifiedId.js";
 import { MessageEncryptionAlgorithm } from "./protobuf/MessageEncryptionAlgorithm.js";
 import Long from "long";
 
-type Item = object
+export type Item = object
 
 interface Ephemeral {
   expiresAfterMillis?: number | null
@@ -35,17 +35,28 @@ export interface Mention {
 }
 
 export interface LinkPreview {
-  url: string
   urlOffset: number
+  url: string
   permanentUrl?: string | null
   title?: string | null
   summary?: string | null
   image?: LinkPreviewAsset | null
 }
 
-interface LinkPreviewAsset {
-  name?: string | null
-  // TODO: Add other fields
+export interface LinkPreviewAsset {
+  mimeType: string
+  metadata?: AssetMetadata | null
+  assetDataPath?: string | null
+  assetDataSize: number | Long
+  assetHeight: number
+  assetWidth: number
+  assetName?: string | null
+  assetKey?: string | null
+  assetToken?: string | null
+  assetDomain?: string | null
+  otrKey: Uint8Array
+  sha256Key: Uint8Array
+  encryptionAlgorithm: MessageEncryptionAlgorithm
 }
 
 export interface WireMessageBase {
@@ -89,6 +100,7 @@ export interface TextMessage extends WireMessageBase, Item, Ephemeral, Replyable
 export const TextMessage = {
   create(
     params: {
+      // TODO(alexandre): add messageId
       conversationId: QualifiedId
       text: string
       mentions?: Mention[]
@@ -98,13 +110,13 @@ export const TextMessage = {
   ): TextMessage {
     return {
       type: 'text',
-      id: crypto.randomUUID(),
+      id: crypto.randomUUID(), // TODO(alexandre): add messageId
       conversationId: params.conversationId,
       sender: new QualifiedId(crypto.randomUUID(), crypto.randomUUID()),
       text: params.text,
       mentions: params.mentions ?? [],
       linkPreviews: params.linkPreviews ?? [],
-      timestamp: new Date(),
+      timestamp: new Date(), // TODO(alexandre): only from replyable type
       expiresAfterMillis: params.expiresAfterMillis ?? null
     }
   }
@@ -136,7 +148,7 @@ export const AssetMessage = {
       id: crypto.randomUUID(),
       conversationId: params.conversationId,
       sender: new QualifiedId(crypto.randomUUID(), crypto.randomUUID()),
-      timestamp: new Date(),
+      timestamp: new Date(), // TODO(alexandre): only from replyable type
       sizeInBytes: params.sizeInBytes,
       name: params.name ?? null,
       mimeType: params.mimeType,
@@ -177,7 +189,56 @@ export interface AssetRemoteData {
   encryptionAlgorithm?: MessageEncryptionAlgorithm | null
 }
 
+export interface CompositeButton extends Item {
+  type: 'composite_button'
+  id: string
+  text: string
+}
+
+export const CompositeButton = {
+  create(
+    params: {
+      text: string
+      id: string | undefined
+    }
+  ): CompositeButton {
+    return {
+      type: 'composite_button',
+      id: params.id ?? crypto.randomUUID(),
+      text: params.text
+    }
+  }
+}
+
+export interface CompositeButtonAction extends WireMessageBase {
+  type: "composite_button_action"
+  referenceMessageId: string
+  buttonId: string
+}
+
+export const CompositeButtonAction = {
+  create(
+    params: {
+      messageId: string
+      conversationId: QualifiedId
+      referenceMessageId: string
+      buttonId: string
+    }
+  ): CompositeButtonAction {
+    return {
+      type: 'composite_button_action',
+      id: params.messageId,
+      conversationId: params.conversationId,
+      buttonId: params.buttonId,
+      referenceMessageId: params.referenceMessageId,
+      sender: new QualifiedId(crypto.randomUUID(), crypto.randomUUID()), // TODO(alexandre): change to real sender
+      timestamp: new Date(), // TODO(alexandre): only from replyable type
+    }
+  }
+}
+
 export type WireMessage =
   | Unknown
   | TextMessage
-  | AssetMessage;
+  | AssetMessage
+  | CompositeButtonAction;

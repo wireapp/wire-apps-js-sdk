@@ -14,14 +14,18 @@
 * along with this program. If not, see http://www.gnu.org/licenses/.
 */
 
-import rootMessage, {
-  type IText,
-  type IGenericMessage,
-  type IAsset,
-  type Asset
+import rootMessage from "../../generated/messages.js";
+import type {
+  Composite as ProtobufComposite,
+  IText,
+  IGenericMessage,
+  IAsset,
+  IButtonAction,
+  Asset
 } from "../../generated/messages.js";
-const { GenericMessage } = rootMessage;
-import { type WireMessage, TextMessage, AssetMessage } from '../../model/WireMessage.js';
+const { GenericMessage, Composite } = rootMessage;
+import { type WireMessage, TextMessage, AssetMessage, type Item, CompositeButton, CompositeButtonAction } from '../../model/WireMessage.js';
+import {MessageLinkPreviewMapper} from "./MessageLinkPreviewMapper.js";
 
 /**
  * Utility object responsible for serializing WireMessage to GenericMessage
@@ -43,12 +47,16 @@ export const ProtobufSerializer = {
 
     switch (wireMessage.type) {
       case 'text':
-        builtMessage = packTextMessage(wireMessage, genericMessage);
-        break;
+        builtMessage = packTextMessage(wireMessage, genericMessage)
+        break
 
       case 'asset':
-        builtMessage = packAssetMessage(wireMessage, genericMessage);
-        break;
+        builtMessage = packAssetMessage(wireMessage, genericMessage)
+        break
+      
+      case 'composite_button_action':
+        builtMessage = packCompositeButtonAction(wireMessage, genericMessage)
+        break
 
         // TODO: Add other message types here
 
@@ -68,6 +76,17 @@ function packTextMessage(
   wireMessage: TextMessage,
   genericMessage: Partial<IGenericMessage>
 ): IGenericMessage {
+  const textContent = packText(wireMessage)
+
+  return {
+    ...genericMessage,
+    text: textContent,
+  } as IGenericMessage;
+}
+
+function packText(
+  wireMessage: TextMessage
+) {
   const textContent: IText = {
     content: wireMessage.text,
     // Add other text-specific fields
@@ -76,7 +95,7 @@ function packTextMessage(
       start: mention.offset,
       length: mention.length
     })) || [],
-    linkPreview: [], // TODO: Add proper mapping for LinkPreview / LinkPreviewAsset
+    linkPreview: wireMessage.linkPreviews?.map(it => MessageLinkPreviewMapper.toProtobuf(it)) ?? [],
     expectsReadConfirmation: false,
     legalHoldStatus: null
   };
@@ -88,10 +107,7 @@ function packTextMessage(
     };
   }
 
-  return {
-    ...genericMessage,
-    text: textContent,
-  } as IGenericMessage;
+  return textContent
 }
 
 function packAssetMessage(
@@ -159,4 +175,42 @@ function packAssetMessage(
       asset
     } as IGenericMessage;
   }
+}
+
+// @ts-expect-error TS6133 - will be used in a follow-up PR
+function _packItemList(itemsList: Item[]): ProtobufComposite.Item[] {
+  return itemsList.flatMap((item) => {
+    switch ((item as TextMessage | CompositeButton).type) {
+      case 'composite_button': {
+        const button = item as CompositeButton
+        return [Composite.Item.create({
+          content: 'button',
+          button: { id: button.id, text: button.text }
+        })]
+      }
+      case 'text': {
+        return [Composite.Item.create({
+          content: 'text',
+          text: packText(item as TextMessage)
+        })]
+      }
+      default:
+        return []
+    }
+  })
+}
+
+function packCompositeButtonAction(
+  wireMessage: CompositeButtonAction,
+  genericMessage: Partial<IGenericMessage>
+): IGenericMessage {
+  const buttonAct: IButtonAction = {
+    referenceMessageId: wireMessage.referenceMessageId,
+    buttonId: wireMessage.buttonId
+  }
+
+  return {
+    ...genericMessage,
+    buttonAction: buttonAct
+  } as IGenericMessage;
 }
