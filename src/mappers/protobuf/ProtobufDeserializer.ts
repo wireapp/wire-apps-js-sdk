@@ -15,15 +15,16 @@
 */
 
 import rootMessage from "../../generated/messages.js";
-import type {Composite, IGenericMessage} from "../../generated/messages.js";
-import type { QualifiedId } from "../../model/QualifiedId.js";
+import type {Composite as ProtobufComposite, IGenericMessage} from "../../generated/messages.js";
+import { QualifiedId } from "../../model/QualifiedId.js";
 const { GenericMessage } = rootMessage;
 import {
   TextMessage,
   Unknown,
   AssetMessage,
   CompositeButton,
-  CompositeButtonAction
+  CompositeButtonAction,
+  CompositeMessage
 } from '../../model/WireMessage.js';
 import type {
   WireMessage,
@@ -55,6 +56,8 @@ export const ProtobufDeserializer = {
       return unpackAssetMessage(genericMessage, qualifiedConversation)
     } else if (genericMessage.buttonAction) {
       return unpackCompositeButtonAction(genericMessage, qualifiedConversation)
+    } else if (genericMessage.composite) {
+      return unpackComposite(genericMessage, qualifiedConversation)
     } else {
       return new Unknown()
     }
@@ -113,10 +116,9 @@ function unpackAssetMessage(
   })
 }
 
-// @ts-expect-error TS6133 - will be used in a follow-up PR
-function _unpackItemList(
+function unpackItemList(
   conversationId: QualifiedId,
-  compositeItemList: Composite.Item[]
+  compositeItemList: ProtobufComposite.Item.$Properties[]
 ): (TextMessage | CompositeButton)[] {
   return compositeItemList.flatMap((item): (TextMessage | CompositeButton)[] => {
     switch (item.content) {
@@ -139,5 +141,19 @@ function unpackCompositeButtonAction(
     conversationId: qualifiedConversation,
     referenceMessageId: genericMessage.buttonAction!.referenceMessageId,
     buttonId: genericMessage.buttonAction!.buttonId
+  })
+}
+
+function unpackComposite(
+  genericMessage: IGenericMessage,
+  qualifiedConversation: QualifiedId
+): CompositeMessage {
+  const items = genericMessage.composite!.items!
+  const itemList = unpackItemList(qualifiedConversation, items)
+
+  return CompositeMessage.create({
+    messageId: genericMessage.messageId,
+    conversationId: qualifiedConversation,
+    buttonList: itemList
   })
 }

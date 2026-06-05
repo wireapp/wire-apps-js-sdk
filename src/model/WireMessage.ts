@@ -199,7 +199,7 @@ export const CompositeButton = {
   create(
     params: {
       text: string
-      id: string | undefined
+      id?: string
     }
   ): CompositeButton {
     return {
@@ -237,8 +237,41 @@ export const CompositeButtonAction = {
   }
 }
 
+export interface CompositeMessage extends WireMessageBase {
+  type: "composite"
+  items: Item[]
+}
+
+export const CompositeMessage = {
+  create(
+    params: {
+      messageId?: string
+      conversationId: QualifiedId
+      text?: string
+      buttonList: Item[]
+    }
+  ): CompositeMessage {
+    const textItem = params.text
+      ? TextMessage.create({
+        conversationId: params.conversationId,
+        text: params.text
+      })
+      : null
+
+    return {
+      type: "composite",
+      id: params.messageId ?? crypto.randomUUID(),
+      conversationId: params.conversationId,
+      sender: new QualifiedId(crypto.randomUUID(), crypto.randomUUID()), // TODO(alexandre): change to real sender
+      timestamp: new Date(), // TODO(alexandre): only from replyable type
+      items: [...(textItem ? [textItem] : []), ...params.buttonList]
+    }
+  }
+}
+
 export type WireMessage =
   | Unknown
   | TextMessage
   | AssetMessage
-  | CompositeButtonAction;
+  | CompositeButtonAction
+  | CompositeMessage;
