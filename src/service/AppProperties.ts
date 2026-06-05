@@ -1,7 +1,7 @@
 /*
 * Wire
 * Copyright (C) 2026 Wire Swiss GmbH
-* 
+*
 * This program is free software: you can redistribute it and/or modify
 * it under the terms of the GNU General Public License as published by
 * the Free Software Foundation, either version 3 of the License, or
@@ -14,22 +14,28 @@
 * along with this program. If not, see http://www.gnu.org/licenses/.
 */
 
-import {singleton} from "tsyringe";
+import {inject, singleton} from "tsyringe";
 import {AppPropertiesRepository} from "../db/AppPropertiesRepository.js";
+import {WIRE_CRYPTO_STORAGE_PASSWORD} from "../utils/DependencyInjectionTokens.js";
+import {AESUtils} from "../utils/AESUtils.js";
+import {LoggerFactory} from "../utils/logger/LoggerFactory.js";
 
 @singleton()
 export class AppProperties {
+  private logger = LoggerFactory.getLogger(this.constructor.name)
   private readonly SHOULD_REJOIN_CONVERSATIONS = "should_rejoin_conversations"
   private readonly LAST_NOTIFICATION_ID = "last_notification_id"
+  private readonly BACKEND_COOKIE = "backend_cookie"
 
   constructor(
-    private appPropertiesRepository: AppPropertiesRepository
+    private appPropertiesRepository: AppPropertiesRepository,
+    @inject(WIRE_CRYPTO_STORAGE_PASSWORD) private wireCryptoStoragePassword: string,
   ) {}
 
   getShouldRejoinConversations(): boolean {
     const value = this.appPropertiesRepository.getByKey(this.SHOULD_REJOIN_CONVERSATIONS)?.value
     const booleanValue = this.databaseValueToBoolean(value)
-    
+
     return booleanValue ?? true
   }
 
@@ -49,6 +55,30 @@ export class AppProperties {
       this.LAST_NOTIFICATION_ID,
       lastNotificationId
     )
+  }
+
+  getBackendCookie(): string | undefined {
+    const encryptedData = this.appPropertiesRepository.getByKey(this.BACKEND_COOKIE)?.value
+    const key = Buffer.from(this.wireCryptoStoragePassword)
+
+    return encryptedData ? AESUtils.decryptData(Buffer.from(encryptedData, 'base64'), key).toString() : undefined
+  }
+
+  saveBackendCookie(cookie: string) {
+    const key = Buffer.from(this.wireCryptoStoragePassword)
+    const encryptedCookie = AESUtils.encryptData(Buffer.from(cookie), key).toString('base64')
+    this.appPropertiesRepository.save(this.BACKEND_COOKIE, encryptedCookie)
+  }
+
+  saveBackendCookieIfMissing(cookie: string) {
+    if (!this.getBackendCookie()) {
+      this.logger.info("Initializing API Token")
+      this.saveBackendCookie(cookie)
+    }
+  }
+
+  deleteBackendCookie() {
+    this.appPropertiesRepository.delete(this.BACKEND_COOKIE)
   }
 
   private booleanToDatabaseValue = (value: boolean): string => value ? '1' : '0'

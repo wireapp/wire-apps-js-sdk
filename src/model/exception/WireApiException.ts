@@ -14,9 +14,20 @@
  * along with this program. If not, see http://www.gnu.org/licenses/.
  */
 
-export interface AccessResponse {
-  access_token: string
-  expires_in: number
-  token_type: string
-  user: string
+import type {WireApiError} from "./WireApiError.js";
+
+export class WireApiException extends Error {
+  readonly code: number;
+  readonly label: string;
+
+  constructor({ code, label, message }: WireApiError) {
+    super(message);
+    this.name = "WireApiException";
+    this.code = code;
+    this.label = label;
+  }
+
+  isCredentialsInvalid(): boolean {
+    return this.label === "invalid-credentials";
+  }
 }

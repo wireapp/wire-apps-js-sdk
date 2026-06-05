@@ -18,6 +18,9 @@ import {beforeEach, describe, expect, it, vi} from 'vitest'
 import {AppProperties} from '../../src/service/AppProperties.js'
 import {AppPropertiesRepository} from '../../src/db/AppPropertiesRepository.js'
 import {container} from 'tsyringe'
+import {AESUtils} from "../../src/utils/AESUtils.js";
+
+const CRYPTO_STORAGE_PASSWORD = 'test-crypto-key-of-32-characters'
 
 describe('AppProperties', () => {
   let appProperties: AppProperties
@@ -31,7 +34,7 @@ describe('AppProperties', () => {
       save: vi.fn()
     } as any
 
-    appProperties = new AppProperties(mockAppPropertiesRepository)
+    appProperties = new AppProperties(mockAppPropertiesRepository, CRYPTO_STORAGE_PASSWORD)
   })
 
   describe('getShouldRejoinConversations', () => {
@@ -60,7 +63,7 @@ describe('AppProperties', () => {
     })
 
     it('should return false when key does not exist', () => {
-      vi.mocked(mockAppPropertiesRepository.getByKey).mockReturnValue(null)
+      vi.mocked(mockAppPropertiesRepository.getByKey).mockReturnValue(undefined)
 
       const result = appProperties.getShouldRejoinConversations()
 
@@ -92,11 +95,43 @@ describe('AppProperties', () => {
     })
   })
 
+  describe('saveBackendCookieIfMissing', () => {
+    const API_TOKEN = 'test-cookie'
+
+    it('should be saved from constructor param when token is not in DB', () => {
+      // given
+      vi.mocked(mockAppPropertiesRepository.getByKey).mockReturnValue(undefined)
+
+      // when
+      appProperties.saveBackendCookieIfMissing(API_TOKEN)
+
+      // then
+      expect(mockAppPropertiesRepository.getByKey).toHaveBeenCalledWith('backend_cookie')
+      expect(mockAppPropertiesRepository.save).toHaveBeenCalledOnce()
+    })
+
+    it('should not overwrite token when one already exists in DB', () => {
+      // given
+      vi.mocked(mockAppPropertiesRepository.getByKey).mockReturnValue({
+        key: 'backend_cookie',
+        value: 'encrypted-test-cookie'
+      })
+      const spy = vi.spyOn(AESUtils, 'decryptData')
+      spy.mockImplementationOnce(() => Buffer.from(API_TOKEN))
+
+      // when
+      appProperties.saveBackendCookieIfMissing(API_TOKEN)
+
+      // then
+      expect(mockAppPropertiesRepository.save).not.toHaveBeenCalled()
+    })
+  })
+
   describe('round-trip behavior', () => {
     it('should correctly round-trip true value', () => {
       // Set to true
       appProperties.setShouldRejoinConversations(true)
-      
+
       expect(mockAppPropertiesRepository.save).toHaveBeenCalledWith('should_rejoin_conversations', '1')
 
       // Mock the get to return what was saved
@@ -112,7 +147,7 @@ describe('AppProperties', () => {
     it('should correctly round-trip false value', () => {
       // Set to false
       appProperties.setShouldRejoinConversations(false)
-      
+
       expect(mockAppPropertiesRepository.save).toHaveBeenCalledWith('should_rejoin_conversations', '0')
 
       // Mock the get to return what was saved

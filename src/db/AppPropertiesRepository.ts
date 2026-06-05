@@ -24,6 +24,7 @@ import {eq, sql} from "drizzle-orm";
 export class AppPropertiesRepository {
   private selectByKeyStmt
   private insertStmt
+  private deleteStmt
 
   constructor(private readonly databaseService: DatabaseService) {
     this.selectByKeyStmt = this.databaseService.db.select().from(appProperties).where(
@@ -38,6 +39,10 @@ export class AppPropertiesRepository {
       target: appProperties.key,
       set: { value: sql.raw(`excluded.${appProperties.value.name}`)}
     }).prepare();
+
+    this.deleteStmt = this.databaseService.db.delete(appProperties).where(
+      eq(appProperties.key, sql.placeholder('key'))
+    ).prepare();
   }
 
   getByKey(key: string): AppEntity | undefined {
@@ -49,5 +54,9 @@ export class AppPropertiesRepository {
    */
   save(key: string, value: string): void {
     this.insertStmt.run({ key, value })
+  }
+
+  delete(key: string) {
+    this.deleteStmt.run({ key })
   }
 }

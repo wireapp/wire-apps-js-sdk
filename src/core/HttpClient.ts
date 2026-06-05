@@ -14,16 +14,18 @@
 * along with this program. If not, see http://www.gnu.org/licenses/.
 */
 
-import type {AccessResponse} from "../api/response/AccessResponse.js"
-import {WIRE_API_HOST, WIRE_USER_EMAIL, WIRE_USER_PASSWORD} from "../utils/DependencyInjectionTokens.js"
+import {WIRE_API_HOST} from "../utils/DependencyInjectionTokens.js"
 import type {WireApiError} from "../model/exception/WireApiError.js"
 import {inject, singleton} from "tsyringe"
 import {LoggerFactory} from "../utils/logger/LoggerFactory.js";
+import {AppProperties} from "../service/AppProperties.js";
+import {WireApiException} from "../model/exception/WireApiException.js";
+import type {AccessResponse} from "../api/response/AccessResponse.js";
 
 @singleton()
 export class HttpClient {
   private logger = LoggerFactory.getLogger(this.constructor.name)
-  private tokenTimestamp: number | null = null
+  private tokenExpirationTimestamp: number | null = null
   private cachedAccessToken: string | null = null
   private cachedDeviceId: string | null = null
   private headers: Record<string, string> = {
@@ -32,12 +34,15 @@ export class HttpClient {
 
   constructor(
     @inject(WIRE_API_HOST) private wireApiHost: string,
-    @inject(WIRE_USER_EMAIL) private wireUserEmail: string,
-    @inject(WIRE_USER_PASSWORD) private wireUserPassword: string
+    private appProperties: AppProperties
   ) {}
 
   private setAuthorizationToken(token: string) {
     this.headers["Authorization"] = `Bearer ${token}`
+  }
+
+  clearAuthorizationToken() {
+    this.cachedAccessToken = null
   }
 
   getApiHostVersion(): string {
@@ -70,56 +75,53 @@ export class HttpClient {
     const currentTime = Date.now()
 
     // Check if token is valid (not null and not expired)
-    if (this.cachedAccessToken != null && this.tokenTimestamp != null) {
-      const timeSinceTokenIssued = currentTime - this.tokenTimestamp
-      if (timeSinceTokenIssued < this.TOKEN_EXPIRATION_MS) {
-        this.setAuthorizationToken(this.cachedAccessToken)
-        return
-      }
+    if (
+      this.cachedAccessToken != null &&
+      this.tokenExpirationTimestamp != null &&
+      currentTime < this.tokenExpirationTimestamp
+    ) { return }
+    this.logger.info("Access token expired, getting a new one.")
 
-      this.logger.info("Access token expired, getting a new one.")
-    }
-
-    // TODO: Move to Token retrieval once backend tickets are done.
-    const loginResponse = (await this.request<Record<string, unknown>>("login", {
-      method: "POST",
-      body: JSON.stringify({
-        email: this.wireUserEmail,
-        password: this.wireUserPassword
-      }),
-      headers: {
-        "Content-Type": this.HEADER_DEFAULT_CONTENT_TYPE,
-      }
-    }))
-
-    if (this.cachedDeviceId != null) {
-      const setCookieHeaders: string[] = loginResponse.response.headers.getSetCookie();
-      const zuidCookie = setCookieHeaders
-        ?.find((cookie: string) => cookie.startsWith('zuid='))
-        ?.split(';')[0];
-
-      const path = this.cachedDeviceId
-        ? `access?client_id=${this.cachedDeviceId}`
-        : `access`
-      const jsonAccessResponse = (await this.request<Record<string, unknown>>(path, {
+    const path = this.cachedDeviceId
+      ? `access?client_id=${this.cachedDeviceId}`
+      : `access`
+    try {
+      const accessResponse = (await this.request<AccessResponse>(path, {
         method: "POST",
         headers: {
-          "Cookie": `${zuidCookie}`
+          "Cookie": `zuid=${this.appProperties.getBackendCookie()}`
         }
-      })).data
+      }))
 
-      const accessResponse: AccessResponse = {
-        accessToken: jsonAccessResponse["access_token"] as string,
-        expiresIn: jsonAccessResponse["expires_in"] as number
+      const setCookieHeaders: string[] = accessResponse.response.headers.getSetCookie();
+      const zuidCookie = setCookieHeaders
+        ?.find((cookie: string) => cookie.startsWith('zuid='))
+        ?.split(';')[0]
+        ?.slice(5); // remove "zuid="
+      if (zuidCookie)
+        this.appProperties.saveBackendCookie(zuidCookie)
+
+      const accessToken = accessResponse.data.access_token
+
+      this.cachedAccessToken = accessToken
+      this.tokenExpirationTimestamp = currentTime + (accessResponse.data.expires_in * 1000) // seconds to milliseconds
+
+      this.setAuthorizationToken(accessToken)
+    } catch (exception) {
+      this.logger.error('Unable to retrieve access token, Error:', exception)
+      if (exception instanceof WireApiException && exception.isCredentialsInvalid()) {
+        this.appProperties.deleteBackendCookie()
+
+        // TODO: Map to WireException
+        throw new Error("Current cookie/api-token is expired. Get a new apiToken and restart the App")
       }
-
-      this.cachedAccessToken = accessResponse.accessToken
-      this.tokenTimestamp = currentTime
-
-      this.setAuthorizationToken(accessResponse.accessToken)
-    } else {
-      this.setAuthorizationToken(loginResponse.data["access_token"] as string)
     }
+  }
+
+  private isAuthenticatedPath(path: string): boolean {
+    return !this.unauthenticatedPaths.some(prefix =>
+      path.startsWith(prefix)
+    );
   }
 
   async request<T>(
@@ -127,6 +129,8 @@ export class HttpClient {
     options: RequestInit = {},
     includeApiVersion: boolean = true
   ): Promise<{ data: T; response: Response }> {
+    if (this.isAuthenticatedPath(path))
+      await this.verifyAuthorizationToken()
     const optionsAndHeaders = {
       ...options,
       headers: {
@@ -142,23 +146,24 @@ export class HttpClient {
     const response = await fetch(url, optionsAndHeaders)
 
     if (!response.ok) {
-      let errorDetails = ''
+      let standardError: WireApiError | undefined
 
-      try {
-        const contentType = response.headers.get("content-type")
-        if (contentType?.includes("application/json")) {
-          const errorBody = await response.json() as Partial<WireApiError>
-          if (errorBody.label && errorBody.message) {
-            this.logger.error(`API Error - Label: ${errorBody.label}, Message: ${errorBody.message}`)
-            errorDetails = ` [${errorBody.label}]: ${errorBody.message}`
-          }
+      const contentType = response.headers.get("content-type")
+      if (contentType?.includes("application/json")) {
+        try {
+          standardError = await response.json() as WireApiError
+        } catch (exception) {
+          this.logger.error(`Could not parse error response: ${exception}`)
         }
-      } catch (exception) {
-        this.logger.error(`Could not parse error response: ${exception}`)
+      }
+
+      if (standardError?.label && standardError?.message) {
+        this.logger.error(`WireApiException - Label: ${standardError.label}, Message: ${standardError.message}`)
+        throw new WireApiException(standardError)
       }
 
       // TODO: Map to WireException
-      throw new Error(`HTTP ${response.status} for ${path}${errorDetails || ': ' + response.statusText}`)
+      throw new Error(`HTTP ${response.status} for ${path}: ${response.statusText}`)
     }
 
     const contentType = response.headers.get("content-type")
@@ -186,8 +191,6 @@ export class HttpClient {
       additionalHeaders?: Record<string, string>
     }
   ): Promise<T> {
-    await this.verifyAuthorizationToken()
-
     const {
       headerContentType = this.HEADER_DEFAULT_CONTENT_TYPE,
       headerAccept = this.HEADER_DEFAULT_ACCEPT,
@@ -245,7 +248,6 @@ export class HttpClient {
     headerContentType: string = this.HEADER_DEFAULT_CONTENT_TYPE,
     headerAccept: string = this.HEADER_DEFAULT_ACCEPT
   ): Promise<T> {
-    await this.verifyAuthorizationToken()
     return (await this.request<T>(path, {
       method: "PUT",
       body: JSON.stringify(body),
@@ -264,8 +266,6 @@ export class HttpClient {
       headerAccept?: string;
     }
   ): Promise<T> {
-    await this.verifyAuthorizationToken()
-
     const {
       headerContentType = this.HEADER_DEFAULT_CONTENT_TYPE,
       headerAccept = this.HEADER_DEFAULT_ACCEPT
@@ -287,7 +287,7 @@ export class HttpClient {
   }
 
   private API_HOST_VERSION: string = "v15"
-  private TOKEN_EXPIRATION_MS = 14 * 60 * 1000 // 14 minutes in milliseconds
   private HEADER_DEFAULT_CONTENT_TYPE = "application/json"
   private HEADER_DEFAULT_ACCEPT = "application/json"
+  private readonly unauthenticatedPaths = ['access', 'api-version']
 }

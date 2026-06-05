@@ -50,7 +50,7 @@ export const AESUtils = {
     const iv = crypto.randomBytes(IV_SIZE_BYTES);
     const cipher = crypto.createCipheriv(algorithm, Buffer.from(key), iv);
 
-    return Buffer.concat([cipher.update(Buffer.concat([iv, data])), cipher.final()]);
+    return Buffer.concat([iv, cipher.update(data), cipher.final()]);
   }
 }
 

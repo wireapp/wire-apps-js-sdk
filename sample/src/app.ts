@@ -38,23 +38,18 @@ import path from 'node:path'
 
 dotenv.config({ path: '../.env' })
 
-const userEmail = process.env['WIRE_SDK_USER_EMAIL'];
-const userPassword = process.env['WIRE_SDK_USER_PASSWORD'];
 const userId = process.env['WIRE_SDK_USER_ID'];
+const apiToken = process.env['WIRE_SDK_API_TOKEN'];
 const userDomain = process.env['WIRE_SDK_USER_DOMAIN'];
 const apiHost = process.env['WIRE_SDK_API_HOST'];
 const cryptographyStoragePassword = process.env['WIRE_SDK_CRYPTO_PASSWORD'];
 
-if (!userEmail) {
-  throw new Error('WIRE_SDK_USER_EMAIL must be set in .env file');
-}
-
-if (!userPassword) {
-  throw new Error('WIRE_SDK_USER_PASSWORD must be set in .env file');
-}
-
 if (!userId) {
   throw new Error('WIRE_SDK_USER_ID must be set in .env file');
+}
+
+if (!apiToken) {
+  throw new Error('WIRE_SDK_API_TOKEN must be set in .env file');
 }
 
 if (!userDomain) {
@@ -446,9 +441,8 @@ class SampleEventsHandler extends WireEventsHandler {
 const sampleEventsHandler = new SampleEventsHandler()
 sampleEventsHandler.appLogger = new PinoLogger()
 const sdk = await WireAppSdk.create(
-  userEmail,
-  userPassword,
   userId,
+  apiToken,
   userDomain,
   apiHost,
   cryptographyStoragePassword,
