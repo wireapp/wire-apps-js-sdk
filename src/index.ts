@@ -49,4 +49,5 @@ export type { ConversationMember } from "./model/conversation/ConversationMember
 export type { ConversationRole } from "./model/conversation/ConversationRole.js";
 export type { RemoveMembersFromConversationResult } from "./api/model/RemoveMembersFromConversationResult.js";
 export { QualifiedId } from "./model/QualifiedId.js";
+export { WireUser } from "./model/WireUser.js";
 export { obfuscateId } from "./utils/ObfuscateUtil.js"

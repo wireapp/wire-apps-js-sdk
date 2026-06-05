@@ -31,7 +31,8 @@ import {
   type Image,
   type Video,
   WireAppSdk,
-  WireEventsHandler
+  WireEventsHandler,
+  WireUser
 } from 'wire-apps-js-sdk'
 import fs from 'fs'
 import path from 'node:path'
@@ -364,17 +365,16 @@ class SampleEventsHandler extends WireEventsHandler {
         }
 
         const userQualifiedId: QualifiedId = new QualifiedId(userId, userDomain)
-        const user = await this.manager.getUser(userQualifiedId)
+        const user: WireUser = await this.manager.getUser(userQualifiedId)
 
         await this.manager.sendMessage(TextMessage.create({
           conversationId: conversationId,
           text: `User data for ${obfuscateId(userQualifiedId.id)}@${userQualifiedId.domain}:
             Name: ${user.name}
-            Email: ${user.email}
-            Handle: ${user.handle}
-            Team: ${user.team}
-            Supported Protocols: ${user.supported_protocols?.join(', ') ?? 'N/A'}
-            Deleted: ${user.deleted}`
+            Email: ${user.email ?? 'N/A'}
+            Handle: ${user.handle ?? 'N/A'}
+            Team: ${user.teamId?.value ?? 'N/A'}
+            Deleted: ${user.deleted ?? false}`
         }))
       },
       'get-conversations': async (conversationId) => {
