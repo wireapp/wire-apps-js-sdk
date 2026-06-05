@@ -248,7 +248,7 @@ export const CompositeMessage = {
       messageId?: string
       conversationId: QualifiedId
       text?: string
-      buttonList: Item[]
+      itemList: Item[]
     }
   ): CompositeMessage {
     const textItem = params.text
@@ -264,7 +264,7 @@ export const CompositeMessage = {
       conversationId: params.conversationId,
       sender: new QualifiedId(crypto.randomUUID(), crypto.randomUUID()), // TODO(alexandre): change to real sender
       timestamp: new Date(), // TODO(alexandre): only from replyable type
-      items: [...(textItem ? [textItem] : []), ...params.buttonList]
+      items: [...(textItem ? [textItem] : []), ...params.itemList]
     }
   }
 }

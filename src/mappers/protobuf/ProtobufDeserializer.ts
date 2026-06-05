@@ -154,6 +154,6 @@ function unpackComposite(
   return CompositeMessage.create({
     messageId: genericMessage.messageId,
     conversationId: qualifiedConversation,
-    buttonList: itemList
+    itemList: itemList
   })
 }
