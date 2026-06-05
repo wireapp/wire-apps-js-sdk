@@ -422,7 +422,7 @@ class SampleEventsHandler extends WireEventsHandler {
         const msg = CompositeMessage.create({
           conversationId: conversationId,
           text: "Composite Title",
-          buttonList: [
+          itemList: [
             CompositeButton.create({
               text: "Button-001"
             }),
