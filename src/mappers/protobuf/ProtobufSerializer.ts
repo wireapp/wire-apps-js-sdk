@@ -24,7 +24,17 @@ import type {
   Asset
 } from "../../generated/messages.js";
 const { GenericMessage, Composite } = rootMessage;
-import { type WireMessage, TextMessage, AssetMessage, type Item, CompositeButton, CompositeButtonAction } from '../../model/WireMessage.js';
+import type {
+  WireMessage,
+  Item
+} from '../../model/WireMessage.js';
+import {
+  TextMessage,
+  AssetMessage,
+  CompositeButton,
+  CompositeButtonAction,
+  CompositeMessage
+} from '../../model/WireMessage.js';
 import {MessageLinkPreviewMapper} from "./MessageLinkPreviewMapper.js";
 
 /**
@@ -56,6 +66,10 @@ export const ProtobufSerializer = {
       
       case 'composite_button_action':
         builtMessage = packCompositeButtonAction(wireMessage, genericMessage)
+        break
+      
+      case 'composite':
+        builtMessage = packCompositeMessage(wireMessage, genericMessage)
         break
 
         // TODO: Add other message types here
@@ -177,8 +191,7 @@ function packAssetMessage(
   }
 }
 
-// @ts-expect-error TS6133 - will be used in a follow-up PR
-function _packItemList(itemsList: Item[]): ProtobufComposite.Item[] {
+function packItemList(itemsList: Item[]): ProtobufComposite.Item[] {
   return itemsList.flatMap((item) => {
     switch ((item as TextMessage | CompositeButton).type) {
       case 'composite_button': {
@@ -213,4 +226,16 @@ function packCompositeButtonAction(
     ...genericMessage,
     buttonAction: buttonAct
   } as IGenericMessage;
+}
+
+function packCompositeMessage(
+  wireMessage: CompositeMessage,
+  genericMessage: Partial<IGenericMessage>
+): IGenericMessage {
+  return {
+    ...genericMessage,
+    composite: Composite.create({
+      items: packItemList(wireMessage.items)
+    })
+  } as IGenericMessage
 }
