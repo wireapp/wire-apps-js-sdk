@@ -237,6 +237,33 @@ export const CompositeButtonAction = {
   }
 }
 
+export interface CompositeButtonActionConfirmation extends WireMessageBase {
+  type: "composite_button_action_confirmation"
+  referenceMessageId: string
+  buttonId: string | null
+}
+
+export const CompositeButtonActionConfirmation = {
+  create(
+    params: {
+      messageId: string
+      conversationId: QualifiedId
+      referenceMessageId: string
+      buttonId: string | null
+    }
+  ): CompositeButtonActionConfirmation {
+    return {
+      type: 'composite_button_action_confirmation',
+      id: params.messageId,
+      conversationId: params.conversationId,
+      buttonId: params.buttonId,
+      referenceMessageId: params.referenceMessageId,
+      sender: new QualifiedId(crypto.randomUUID(), crypto.randomUUID()), // TODO(alexandre): change to real sender
+      timestamp: new Date(), // TODO(alexandre): only from replyable type
+    }
+  }
+}
+
 export interface CompositeMessage extends WireMessageBase {
   type: "composite"
   items: Item[]
@@ -274,4 +301,5 @@ export type WireMessage =
   | TextMessage
   | AssetMessage
   | CompositeButtonAction
+  | CompositeButtonActionConfirmation
   | CompositeMessage;
