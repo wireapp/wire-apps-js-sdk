@@ -84,7 +84,7 @@ class SampleEventsHandler extends WireEventsHandler {
     } else {
       const textMessage = TextMessage.create({
         conversationId: wireMessage.conversationId,
-        text: `${wireMessage.text} -- Sent from the Sample SDK`,
+        text: `${wireMessage.text} -- Sent from the TS Sample SDK`,
         linkPreviews: wireMessage.linkPreviews,
         mentions: wireMessage.mentions
       })
