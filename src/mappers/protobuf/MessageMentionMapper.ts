@@ -19,15 +19,15 @@ import {QualifiedId} from "../../model/QualifiedId.js";
 import type {Mention} from "../../model/WireMessage.js";
 
 export class MessageMentionMapper {
-  static fromProtobuf(mention: IMention): Mention[] {
+  static fromProtobuf(mention: IMention): Mention | null {
     if (!mention.qualifiedUserId?.id || !mention.qualifiedUserId?.domain) {
-      return [];
+      return null;
     }
-    return [{
+    return {
       userId: new QualifiedId(mention.qualifiedUserId.id, mention.qualifiedUserId.domain),
       offset: mention.start,
-      length: mention.length
-    }];
+      length: mention.length,
+    };
   }
 
   static toProtobuf(mention: Mention): IMention {
@@ -38,6 +38,6 @@ export class MessageMentionMapper {
       },
       start: mention.offset,
       length: mention.length
-    } as IMention
+    }
   }
 }

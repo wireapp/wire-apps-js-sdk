@@ -42,7 +42,6 @@ import {MessageMentionMapper} from "./MessageMentionMapper.js";
  * Utility object responsible for serializing WireMessage to GenericMessage
  */
 export const ProtobufSerializer = {
-  
   /**
    * Converts a WireMessage to a GenericMessage Byte Array
    *
@@ -103,11 +102,10 @@ function packTextMessage(
 function packText(
   wireMessage: TextMessage
 ) {
-  const finalMentions = wireMessage.mentions?.flatMap(MessageMentionMapper.toProtobuf) ?? []
   const textContent: IText = {
     content: wireMessage.text,
     // Add other text-specific fields
-    mentions: finalMentions,
+    mentions: wireMessage.mentions?.map(MessageMentionMapper.toProtobuf) ?? [],
     linkPreview: wireMessage.linkPreviews?.map(it => MessageLinkPreviewMapper.toProtobuf(it)) ?? [],
     expectsReadConfirmation: false,
     legalHoldStatus: null

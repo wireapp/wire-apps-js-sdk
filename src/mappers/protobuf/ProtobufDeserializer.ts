@@ -18,6 +18,15 @@ import rootMessage from "../../generated/messages.js";
 import type {Composite as ProtobufComposite, IGenericMessage} from "../../generated/messages.js";
 import { QualifiedId } from "../../model/QualifiedId.js";
 const { GenericMessage } = rootMessage;
+import type {
+  WireMessage,
+  AssetMetadata,
+  Image,
+  Audio,
+  Video,
+  AssetRemoteData,
+  Mention
+} from "../../model/WireMessage.js";
 import {
   TextMessage,
   Unknown,
@@ -26,14 +35,6 @@ import {
   CompositeButtonAction,
   CompositeMessage
 } from '../../model/WireMessage.js';
-import type {
-  WireMessage,
-  AssetMetadata,
-  Image,
-  Audio,
-  Video,
-  AssetRemoteData
-} from "../../model/WireMessage.js";
 import {MessageEncryptionAlgorithm} from "../../model/protobuf/MessageEncryptionAlgorithm.js";
 import {MessageLinkPreviewMapper} from "./MessageLinkPreviewMapper.js";
 import {MessageMentionMapper} from "./MessageMentionMapper.js";
@@ -74,7 +75,9 @@ function unpackTextMessage(
     conversationId: qualifiedConversation,
     text: genericMessage.text!.content,
     linkPreviews: genericMessage.text!.linkPreview?.map(MessageLinkPreviewMapper.fromProtobuf) ?? [],
-    mentions: genericMessage.text!.mentions?.flatMap(MessageMentionMapper.fromProtobuf) ?? []
+    mentions: genericMessage.text!.mentions
+      ?.map(MessageMentionMapper.fromProtobuf)
+      .filter((mention): mention is Mention => mention !== null) ?? []
     // TODO: Map other fields
   })
 }

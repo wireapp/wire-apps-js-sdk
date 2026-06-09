@@ -48,14 +48,14 @@ describe('MessageMentionMapper', () => {
       length: 8
     }
 
-    expect(MessageMentionMapper.fromProtobuf(mention)).toStrictEqual([{
+    expect(MessageMentionMapper.fromProtobuf(mention)).toStrictEqual({
       userId: new QualifiedId('user-id', 'wire.com'),
       offset: 5,
       length: 8
-    }])
+    })
   })
 
   it('skips protobuf Mention without qualified user id', () => {
-    expect(MessageMentionMapper.fromProtobuf({ start: 5, length: 8 })).toStrictEqual([])
+    expect(MessageMentionMapper.fromProtobuf({ start: 5, length: 8 })).toBeNull()
   })
 })
