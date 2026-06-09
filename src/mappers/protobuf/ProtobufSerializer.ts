@@ -38,6 +38,7 @@ import {
   CompositeMessage
 } from '../../model/WireMessage.js';
 import {MessageLinkPreviewMapper} from "./MessageLinkPreviewMapper.js";
+import {MessageMentionMapper} from "./MessageMentionMapper.js";
 
 /**
  * Utility object responsible for serializing WireMessage to GenericMessage
@@ -110,11 +111,7 @@ function packText(
   const textContent: IText = {
     content: wireMessage.text,
     // Add other text-specific fields
-    mentions: wireMessage.mentions?.map(mention => ({
-      qualifiedUserId: mention.userId,
-      start: mention.offset,
-      length: mention.length
-    })) || [],
+    mentions: wireMessage.mentions?.map(MessageMentionMapper.toProtobuf) ?? [],
     linkPreview: wireMessage.linkPreviews?.map(it => MessageLinkPreviewMapper.toProtobuf(it)) ?? [],
     expectsReadConfirmation: false,
     legalHoldStatus: null
