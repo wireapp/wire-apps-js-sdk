@@ -33,6 +33,7 @@ import {
   AssetMessage,
   CompositeButton,
   CompositeButtonAction,
+  CompositeButtonActionConfirmation,
   CompositeMessage
 } from '../../model/WireMessage.js';
 import {MessageEncryptionAlgorithm} from "../../model/protobuf/MessageEncryptionAlgorithm.js";
@@ -58,6 +59,8 @@ export const ProtobufDeserializer = {
       return unpackAssetMessage(genericMessage, qualifiedConversation)
     } else if (genericMessage.buttonAction) {
       return unpackCompositeButtonAction(genericMessage, qualifiedConversation)
+    } else if (genericMessage.buttonActionConfirmation) {
+      return unpackCompositeButtonActionConfirmation(genericMessage, qualifiedConversation)
     } else if (genericMessage.composite) {
       return unpackComposite(genericMessage, qualifiedConversation)
     } else {
@@ -146,6 +149,22 @@ function unpackCompositeButtonAction(
     conversationId: qualifiedConversation,
     referenceMessageId: genericMessage.buttonAction!.referenceMessageId,
     buttonId: genericMessage.buttonAction!.buttonId
+  })
+}
+
+function unpackCompositeButtonActionConfirmation(
+  genericMessage: IGenericMessage,
+  qualifiedConversation: QualifiedId
+): CompositeButtonActionConfirmation {
+  const buttonActionConfirmation = genericMessage.buttonActionConfirmation!
+  const buttonId = Object.prototype.hasOwnProperty.call(buttonActionConfirmation, 'buttonId')
+    ? buttonActionConfirmation.buttonId ?? null
+    : null
+  return CompositeButtonActionConfirmation.create({
+    messageId: genericMessage.messageId,
+    conversationId: qualifiedConversation,
+    referenceMessageId: buttonActionConfirmation.referenceMessageId,
+    buttonId: buttonId
   })
 }
 

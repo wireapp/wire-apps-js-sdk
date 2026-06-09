@@ -21,7 +21,8 @@ import type {
   IGenericMessage,
   IAsset,
   IButtonAction,
-  Asset
+  Asset,
+  IButtonActionConfirmation
 } from "../../generated/messages.js";
 const { GenericMessage, Composite } = rootMessage;
 import type {
@@ -33,6 +34,7 @@ import {
   AssetMessage,
   CompositeButton,
   CompositeButtonAction,
+  CompositeButtonActionConfirmation,
   CompositeMessage
 } from '../../model/WireMessage.js';
 import {MessageLinkPreviewMapper} from "./MessageLinkPreviewMapper.js";
@@ -67,6 +69,10 @@ export const ProtobufSerializer = {
       
       case 'composite_button_action':
         builtMessage = packCompositeButtonAction(wireMessage, genericMessage)
+        break
+
+      case 'composite_button_action_confirmation':
+        builtMessage = packCompositeButtonActionConfirmation(wireMessage, genericMessage)
         break
       
       case 'composite':
@@ -214,15 +220,30 @@ function packCompositeButtonAction(
   wireMessage: CompositeButtonAction,
   genericMessage: Partial<IGenericMessage>
 ): IGenericMessage {
-  const buttonAct: IButtonAction = {
+  const buttonAction: IButtonAction = {
     referenceMessageId: wireMessage.referenceMessageId,
     buttonId: wireMessage.buttonId
   }
 
   return {
     ...genericMessage,
-    buttonAction: buttonAct
+    buttonAction: buttonAction
   } as IGenericMessage;
+}
+
+function packCompositeButtonActionConfirmation(
+  wireMessage: CompositeButtonActionConfirmation,
+  genericMessage: Partial<IGenericMessage>
+): IGenericMessage {
+  const buttonActionConfirmation: IButtonActionConfirmation = {
+    referenceMessageId: wireMessage.referenceMessageId,
+    buttonId: wireMessage.buttonId
+  }
+
+  return {
+    ...genericMessage,
+    buttonActionConfirmation: buttonActionConfirmation
+  } as IGenericMessage
 }
 
 function packCompositeMessage(
