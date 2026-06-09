@@ -151,11 +151,15 @@ function unpackCompositeButtonActionConfirmation(
   genericMessage: IGenericMessage,
   qualifiedConversation: QualifiedId
 ): CompositeButtonActionConfirmation {
+  const buttonActionConfirmation = genericMessage.buttonActionConfirmation!
+  const buttonId = Object.prototype.hasOwnProperty.call(buttonActionConfirmation, 'buttonId')
+    ? buttonActionConfirmation.buttonId ?? null
+    : null
   return CompositeButtonActionConfirmation.create({
     messageId: genericMessage.messageId,
     conversationId: qualifiedConversation,
-    referenceMessageId: genericMessage.buttonActionConfirmation!.referenceMessageId,
-    buttonId: genericMessage.buttonActionConfirmation?.buttonId ?? null
+    referenceMessageId: buttonActionConfirmation.referenceMessageId,
+    buttonId: buttonId
   })
 }
 
