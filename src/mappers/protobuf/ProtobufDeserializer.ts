@@ -36,6 +36,7 @@ import type {
 } from "../../model/WireMessage.js";
 import {MessageEncryptionAlgorithm} from "../../model/protobuf/MessageEncryptionAlgorithm.js";
 import {MessageLinkPreviewMapper} from "./MessageLinkPreviewMapper.js";
+import {MessageMentionMapper} from "./MessageMentionMapper.js";
 
 /**
  * Utility object responsible for mapping a GenericMessage to WireMessage
@@ -72,7 +73,8 @@ function unpackTextMessage(
     // TODO(alexandre): add messageId
     conversationId: qualifiedConversation,
     text: genericMessage.text!.content,
-    linkPreviews: genericMessage.text!.linkPreview?.map(it => MessageLinkPreviewMapper.fromProtobuf(it)) ?? []
+    linkPreviews: genericMessage.text!.linkPreview?.map(MessageLinkPreviewMapper.fromProtobuf) ?? [],
+    mentions: genericMessage.text!.mentions?.flatMap(MessageMentionMapper.fromProtobuf) ?? []
     // TODO: Map other fields
   })
 }

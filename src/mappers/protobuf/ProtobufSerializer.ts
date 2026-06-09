@@ -36,11 +36,13 @@ import {
   CompositeMessage
 } from '../../model/WireMessage.js';
 import {MessageLinkPreviewMapper} from "./MessageLinkPreviewMapper.js";
+import {MessageMentionMapper} from "./MessageMentionMapper.js";
 
 /**
  * Utility object responsible for serializing WireMessage to GenericMessage
  */
 export const ProtobufSerializer = {
+  
   /**
    * Converts a WireMessage to a GenericMessage Byte Array
    *
@@ -101,14 +103,11 @@ function packTextMessage(
 function packText(
   wireMessage: TextMessage
 ) {
+  const finalMentions = wireMessage.mentions?.flatMap(MessageMentionMapper.toProtobuf) ?? []
   const textContent: IText = {
     content: wireMessage.text,
     // Add other text-specific fields
-    mentions: wireMessage.mentions?.map(mention => ({
-      qualifiedUserId: mention.userId,
-      start: mention.offset,
-      length: mention.length
-    })) || [],
+    mentions: finalMentions,
     linkPreview: wireMessage.linkPreviews?.map(it => MessageLinkPreviewMapper.toProtobuf(it)) ?? [],
     expectsReadConfirmation: false,
     legalHoldStatus: null

@@ -91,7 +91,7 @@ export interface TextMessage extends WireMessageBase, Item, Ephemeral, Replyable
   type: 'text'
   text: string
   quotedMessageId?: string | null
-  quotedMessageSha256?: (Uint8Array | null)
+  quotedMessageSha256?: Uint8Array | null
   mentions?: Mention[]
   linkPreviews?: LinkPreview[]
   expiresAfterMillis?: number | null

@@ -67,6 +67,30 @@ describe('Protobuf serialization', () => {
     expect(result.text?.linkPreview).toStrictEqual([])
   })
 
+  it('serializes text message mentions', () => {
+    const message = TextMessage.create({
+      conversationId,
+      text: 'Hello @Wire',
+      mentions: [{
+        userId: new QualifiedId('user-id', 'wire.com'),
+        offset: 6,
+        length: 5
+      }]
+    })
+
+    const serialized = ProtobufSerializer.toGenericMessageByteArray(message)
+    const result = GenericMessage.decode(serialized)
+
+    expect(result.text?.mentions).toMatchObject([{
+      qualifiedUserId: {
+        id: 'user-id',
+        domain: 'wire.com'
+      },
+      start: 6,
+      length: 5
+    }])
+  })
+
   it('deserializes text message link previews', () => {
     const genericMessage = GenericMessage.create({
       messageId: 'message-id',
