@@ -91,7 +91,7 @@ export interface TextMessage extends WireMessageBase, Item, Ephemeral, Replyable
   type: 'text'
   text: string
   quotedMessageId?: string | null
-  quotedMessageSha256?: (Uint8Array | null)
+  quotedMessageSha256?: Uint8Array | null
   mentions?: Mention[]
   linkPreviews?: LinkPreview[]
   expiresAfterMillis?: number | null
@@ -199,7 +199,7 @@ export const CompositeButton = {
   create(
     params: {
       text: string
-      id: string | undefined
+      id?: string
     }
   ): CompositeButton {
     return {
@@ -237,8 +237,69 @@ export const CompositeButtonAction = {
   }
 }
 
+export interface CompositeButtonActionConfirmation extends WireMessageBase {
+  type: "composite_button_action_confirmation"
+  referenceMessageId: string
+  buttonId: string | null
+}
+
+export const CompositeButtonActionConfirmation = {
+  create(
+    params: {
+      messageId: string
+      conversationId: QualifiedId
+      referenceMessageId: string
+      buttonId: string | null
+    }
+  ): CompositeButtonActionConfirmation {
+    return {
+      type: 'composite_button_action_confirmation',
+      id: params.messageId,
+      conversationId: params.conversationId,
+      buttonId: params.buttonId,
+      referenceMessageId: params.referenceMessageId,
+      sender: new QualifiedId(crypto.randomUUID(), crypto.randomUUID()), // TODO(alexandre): change to real sender
+      timestamp: new Date(), // TODO(alexandre): only from replyable type
+    }
+  }
+}
+
+export interface CompositeMessage extends WireMessageBase {
+  type: "composite"
+  items: Item[]
+}
+
+export const CompositeMessage = {
+  create(
+    params: {
+      messageId?: string
+      conversationId: QualifiedId
+      text?: string
+      itemList: Item[]
+    }
+  ): CompositeMessage {
+    const textItem = params.text
+      ? TextMessage.create({
+        conversationId: params.conversationId,
+        text: params.text
+      })
+      : null
+
+    return {
+      type: "composite",
+      id: params.messageId ?? crypto.randomUUID(),
+      conversationId: params.conversationId,
+      sender: new QualifiedId(crypto.randomUUID(), crypto.randomUUID()), // TODO(alexandre): change to real sender
+      timestamp: new Date(), // TODO(alexandre): only from replyable type
+      items: [...(textItem ? [textItem] : []), ...params.itemList]
+    }
+  }
+}
+
 export type WireMessage =
   | Unknown
   | TextMessage
   | AssetMessage
-  | CompositeButtonAction;
+  | CompositeButtonAction
+  | CompositeButtonActionConfirmation
+  | CompositeMessage;

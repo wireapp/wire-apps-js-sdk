@@ -21,11 +21,24 @@ import type {
   IGenericMessage,
   IAsset,
   IButtonAction,
-  Asset
+  Asset,
+  IButtonActionConfirmation
 } from "../../generated/messages.js";
 const { GenericMessage, Composite } = rootMessage;
-import { type WireMessage, TextMessage, AssetMessage, type Item, CompositeButton, CompositeButtonAction } from '../../model/WireMessage.js';
+import type {
+  WireMessage,
+  Item
+} from '../../model/WireMessage.js';
+import {
+  TextMessage,
+  AssetMessage,
+  CompositeButton,
+  CompositeButtonAction,
+  CompositeButtonActionConfirmation,
+  CompositeMessage
+} from '../../model/WireMessage.js';
 import {MessageLinkPreviewMapper} from "./MessageLinkPreviewMapper.js";
+import {MessageMentionMapper} from "./MessageMentionMapper.js";
 
 /**
  * Utility object responsible for serializing WireMessage to GenericMessage
@@ -56,6 +69,14 @@ export const ProtobufSerializer = {
       
       case 'composite_button_action':
         builtMessage = packCompositeButtonAction(wireMessage, genericMessage)
+        break
+
+      case 'composite_button_action_confirmation':
+        builtMessage = packCompositeButtonActionConfirmation(wireMessage, genericMessage)
+        break
+      
+      case 'composite':
+        builtMessage = packCompositeMessage(wireMessage, genericMessage)
         break
 
         // TODO: Add other message types here
@@ -90,11 +111,7 @@ function packText(
   const textContent: IText = {
     content: wireMessage.text,
     // Add other text-specific fields
-    mentions: wireMessage.mentions?.map(mention => ({
-      qualifiedUserId: mention.userId,
-      start: mention.offset,
-      length: mention.length
-    })) || [],
+    mentions: wireMessage.mentions?.map(MessageMentionMapper.toProtobuf) ?? [],
     linkPreview: wireMessage.linkPreviews?.map(it => MessageLinkPreviewMapper.toProtobuf(it)) ?? [],
     expectsReadConfirmation: false,
     legalHoldStatus: null
@@ -177,8 +194,7 @@ function packAssetMessage(
   }
 }
 
-// @ts-expect-error TS6133 - will be used in a follow-up PR
-function _packItemList(itemsList: Item[]): ProtobufComposite.Item[] {
+function packItemList(itemsList: Item[]): ProtobufComposite.Item[] {
   return itemsList.flatMap((item) => {
     switch ((item as TextMessage | CompositeButton).type) {
       case 'composite_button': {
@@ -204,13 +220,40 @@ function packCompositeButtonAction(
   wireMessage: CompositeButtonAction,
   genericMessage: Partial<IGenericMessage>
 ): IGenericMessage {
-  const buttonAct: IButtonAction = {
+  const buttonAction: IButtonAction = {
     referenceMessageId: wireMessage.referenceMessageId,
     buttonId: wireMessage.buttonId
   }
 
   return {
     ...genericMessage,
-    buttonAction: buttonAct
+    buttonAction: buttonAction
   } as IGenericMessage;
+}
+
+function packCompositeButtonActionConfirmation(
+  wireMessage: CompositeButtonActionConfirmation,
+  genericMessage: Partial<IGenericMessage>
+): IGenericMessage {
+  const buttonActionConfirmation: IButtonActionConfirmation = {
+    referenceMessageId: wireMessage.referenceMessageId,
+    buttonId: wireMessage.buttonId
+  }
+
+  return {
+    ...genericMessage,
+    buttonActionConfirmation: buttonActionConfirmation
+  } as IGenericMessage
+}
+
+function packCompositeMessage(
+  wireMessage: CompositeMessage,
+  genericMessage: Partial<IGenericMessage>
+): IGenericMessage {
+  return {
+    ...genericMessage,
+    composite: Composite.create({
+      items: packItemList(wireMessage.items)
+    })
+  } as IGenericMessage
 }

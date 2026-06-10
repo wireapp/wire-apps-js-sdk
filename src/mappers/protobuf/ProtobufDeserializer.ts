@@ -15,26 +15,30 @@
 */
 
 import rootMessage from "../../generated/messages.js";
-import type {Composite, IGenericMessage} from "../../generated/messages.js";
-import type { QualifiedId } from "../../model/QualifiedId.js";
+import type {Composite as ProtobufComposite, IGenericMessage} from "../../generated/messages.js";
+import { QualifiedId } from "../../model/QualifiedId.js";
 const { GenericMessage } = rootMessage;
-import {
-  TextMessage,
-  Unknown,
-  AssetMessage,
-  CompositeButton,
-  CompositeButtonAction
-} from '../../model/WireMessage.js';
 import type {
   WireMessage,
   AssetMetadata,
   Image,
   Audio,
   Video,
-  AssetRemoteData
+  AssetRemoteData,
+  Mention
 } from "../../model/WireMessage.js";
+import {
+  TextMessage,
+  Unknown,
+  AssetMessage,
+  CompositeButton,
+  CompositeButtonAction,
+  CompositeButtonActionConfirmation,
+  CompositeMessage
+} from '../../model/WireMessage.js';
 import {MessageEncryptionAlgorithm} from "../../model/protobuf/MessageEncryptionAlgorithm.js";
 import {MessageLinkPreviewMapper} from "./MessageLinkPreviewMapper.js";
+import {MessageMentionMapper} from "./MessageMentionMapper.js";
 
 /**
  * Utility object responsible for mapping a GenericMessage to WireMessage
@@ -55,6 +59,10 @@ export const ProtobufDeserializer = {
       return unpackAssetMessage(genericMessage, qualifiedConversation)
     } else if (genericMessage.buttonAction) {
       return unpackCompositeButtonAction(genericMessage, qualifiedConversation)
+    } else if (genericMessage.buttonActionConfirmation) {
+      return unpackCompositeButtonActionConfirmation(genericMessage, qualifiedConversation)
+    } else if (genericMessage.composite) {
+      return unpackComposite(genericMessage, qualifiedConversation)
     } else {
       return new Unknown()
     }
@@ -69,7 +77,10 @@ function unpackTextMessage(
     // TODO(alexandre): add messageId
     conversationId: qualifiedConversation,
     text: genericMessage.text!.content,
-    linkPreviews: genericMessage.text!.linkPreview?.map(it => MessageLinkPreviewMapper.fromProtobuf(it)) ?? []
+    linkPreviews: genericMessage.text!.linkPreview?.map(MessageLinkPreviewMapper.fromProtobuf) ?? [],
+    mentions: genericMessage.text!.mentions
+      ?.map(MessageMentionMapper.fromProtobuf)
+      .filter((mention): mention is Mention => mention !== null) ?? []
     // TODO: Map other fields
   })
 }
@@ -113,10 +124,9 @@ function unpackAssetMessage(
   })
 }
 
-// @ts-expect-error TS6133 - will be used in a follow-up PR
-function _unpackItemList(
+function unpackItemList(
   conversationId: QualifiedId,
-  compositeItemList: Composite.Item[]
+  compositeItemList: ProtobufComposite.Item.$Properties[]
 ): (TextMessage | CompositeButton)[] {
   return compositeItemList.flatMap((item): (TextMessage | CompositeButton)[] => {
     switch (item.content) {
@@ -139,5 +149,35 @@ function unpackCompositeButtonAction(
     conversationId: qualifiedConversation,
     referenceMessageId: genericMessage.buttonAction!.referenceMessageId,
     buttonId: genericMessage.buttonAction!.buttonId
+  })
+}
+
+function unpackCompositeButtonActionConfirmation(
+  genericMessage: IGenericMessage,
+  qualifiedConversation: QualifiedId
+): CompositeButtonActionConfirmation {
+  const buttonActionConfirmation = genericMessage.buttonActionConfirmation!
+  const buttonId = Object.prototype.hasOwnProperty.call(buttonActionConfirmation, 'buttonId')
+    ? buttonActionConfirmation.buttonId ?? null
+    : null
+  return CompositeButtonActionConfirmation.create({
+    messageId: genericMessage.messageId,
+    conversationId: qualifiedConversation,
+    referenceMessageId: buttonActionConfirmation.referenceMessageId,
+    buttonId: buttonId
+  })
+}
+
+function unpackComposite(
+  genericMessage: IGenericMessage,
+  qualifiedConversation: QualifiedId
+): CompositeMessage {
+  const items = genericMessage.composite!.items!
+  const itemList = unpackItemList(qualifiedConversation, items)
+
+  return CompositeMessage.create({
+    messageId: genericMessage.messageId,
+    conversationId: qualifiedConversation,
+    itemList: itemList
   })
 }

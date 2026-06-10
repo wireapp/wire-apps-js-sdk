@@ -27,6 +27,8 @@ import {
   QualifiedId,
   TextMessage,
   AssetMessage,
+  CompositeButton,
+  CompositeMessage,
   type Audio,
   type Image,
   type Video,
@@ -82,7 +84,9 @@ class SampleEventsHandler extends WireEventsHandler {
     } else {
       const textMessage = TextMessage.create({
         conversationId: wireMessage.conversationId,
-        text: `Sent from SampleEventsHandler: ${wireMessage.text}`
+        text: `${wireMessage.text} -- Sent from the TS Sample SDK`,
+        linkPreviews: wireMessage.linkPreviews,
+        mentions: wireMessage.mentions
       })
 
       await this.manager.sendMessage(textMessage)
@@ -415,6 +419,22 @@ class SampleEventsHandler extends WireEventsHandler {
           conversationId: conversationId,
           text: `Members in conversation ${obfuscateId(targetQualifiedId.id)}@${targetQualifiedId.domain} (${members.length}):\n${memberList}`
         }))
+      },
+      'test-composite-message': async (conversationId, command) => {
+        const msg = CompositeMessage.create({
+          conversationId: conversationId,
+          text: "Composite Title",
+          itemList: [
+            CompositeButton.create({
+              text: "Button-001"
+            }),
+            CompositeButton.create({
+              text: "Button-002"
+            })
+          ]
+        })
+  
+        await this.manager.sendMessage(msg)
       }
       // More reserved test commands will be added here
     }

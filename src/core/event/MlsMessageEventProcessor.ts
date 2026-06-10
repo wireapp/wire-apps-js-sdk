@@ -82,6 +82,12 @@ export class MlsMessageEventProcessor implements EventProcessor<NewMLSMessageDTO
       case 'composite_button_action':
         await this.wireEventsHandler.onButtonClicked(wireMessage)
         break
+      case 'composite_button_action_confirmation':
+        this.logger.debug('ButtonActionConfirmation event received.')
+        break
+      case 'composite':
+        this.logger.debug('Composite event received.')
+        break
       case 'unknown':
       default:
         this.logger.info("Unknown event received.")
