@@ -208,6 +208,11 @@ function unpackEphemeralPing(
   })
 }
 
+/**
+ * Normalizes protobufjs integer values to plain numbers.
+ * Depending on protobufjs runtime configuration, int64 fields may decode as
+ * either JavaScript numbers or Long-like objects.
+ */
 function toNumber(value: number | { toNumber(): number }): number {
   return typeof value === 'number' ? value : value.toNumber()
 }
