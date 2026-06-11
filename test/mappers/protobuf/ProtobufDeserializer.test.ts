@@ -63,4 +63,38 @@ describe('Protobuf deserialization', () => {
     expect(result.type).toBe('text')
     expect(result.type === 'text' ? result.mentions : null).toStrictEqual([])
   })
+
+  it('deserializes knocks as pings', () => {
+    const genericMessage = GenericMessage.create({
+      messageId: 'message-id',
+      knock: {
+        hotKnock: false
+      }
+    })
+
+    const result = ProtobufDeserializer.toWireMessage(GenericMessage.encode(genericMessage).finish(), conversationId)
+
+    expect(result.type).toBe('ping')
+    expect(result.type === 'ping' ? result.id : null).toBe('message-id')
+    expect(result.type === 'ping' ? result.conversationId : null).toStrictEqual(conversationId)
+    expect(result.type === 'ping' ? result.expiresAfterMillis : undefined).toBeNull()
+  })
+
+  it('deserializes ephemeral knocks as expiring pings', () => {
+    const genericMessage = GenericMessage.create({
+      messageId: 'message-id',
+      ephemeral: {
+        expireAfterMillis: 1000,
+        knock: {
+          hotKnock: false
+        }
+      }
+    })
+
+    const result = ProtobufDeserializer.toWireMessage(GenericMessage.encode(genericMessage).finish(), conversationId)
+
+    expect(result.type).toBe('ping')
+    expect(result.type === 'ping' ? result.id : null).toBe('message-id')
+    expect(result.type === 'ping' ? result.expiresAfterMillis : null).toBe(1000)
+  })
 })

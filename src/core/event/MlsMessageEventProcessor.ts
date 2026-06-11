@@ -88,6 +88,9 @@ export class MlsMessageEventProcessor implements EventProcessor<NewMLSMessageDTO
       case 'composite':
         this.logger.debug('Composite event received.')
         break
+      case 'ping':
+        await this.wireEventsHandler.onPingReceived(wireMessage)
+        break
       case 'unknown':
       default:
         this.logger.info("Unknown event received.")

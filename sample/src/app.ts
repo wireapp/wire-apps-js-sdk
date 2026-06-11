@@ -29,6 +29,7 @@ import {
   AssetMessage,
   CompositeButton,
   CompositeMessage,
+  Ping,
   type Audio,
   type Image,
   type Video,
@@ -91,6 +92,16 @@ class SampleEventsHandler extends WireEventsHandler {
 
       await this.manager.sendMessage(textMessage)
     }
+  }
+
+  public override async onPingReceived(wireMessage: Ping): Promise<void> {
+    this.appLogger?.info(`[Sample App] Received a Ping, sending one back`)
+
+    const ping = Ping.create({
+      conversationId: wireMessage.conversationId
+    })
+
+    await this.manager.sendMessage(ping)
   }
 
   public override async onConversationDeleted(conversationId: QualifiedId): Promise<void> {
