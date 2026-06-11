@@ -279,7 +279,6 @@ function packPing(
       }
       : {
         knock: knock
-      })
-  
+      })  
   } as IGenericMessage
 }

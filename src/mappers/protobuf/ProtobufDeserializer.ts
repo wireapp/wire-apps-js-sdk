@@ -18,15 +18,14 @@ import rootMessage from "../../generated/messages.js";
 import type {Composite as ProtobufComposite, IGenericMessage} from "../../generated/messages.js";
 import { QualifiedId } from "../../model/QualifiedId.js";
 const { GenericMessage } = rootMessage;
-import {
-  type WireMessage,
-  type AssetMetadata,
-  type Image,
-  type Audio,
-  type Video,
-  type AssetRemoteData,
-  type Mention,
-  Ping
+import type {
+  WireMessage,
+  AssetMetadata,
+  Image,
+  Audio,
+  Video,
+  AssetRemoteData,
+  Mention
 } from "../../model/WireMessage.js";
 import {
   TextMessage,
@@ -35,7 +34,8 @@ import {
   CompositeButton,
   CompositeButtonAction,
   CompositeButtonActionConfirmation,
-  CompositeMessage
+  CompositeMessage,
+  Ping
 } from '../../model/WireMessage.js';
 import {MessageEncryptionAlgorithm} from "../../model/protobuf/MessageEncryptionAlgorithm.js";
 import {MessageLinkPreviewMapper} from "./MessageLinkPreviewMapper.js";
