@@ -24,10 +24,11 @@ import type {
   Asset,
   IButtonActionConfirmation
 } from "../../generated/messages.js";
-const { GenericMessage, Composite } = rootMessage;
+const { GenericMessage, Composite, Ephemeral, Knock } = rootMessage;
 import type {
   WireMessage,
-  Item
+  Item,
+  Ping
 } from '../../model/WireMessage.js';
 import {
   TextMessage,
@@ -77,6 +78,10 @@ export const ProtobufSerializer = {
       
       case 'composite':
         builtMessage = packCompositeMessage(wireMessage, genericMessage)
+        break
+      
+      case 'ping':
+        builtMessage = packPing(wireMessage, genericMessage)
         break
 
         // TODO: Add other message types here
@@ -255,5 +260,25 @@ function packCompositeMessage(
     composite: Composite.create({
       items: packItemList(wireMessage.items)
     })
+  } as IGenericMessage
+}
+
+function packPing(
+  wireMessage: Ping,
+  genericMessage: Partial<IGenericMessage>
+): IGenericMessage {
+  const knock = Knock.create({ hotKnock: false })
+  return {
+    ...genericMessage,
+    ...(wireMessage.expiresAfterMillis
+      ? {
+        ephemeral: Ephemeral.create({
+          expireAfterMillis: wireMessage.expiresAfterMillis,
+          knock: knock
+        })
+      }
+      : {
+        knock: knock
+      })  
   } as IGenericMessage
 }

@@ -42,6 +42,7 @@ const makeEvent = (): NewMLSMessageDTO => ({
 
 const makeTextMessage = () => ({type: 'text' as const, text: 'hello'} as any)
 const makeAssetMessage = () => ({type: 'asset' as const, mimeType: 'image/png', sizeInBytes: 1024} as any)
+const makePing = () => ({type: 'ping' as const, id: 'ping-id'} as any)
 const makeUnknownMessage = () => ({type: 'unknown' as const} as any)
 
 let conversationService: ConversationService
@@ -68,6 +69,7 @@ beforeEach(() => {
   wireEventsHandler = {
     onTextMessageReceived: vi.fn().mockResolvedValue(undefined),
     onAssetMessageReceived: vi.fn().mockResolvedValue(undefined),
+    onPingReceived: vi.fn().mockResolvedValue(undefined),
   } as any
 
   processor = new MlsMessageEventProcessor(coreCryptoService, conversationService, mlsFallbackStrategy, wireEventsHandler)
@@ -127,6 +129,18 @@ describe('MlsMessageEventProcessor', () => {
         expect(wireEventsHandler.onTextMessageReceived).not.toHaveBeenCalled()
       })
 
+      it('should call onPingReceived for ping messages', async () => {
+        const ping = makePing()
+        vi.mocked(ProtobufDeserializer.toWireMessage).mockReturnValue(ping)
+
+        await processor.process(makeEvent())
+
+        expect(wireEventsHandler.onPingReceived).toHaveBeenCalledTimes(1)
+        expect(wireEventsHandler.onPingReceived).toHaveBeenCalledWith(ping)
+        expect(wireEventsHandler.onTextMessageReceived).not.toHaveBeenCalled()
+        expect(wireEventsHandler.onAssetMessageReceived).not.toHaveBeenCalled()
+      })
+
       it('should not forward unknown message types', async () => {
         vi.mocked(ProtobufDeserializer.toWireMessage).mockReturnValue(makeUnknownMessage())
 
@@ -134,6 +148,7 @@ describe('MlsMessageEventProcessor', () => {
 
         expect(wireEventsHandler.onTextMessageReceived).not.toHaveBeenCalled()
         expect(wireEventsHandler.onAssetMessageReceived).not.toHaveBeenCalled()
+        expect(wireEventsHandler.onPingReceived).not.toHaveBeenCalled()
       })
 
       it('should deserialize the message with the decrypted bytes and qualified conversation', async () => {

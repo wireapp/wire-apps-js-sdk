@@ -296,10 +296,34 @@ export const CompositeMessage = {
   }
 }
 
+export interface Ping extends WireMessageBase, Ephemeral {
+  type: 'ping'
+}
+
+export const Ping = {
+  create(
+    params: {
+      messageId?: string
+      conversationId: QualifiedId
+      expiresAfterMillis?: number | null
+    }
+  ): Ping {
+    return {
+      type: 'ping',
+      id: params.messageId ?? crypto.randomUUID(),
+      conversationId: params.conversationId,
+      sender: new QualifiedId(crypto.randomUUID(), crypto.randomUUID()), // TODO(alexandre): change to real sender
+      timestamp: new Date(), // TODO(alexandre): only from replyable type
+      expiresAfterMillis: params.expiresAfterMillis ?? null
+    }
+  }
+}
+
 export type WireMessage =
   | Unknown
   | TextMessage
   | AssetMessage
   | CompositeButtonAction
   | CompositeButtonActionConfirmation
-  | CompositeMessage;
+  | CompositeMessage
+  | Ping;

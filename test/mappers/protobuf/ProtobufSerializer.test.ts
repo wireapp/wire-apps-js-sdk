@@ -19,7 +19,7 @@ import rootMessage from '../../../src/generated/messages.js'
 import { ProtobufDeserializer } from '../../../src/mappers/protobuf/ProtobufDeserializer.js'
 import { ProtobufSerializer } from '../../../src/mappers/protobuf/ProtobufSerializer.js'
 import { QualifiedId } from '../../../src/model/QualifiedId.js'
-import { CompositeButtonActionConfirmation, TextMessage } from '../../../src/model/WireMessage.js'
+import { CompositeButtonActionConfirmation, Ping, TextMessage } from '../../../src/model/WireMessage.js'
 
 const { GenericMessage } = rootMessage
 
@@ -150,6 +150,41 @@ describe('Protobuf serialization', () => {
     expect(result.buttonActionConfirmation).toMatchObject({
       referenceMessageId: 'reference-message-id',
       buttonId: 'button-id'
+    })
+  })
+
+  it('serializes pings as knocks', () => {
+    const message = Ping.create({
+      messageId: 'message-id',
+      conversationId
+    })
+
+    const serialized = ProtobufSerializer.toGenericMessageByteArray(message)
+    const result = GenericMessage.decode(serialized)
+
+    expect(result.messageId).toBe('message-id')
+    expect(result.content).toBe('knock')
+    expect(result.knock).toMatchObject({
+      hotKnock: false
+    })
+  })
+
+  it('serializes expiring pings as ephemeral knocks', () => {
+    const message = Ping.create({
+      messageId: 'message-id',
+      conversationId,
+      expiresAfterMillis: 1000
+    })
+
+    const serialized = ProtobufSerializer.toGenericMessageByteArray(message)
+    const result = GenericMessage.decode(serialized)
+
+    expect(result.messageId).toBe('message-id')
+    expect(result.content).toBe('ephemeral')
+    expect(result.ephemeral?.expireAfterMillis.toString()).toBe('1000')
+    expect(result.ephemeral?.content).toBe('knock')
+    expect(result.ephemeral?.knock).toMatchObject({
+      hotKnock: false
     })
   })
 

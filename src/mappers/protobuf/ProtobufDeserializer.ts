@@ -34,7 +34,8 @@ import {
   CompositeButton,
   CompositeButtonAction,
   CompositeButtonActionConfirmation,
-  CompositeMessage
+  CompositeMessage,
+  Ping
 } from '../../model/WireMessage.js';
 import {MessageEncryptionAlgorithm} from "../../model/protobuf/MessageEncryptionAlgorithm.js";
 import {MessageLinkPreviewMapper} from "./MessageLinkPreviewMapper.js";
@@ -63,6 +64,10 @@ export const ProtobufDeserializer = {
       return unpackCompositeButtonActionConfirmation(genericMessage, qualifiedConversation)
     } else if (genericMessage.composite) {
       return unpackComposite(genericMessage, qualifiedConversation)
+    } else if (genericMessage.knock) {
+      return unpackPing(genericMessage, qualifiedConversation)
+    } else if (genericMessage.ephemeral?.knock) {
+      return unpackEphemeralPing(genericMessage, qualifiedConversation)
     } else {
       return new Unknown()
     }
@@ -180,4 +185,34 @@ function unpackComposite(
     conversationId: qualifiedConversation,
     itemList: itemList
   })
+}
+
+function unpackPing(
+  genericMessage: IGenericMessage,
+  qualifiedConversation: QualifiedId
+): Ping {
+  return Ping.create({
+    messageId: genericMessage.messageId,
+    conversationId: qualifiedConversation
+  })
+}
+
+function unpackEphemeralPing(
+  genericMessage: IGenericMessage,
+  qualifiedConversation: QualifiedId
+): Ping {
+  return Ping.create({
+    messageId: genericMessage.messageId,
+    conversationId: qualifiedConversation,
+    expiresAfterMillis: toNumber(genericMessage.ephemeral!.expireAfterMillis)
+  })
+}
+
+/**
+ * Normalizes protobufjs integer values to plain numbers.
+ * Depending on protobufjs runtime configuration, int64 fields may decode as
+ * either JavaScript numbers or Long-like objects.
+ */
+function toNumber(value: number | { toNumber(): number }): number {
+  return typeof value === 'number' ? value : value.toNumber()
 }
