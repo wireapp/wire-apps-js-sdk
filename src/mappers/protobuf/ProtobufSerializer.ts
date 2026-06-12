@@ -24,11 +24,12 @@ import type {
   Asset,
   IButtonActionConfirmation
 } from "../../generated/messages.js";
-const { GenericMessage, Composite, Ephemeral, Knock } = rootMessage;
+const { GenericMessage, Composite, Ephemeral, Knock, Location: ProtobufLocation } = rootMessage;
 import type {
   WireMessage,
   Item,
-  Ping
+  Ping,
+  Location
 } from '../../model/WireMessage.js';
 import {
   TextMessage,
@@ -82,6 +83,10 @@ export const ProtobufSerializer = {
       
       case 'ping':
         builtMessage = packPing(wireMessage, genericMessage)
+        break
+
+      case 'location':
+        builtMessage = packLocation(wireMessage, genericMessage)
         break
 
         // TODO: Add other message types here
@@ -280,5 +285,20 @@ function packPing(
       : {
         knock: knock
       })  
+  } as IGenericMessage
+}
+
+function packLocation(
+  wireMessage: Location,
+  genericMessage: Partial<IGenericMessage>
+): IGenericMessage {
+  return {
+    ...genericMessage,
+    location: ProtobufLocation.create({
+      latitude: wireMessage.latitude,
+      longitude: wireMessage.longitude,
+      name: wireMessage.name,
+      zoom: wireMessage.zoom
+    })
   } as IGenericMessage
 }

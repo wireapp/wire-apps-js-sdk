@@ -19,7 +19,7 @@ import rootMessage from '../../../src/generated/messages.js'
 import { ProtobufDeserializer } from '../../../src/mappers/protobuf/ProtobufDeserializer.js'
 import { ProtobufSerializer } from '../../../src/mappers/protobuf/ProtobufSerializer.js'
 import { QualifiedId } from '../../../src/model/QualifiedId.js'
-import { CompositeButtonActionConfirmation, Ping, TextMessage } from '../../../src/model/WireMessage.js'
+import { CompositeButtonActionConfirmation, Location, Ping, TextMessage } from '../../../src/model/WireMessage.js'
 
 const { GenericMessage } = rootMessage
 
@@ -186,6 +186,27 @@ describe('Protobuf serialization', () => {
     expect(result.ephemeral?.knock).toMatchObject({
       hotKnock: false
     })
+  })
+
+  it('serializes locations', () => {
+    const message = Location.create({
+      messageId: 'message-id',
+      conversationId,
+      latitude: 52.520008,
+      longitude: 13.404954,
+      name: 'Berlin',
+      zoom: 12
+    })
+
+    const serialized = ProtobufSerializer.toGenericMessageByteArray(message)
+    const result = GenericMessage.decode(serialized)
+
+    expect(result.messageId).toBe('message-id')
+    expect(result.content).toBe('location')
+    expect(result.location?.latitude).toBeCloseTo(52.520008)
+    expect(result.location?.longitude).toBeCloseTo(13.404954)
+    expect(result.location?.name).toBe('Berlin')
+    expect(result.location?.zoom).toBe(12)
   })
 
   it('deserializes composite button action confirmations', () => {

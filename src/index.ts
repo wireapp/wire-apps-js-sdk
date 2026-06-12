@@ -42,6 +42,7 @@ export {
   CompositeButtonAction,
   CompositeMessage,
   Ping,
+  Location,
   type LinkPreview,
   type Audio,
   type Image,

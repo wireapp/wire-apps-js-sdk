@@ -97,4 +97,58 @@ describe('Protobuf deserialization', () => {
     expect(result.type === 'ping' ? result.id : null).toBe('message-id')
     expect(result.type === 'ping' ? result.expiresAfterMillis : null).toBe(1000)
   })
+
+  it('deserializes locations', () => {
+    const genericMessage = GenericMessage.create({
+      messageId: 'message-id',
+      location: {
+        latitude: 52.520008,
+        longitude: 13.404954,
+        name: 'Berlin',
+        zoom: 12
+      }
+    })
+
+    const result = ProtobufDeserializer.toWireMessage(GenericMessage.encode(genericMessage).finish(), conversationId)
+
+    expect(result.type).toBe('location')
+    expect(result.type === 'location' ? result.id : null).toBe('message-id')
+    expect(result.type === 'location' ? result.conversationId : null).toStrictEqual(conversationId)
+    expect(result.type === 'location' ? result.latitude : null).toBeCloseTo(52.520008)
+    expect(result.type === 'location' ? result.longitude : null).toBeCloseTo(13.404954)
+    expect(result.type === 'location' ? result.name : null).toBe('Berlin')
+    expect(result.type === 'location' ? result.zoom : null).toBe(12)
+  })
+
+  it('preserves omitted optional location fields as null', () => {
+    const genericMessage = GenericMessage.create({
+      messageId: 'message-id',
+      location: {
+        latitude: 52.520008,
+        longitude: 13.404954
+      }
+    })
+
+    const result = ProtobufDeserializer.toWireMessage(GenericMessage.encode(genericMessage).finish(), conversationId)
+
+    expect(result.type).toBe('location')
+    expect(result.type === 'location' ? result.name : undefined).toBeNull()
+    expect(result.type === 'location' ? result.zoom : undefined).toBeNull()
+  })
+
+  it('preserves explicit location zoom 0', () => {
+    const genericMessage = GenericMessage.create({
+      messageId: 'message-id',
+      location: {
+        latitude: 52.520008,
+        longitude: 13.404954,
+        zoom: 0
+      }
+    })
+
+    const result = ProtobufDeserializer.toWireMessage(GenericMessage.encode(genericMessage).finish(), conversationId)
+
+    expect(result.type).toBe('location')
+    expect(result.type === 'location' ? result.zoom : null).toBe(0)
+  })
 })

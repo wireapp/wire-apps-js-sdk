@@ -91,6 +91,9 @@ export class MlsMessageEventProcessor implements EventProcessor<NewMLSMessageDTO
       case 'ping':
         await this.wireEventsHandler.onPingReceived(wireMessage)
         break
+      case 'location':
+        await this.wireEventsHandler.onLocationReceived(wireMessage)
+        break
       case 'unknown':
       default:
         this.logger.info("Unknown event received.")

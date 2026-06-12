@@ -319,6 +319,41 @@ export const Ping = {
   }
 }
 
+export interface Location extends WireMessageBase, Ephemeral, Replyable {
+  type: 'location'
+  latitude: number
+  longitude: number
+  name: string | null
+  zoom: number | null
+}
+
+export const Location = {
+  create(
+    params: {
+      messageId?: string
+      conversationId: QualifiedId
+      latitude: number
+      longitude: number
+      name?: string | null | undefined
+      zoom?: number | null | undefined
+      expiresAfterMillis?: number | null
+    }
+  ): Location {
+    return {
+      type: 'location',
+      id: params.messageId ?? crypto.randomUUID(),
+      conversationId: params.conversationId,
+      sender: new QualifiedId(crypto.randomUUID(), crypto.randomUUID()), // TODO(alexandre): change to real sender
+      latitude: params.latitude,
+      longitude: params.longitude,
+      name: params.name ?? null,
+      zoom: params.zoom ?? null,
+      timestamp: new Date(), // TODO(alexandre): only from replyable type
+      expiresAfterMillis: params.expiresAfterMillis ?? null
+    }
+  }
+}
+
 export type WireMessage =
   | Unknown
   | TextMessage
@@ -326,4 +361,5 @@ export type WireMessage =
   | CompositeButtonAction
   | CompositeButtonActionConfirmation
   | CompositeMessage
-  | Ping;
+  | Ping
+  | Location;
