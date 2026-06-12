@@ -468,12 +468,12 @@ class SampleEventsHandler extends WireEventsHandler {
       },
       'test-deleted-message': async (conversationId) => {
         this.appLogger?.info(`[Sample App] Sending a text message and then deleting it after 3 seconds`)
-    
+
         const message = TextMessage.create({
           conversationId: conversationId,
           text: "This message will be deleted in 3 seconds"
         })
-        
+
         await this.manager.sendMessage(message)
 
         await new Promise(resolve => setTimeout(resolve, 3000))

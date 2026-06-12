@@ -18,15 +18,14 @@ import rootMessage from "../../generated/messages.js";
 import type {Composite as ProtobufComposite, IGenericMessage} from "../../generated/messages.js";
 import { QualifiedId } from "../../model/QualifiedId.js";
 const { GenericMessage } = rootMessage;
-import {
-  type WireMessage,
-  type AssetMetadata,
-  type Image,
-  type Audio,
-  type Video,
-  type AssetRemoteData,
-  type Mention,
-  DeletedMessage
+import type {
+  WireMessage,
+  AssetMetadata,
+  Image,
+  Audio,
+  Video,
+  AssetRemoteData,
+  Mention
 } from "../../model/WireMessage.js";
 import {
   TextMessage,
@@ -37,7 +36,8 @@ import {
   CompositeButtonActionConfirmation,
   CompositeMessage,
   Ping,
-  Location
+  Location,
+  DeletedMessage
 } from '../../model/WireMessage.js';
 import {MessageEncryptionAlgorithm} from "../../model/protobuf/MessageEncryptionAlgorithm.js";
 import {MessageLinkPreviewMapper} from "./MessageLinkPreviewMapper.js";
@@ -235,7 +235,7 @@ function unpackDeletedMessage(
   qualifiedConversation: QualifiedId
 ): DeletedMessage {
   const deletedMessage = genericMessage.deleted!
-  
+
   return DeletedMessage.create({
     id: genericMessage.messageId,
     conversationId: qualifiedConversation,
