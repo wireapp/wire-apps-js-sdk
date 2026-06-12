@@ -324,7 +324,7 @@ export interface Location extends WireMessageBase, Ephemeral, Replyable {
   latitude: number
   longitude: number
   name: string | null
-  zoom: number
+  zoom: number | null
 }
 
 export const Location = {
@@ -346,8 +346,8 @@ export const Location = {
       sender: new QualifiedId(crypto.randomUUID(), crypto.randomUUID()), // TODO(alexandre): change to real sender
       latitude: params.latitude,
       longitude: params.longitude,
-      name: params.name ?? "Unknown Location",
-      zoom: params.zoom ?? 0,
+      name: params.name ?? null,
+      zoom: params.zoom ?? null,
       timestamp: new Date(), // TODO(alexandre): only from replyable type
       expiresAfterMillis: params.expiresAfterMillis ?? null
     }

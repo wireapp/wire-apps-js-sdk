@@ -30,6 +30,7 @@ import {
   CompositeButton,
   CompositeMessage,
   Ping,
+  Location,
   type Audio,
   type Image,
   type Video,
@@ -39,7 +40,6 @@ import {
 } from 'wire-apps-js-sdk'
 import fs from 'fs'
 import path from 'node:path'
-import type {Location} from "../../build/model/WireMessage.js";
 
 dotenv.config({ path: '../.env' })
 

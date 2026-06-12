@@ -215,13 +215,15 @@ function unpackLocation(
   genericMessage: IGenericMessage,
   qualifiedConversation: QualifiedId
 ): Location {
+  const location = genericMessage.location!
+
   return Location.create({
     messageId: genericMessage.messageId,
     conversationId: qualifiedConversation,
-    latitude: genericMessage.location!.latitude,
-    longitude: genericMessage.location!.longitude,
-    name: genericMessage.location!.name,
-    zoom: genericMessage.location!.zoom
+    latitude: location.latitude,
+    longitude: location.longitude,
+    name: Object.hasOwn(location, 'name') ? location.name : null,
+    zoom: Object.hasOwn(location, 'zoom') ? location.zoom : null
   })
 }
 
