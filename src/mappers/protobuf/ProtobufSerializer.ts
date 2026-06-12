@@ -24,12 +24,13 @@ import type {
   Asset,
   IButtonActionConfirmation
 } from "../../generated/messages.js";
-const { GenericMessage, Composite, Ephemeral, Knock, Location: ProtobufLocation } = rootMessage;
+const { GenericMessage, Composite, Ephemeral, Knock, Location: ProtobufLocation, MessageDelete } = rootMessage;
 import type {
   WireMessage,
   Item,
   Ping,
-  Location
+  Location,
+  DeletedMessage
 } from '../../model/WireMessage.js';
 import {
   TextMessage,
@@ -87,6 +88,10 @@ export const ProtobufSerializer = {
 
       case 'location':
         builtMessage = packLocation(wireMessage, genericMessage)
+        break
+
+      case 'deleted':
+        builtMessage = packDeletedMessage(wireMessage, genericMessage)
         break
 
         // TODO: Add other message types here
@@ -299,6 +304,18 @@ function packLocation(
       longitude: wireMessage.longitude,
       name: wireMessage.name,
       zoom: wireMessage.zoom
+    })
+  } as IGenericMessage
+}
+
+function packDeletedMessage(
+  wireMessage: DeletedMessage,
+  genericMessage: Partial<IGenericMessage>
+): IGenericMessage {
+  return {
+    ...genericMessage,
+    deleted: MessageDelete.create({
+      messageId: wireMessage.messageId
     })
   } as IGenericMessage
 }

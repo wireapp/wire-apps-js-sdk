@@ -151,4 +151,20 @@ describe('Protobuf deserialization', () => {
     expect(result.type).toBe('location')
     expect(result.type === 'location' ? result.zoom : null).toBe(0)
   })
+
+  it('deserializes deleted messages', () => {
+    const genericMessage = GenericMessage.create({
+      messageId: 'message-id',
+      deleted: {
+        messageId: 'deleted-message-id'
+      }
+    })
+
+    const result = ProtobufDeserializer.toWireMessage(GenericMessage.encode(genericMessage).finish(), conversationId)
+
+    expect(result.type).toBe('deleted')
+    expect(result.type === 'deleted' ? result.id : null).toBe('message-id')
+    expect(result.type === 'deleted' ? result.conversationId : null).toStrictEqual(conversationId)
+    expect(result.type === 'deleted' ? result.messageId : null).toBe('deleted-message-id')
+  })
 })

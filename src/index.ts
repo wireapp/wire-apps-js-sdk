@@ -43,6 +43,7 @@ export {
   CompositeMessage,
   Ping,
   Location,
+  DeletedMessage,
   type LinkPreview,
   type Audio,
   type Image,

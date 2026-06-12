@@ -354,6 +354,30 @@ export const Location = {
   }
 }
 
+export interface DeletedMessage extends WireMessageBase {
+  type: 'deleted'
+  messageId: string
+}
+
+export const DeletedMessage = {
+  create(
+    params: {
+      id?: string
+      conversationId: QualifiedId
+      messageId: string
+    }
+  ): DeletedMessage {
+    return {
+      type: 'deleted',
+      id: params.id ?? crypto.randomUUID(),
+      conversationId: params.conversationId,
+      sender: new QualifiedId(crypto.randomUUID(), crypto.randomUUID()), // TODO(alexandre): change to real sender
+      messageId: params.messageId,
+      timestamp: new Date(), // TODO(alexandre): only from replyable type
+    }
+  }
+}
+
 export type WireMessage =
   | Unknown
   | TextMessage
@@ -362,4 +386,5 @@ export type WireMessage =
   | CompositeButtonActionConfirmation
   | CompositeMessage
   | Ping
-  | Location;
+  | Location
+  | DeletedMessage;

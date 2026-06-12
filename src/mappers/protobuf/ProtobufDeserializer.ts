@@ -18,14 +18,15 @@ import rootMessage from "../../generated/messages.js";
 import type {Composite as ProtobufComposite, IGenericMessage} from "../../generated/messages.js";
 import { QualifiedId } from "../../model/QualifiedId.js";
 const { GenericMessage } = rootMessage;
-import type {
-  WireMessage,
-  AssetMetadata,
-  Image,
-  Audio,
-  Video,
-  AssetRemoteData,
-  Mention
+import {
+  type WireMessage,
+  type AssetMetadata,
+  type Image,
+  type Audio,
+  type Video,
+  type AssetRemoteData,
+  type Mention,
+  DeletedMessage
 } from "../../model/WireMessage.js";
 import {
   TextMessage,
@@ -71,6 +72,8 @@ export const ProtobufDeserializer = {
       return unpackEphemeralPing(genericMessage, qualifiedConversation)
     } else if (genericMessage.location) {
       return unpackLocation(genericMessage, qualifiedConversation)
+    } else if (genericMessage.deleted) {
+      return unpackDeletedMessage(genericMessage, qualifiedConversation)
     } else {
       return new Unknown()
     }
@@ -224,6 +227,19 @@ function unpackLocation(
     longitude: location.longitude,
     name: Object.hasOwn(location, 'name') ? location.name : null,
     zoom: Object.hasOwn(location, 'zoom') ? location.zoom : null
+  })
+}
+
+function unpackDeletedMessage(
+  genericMessage: IGenericMessage,
+  qualifiedConversation: QualifiedId
+): DeletedMessage {
+  const deletedMessage = genericMessage.deleted!
+  
+  return DeletedMessage.create({
+    id: genericMessage.messageId,
+    conversationId: qualifiedConversation,
+    messageId: deletedMessage.messageId
   })
 }
 
