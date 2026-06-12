@@ -39,6 +39,7 @@ import {
 } from 'wire-apps-js-sdk'
 import fs from 'fs'
 import path from 'node:path'
+import type {Location} from "../../build/model/WireMessage.js";
 
 dotenv.config({ path: '../.env' })
 
@@ -102,6 +103,23 @@ class SampleEventsHandler extends WireEventsHandler {
     })
 
     await this.manager.sendMessage(ping)
+  }
+
+  public override async onLocationReceived(wireMessage: Location): Promise<void> {
+    this.appLogger?.info(`[Sample App] Received a Location, sending back the details`)
+
+    let locationDetails = `Received Location:`
+    locationDetails += `\nLatitude: ${wireMessage.latitude}`
+    locationDetails += `\nLongitude: ${wireMessage.longitude}`
+    locationDetails += `\nName: ${wireMessage.name}`
+    locationDetails += `\nzoom: ${wireMessage.zoom}`
+
+    const textMessage = TextMessage.create({
+      conversationId: wireMessage.conversationId,
+      text: locationDetails
+    })
+
+    await this.manager.sendMessage(textMessage)
   }
 
   public override async onConversationDeleted(conversationId: QualifiedId): Promise<void> {

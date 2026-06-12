@@ -35,7 +35,8 @@ import {
   CompositeButtonAction,
   CompositeButtonActionConfirmation,
   CompositeMessage,
-  Ping
+  Ping,
+  Location
 } from '../../model/WireMessage.js';
 import {MessageEncryptionAlgorithm} from "../../model/protobuf/MessageEncryptionAlgorithm.js";
 import {MessageLinkPreviewMapper} from "./MessageLinkPreviewMapper.js";
@@ -66,8 +67,10 @@ export const ProtobufDeserializer = {
       return unpackComposite(genericMessage, qualifiedConversation)
     } else if (genericMessage.knock) {
       return unpackPing(genericMessage, qualifiedConversation)
-    } else if (genericMessage.ephemeral?.knock) {
+    } else if (genericMessage.ephemeral?.knock) { // TODO(alexandre): Move ephemeral to its own unpack method and handle all other cases
       return unpackEphemeralPing(genericMessage, qualifiedConversation)
+    } else if (genericMessage.location) {
+      return unpackLocation(genericMessage, qualifiedConversation)
     } else {
       return new Unknown()
     }
@@ -205,6 +208,20 @@ function unpackEphemeralPing(
     messageId: genericMessage.messageId,
     conversationId: qualifiedConversation,
     expiresAfterMillis: toNumber(genericMessage.ephemeral!.expireAfterMillis)
+  })
+}
+
+function unpackLocation(
+  genericMessage: IGenericMessage,
+  qualifiedConversation: QualifiedId
+): Location {
+  return Location.create({
+    messageId: genericMessage.messageId,
+    conversationId: qualifiedConversation,
+    latitude: genericMessage.location!.latitude,
+    longitude: genericMessage.location!.longitude,
+    name: genericMessage.location!.name,
+    zoom: genericMessage.location!.zoom
   })
 }
 

@@ -43,6 +43,7 @@ const makeEvent = (): NewMLSMessageDTO => ({
 const makeTextMessage = () => ({type: 'text' as const, text: 'hello'} as any)
 const makeAssetMessage = () => ({type: 'asset' as const, mimeType: 'image/png', sizeInBytes: 1024} as any)
 const makePing = () => ({type: 'ping' as const, id: 'ping-id'} as any)
+const makeLocationMessage = () => ({type: 'location' as const, id: 'location-id'} as any)
 const makeUnknownMessage = () => ({type: 'unknown' as const} as any)
 
 let conversationService: ConversationService
@@ -70,6 +71,7 @@ beforeEach(() => {
     onTextMessageReceived: vi.fn().mockResolvedValue(undefined),
     onAssetMessageReceived: vi.fn().mockResolvedValue(undefined),
     onPingReceived: vi.fn().mockResolvedValue(undefined),
+    onLocationReceived: vi.fn().mockResolvedValue(undefined),
   } as any
 
   processor = new MlsMessageEventProcessor(coreCryptoService, conversationService, mlsFallbackStrategy, wireEventsHandler)
@@ -141,6 +143,19 @@ describe('MlsMessageEventProcessor', () => {
         expect(wireEventsHandler.onAssetMessageReceived).not.toHaveBeenCalled()
       })
 
+      it('should call onLocationReceived for location messages', async () => {
+        const locationMessage = makeLocationMessage()
+        vi.mocked(ProtobufDeserializer.toWireMessage).mockReturnValue(locationMessage)
+
+        await processor.process(makeEvent())
+
+        expect(wireEventsHandler.onLocationReceived).toHaveBeenCalledTimes(1)
+        expect(wireEventsHandler.onLocationReceived).toHaveBeenCalledWith(locationMessage)
+        expect(wireEventsHandler.onTextMessageReceived).not.toHaveBeenCalled()
+        expect(wireEventsHandler.onAssetMessageReceived).not.toHaveBeenCalled()
+        expect(wireEventsHandler.onPingReceived).not.toHaveBeenCalled()
+      })
+
       it('should not forward unknown message types', async () => {
         vi.mocked(ProtobufDeserializer.toWireMessage).mockReturnValue(makeUnknownMessage())
 
@@ -149,6 +164,7 @@ describe('MlsMessageEventProcessor', () => {
         expect(wireEventsHandler.onTextMessageReceived).not.toHaveBeenCalled()
         expect(wireEventsHandler.onAssetMessageReceived).not.toHaveBeenCalled()
         expect(wireEventsHandler.onPingReceived).not.toHaveBeenCalled()
+        expect(wireEventsHandler.onLocationReceived).not.toHaveBeenCalled()
       })
 
       it('should deserialize the message with the decrypted bytes and qualified conversation', async () => {
