@@ -19,7 +19,7 @@ import rootMessage from '../../../src/generated/messages.js'
 import { ProtobufDeserializer } from '../../../src/mappers/protobuf/ProtobufDeserializer.js'
 import { ProtobufSerializer } from '../../../src/mappers/protobuf/ProtobufSerializer.js'
 import { QualifiedId } from '../../../src/model/QualifiedId.js'
-import { CompositeButtonActionConfirmation, Location, Ping, TextMessage } from '../../../src/model/WireMessage.js'
+import { CompositeButtonActionConfirmation, DeletedMessage, Location, Ping, TextMessage } from '../../../src/model/WireMessage.js'
 
 const { GenericMessage } = rootMessage
 
@@ -207,6 +207,21 @@ describe('Protobuf serialization', () => {
     expect(result.location?.longitude).toBeCloseTo(13.404954)
     expect(result.location?.name).toBe('Berlin')
     expect(result.location?.zoom).toBe(12)
+  })
+
+  it('serializes deleted messages', () => {
+    const message = DeletedMessage.create({
+      id: 'message-id',
+      conversationId,
+      messageId: 'deleted-message-id'
+    })
+
+    const serialized = ProtobufSerializer.toGenericMessageByteArray(message)
+    const result = GenericMessage.decode(serialized)
+
+    expect(result.messageId).toBe('message-id')
+    expect(result.content).toBe('deleted')
+    expect(result.deleted?.messageId).toBe('deleted-message-id')
   })
 
   it('deserializes composite button action confirmations', () => {

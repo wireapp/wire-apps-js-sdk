@@ -31,6 +31,7 @@ import {
   CompositeMessage,
   Ping,
   Location,
+  DeletedMessage,
   type Audio,
   type Image,
   type Video,
@@ -449,7 +450,7 @@ class SampleEventsHandler extends WireEventsHandler {
           text: `Members in conversation ${obfuscateId(targetQualifiedId.id)}@${targetQualifiedId.domain} (${members.length}):\n${memberList}`
         }))
       },
-      'test-composite-message': async (conversationId, command) => {
+      'test-composite-message': async (conversationId) => {
         const msg = CompositeMessage.create({
           conversationId: conversationId,
           text: "Composite Title",
@@ -464,6 +465,25 @@ class SampleEventsHandler extends WireEventsHandler {
         })
   
         await this.manager.sendMessage(msg)
+      },
+      'test-deleted-message': async (conversationId) => {
+        this.appLogger?.info(`[Sample App] Sending a text message and then deleting it after 3 seconds`)
+
+        const message = TextMessage.create({
+          conversationId: conversationId,
+          text: "This message will be deleted in 3 seconds"
+        })
+
+        await this.manager.sendMessage(message)
+
+        await new Promise(resolve => setTimeout(resolve, 3000))
+
+        const deleted = DeletedMessage.create({
+          conversationId: conversationId,
+          messageId: message.id
+        })
+
+        await this.manager.sendMessage(deleted)
       }
       // More reserved test commands will be added here
     }

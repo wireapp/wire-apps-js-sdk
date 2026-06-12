@@ -36,7 +36,8 @@ import {
   CompositeButtonActionConfirmation,
   CompositeMessage,
   Ping,
-  Location
+  Location,
+  DeletedMessage
 } from '../../model/WireMessage.js';
 import {MessageEncryptionAlgorithm} from "../../model/protobuf/MessageEncryptionAlgorithm.js";
 import {MessageLinkPreviewMapper} from "./MessageLinkPreviewMapper.js";
@@ -71,6 +72,8 @@ export const ProtobufDeserializer = {
       return unpackEphemeralPing(genericMessage, qualifiedConversation)
     } else if (genericMessage.location) {
       return unpackLocation(genericMessage, qualifiedConversation)
+    } else if (genericMessage.deleted) {
+      return unpackDeletedMessage(genericMessage, qualifiedConversation)
     } else {
       return new Unknown()
     }
@@ -224,6 +227,19 @@ function unpackLocation(
     longitude: location.longitude,
     name: Object.hasOwn(location, 'name') ? location.name : null,
     zoom: Object.hasOwn(location, 'zoom') ? location.zoom : null
+  })
+}
+
+function unpackDeletedMessage(
+  genericMessage: IGenericMessage,
+  qualifiedConversation: QualifiedId
+): DeletedMessage {
+  const deletedMessage = genericMessage.deleted!
+
+  return DeletedMessage.create({
+    id: genericMessage.messageId,
+    conversationId: qualifiedConversation,
+    messageId: deletedMessage.messageId
   })
 }
 
