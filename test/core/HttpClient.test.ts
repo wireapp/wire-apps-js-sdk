@@ -113,6 +113,78 @@ describe('HttpClient', () => {
 
       // then
       expect(httpClient.getCachedAccessToken()).toEqual(FULL_FLEDGED_ACCESS_TOKEN)
+    });
+
+    describe('on expiry', () => {
+      const TEST_AUTHORIZED_ENDPOINT = 'test-endpoint'
+      let tokenRefreshCount: number
+      let requestCount: number
+
+      beforeEach(() => {
+        tokenRefreshCount = 0
+        requestCount = 0
+
+        server.use(
+          http.post(`${TEST_API_HOST}/v*/access`, () => {
+            tokenRefreshCount++
+            return HttpResponse.json({ access_token: TEST_ACCESS_TOKEN })
+          }),
+          http.get(`${TEST_API_HOST}/v*/${TEST_AUTHORIZED_ENDPOINT}`, ({ request }) => {
+            const accessToken = request.headers.get('Authorization')
+            requestCount++
+
+            if (!accessToken) {
+              return HttpResponse.html(
+                `<html>
+                <head><title>401 Authorization Required</title></head>
+                <body>
+                <center><h1>401 Authorization Required</h1></center>
+                <hr><center>nginx</center>
+                </body>
+                </html>`,
+              {
+                status: 401
+              })
+            }
+            return HttpResponse.json({data: 'example'}, {status: 200})
+          })
+        )
+      })
+
+      it('should be refreshed', async () => {
+        // given
+        const httpClient = createHttpClient(mockAppProperties)
+
+        // when
+        await httpClient.getRequest(TEST_AUTHORIZED_ENDPOINT)
+
+        // then
+        expect(tokenRefreshCount).toBe(1)
+      });
+
+      it('should retry the original request', async () => {
+        // given
+        const httpClient = createHttpClient(mockAppProperties)
+
+        // when
+        const response = await httpClient.request(TEST_AUTHORIZED_ENDPOINT, {method: "GET"})
+
+        // then
+        expect(requestCount).toBe(2)
+        expect(response.response.status).toBe(200)
+      });
+
+      it('should not refresh on the next request', async () => {
+        // given
+        const httpClient = createHttpClient(mockAppProperties)
+        await httpClient.getRequest(TEST_AUTHORIZED_ENDPOINT)
+
+        // when
+        await httpClient.getRequest(TEST_AUTHORIZED_ENDPOINT)
+
+        // then
+        expect(tokenRefreshCount).toBe(1)
+      });
     })
   })
   describe('App token', () => {
