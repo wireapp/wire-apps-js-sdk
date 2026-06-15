@@ -218,8 +218,6 @@ export class HttpClient {
       includeApiVersion?: boolean;
     }
   ): Promise<T> {
-    await this.verifyAuthorizationToken()
-
     const {
       headerContentType = this.HEADER_DEFAULT_CONTENT_TYPE,
       headerAccept = this.HEADER_DEFAULT_ACCEPT,
