@@ -82,31 +82,8 @@ export class HttpClient {
     ) { return }
     this.logger.info("Access token expired, getting a new one.")
 
-    const path = this.cachedDeviceId
-      ? `access?client_id=${this.cachedDeviceId}`
-      : `access`
     try {
-      const accessResponse = (await this.request<AccessResponse>(path, {
-        method: "POST",
-        headers: {
-          "Cookie": `zuid=${this.appProperties.getBackendCookie()}`
-        }
-      }))
-
-      const setCookieHeaders: string[] = accessResponse.response.headers.getSetCookie();
-      const zuidCookie = setCookieHeaders
-        ?.find((cookie: string) => cookie.startsWith('zuid='))
-        ?.split(';')[0]
-        ?.slice(5); // remove "zuid="
-      if (zuidCookie)
-        this.appProperties.saveBackendCookie(zuidCookie)
-
-      const accessToken = accessResponse.data.access_token
-
-      this.cachedAccessToken = accessToken
-      this.tokenExpirationTimestamp = currentTime + (accessResponse.data.expires_in * 1000) // seconds to milliseconds
-
-      this.setAuthorizationToken(accessToken)
+      await this.refreshToken(currentTime)
     } catch (exception) {
       this.logger.error('Unable to retrieve access token, Error:', exception)
       if (exception instanceof WireApiException && exception.isCredentialsInvalid()) {
@@ -116,6 +93,34 @@ export class HttpClient {
         throw new Error("Current cookie/api-token is expired. Get a new apiToken and restart the App")
       }
     }
+  }
+
+  async refreshToken(currentTime: number) {
+    const path = this.cachedDeviceId
+      ? `access?client_id=${this.cachedDeviceId}`
+      : `access`
+
+    const accessResponse = (await this.request<AccessResponse>(path, {
+      method: "POST",
+      headers: {
+        "Cookie": `zuid=${this.appProperties.getBackendCookie()}`
+      }
+    }))
+
+    const setCookieHeaders: string[] = accessResponse.response.headers.getSetCookie();
+    const zuidCookie = setCookieHeaders
+      ?.find((cookie: string) => cookie.startsWith('zuid='))
+      ?.split(';')[0]
+      ?.slice(5); // remove "zuid="
+    if (zuidCookie)
+      this.appProperties.saveBackendCookie(zuidCookie)
+
+    const accessToken = accessResponse.data.access_token
+
+    this.cachedAccessToken = accessToken
+    this.tokenExpirationTimestamp = currentTime + (accessResponse.data.expires_in * 1000) // seconds to milliseconds
+
+    this.setAuthorizationToken(accessToken)
   }
 
   private isAuthenticatedPath(path: string): boolean {
