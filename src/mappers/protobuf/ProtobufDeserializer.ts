@@ -17,7 +17,7 @@
 import rootMessage from "../../generated/messages.js";
 import type {Composite as ProtobufComposite, IGenericMessage} from "../../generated/messages.js";
 import { QualifiedId } from "../../model/QualifiedId.js";
-const { GenericMessage } = rootMessage;
+const { GenericMessage, Confirmation } = rootMessage;
 import type {
   WireMessage,
   AssetMetadata,
@@ -37,7 +37,10 @@ import {
   CompositeMessage,
   Ping,
   Location,
-  DeletedMessage
+  DeletedMessage,
+  Receipt,
+  ReceiptType,
+  Ignored
 } from '../../model/WireMessage.js';
 import {MessageEncryptionAlgorithm} from "../../model/protobuf/MessageEncryptionAlgorithm.js";
 import {MessageLinkPreviewMapper} from "./MessageLinkPreviewMapper.js";
@@ -74,6 +77,8 @@ export const ProtobufDeserializer = {
       return unpackLocation(genericMessage, qualifiedConversation)
     } else if (genericMessage.deleted) {
       return unpackDeletedMessage(genericMessage, qualifiedConversation)
+    } else if (genericMessage.confirmation) {
+      return unpackReceipt(genericMessage, qualifiedConversation)
     } else {
       return new Unknown()
     }
@@ -241,6 +246,38 @@ function unpackDeletedMessage(
     conversationId: qualifiedConversation,
     messageId: deletedMessage.messageId
   })
+}
+
+function unpackReceipt(
+  genericMessage: IGenericMessage,
+  qualifiedConversation: QualifiedId
+): Receipt | Ignored {
+  const receipt = genericMessage.confirmation!
+  let type: ReceiptType | null | undefined
+
+  switch (receipt?.type) {
+    case Confirmation.Type.DELIVERED:
+      type = ReceiptType.DELIVERED
+      break
+    case Confirmation.Type.READ:
+      type = ReceiptType.READ
+      break
+    default:
+      type = null
+  }
+
+  if (type) {
+    return Receipt.create(
+      {
+        id: genericMessage.messageId,
+        conversationId: qualifiedConversation,
+        receiptType: type,
+        messageIds: [receipt.firstMessageId, ...(receipt.moreMessageIds ?? [])]
+      }
+    )
+  } else {
+    return new Ignored()
+  }
 }
 
 /**

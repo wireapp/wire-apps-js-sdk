@@ -19,9 +19,9 @@ import rootMessage from '../../../src/generated/messages.js'
 import { ProtobufDeserializer } from '../../../src/mappers/protobuf/ProtobufDeserializer.js'
 import { ProtobufSerializer } from '../../../src/mappers/protobuf/ProtobufSerializer.js'
 import { QualifiedId } from '../../../src/model/QualifiedId.js'
-import { CompositeButtonActionConfirmation, DeletedMessage, Location, Ping, TextMessage } from '../../../src/model/WireMessage.js'
+import { CompositeButtonActionConfirmation, DeletedMessage, Location, Ping, Receipt, ReceiptType, TextMessage } from '../../../src/model/WireMessage.js'
 
-const { GenericMessage } = rootMessage
+const { GenericMessage, Confirmation } = rootMessage
 
 const wireBlogUrl = "https://wire.com/blog"
 
@@ -222,6 +222,54 @@ describe('Protobuf serialization', () => {
     expect(result.messageId).toBe('message-id')
     expect(result.content).toBe('deleted')
     expect(result.deleted?.messageId).toBe('deleted-message-id')
+  })
+
+  it('serializes delivered receipts', () => {
+    const message = Receipt.create({
+      id: 'message-id',
+      conversationId,
+      receiptType: ReceiptType.DELIVERED,
+      messageIds: ['first-message-id', 'second-message-id', 'third-message-id']
+    })
+
+    const serialized = ProtobufSerializer.toGenericMessageByteArray(message)
+    const result = GenericMessage.decode(serialized)
+
+    expect(result.messageId).toBe('message-id')
+    expect(result.content).toBe('confirmation')
+    expect(result.confirmation?.type).toBe(Confirmation.Type.DELIVERED)
+    expect(result.confirmation?.firstMessageId).toBe('first-message-id')
+    expect(result.confirmation?.moreMessageIds).toStrictEqual(['second-message-id', 'third-message-id'])
+  })
+
+  it('serializes read receipts', () => {
+    const message = Receipt.create({
+      id: 'message-id',
+      conversationId,
+      receiptType: ReceiptType.READ,
+      messageIds: ['read-message-id']
+    })
+
+    const serialized = ProtobufSerializer.toGenericMessageByteArray(message)
+    const result = GenericMessage.decode(serialized)
+
+    expect(result.content).toBe('confirmation')
+    expect(result.confirmation?.type).toBe(Confirmation.Type.READ)
+    expect(result.confirmation?.firstMessageId).toBe('read-message-id')
+    expect(result.confirmation?.moreMessageIds).toStrictEqual([])
+  })
+
+  it('throws when serializing receipts without message ids', () => {
+    const message = Receipt.create({
+      id: 'message-id',
+      conversationId,
+      receiptType: ReceiptType.DELIVERED,
+      messageIds: []
+    })
+
+    expect(() => ProtobufSerializer.toGenericMessageByteArray(message)).toThrow(
+      'First messageId for Receipt message type is null'
+    )
   })
 
   it('deserializes composite button action confirmations', () => {

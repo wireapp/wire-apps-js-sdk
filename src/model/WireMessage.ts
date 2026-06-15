@@ -87,6 +87,26 @@ export class Unknown implements WireMessageBase {
   readonly type = "unknown" as const
 }
 
+export class Ignored implements WireMessageBase {
+  get id(): string {
+    throw new Error("Unknown message, no ID")
+  }
+
+  get conversationId(): QualifiedId {
+    throw new Error("Unknown message, no conversation")
+  }
+
+  get sender(): QualifiedId {
+    throw new Error("Unknown message, no sender")
+  }
+
+  get timestamp(): Date {
+    throw new Error("Unknown message, no timestamp")
+  }
+
+  readonly type = "ignored" as const
+}
+
 export interface TextMessage extends WireMessageBase, Item, Ephemeral, Replyable {
   type: 'text'
   text: string
@@ -378,8 +398,43 @@ export const DeletedMessage = {
   }
 }
 
+export const ReceiptType = {
+  DELIVERED: "DELIVERED",
+  READ: "READ"
+} as const;
+
+export type ReceiptType = typeof ReceiptType[keyof typeof ReceiptType];
+
+export interface Receipt extends WireMessageBase {
+  type: 'receipt'
+  receiptType: ReceiptType
+  messageIds: string[]
+}
+
+export const Receipt = {
+  create(
+    params: {
+      id?: string
+      conversationId: QualifiedId
+      receiptType: ReceiptType
+      messageIds: string[]
+    }
+  ): Receipt {
+    return {
+      type: 'receipt',
+      id: params.id ?? crypto.randomUUID(),
+      conversationId: params.conversationId,
+      sender: new QualifiedId(crypto.randomUUID(), crypto.randomUUID()), // TODO(alexandre): change to real sender
+      receiptType: params.receiptType,
+      messageIds: params.messageIds,
+      timestamp: new Date(), // TODO(alexandre): only from replyable type
+    }
+  }
+}
+
 export type WireMessage =
   | Unknown
+  | Ignored
   | TextMessage
   | AssetMessage
   | CompositeButtonAction
@@ -387,4 +442,5 @@ export type WireMessage =
   | CompositeMessage
   | Ping
   | Location
-  | DeletedMessage;
+  | DeletedMessage
+  | Receipt;
