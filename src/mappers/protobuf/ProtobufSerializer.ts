@@ -95,7 +95,7 @@ export const ProtobufSerializer = {
       case 'deleted':
         builtMessage = packDeletedMessage(wireMessage, genericMessage)
         break
-      
+
       case 'receipt':
         builtMessage = packReceipt(wireMessage, genericMessage)
         break

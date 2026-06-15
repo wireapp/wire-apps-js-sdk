@@ -89,19 +89,19 @@ export class Unknown implements WireMessageBase {
 
 export class Ignored implements WireMessageBase {
   get id(): string {
-    throw new Error("Unknown message, no ID")
+    throw new Error("Ignored message, no ID")
   }
 
   get conversationId(): QualifiedId {
-    throw new Error("Unknown message, no conversation")
+    throw new Error("Ignored message, no conversation")
   }
 
   get sender(): QualifiedId {
-    throw new Error("Unknown message, no sender")
+    throw new Error("Ignored message, no sender")
   }
 
   get timestamp(): Date {
-    throw new Error("Unknown message, no timestamp")
+    throw new Error("Ignored message, no timestamp")
   }
 
   readonly type = "ignored" as const
