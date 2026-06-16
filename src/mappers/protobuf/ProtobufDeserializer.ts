@@ -40,8 +40,8 @@ import {
   DeletedMessage,
   Receipt,
   ReceiptType,
-  Ignored,
-  Reaction
+  Reaction,
+  Ignored
 } from '../../model/WireMessage.js';
 import {MessageEncryptionAlgorithm} from "../../model/protobuf/MessageEncryptionAlgorithm.js";
 import {MessageLinkPreviewMapper} from "./MessageLinkPreviewMapper.js";

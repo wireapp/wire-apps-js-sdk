@@ -136,6 +136,16 @@ class SampleEventsHandler extends WireEventsHandler {
     locationDetails += `\nName: ${wireMessage.name}`
     locationDetails += `\nzoom: ${wireMessage.zoom}`
 
+    // Sending a Read Receipt for the received message
+    const receipt = Receipt.create({
+      conversationId: wireMessage.conversationId,
+      receiptType: ReceiptType.READ,
+      messageIds: [wireMessage.id]
+    })
+
+    await this.manager.sendMessage(receipt)
+
+    // Sending a Text message for the received message
     const textMessage = TextMessage.create({
       conversationId: wireMessage.conversationId,
       text: locationDetails
