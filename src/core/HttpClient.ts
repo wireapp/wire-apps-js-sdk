@@ -151,6 +151,8 @@ export class HttpClient {
     const response = await fetch(url, optionsAndHeaders)
 
     if (!response.ok) {
+      if (response.status == 401) {
+      }
       let standardError: WireApiError | undefined
 
       const contentType = response.headers.get("content-type")
