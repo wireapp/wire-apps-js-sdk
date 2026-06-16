@@ -136,7 +136,7 @@ export class HttpClient {
     const response = await fetch(url, optionsAndHeaders)
 
     if (!response.ok) {
-      if (response.status == 401 && shouldRetry) {
+      if (response.status === 401 && shouldRetry) {
         this.logger.info("Access token not valid, getting a new one.")
         await this.refreshAccessToken()
         return this.request(path, options, includeApiVersion, false)
