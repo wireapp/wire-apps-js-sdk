@@ -95,7 +95,10 @@ export class HttpClient {
       headers: {
         "Cookie": `zuid=${this.appProperties.getBackendCookie()}`
       }
-    }))
+    },
+    true,
+    false
+    ))
 
     const setCookieHeaders: string[] = accessResponse.response.headers.getSetCookie();
     const zuidCookie = setCookieHeaders
@@ -116,7 +119,7 @@ export class HttpClient {
     path: string,
     options: RequestInit = {},
     includeApiVersion: boolean = true,
-    isRetry: boolean = false
+    shouldRetry: boolean = true
   ): Promise<{ data: T; response: Response }> {
     const optionsAndHeaders = {
       ...options,
@@ -133,10 +136,10 @@ export class HttpClient {
     const response = await fetch(url, optionsAndHeaders)
 
     if (!response.ok) {
-      if (response.status == 401 && !isRetry) {
+      if (response.status == 401 && shouldRetry) {
         this.logger.info("Access token not valid, getting a new one.")
         await this.refreshAccessToken()
-        return this.request(path, options, includeApiVersion, true)
+        return this.request(path, options, includeApiVersion, false)
       }
       let standardError: WireApiError | undefined
 
