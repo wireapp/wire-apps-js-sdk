@@ -25,7 +25,6 @@ import type {AccessResponse} from "../api/response/AccessResponse.js";
 @singleton()
 export class HttpClient {
   private logger = LoggerFactory.getLogger(this.constructor.name)
-  private tokenExpirationTimestamp: number | null = null
   private cachedAccessToken: string | null = null
   private cachedDeviceId: string | null = null
   private headers: Record<string, string> = {
@@ -72,18 +71,10 @@ export class HttpClient {
   }
 
   async verifyAuthorizationToken() {
-    const currentTime = Date.now()
-
-    // Check if token is valid (not null and not expired)
-    if (
-      this.cachedAccessToken != null &&
-      this.tokenExpirationTimestamp != null &&
-      currentTime < this.tokenExpirationTimestamp
-    ) { return }
     this.logger.info("Access token expired, getting a new one.")
 
     try {
-      await this.refreshToken(currentTime)
+      await this.refreshToken()
     } catch (exception) {
       this.logger.error('Unable to retrieve access token, Error:', exception)
       if (exception instanceof WireApiException && exception.isCredentialsInvalid()) {
@@ -95,7 +86,7 @@ export class HttpClient {
     }
   }
 
-  async refreshToken(currentTime: number) {
+  async refreshToken() {
     const path = this.cachedDeviceId
       ? `access?client_id=${this.cachedDeviceId}`
       : `access`
@@ -118,15 +109,8 @@ export class HttpClient {
     const accessToken = accessResponse.data.access_token
 
     this.cachedAccessToken = accessToken
-    this.tokenExpirationTimestamp = currentTime + (accessResponse.data.expires_in * 1000) // seconds to milliseconds
 
     this.setAuthorizationToken(accessToken)
-  }
-
-  private isAuthenticatedPath(path: string): boolean {
-    return !this.unauthenticatedPaths.some(prefix =>
-      path.startsWith(prefix)
-    );
   }
 
   async request<T>(
@@ -134,8 +118,6 @@ export class HttpClient {
     options: RequestInit = {},
     includeApiVersion: boolean = true
   ): Promise<{ data: T; response: Response }> {
-    if (this.isAuthenticatedPath(path))
-      await this.verifyAuthorizationToken()
     const optionsAndHeaders = {
       ...options,
       headers: {
@@ -294,5 +276,4 @@ export class HttpClient {
   private API_HOST_VERSION: string = "v15"
   private HEADER_DEFAULT_CONTENT_TYPE = "application/json"
   private HEADER_DEFAULT_ACCEPT = "application/json"
-  private readonly unauthenticatedPaths = ['access', 'api-version']
 }
