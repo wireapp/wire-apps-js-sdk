@@ -72,6 +72,7 @@ export class HttpClient {
 
   async refreshAccessToken() {
     try {
+      this.logger.info('Obtaining new access token')
       await this.obtainAccessToken()
     } catch (exception) {
       this.logger.error('Unable to retrieve access token, Error:', exception)
