@@ -70,11 +70,9 @@ export class HttpClient {
     return this.cachedDeviceId!
   }
 
-  async verifyAuthorizationToken() {
-    this.logger.info("Access token expired, getting a new one.")
-
+  async refreshAccessToken() {
     try {
-      await this.refreshToken()
+      await this.obtainAccessToken()
     } catch (exception) {
       this.logger.error('Unable to retrieve access token, Error:', exception)
       if (exception instanceof WireApiException && exception.isCredentialsInvalid()) {
@@ -86,7 +84,7 @@ export class HttpClient {
     }
   }
 
-  async refreshToken() {
+  private async obtainAccessToken() {
     const path = this.cachedDeviceId
       ? `access?client_id=${this.cachedDeviceId}`
       : `access`
@@ -134,6 +132,8 @@ export class HttpClient {
 
     if (!response.ok) {
       if (response.status == 401) {
+        this.logger.info("Access token not valid, getting a new one.")
+        await this.refreshAccessToken()
       }
       let standardError: WireApiError | undefined
 

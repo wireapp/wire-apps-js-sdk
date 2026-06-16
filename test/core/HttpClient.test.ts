@@ -93,7 +93,7 @@ describe('HttpClient', () => {
       const httpClient = createHttpClient(mockAppProperties)
 
       // when
-      await httpClient.verifyAuthorizationToken()
+      await httpClient.refreshAccessToken()
 
       // then
       expect(httpClient.getCachedAccessToken()).toEqual(TEST_ACCESS_TOKEN)
@@ -109,7 +109,7 @@ describe('HttpClient', () => {
       const testPreKeys: PreKeyCrypto[] = [new PreKeyCrypto(1, 'foo')]
       await clientsApiClient.registerClient(testPreKeys, testPreKeys[0]!)
 
-      await httpClient.verifyAuthorizationToken()
+      await httpClient.refreshAccessToken()
 
       // then
       expect(httpClient.getCachedAccessToken()).toEqual(FULL_FLEDGED_ACCESS_TOKEN)
@@ -198,7 +198,7 @@ describe('HttpClient', () => {
       const httpClient = createHttpClient(mockAppProperties)
 
       // when
-      await httpClient.verifyAuthorizationToken()
+      await httpClient.refreshAccessToken()
 
       // then
       const capturedRequest = await requestPromise
@@ -211,7 +211,7 @@ describe('HttpClient', () => {
       const httpClient = createHttpClient(mockAppProperties)
 
       // when
-      await httpClient.verifyAuthorizationToken()
+      await httpClient.refreshAccessToken()
 
       // then
       expect(storedCookie).toEqual(NEW_COOKIE)
@@ -223,7 +223,7 @@ describe('HttpClient', () => {
       const httpClient = createHttpClient(mockAppProperties)
 
       // when & then
-      await expect(httpClient.verifyAuthorizationToken()).rejects.toThrow()
+      await expect(httpClient.refreshAccessToken()).rejects.toThrow()
       expect(mockAppProperties.deleteBackendCookie).toHaveBeenCalled()
     });
   })
