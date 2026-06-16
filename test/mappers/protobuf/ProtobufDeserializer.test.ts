@@ -19,7 +19,7 @@ import rootMessage from '../../../src/generated/messages.js'
 import { ProtobufDeserializer } from '../../../src/mappers/protobuf/ProtobufDeserializer.js'
 import { QualifiedId } from '../../../src/model/QualifiedId.js'
 
-const { GenericMessage } = rootMessage
+const { GenericMessage, Confirmation } = rootMessage
 
 describe('Protobuf deserialization', () => {
   const conversationId = new QualifiedId('conversation-id', 'wire.com')
@@ -166,5 +166,58 @@ describe('Protobuf deserialization', () => {
     expect(result.type === 'deleted' ? result.id : null).toBe('message-id')
     expect(result.type === 'deleted' ? result.conversationId : null).toStrictEqual(conversationId)
     expect(result.type === 'deleted' ? result.messageId : null).toBe('deleted-message-id')
+  })
+
+  it('deserializes delivered receipts', () => {
+    const genericMessage = GenericMessage.create({
+      messageId: 'message-id',
+      confirmation: {
+        type: Confirmation.Type.DELIVERED,
+        firstMessageId: 'first-message-id',
+        moreMessageIds: ['second-message-id', 'third-message-id']
+      }
+    })
+
+    const result = ProtobufDeserializer.toWireMessage(GenericMessage.encode(genericMessage).finish(), conversationId)
+
+    expect(result.type).toBe('receipt')
+    expect(result.type === 'receipt' ? result.id : null).toBe('message-id')
+    expect(result.type === 'receipt' ? result.conversationId : null).toStrictEqual(conversationId)
+    expect(result.type === 'receipt' ? result.receiptType : null).toBe('DELIVERED')
+    expect(result.type === 'receipt' ? result.messageIds : []).toStrictEqual([
+      'first-message-id',
+      'second-message-id',
+      'third-message-id'
+    ])
+  })
+
+  it('deserializes read receipts', () => {
+    const genericMessage = GenericMessage.create({
+      messageId: 'message-id',
+      confirmation: {
+        type: Confirmation.Type.READ,
+        firstMessageId: 'read-message-id'
+      }
+    })
+
+    const result = ProtobufDeserializer.toWireMessage(GenericMessage.encode(genericMessage).finish(), conversationId)
+
+    expect(result.type).toBe('receipt')
+    expect(result.type === 'receipt' ? result.receiptType : null).toBe('READ')
+    expect(result.type === 'receipt' ? result.messageIds : []).toStrictEqual(['read-message-id'])
+  })
+
+  it('ignores unsupported receipt types', () => {
+    const genericMessage = GenericMessage.create({
+      messageId: 'message-id',
+      confirmation: {
+        type: 99,
+        firstMessageId: 'message-id'
+      }
+    })
+
+    const result = ProtobufDeserializer.toWireMessage(GenericMessage.encode(genericMessage).finish(), conversationId)
+
+    expect(result.type).toBe('ignored')
   })
 })

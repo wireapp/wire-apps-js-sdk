@@ -45,6 +45,7 @@ const makeAssetMessage = () => ({type: 'asset' as const, mimeType: 'image/png', 
 const makePing = () => ({type: 'ping' as const, id: 'ping-id'} as any)
 const makeLocationMessage = () => ({type: 'location' as const, id: 'location-id'} as any)
 const makeDeletedMessage = () => ({type: 'deleted' as const, id: 'message-id', messageId: 'deleted-message-id'} as any)
+const makeReceipt = () => ({type: 'receipt' as const, id: 'message-id', messageIds: ['delivered-message-id']} as any)
 const makeUnknownMessage = () => ({type: 'unknown' as const} as any)
 
 let conversationService: ConversationService
@@ -74,6 +75,7 @@ beforeEach(() => {
     onPingReceived: vi.fn().mockResolvedValue(undefined),
     onLocationReceived: vi.fn().mockResolvedValue(undefined),
     onMessageDeleted: vi.fn().mockResolvedValue(undefined),
+    onMessageDelivered: vi.fn().mockResolvedValue(undefined),
   } as any
 
   processor = new MlsMessageEventProcessor(coreCryptoService, conversationService, mlsFallbackStrategy, wireEventsHandler)
@@ -172,6 +174,21 @@ describe('MlsMessageEventProcessor', () => {
         expect(wireEventsHandler.onLocationReceived).not.toHaveBeenCalled()
       })
 
+      it('should call onMessageDelivered for receipt messages', async () => {
+        const receipt = makeReceipt()
+        vi.mocked(ProtobufDeserializer.toWireMessage).mockReturnValue(receipt)
+
+        await processor.process(makeEvent())
+
+        expect(wireEventsHandler.onMessageDelivered).toHaveBeenCalledTimes(1)
+        expect(wireEventsHandler.onMessageDelivered).toHaveBeenCalledWith(receipt)
+        expect(wireEventsHandler.onTextMessageReceived).not.toHaveBeenCalled()
+        expect(wireEventsHandler.onAssetMessageReceived).not.toHaveBeenCalled()
+        expect(wireEventsHandler.onPingReceived).not.toHaveBeenCalled()
+        expect(wireEventsHandler.onLocationReceived).not.toHaveBeenCalled()
+        expect(wireEventsHandler.onMessageDeleted).not.toHaveBeenCalled()
+      })
+
       it('should not forward unknown message types', async () => {
         vi.mocked(ProtobufDeserializer.toWireMessage).mockReturnValue(makeUnknownMessage())
 
@@ -182,6 +199,7 @@ describe('MlsMessageEventProcessor', () => {
         expect(wireEventsHandler.onPingReceived).not.toHaveBeenCalled()
         expect(wireEventsHandler.onLocationReceived).not.toHaveBeenCalled()
         expect(wireEventsHandler.onMessageDeleted).not.toHaveBeenCalled()
+        expect(wireEventsHandler.onMessageDelivered).not.toHaveBeenCalled()
       })
 
       it('should deserialize the message with the decrypted bytes and qualified conversation', async () => {

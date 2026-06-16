@@ -24,13 +24,14 @@ import type {
   Asset,
   IButtonActionConfirmation
 } from "../../generated/messages.js";
-const { GenericMessage, Composite, Ephemeral, Knock, Location: ProtobufLocation, MessageDelete } = rootMessage;
+const { GenericMessage, Composite, Ephemeral, Knock, Location: ProtobufLocation, MessageDelete, Confirmation } = rootMessage;
 import type {
   WireMessage,
   Item,
   Ping,
   Location,
-  DeletedMessage
+  DeletedMessage,
+  Receipt
 } from '../../model/WireMessage.js';
 import {
   TextMessage,
@@ -38,7 +39,8 @@ import {
   CompositeButton,
   CompositeButtonAction,
   CompositeButtonActionConfirmation,
-  CompositeMessage
+  CompositeMessage,
+  ReceiptType
 } from '../../model/WireMessage.js';
 import {MessageLinkPreviewMapper} from "./MessageLinkPreviewMapper.js";
 import {MessageMentionMapper} from "./MessageMentionMapper.js";
@@ -92,6 +94,10 @@ export const ProtobufSerializer = {
 
       case 'deleted':
         builtMessage = packDeletedMessage(wireMessage, genericMessage)
+        break
+
+      case 'receipt':
+        builtMessage = packReceipt(wireMessage, genericMessage)
         break
 
         // TODO: Add other message types here
@@ -316,6 +322,36 @@ function packDeletedMessage(
     ...genericMessage,
     deleted: MessageDelete.create({
       messageId: wireMessage.messageId
+    })
+  } as IGenericMessage
+}
+
+function packReceipt(
+  wireMessage: Receipt,
+  genericMessage: Partial<IGenericMessage>
+): IGenericMessage {
+  let type
+  switch (wireMessage.receiptType) {
+    case ReceiptType.DELIVERED:
+      type = Confirmation.Type.DELIVERED
+      break
+    case ReceiptType.READ:
+      type = Confirmation.Type.READ
+      break
+  }
+
+  const [firstMessageId, ...moreMessageIds] = wireMessage.messageIds;
+
+  if (!firstMessageId) {
+    throw new Error("First messageId for Receipt message type is null") // TODO: Change to WireException once implemented
+  }
+
+  return {
+    ...genericMessage,
+    confirmation: Confirmation.create({
+      type: type,
+      firstMessageId: firstMessageId,
+      moreMessageIds: moreMessageIds
     })
   } as IGenericMessage
 }
