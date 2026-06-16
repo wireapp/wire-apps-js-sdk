@@ -24,14 +24,15 @@ import type {
   Asset,
   IButtonActionConfirmation
 } from "../../generated/messages.js";
-const { GenericMessage, Composite, Ephemeral, Knock, Location: ProtobufLocation, MessageDelete, Confirmation } = rootMessage;
+const { GenericMessage, Composite, Ephemeral, Knock, Location: ProtobufLocation, MessageDelete, Confirmation, Reaction: ProtobufReaction } = rootMessage;
 import type {
   WireMessage,
   Item,
   Ping,
   Location,
   DeletedMessage,
-  Receipt
+  Receipt,
+  Reaction
 } from '../../model/WireMessage.js';
 import {
   TextMessage,
@@ -98,6 +99,10 @@ export const ProtobufSerializer = {
 
       case 'receipt':
         builtMessage = packReceipt(wireMessage, genericMessage)
+        break
+
+      case 'reaction':
+        builtMessage = packReaction(wireMessage, genericMessage)
         break
 
         // TODO: Add other message types here
@@ -352,6 +357,24 @@ function packReceipt(
       type: type,
       firstMessageId: firstMessageId,
       moreMessageIds: moreMessageIds
+    })
+  } as IGenericMessage
+}
+
+function packReaction(
+  wireMessage: Reaction,
+  genericMessage: Partial<IGenericMessage>
+): IGenericMessage {
+  const emojis = [...wireMessage.emojiSet]
+    .map(emojiString => emojiString.trim())
+    .filter(emojiString => emojiString.length > 0)
+    .join(",")
+
+  return {
+    ...genericMessage,
+    reaction: ProtobufReaction.create({
+      messageId: wireMessage.messageId,
+      emoji: emojis
     })
   } as IGenericMessage
 }

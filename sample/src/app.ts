@@ -39,7 +39,8 @@ import {
   WireEventsHandler,
   WireUser,
   Receipt,
-  ReceiptType
+  ReceiptType,
+  Reaction
 } from 'wire-apps-js-sdk'
 import fs from 'fs'
 import path from 'node:path'
@@ -95,6 +96,24 @@ class SampleEventsHandler extends WireEventsHandler {
       })
 
       await this.manager.sendMessage(textMessage)
+
+      // Sending a Read Receipt for the received message
+      const receipt = Receipt.create({
+        conversationId: wireMessage.conversationId,
+        receiptType: ReceiptType.READ,
+        messageIds: [wireMessage.id]
+      })
+
+      await this.manager.sendMessage(receipt)
+
+      // Set an emoji on the received text message
+      const reaction = Reaction.create({
+        conversationId: wireMessage.conversationId,
+        messageId: wireMessage.id,
+        emojiSet: new Set<string>(["🧩"])
+      })
+
+      await this.manager.sendMessage(reaction)
     }
   }
 

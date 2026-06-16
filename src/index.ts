@@ -46,6 +46,7 @@ export {
   DeletedMessage,
   Receipt,
   ReceiptType,
+  Reaction,
   Ignored,
   Unknown,
   type LinkPreview,

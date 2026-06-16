@@ -40,6 +40,7 @@ import {
   DeletedMessage,
   Receipt,
   ReceiptType,
+  Reaction,
   Ignored
 } from '../../model/WireMessage.js';
 import {MessageEncryptionAlgorithm} from "../../model/protobuf/MessageEncryptionAlgorithm.js";
@@ -79,6 +80,8 @@ export const ProtobufDeserializer = {
       return unpackDeletedMessage(genericMessage, qualifiedConversation)
     } else if (genericMessage.confirmation) {
       return unpackReceipt(genericMessage, qualifiedConversation)
+    } else if (genericMessage.reaction) {
+      return unpackReaction(genericMessage, qualifiedConversation)
     } else {
       return new Unknown()
     }
@@ -90,7 +93,7 @@ function unpackTextMessage(
   qualifiedConversation: QualifiedId
 ): TextMessage {
   return TextMessage.create({
-    // TODO(alexandre): add messageId
+    messageId: genericMessage.messageId,
     conversationId: qualifiedConversation,
     text: genericMessage.text!.content,
     linkPreviews: genericMessage.text!.linkPreview?.map(MessageLinkPreviewMapper.fromProtobuf) ?? [],
@@ -131,6 +134,7 @@ function unpackAssetMessage(
   }
 
   return AssetMessage.create({
+    messageId: genericMessage.messageId,
     conversationId: qualifiedConversation,
     metadata: metadata,
     mimeType: original?.mimeType ?? "*/*",
@@ -267,17 +271,37 @@ function unpackReceipt(
   }
 
   if (type) {
-    return Receipt.create(
-      {
-        id: genericMessage.messageId,
-        conversationId: qualifiedConversation,
-        receiptType: type,
-        messageIds: [receipt.firstMessageId, ...(receipt.moreMessageIds ?? [])]
-      }
-    )
+    return Receipt.create({
+      id: genericMessage.messageId,
+      conversationId: qualifiedConversation,
+      receiptType: type,
+      messageIds: [receipt.firstMessageId, ...(receipt.moreMessageIds ?? [])]
+    })
   } else {
     return new Ignored()
   }
+}
+
+function unpackReaction(
+  genericMessage: IGenericMessage,
+  qualifiedConversation: QualifiedId
+): Reaction {
+  const reaction = genericMessage.reaction!
+
+  const emoji = reaction.emoji
+  const emojiSet = new Set(
+    (emoji ?? "")
+      .split(",")
+      .map(emojiString => emojiString.trim())
+      .filter(emojiString => emojiString.length > 0)
+  )
+
+  return Reaction.create({
+    id: genericMessage.messageId,
+    conversationId: qualifiedConversation,
+    messageId: reaction.messageId,
+    emojiSet: emojiSet
+  })
 }
 
 /**

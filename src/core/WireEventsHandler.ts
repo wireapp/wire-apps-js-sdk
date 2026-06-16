@@ -15,7 +15,7 @@
  */
 
 import {WireApplicationManager} from "./WireApplicationManager.js";
-import type {AssetMessage, CompositeButtonAction, DeletedMessage, Location, Ping, Receipt, TextMessage} from "../model/WireMessage.js";
+import type {AssetMessage, CompositeButtonAction, DeletedMessage, Location, Ping, Reaction, Receipt, TextMessage} from "../model/WireMessage.js";
 import type {Conversation} from "../model/conversation/Conversation.js";
 import type {ConversationMember} from "../model/conversation/ConversationMember.js";
 import {obfuscateId} from "../utils/ObfuscateUtil.js";
@@ -56,19 +56,23 @@ export abstract class WireEventsHandler {
   }
 
   public async onPingReceived(wireMessage: Ping): Promise<void> {
-    this.logger.info(`Received Ping, ID: ${wireMessage.id}`)
+    this.logger.info(`Received onPingReceived, ID: ${wireMessage.id}`)
   }
 
   public async onLocationReceived(wireMessage: Location): Promise<void> {
-    this.logger.info(`Received Location, ID: ${wireMessage.id}`)
+    this.logger.info(`Received onLocationReceived, ID: ${wireMessage.id}`)
   }
 
   public async onMessageDeleted(wireMessage: DeletedMessage): Promise<void> {
-    this.logger.info(`Received DeletedMessage, ID: ${wireMessage.id}`)
+    this.logger.info(`Received onMessageDeleted, ID: ${wireMessage.id}`)
   }
 
   public async onMessageDelivered(wireMessage: Receipt): Promise<void> {
-    this.logger.info(`Received MessageDelivered, ID: ${wireMessage.id}`)
+    this.logger.info(`Received onMessageDelivered, ID: ${wireMessage.id}`)
+  }
+
+  public async onMessageReactionReceived(wireMessage: Reaction): Promise<void> {
+    this.logger.info(`Received onMessageReactionReceived, ID: ${wireMessage.id}`)
   }
 
   public async onAppAddedToConversation(

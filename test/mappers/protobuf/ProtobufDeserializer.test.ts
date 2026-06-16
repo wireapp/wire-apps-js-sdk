@@ -64,6 +64,20 @@ describe('Protobuf deserialization', () => {
     expect(result.type === 'text' ? result.mentions : null).toStrictEqual([])
   })
 
+  it('preserves text message ids', () => {
+    const genericMessage = GenericMessage.create({
+      messageId: 'message-id',
+      text: {
+        content: 'Hello'
+      }
+    })
+
+    const result = ProtobufDeserializer.toWireMessage(GenericMessage.encode(genericMessage).finish(), conversationId)
+
+    expect(result.type).toBe('text')
+    expect(result.type === 'text' ? result.id : null).toBe('message-id')
+  })
+
   it('deserializes knocks as pings', () => {
     const genericMessage = GenericMessage.create({
       messageId: 'message-id',
