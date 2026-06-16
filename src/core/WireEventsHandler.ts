@@ -75,10 +75,6 @@ export abstract class WireEventsHandler {
     this.logger.info(`Received onMessageReactionReceived, ID: ${wireMessage.id}`)
   }
 
-  public async onMessageDelivered(wireMessage: Receipt): Promise<void> {
-    this.logger.info(`Received MessageDelivered, ID: ${wireMessage.id}`)
-  }
-
   public async onAppAddedToConversation(
     conversation: Conversation,
     members: ConversationMember[]
