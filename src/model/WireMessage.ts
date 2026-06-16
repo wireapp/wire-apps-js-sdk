@@ -120,7 +120,7 @@ export interface TextMessage extends WireMessageBase, Item, Ephemeral, Replyable
 export const TextMessage = {
   create(
     params: {
-      // TODO(alexandre): add messageId
+      messageId?: string
       conversationId: QualifiedId
       text: string
       mentions?: Mention[]
@@ -130,7 +130,7 @@ export const TextMessage = {
   ): TextMessage {
     return {
       type: 'text',
-      id: crypto.randomUUID(), // TODO(alexandre): add messageId
+      id: params.messageId ?? crypto.randomUUID(),
       conversationId: params.conversationId,
       sender: new QualifiedId(crypto.randomUUID(), crypto.randomUUID()),
       text: params.text,
@@ -154,6 +154,7 @@ export interface AssetMessage extends WireMessageBase, Ephemeral, Replyable {
 export const AssetMessage = {
   create(
     params: {
+      messageId?: string
       conversationId: QualifiedId
       sizeInBytes: number | Long
       name?: string | null
@@ -165,7 +166,7 @@ export const AssetMessage = {
   ): AssetMessage {
     return {
       type: 'asset',
-      id: crypto.randomUUID(),
+      id: params.messageId ?? crypto.randomUUID(),
       conversationId: params.conversationId,
       sender: new QualifiedId(crypto.randomUUID(), crypto.randomUUID()),
       timestamp: new Date(), // TODO(alexandre): only from replyable type
@@ -432,6 +433,33 @@ export const Receipt = {
   }
 }
 
+export interface Reaction extends WireMessageBase {
+  type: 'reaction'
+  messageId: string
+  emojiSet: Set<string>
+}
+
+export const Reaction = {
+  create(
+    params: {
+      id?: string
+      conversationId: QualifiedId
+      messageId: string
+      emojiSet: Set<string>
+    }
+  ): Reaction {
+    return {
+      type: 'reaction',
+      id: params.id ?? crypto.randomUUID(),
+      conversationId: params.conversationId,
+      sender: new QualifiedId(crypto.randomUUID(), crypto.randomUUID()), // TODO(alexandre): change to real sender
+      messageId: params.messageId,
+      emojiSet: params.emojiSet,
+      timestamp: new Date(), // TODO(alexandre): only from replyable type
+    }
+  }
+}
+
 export type WireMessage =
   | Unknown
   | Ignored
@@ -443,4 +471,5 @@ export type WireMessage =
   | Ping
   | Location
   | DeletedMessage
-  | Receipt;
+  | Receipt
+  | Reaction;

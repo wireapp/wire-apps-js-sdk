@@ -100,6 +100,9 @@ export class MlsMessageEventProcessor implements EventProcessor<NewMLSMessageDTO
       case 'receipt':
         await this.wireEventsHandler.onMessageDelivered(wireMessage)
         break
+      case 'reaction':
+        await this.wireEventsHandler.onMessageReactionReceived(wireMessage)
+        break
       case 'unknown':
       default:
         this.logger.info("Unknown event received.")
