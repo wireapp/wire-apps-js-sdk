@@ -117,6 +117,16 @@ describe('HttpClient', () => {
 
     describe('on expiry', () => {
       const TEST_AUTHORIZED_ENDPOINT = 'test-endpoint'
+      const ALWAYS_RETURNS_UNAUTHORIZED_ENDPOINT = 'always-unauthorized'
+      const html = `
+        <html>
+        <head><title>401 Authorization Required</title></head>
+        <body>
+        <center><h1>401 Authorization Required</h1></center>
+        <hr><center>nginx</center>
+        </body>
+        </html>
+      `
       let tokenRefreshCount: number
       let requestCount: number
 
@@ -134,19 +144,13 @@ describe('HttpClient', () => {
             requestCount++
 
             if (!accessToken) {
-              return HttpResponse.html(
-                `<html>
-                <head><title>401 Authorization Required</title></head>
-                <body>
-                <center><h1>401 Authorization Required</h1></center>
-                <hr><center>nginx</center>
-                </body>
-                </html>`,
-              {
-                status: 401
-              })
+              return HttpResponse.html(html, {status: 401})
             }
             return HttpResponse.json({data: 'example'}, {status: 200})
+          }),
+          http.get(`${TEST_API_HOST}/v*/${ALWAYS_RETURNS_UNAUTHORIZED_ENDPOINT}`, () => {
+            requestCount++
+            return HttpResponse.html(html, {status: 401})
           })
         )
       })
@@ -172,6 +176,19 @@ describe('HttpClient', () => {
         // then
         expect(requestCount).toBe(2)
         expect(response.response.status).toBe(200)
+      });
+
+      it('should not retry a request more than once', async () => {
+        // given
+        const httpClient = createHttpClient(mockAppProperties)
+
+        // when
+        await expect(
+          httpClient.getRequest(ALWAYS_RETURNS_UNAUTHORIZED_ENDPOINT)
+        ).rejects.toThrow()
+
+        // then
+        expect(requestCount).toBe(2)
       });
 
       it('should not refresh on the next request', async () => {
