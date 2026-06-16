@@ -114,7 +114,8 @@ export class HttpClient {
   async request<T>(
     path: string,
     options: RequestInit = {},
-    includeApiVersion: boolean = true
+    includeApiVersion: boolean = true,
+    isRetry: boolean = false
   ): Promise<{ data: T; response: Response }> {
     const optionsAndHeaders = {
       ...options,
@@ -131,9 +132,10 @@ export class HttpClient {
     const response = await fetch(url, optionsAndHeaders)
 
     if (!response.ok) {
-      if (response.status == 401) {
+      if (response.status == 401 && !isRetry) {
         this.logger.info("Access token not valid, getting a new one.")
         await this.refreshAccessToken()
+        return this.request(path, options, includeApiVersion, true)
       }
       let standardError: WireApiError | undefined
 
