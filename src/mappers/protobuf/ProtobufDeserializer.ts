@@ -56,32 +56,34 @@ export const ProtobufDeserializer = {
    */
   toWireMessage: (
     message: Uint8Array,
-    qualifiedConversation: QualifiedId
+    qualifiedConversation: QualifiedId,
+    senderId: QualifiedId,
+    timestamp: Date
   ): WireMessage => {
     const genericMessage = GenericMessage.decode(message)
 
     if (genericMessage.text) {
-      return unpackTextMessage(genericMessage, qualifiedConversation)
+      return unpackTextMessage(genericMessage, qualifiedConversation, senderId, timestamp)
     } else if (genericMessage.asset) {
-      return unpackAssetMessage(genericMessage, qualifiedConversation)
+      return unpackAssetMessage(genericMessage, qualifiedConversation, senderId, timestamp)
     } else if (genericMessage.buttonAction) {
-      return unpackCompositeButtonAction(genericMessage, qualifiedConversation)
+      return unpackCompositeButtonAction(genericMessage, qualifiedConversation, senderId)
     } else if (genericMessage.buttonActionConfirmation) {
-      return unpackCompositeButtonActionConfirmation(genericMessage, qualifiedConversation)
+      return unpackCompositeButtonActionConfirmation(genericMessage, qualifiedConversation, senderId)
     } else if (genericMessage.composite) {
-      return unpackComposite(genericMessage, qualifiedConversation)
+      return unpackComposite(genericMessage, qualifiedConversation, senderId)
     } else if (genericMessage.knock) {
-      return unpackPing(genericMessage, qualifiedConversation)
+      return unpackPing(genericMessage, qualifiedConversation, senderId)
     } else if (genericMessage.ephemeral?.knock) { // TODO(alexandre): Move ephemeral to its own unpack method and handle all other cases
       return unpackEphemeralPing(genericMessage, qualifiedConversation)
     } else if (genericMessage.location) {
-      return unpackLocation(genericMessage, qualifiedConversation)
+      return unpackLocation(genericMessage, qualifiedConversation, senderId, timestamp)
     } else if (genericMessage.deleted) {
-      return unpackDeletedMessage(genericMessage, qualifiedConversation)
+      return unpackDeletedMessage(genericMessage, qualifiedConversation, senderId)
     } else if (genericMessage.confirmation) {
-      return unpackReceipt(genericMessage, qualifiedConversation)
+      return unpackReceipt(genericMessage, qualifiedConversation, senderId)
     } else if (genericMessage.reaction) {
-      return unpackReaction(genericMessage, qualifiedConversation)
+      return unpackReaction(genericMessage, qualifiedConversation, senderId)
     } else {
       return new Unknown()
     }
@@ -90,7 +92,9 @@ export const ProtobufDeserializer = {
 
 function unpackTextMessage(
   genericMessage: IGenericMessage,
-  qualifiedConversation: QualifiedId
+  qualifiedConversation: QualifiedId,
+  senderId: QualifiedId,
+  timestamp: Date
 ): TextMessage {
   return TextMessage.create({
     messageId: genericMessage.messageId,
@@ -99,14 +103,17 @@ function unpackTextMessage(
     linkPreviews: genericMessage.text!.linkPreview?.map(MessageLinkPreviewMapper.fromProtobuf) ?? [],
     mentions: genericMessage.text!.mentions
       ?.map(MessageMentionMapper.fromProtobuf)
-      .filter((mention): mention is Mention => mention !== null) ?? []
-    // TODO: Map other fields
+      .filter((mention): mention is Mention => mention !== null) ?? [],
+    senderId: senderId,
+    timestamp: timestamp
   })
 }
 
 function unpackAssetMessage(
   genericMessage: IGenericMessage,
-  qualifiedConversation: QualifiedId
+  qualifiedConversation: QualifiedId,
+  senderId: QualifiedId,
+  timestamp: Date
 ): AssetMessage {
   const asset = genericMessage.asset
   const original = asset?.original
@@ -140,7 +147,9 @@ function unpackAssetMessage(
     mimeType: original?.mimeType ?? "*/*",
     name: original?.name ?? null,
     remoteData: remoteData,
-    sizeInBytes: original?.size ?? 0
+    sizeInBytes: original?.size ?? 0,
+    senderId: senderId,
+    timestamp: timestamp
   })
 }
 
@@ -162,19 +171,22 @@ function unpackItemList(
 
 function unpackCompositeButtonAction(
   genericMessage: IGenericMessage,
-  qualifiedConversation: QualifiedId
+  qualifiedConversation: QualifiedId,
+  senderId: QualifiedId
 ): CompositeButtonAction {
   return CompositeButtonAction.create({
     messageId: genericMessage.messageId,
     conversationId: qualifiedConversation,
     referenceMessageId: genericMessage.buttonAction!.referenceMessageId,
-    buttonId: genericMessage.buttonAction!.buttonId
+    buttonId: genericMessage.buttonAction!.buttonId,
+    senderId: senderId
   })
 }
 
 function unpackCompositeButtonActionConfirmation(
   genericMessage: IGenericMessage,
-  qualifiedConversation: QualifiedId
+  qualifiedConversation: QualifiedId,
+  senderId: QualifiedId
 ): CompositeButtonActionConfirmation {
   const buttonActionConfirmation = genericMessage.buttonActionConfirmation!
   const buttonId = Object.prototype.hasOwnProperty.call(buttonActionConfirmation, 'buttonId')
@@ -184,13 +196,15 @@ function unpackCompositeButtonActionConfirmation(
     messageId: genericMessage.messageId,
     conversationId: qualifiedConversation,
     referenceMessageId: buttonActionConfirmation.referenceMessageId,
-    buttonId: buttonId
+    buttonId: buttonId,
+    senderId: senderId
   })
 }
 
 function unpackComposite(
   genericMessage: IGenericMessage,
-  qualifiedConversation: QualifiedId
+  qualifiedConversation: QualifiedId,
+  senderId: QualifiedId
 ): CompositeMessage {
   const items = genericMessage.composite!.items!
   const itemList = unpackItemList(qualifiedConversation, items)
@@ -198,17 +212,20 @@ function unpackComposite(
   return CompositeMessage.create({
     messageId: genericMessage.messageId,
     conversationId: qualifiedConversation,
-    itemList: itemList
+    itemList: itemList,
+    senderId: senderId
   })
 }
 
 function unpackPing(
   genericMessage: IGenericMessage,
-  qualifiedConversation: QualifiedId
+  qualifiedConversation: QualifiedId,
+  senderId: QualifiedId
 ): Ping {
   return Ping.create({
     messageId: genericMessage.messageId,
-    conversationId: qualifiedConversation
+    conversationId: qualifiedConversation,
+    senderId: senderId
   })
 }
 
@@ -225,7 +242,9 @@ function unpackEphemeralPing(
 
 function unpackLocation(
   genericMessage: IGenericMessage,
-  qualifiedConversation: QualifiedId
+  qualifiedConversation: QualifiedId,
+  senderId: QualifiedId,
+  timestamp: Date
 ): Location {
   const location = genericMessage.location!
 
@@ -235,26 +254,31 @@ function unpackLocation(
     latitude: location.latitude,
     longitude: location.longitude,
     name: Object.hasOwn(location, 'name') ? location.name : null,
-    zoom: Object.hasOwn(location, 'zoom') ? location.zoom : null
+    zoom: Object.hasOwn(location, 'zoom') ? location.zoom : null,
+    senderId: senderId,
+    timestamp: timestamp
   })
 }
 
 function unpackDeletedMessage(
   genericMessage: IGenericMessage,
-  qualifiedConversation: QualifiedId
+  qualifiedConversation: QualifiedId,
+  senderId: QualifiedId
 ): DeletedMessage {
   const deletedMessage = genericMessage.deleted!
 
   return DeletedMessage.create({
     id: genericMessage.messageId,
     conversationId: qualifiedConversation,
-    messageId: deletedMessage.messageId
+    messageId: deletedMessage.messageId,
+    senderId: senderId
   })
 }
 
 function unpackReceipt(
   genericMessage: IGenericMessage,
-  qualifiedConversation: QualifiedId
+  qualifiedConversation: QualifiedId,
+  senderId: QualifiedId
 ): Receipt | Ignored {
   const receipt = genericMessage.confirmation!
   let type: ReceiptType | null | undefined
@@ -275,7 +299,8 @@ function unpackReceipt(
       id: genericMessage.messageId,
       conversationId: qualifiedConversation,
       receiptType: type,
-      messageIds: [receipt.firstMessageId, ...(receipt.moreMessageIds ?? [])]
+      messageIds: [receipt.firstMessageId, ...(receipt.moreMessageIds ?? [])],
+      senderId: senderId
     })
   } else {
     return new Ignored()
@@ -284,7 +309,8 @@ function unpackReceipt(
 
 function unpackReaction(
   genericMessage: IGenericMessage,
-  qualifiedConversation: QualifiedId
+  qualifiedConversation: QualifiedId,
+  senderId: QualifiedId
 ): Reaction {
   const reaction = genericMessage.reaction!
 
@@ -300,7 +326,8 @@ function unpackReaction(
     id: genericMessage.messageId,
     conversationId: qualifiedConversation,
     messageId: reaction.messageId,
-    emojiSet: emojiSet
+    emojiSet: emojiSet,
+    senderId: senderId
   })
 }
 
