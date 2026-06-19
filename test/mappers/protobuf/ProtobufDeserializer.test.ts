@@ -23,6 +23,11 @@ const { GenericMessage, Confirmation } = rootMessage
 
 describe('Protobuf deserialization', () => {
   const conversationId = new QualifiedId('conversation-id', 'wire.com')
+  const senderId = new QualifiedId('sender-id', 'wire.com')
+  const timestamp = new Date('2026-06-18T12:00:00.000Z')
+
+  const toWireMessage = (genericMessage: rootMessage.IGenericMessage) =>
+    ProtobufDeserializer.toWireMessage(GenericMessage.encode(genericMessage).finish(), conversationId, senderId, timestamp)
 
   it('deserializes text message mentions', () => {
     const genericMessage = GenericMessage.create({
@@ -40,7 +45,7 @@ describe('Protobuf deserialization', () => {
       }
     })
 
-    const result = ProtobufDeserializer.toWireMessage(GenericMessage.encode(genericMessage).finish(), conversationId)
+    const result = toWireMessage(genericMessage)
 
     expect(result.type).toBe('text')
     expect(result.type === 'text' ? result.mentions : []).toStrictEqual([{
@@ -58,7 +63,7 @@ describe('Protobuf deserialization', () => {
       }
     })
 
-    const result = ProtobufDeserializer.toWireMessage(GenericMessage.encode(genericMessage).finish(), conversationId)
+    const result = toWireMessage(genericMessage)
 
     expect(result.type).toBe('text')
     expect(result.type === 'text' ? result.mentions : null).toStrictEqual([])
@@ -72,10 +77,25 @@ describe('Protobuf deserialization', () => {
       }
     })
 
-    const result = ProtobufDeserializer.toWireMessage(GenericMessage.encode(genericMessage).finish(), conversationId)
+    const result = toWireMessage(genericMessage)
 
     expect(result.type).toBe('text')
     expect(result.type === 'text' ? result.id : null).toBe('message-id')
+  })
+
+  it('preserves received text message metadata', () => {
+    const genericMessage = GenericMessage.create({
+      messageId: 'message-id',
+      text: {
+        content: 'Hello'
+      }
+    })
+
+    const result = toWireMessage(genericMessage)
+
+    expect(result.type).toBe('text')
+    expect(result.type === 'text' ? result.sender : null).toStrictEqual(senderId)
+    expect(result.type === 'text' ? result.timestamp : null).toStrictEqual(timestamp)
   })
 
   it('deserializes knocks as pings', () => {
@@ -86,7 +106,7 @@ describe('Protobuf deserialization', () => {
       }
     })
 
-    const result = ProtobufDeserializer.toWireMessage(GenericMessage.encode(genericMessage).finish(), conversationId)
+    const result = toWireMessage(genericMessage)
 
     expect(result.type).toBe('ping')
     expect(result.type === 'ping' ? result.id : null).toBe('message-id')
@@ -105,7 +125,7 @@ describe('Protobuf deserialization', () => {
       }
     })
 
-    const result = ProtobufDeserializer.toWireMessage(GenericMessage.encode(genericMessage).finish(), conversationId)
+    const result = toWireMessage(genericMessage)
 
     expect(result.type).toBe('ping')
     expect(result.type === 'ping' ? result.id : null).toBe('message-id')
@@ -123,7 +143,7 @@ describe('Protobuf deserialization', () => {
       }
     })
 
-    const result = ProtobufDeserializer.toWireMessage(GenericMessage.encode(genericMessage).finish(), conversationId)
+    const result = toWireMessage(genericMessage)
 
     expect(result.type).toBe('location')
     expect(result.type === 'location' ? result.id : null).toBe('message-id')
@@ -132,6 +152,8 @@ describe('Protobuf deserialization', () => {
     expect(result.type === 'location' ? result.longitude : null).toBeCloseTo(13.404954)
     expect(result.type === 'location' ? result.name : null).toBe('Berlin')
     expect(result.type === 'location' ? result.zoom : null).toBe(12)
+    expect(result.type === 'location' ? result.sender : null).toStrictEqual(senderId)
+    expect(result.type === 'location' ? result.timestamp : null).toStrictEqual(timestamp)
   })
 
   it('preserves omitted optional location fields as null', () => {
@@ -143,7 +165,7 @@ describe('Protobuf deserialization', () => {
       }
     })
 
-    const result = ProtobufDeserializer.toWireMessage(GenericMessage.encode(genericMessage).finish(), conversationId)
+    const result = toWireMessage(genericMessage)
 
     expect(result.type).toBe('location')
     expect(result.type === 'location' ? result.name : undefined).toBeNull()
@@ -160,7 +182,7 @@ describe('Protobuf deserialization', () => {
       }
     })
 
-    const result = ProtobufDeserializer.toWireMessage(GenericMessage.encode(genericMessage).finish(), conversationId)
+    const result = toWireMessage(genericMessage)
 
     expect(result.type).toBe('location')
     expect(result.type === 'location' ? result.zoom : null).toBe(0)
@@ -174,12 +196,13 @@ describe('Protobuf deserialization', () => {
       }
     })
 
-    const result = ProtobufDeserializer.toWireMessage(GenericMessage.encode(genericMessage).finish(), conversationId)
+    const result = toWireMessage(genericMessage)
 
     expect(result.type).toBe('deleted')
     expect(result.type === 'deleted' ? result.id : null).toBe('message-id')
     expect(result.type === 'deleted' ? result.conversationId : null).toStrictEqual(conversationId)
     expect(result.type === 'deleted' ? result.messageId : null).toBe('deleted-message-id')
+    expect(result.type === 'deleted' ? result.sender : null).toStrictEqual(senderId)
   })
 
   it('deserializes delivered receipts', () => {
@@ -192,7 +215,7 @@ describe('Protobuf deserialization', () => {
       }
     })
 
-    const result = ProtobufDeserializer.toWireMessage(GenericMessage.encode(genericMessage).finish(), conversationId)
+    const result = toWireMessage(genericMessage)
 
     expect(result.type).toBe('receipt')
     expect(result.type === 'receipt' ? result.id : null).toBe('message-id')
@@ -203,6 +226,7 @@ describe('Protobuf deserialization', () => {
       'second-message-id',
       'third-message-id'
     ])
+    expect(result.type === 'receipt' ? result.sender : null).toStrictEqual(senderId)
   })
 
   it('deserializes read receipts', () => {
@@ -214,7 +238,7 @@ describe('Protobuf deserialization', () => {
       }
     })
 
-    const result = ProtobufDeserializer.toWireMessage(GenericMessage.encode(genericMessage).finish(), conversationId)
+    const result = toWireMessage(genericMessage)
 
     expect(result.type).toBe('receipt')
     expect(result.type === 'receipt' ? result.receiptType : null).toBe('READ')
@@ -230,7 +254,7 @@ describe('Protobuf deserialization', () => {
       }
     })
 
-    const result = ProtobufDeserializer.toWireMessage(GenericMessage.encode(genericMessage).finish(), conversationId)
+    const result = toWireMessage(genericMessage)
 
     expect(result.type).toBe('ignored')
   })

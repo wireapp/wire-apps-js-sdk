@@ -31,13 +31,15 @@ vi.mock('../../../src/mappers/protobuf/ProtobufDeserializer.js')
 const qualifiedConversation = {id: 'conv-123', domain: 'example.com'}
 const mlsGroupId = 'mls-group-id'
 const decryptedMessage = new Uint8Array([1, 2, 3])
+const qualifiedFrom = {id: 'user-from', domain: 'example.com'}
+const eventDate = new Date()
 
 const makeEvent = (): NewMLSMessageDTO => ({
   type: 'conversation.mls-message-add',
-  time: new Date(),
+  time: eventDate,
   data: 'base64encodeddata',
   qualified_conversation: qualifiedConversation,
-  qualified_from: {id: 'user-from', domain: 'example.com'},
+  qualified_from: qualifiedFrom
 })
 
 const makeTextMessage = () => ({type: 'text' as const, text: 'hello'} as any)
@@ -226,7 +228,12 @@ describe('MlsMessageEventProcessor', () => {
 
         await processor.process(makeEvent())
 
-        expect(ProtobufDeserializer.toWireMessage).toHaveBeenCalledWith(decryptedMessage, qualifiedConversation)
+        expect(ProtobufDeserializer.toWireMessage).toHaveBeenCalledWith(
+          decryptedMessage,
+          qualifiedConversation,
+          qualifiedFrom,
+          eventDate
+        )
       })
     })
 
