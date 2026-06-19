@@ -18,6 +18,10 @@ import { QualifiedId } from "./QualifiedId.js";
 import { MessageEncryptionAlgorithm } from "./protobuf/MessageEncryptionAlgorithm.js";
 import Long from "long";
 
+const appUserId = process.env['WIRE_SDK_USER_ID']!
+const appUserDomain = process.env['WIRE_SDK_USER_DOMAIN']!
+const appQualifiedId = new QualifiedId(appUserId, appUserDomain)
+
 export type Item = object
 
 /**
@@ -150,7 +154,7 @@ export const TextMessage = {
       type: 'text',
       id: params.messageId ?? crypto.randomUUID(),
       conversationId: params.conversationId,
-      ...(params.senderId && { sender: params.senderId }),
+      sender: params.senderId ?? appQualifiedId,
       text: params.text,
       mentions: params.mentions ?? [],
       linkPreviews: params.linkPreviews ?? [],
@@ -188,7 +192,7 @@ export const AssetMessage = {
       type: 'asset',
       id: params.messageId ?? crypto.randomUUID(),
       conversationId: params.conversationId,
-      ...(params.senderId && { sender: params.senderId }),
+      sender: params.senderId ?? appQualifiedId,
       timestamp: params.timestamp ?? new Date(),
       sizeInBytes: params.sizeInBytes,
       name: params.name ?? null,
@@ -273,7 +277,7 @@ export const CompositeButtonAction = {
       conversationId: params.conversationId,
       buttonId: params.buttonId,
       referenceMessageId: params.referenceMessageId,
-      ...(params.senderId && { sender: params.senderId })
+      sender: params.senderId ?? appQualifiedId
     }
   }
 }
@@ -332,7 +336,7 @@ export const CompositeMessage = {
       id: params.messageId ?? crypto.randomUUID(),
       conversationId: params.conversationId,
       items: [...(textItem ? [textItem] : []), ...params.itemList],
-      ...(params.senderId && { sender: params.senderId })
+      sender: params.senderId ?? appQualifiedId
     }
   }
 }
@@ -390,7 +394,7 @@ export const Location = {
       longitude: params.longitude,
       name: params.name ?? null,
       zoom: params.zoom ?? null,
-      ...(params.senderId && { sender: params.senderId }),
+      sender: params.senderId ?? appQualifiedId,
       timestamp: params.timestamp ?? new Date(),
       expiresAfterMillis: params.expiresAfterMillis ?? null
     }
@@ -450,7 +454,7 @@ export const Receipt = {
       conversationId: params.conversationId,
       receiptType: params.receiptType,
       messageIds: params.messageIds,
-      ...(params.senderId && { sender: params.senderId })
+      sender: params.senderId ?? appQualifiedId
     }
   }
 }
