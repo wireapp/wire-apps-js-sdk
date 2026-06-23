@@ -202,6 +202,20 @@ describe('HttpClient', () => {
         // then
         expect(tokenRefreshCount).toBe(1)
       });
+
+      it('should refresh once on concurrent unauthorized request', async () => {
+        // given
+        const httpClient = createHttpClient(mockAppProperties)
+
+        // when
+        await Promise.all([
+          httpClient.getRequest(TEST_AUTHORIZED_ENDPOINT),
+          httpClient.getRequest(TEST_AUTHORIZED_ENDPOINT)
+        ])
+
+        // then
+        expect(tokenRefreshCount).toBe(1)
+      });
     })
   })
   describe('App token', () => {
