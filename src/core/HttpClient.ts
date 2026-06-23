@@ -26,6 +26,7 @@ import type {AccessResponse} from "../api/response/AccessResponse.js";
 export class HttpClient {
   private logger = LoggerFactory.getLogger(this.constructor.name)
   private cachedAccessToken: string | null = null
+  private accessTokenRefreshLock: Promise<void> | null = null;
   private cachedDeviceId: string | null = null
   private headers: Record<string, string> = {
     "Content-Type": "application/json"
@@ -71,9 +72,37 @@ export class HttpClient {
   }
 
   async refreshAccessToken() {
+    if (this.accessTokenRefreshLock) {
+      return this.accessTokenRefreshLock
+    }
+
+    this.accessTokenRefreshLock = this.updateAccessToken().finally(() => {
+      this.accessTokenRefreshLock = null
+    })
+
+    return this.accessTokenRefreshLock
+  }
+
+  private persistBackendCookie(setCookieHeader: string[]) {
+    const zuidCookie = setCookieHeader
+      ?.find((cookie: string) => cookie.startsWith('zuid='))
+      ?.split(';')[0]
+      ?.slice(5); // remove "zuid="
+    if (zuidCookie)
+      this.appProperties.saveBackendCookie(zuidCookie)
+  }
+
+  private async updateAccessToken() {
     try {
       this.logger.info('Obtaining new access token')
-      await this.obtainAccessToken()
+      const accessResponse = await this.fetchAccessToken()
+      this.persistBackendCookie(accessResponse.response.headers.getSetCookie())
+
+      const accessToken = accessResponse.data.access_token
+
+      this.cachedAccessToken = accessToken
+
+      this.setAuthorizationToken(accessToken)
     } catch (exception) {
       this.logger.error('Unable to retrieve access token, Error:', exception)
       if (exception instanceof WireApiException && exception.isCredentialsInvalid()) {
@@ -85,12 +114,12 @@ export class HttpClient {
     }
   }
 
-  private async obtainAccessToken() {
+  private async fetchAccessToken() {
     const path = this.cachedDeviceId
       ? `access?client_id=${this.cachedDeviceId}`
       : `access`
 
-    const accessResponse = (await this.request<AccessResponse>(path, {
+    return this.request<AccessResponse>(path, {
       method: "POST",
       headers: {
         "Cookie": `zuid=${this.appProperties.getBackendCookie()}`
@@ -98,21 +127,7 @@ export class HttpClient {
     },
     true,
     false
-    ))
-
-    const setCookieHeaders: string[] = accessResponse.response.headers.getSetCookie();
-    const zuidCookie = setCookieHeaders
-      ?.find((cookie: string) => cookie.startsWith('zuid='))
-      ?.split(';')[0]
-      ?.slice(5); // remove "zuid="
-    if (zuidCookie)
-      this.appProperties.saveBackendCookie(zuidCookie)
-
-    const accessToken = accessResponse.data.access_token
-
-    this.cachedAccessToken = accessToken
-
-    this.setAuthorizationToken(accessToken)
+    )
   }
 
   async request<T>(
