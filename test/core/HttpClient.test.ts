@@ -93,7 +93,7 @@ describe('HttpClient', () => {
       const httpClient = createHttpClient(mockAppProperties)
 
       // when
-      await httpClient.verifyAuthorizationToken()
+      await httpClient.refreshAccessToken()
 
       // then
       expect(httpClient.getCachedAccessToken()).toEqual(TEST_ACCESS_TOKEN)
@@ -109,10 +109,113 @@ describe('HttpClient', () => {
       const testPreKeys: PreKeyCrypto[] = [new PreKeyCrypto(1, 'foo')]
       await clientsApiClient.registerClient(testPreKeys, testPreKeys[0]!)
 
-      await httpClient.verifyAuthorizationToken()
+      await httpClient.refreshAccessToken()
 
       // then
       expect(httpClient.getCachedAccessToken()).toEqual(FULL_FLEDGED_ACCESS_TOKEN)
+    });
+
+    describe('on expiry', () => {
+      const TEST_AUTHORIZED_ENDPOINT = 'test-endpoint'
+      const ALWAYS_RETURNS_UNAUTHORIZED_ENDPOINT = 'always-unauthorized'
+      const html = `
+        <html>
+        <head><title>401 Authorization Required</title></head>
+        <body>
+        <center><h1>401 Authorization Required</h1></center>
+        <hr><center>nginx</center>
+        </body>
+        </html>
+      `
+      let tokenRefreshCount: number
+      let requestCount: number
+
+      beforeEach(() => {
+        tokenRefreshCount = 0
+        requestCount = 0
+
+        server.use(
+          http.post(`${TEST_API_HOST}/v*/access`, () => {
+            tokenRefreshCount++
+            return HttpResponse.json({ access_token: TEST_ACCESS_TOKEN })
+          }),
+          http.get(`${TEST_API_HOST}/v*/${TEST_AUTHORIZED_ENDPOINT}`, ({ request }) => {
+            const accessToken = request.headers.get('Authorization')
+            requestCount++
+
+            if (!accessToken) {
+              return HttpResponse.html(html, {status: 401})
+            }
+            return HttpResponse.json({data: 'example'}, {status: 200})
+          }),
+          http.get(`${TEST_API_HOST}/v*/${ALWAYS_RETURNS_UNAUTHORIZED_ENDPOINT}`, () => {
+            requestCount++
+            return HttpResponse.html(html, {status: 401})
+          })
+        )
+      })
+
+      it('should be refreshed', async () => {
+        // given
+        const httpClient = createHttpClient(mockAppProperties)
+
+        // when
+        await httpClient.getRequest(TEST_AUTHORIZED_ENDPOINT)
+
+        // then
+        expect(tokenRefreshCount).toBe(1)
+      });
+
+      it('should retry the original request', async () => {
+        // given
+        const httpClient = createHttpClient(mockAppProperties)
+
+        // when
+        const response = await httpClient.request(TEST_AUTHORIZED_ENDPOINT, {method: "GET"})
+
+        // then
+        expect(requestCount).toBe(2)
+        expect(response.response.status).toBe(200)
+      });
+
+      it('should not retry a request more than once', async () => {
+        // given
+        const httpClient = createHttpClient(mockAppProperties)
+
+        // when
+        await expect(
+          httpClient.getRequest(ALWAYS_RETURNS_UNAUTHORIZED_ENDPOINT)
+        ).rejects.toThrow()
+
+        // then
+        expect(requestCount).toBe(2)
+      });
+
+      it('should not refresh on the next request', async () => {
+        // given
+        const httpClient = createHttpClient(mockAppProperties)
+        await httpClient.getRequest(TEST_AUTHORIZED_ENDPOINT)
+
+        // when
+        await httpClient.getRequest(TEST_AUTHORIZED_ENDPOINT)
+
+        // then
+        expect(tokenRefreshCount).toBe(1)
+      });
+
+      it('should refresh once on concurrent unauthorized request', async () => {
+        // given
+        const httpClient = createHttpClient(mockAppProperties)
+
+        // when
+        await Promise.all([
+          httpClient.getRequest(TEST_AUTHORIZED_ENDPOINT),
+          httpClient.getRequest(TEST_AUTHORIZED_ENDPOINT)
+        ])
+
+        // then
+        expect(tokenRefreshCount).toBe(1)
+      });
     })
   })
   describe('App token', () => {
@@ -126,7 +229,7 @@ describe('HttpClient', () => {
       const httpClient = createHttpClient(mockAppProperties)
 
       // when
-      await httpClient.verifyAuthorizationToken()
+      await httpClient.refreshAccessToken()
 
       // then
       const capturedRequest = await requestPromise
@@ -139,7 +242,7 @@ describe('HttpClient', () => {
       const httpClient = createHttpClient(mockAppProperties)
 
       // when
-      await httpClient.verifyAuthorizationToken()
+      await httpClient.refreshAccessToken()
 
       // then
       expect(storedCookie).toEqual(NEW_COOKIE)
@@ -151,7 +254,7 @@ describe('HttpClient', () => {
       const httpClient = createHttpClient(mockAppProperties)
 
       // when & then
-      await expect(httpClient.verifyAuthorizationToken()).rejects.toThrow()
+      await expect(httpClient.refreshAccessToken()).rejects.toThrow()
       expect(mockAppProperties.deleteBackendCookie).toHaveBeenCalled()
     });
   })

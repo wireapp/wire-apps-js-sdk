@@ -25,8 +25,8 @@ import type {AccessResponse} from "../api/response/AccessResponse.js";
 @singleton()
 export class HttpClient {
   private logger = LoggerFactory.getLogger(this.constructor.name)
-  private tokenExpirationTimestamp: number | null = null
   private cachedAccessToken: string | null = null
+  private accessTokenRefreshLock: Promise<void> | null = null;
   private cachedDeviceId: string | null = null
   private headers: Record<string, string> = {
     "Content-Type": "application/json"
@@ -71,40 +71,36 @@ export class HttpClient {
     return this.cachedDeviceId!
   }
 
-  async verifyAuthorizationToken() {
-    const currentTime = Date.now()
+  async refreshAccessToken() {
+    if (this.accessTokenRefreshLock) {
+      return this.accessTokenRefreshLock
+    }
 
-    // Check if token is valid (not null and not expired)
-    if (
-      this.cachedAccessToken != null &&
-      this.tokenExpirationTimestamp != null &&
-      currentTime < this.tokenExpirationTimestamp
-    ) { return }
-    this.logger.info("Access token expired, getting a new one.")
+    this.accessTokenRefreshLock = this.updateAccessToken().finally(() => {
+      this.accessTokenRefreshLock = null
+    })
 
-    const path = this.cachedDeviceId
-      ? `access?client_id=${this.cachedDeviceId}`
-      : `access`
+    return this.accessTokenRefreshLock
+  }
+
+  private persistBackendCookie(setCookieHeader: string[]) {
+    const zuidCookie = setCookieHeader
+      ?.find((cookie: string) => cookie.startsWith('zuid='))
+      ?.split(';')[0]
+      ?.slice(5); // remove "zuid="
+    if (zuidCookie)
+      this.appProperties.saveBackendCookie(zuidCookie)
+  }
+
+  private async updateAccessToken() {
     try {
-      const accessResponse = (await this.request<AccessResponse>(path, {
-        method: "POST",
-        headers: {
-          "Cookie": `zuid=${this.appProperties.getBackendCookie()}`
-        }
-      }))
-
-      const setCookieHeaders: string[] = accessResponse.response.headers.getSetCookie();
-      const zuidCookie = setCookieHeaders
-        ?.find((cookie: string) => cookie.startsWith('zuid='))
-        ?.split(';')[0]
-        ?.slice(5); // remove "zuid="
-      if (zuidCookie)
-        this.appProperties.saveBackendCookie(zuidCookie)
+      this.logger.info('Obtaining new access token')
+      const accessResponse = await this.fetchAccessToken()
+      this.persistBackendCookie(accessResponse.response.headers.getSetCookie())
 
       const accessToken = accessResponse.data.access_token
 
       this.cachedAccessToken = accessToken
-      this.tokenExpirationTimestamp = currentTime + (accessResponse.data.expires_in * 1000) // seconds to milliseconds
 
       this.setAuthorizationToken(accessToken)
     } catch (exception) {
@@ -118,19 +114,28 @@ export class HttpClient {
     }
   }
 
-  private isAuthenticatedPath(path: string): boolean {
-    return !this.unauthenticatedPaths.some(prefix =>
-      path.startsWith(prefix)
-    );
+  private async fetchAccessToken() {
+    const path = this.cachedDeviceId
+      ? `access?client_id=${this.cachedDeviceId}`
+      : `access`
+
+    return this.request<AccessResponse>(path, {
+      method: "POST",
+      headers: {
+        "Cookie": `zuid=${this.appProperties.getBackendCookie()}`
+      }
+    },
+    true,
+    false
+    )
   }
 
   async request<T>(
     path: string,
     options: RequestInit = {},
-    includeApiVersion: boolean = true
+    includeApiVersion: boolean = true,
+    shouldRetry: boolean = true
   ): Promise<{ data: T; response: Response }> {
-    if (this.isAuthenticatedPath(path))
-      await this.verifyAuthorizationToken()
     const optionsAndHeaders = {
       ...options,
       headers: {
@@ -146,6 +151,11 @@ export class HttpClient {
     const response = await fetch(url, optionsAndHeaders)
 
     if (!response.ok) {
+      if (response.status === 401 && shouldRetry) {
+        this.logger.info("Access token not valid, getting a new one.")
+        await this.refreshAccessToken()
+        return this.request(path, options, includeApiVersion, false)
+      }
       let standardError: WireApiError | undefined
 
       const contentType = response.headers.get("content-type")
@@ -218,8 +228,6 @@ export class HttpClient {
       includeApiVersion?: boolean;
     }
   ): Promise<T> {
-    await this.verifyAuthorizationToken()
-
     const {
       headerContentType = this.HEADER_DEFAULT_CONTENT_TYPE,
       headerAccept = this.HEADER_DEFAULT_ACCEPT,
@@ -289,5 +297,4 @@ export class HttpClient {
   private API_HOST_VERSION: string = "v15"
   private HEADER_DEFAULT_CONTENT_TYPE = "application/json"
   private HEADER_DEFAULT_ACCEPT = "application/json"
-  private readonly unauthenticatedPaths = ['access', 'api-version']
 }
