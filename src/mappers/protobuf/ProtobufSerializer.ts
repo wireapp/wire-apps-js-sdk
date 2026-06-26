@@ -60,7 +60,7 @@ export const ProtobufSerializer = {
   toGenericMessageByteArray: (wireMessage: WireMessage): Uint8Array => {
     const genericMessage: Partial<IGenericMessage> = {
       messageId: wireMessage.id,
-    };
+    }
 
     let builtMessage: IGenericMessage;
 
@@ -114,7 +114,7 @@ export const ProtobufSerializer = {
     const message = GenericMessage.create(builtMessage);
     return GenericMessage.encode(message).finish();
   },
-};
+}
 
 /**
  * Packs a text message into the GenericMessage format
@@ -127,8 +127,17 @@ function packTextMessage(
 
   return {
     ...genericMessage,
-    text: textContent,
-  } as IGenericMessage;
+    ...(wireMessage.expiresAfterMillis
+      ? {
+        ephemeral: Ephemeral.create({
+          expireAfterMillis: wireMessage.expiresAfterMillis,
+          text: textContent
+        })
+      }
+      : {
+        text: textContent
+      })
+  } as IGenericMessage
 }
 
 function packText(
@@ -199,25 +208,24 @@ function packAssetMessage(
     assetDomain: wireMessage.remoteData?.assetDomain || null
   };
 
-  const asset: IAsset = {
+  const assetContent: IAsset = {
     original,
     uploaded
   };
 
-  if (wireMessage.expiresAfterMillis !== undefined && wireMessage.expiresAfterMillis !== null) {
-    return {
-      ...genericMessage,
-      ephemeral: {
-        expireAfterMillis: wireMessage.expiresAfterMillis,
-        asset
+  return {
+    ...genericMessage,
+    ...(wireMessage.expiresAfterMillis
+      ? {
+        ephemeral: Ephemeral.create({
+          expireAfterMillis: wireMessage.expiresAfterMillis,
+          asset: assetContent
+        })
       }
-    } as IGenericMessage;
-  } else {
-    return {
-      ...genericMessage,
-      asset
-    } as IGenericMessage;
-  }
+      : {
+        asset: assetContent
+      })
+  } as IGenericMessage
 }
 
 function packItemList(itemsList: Item[]): ProtobufComposite.Item[] {
@@ -308,14 +316,25 @@ function packLocation(
   wireMessage: Location,
   genericMessage: Partial<IGenericMessage>
 ): IGenericMessage {
+  const locationContent = ProtobufLocation.create({
+    latitude: wireMessage.latitude,
+    longitude: wireMessage.longitude,
+    name: wireMessage.name,
+    zoom: wireMessage.zoom
+  })
+
   return {
     ...genericMessage,
-    location: ProtobufLocation.create({
-      latitude: wireMessage.latitude,
-      longitude: wireMessage.longitude,
-      name: wireMessage.name,
-      zoom: wireMessage.zoom
-    })
+    ...(wireMessage.expiresAfterMillis
+      ? {
+        ephemeral: Ephemeral.create({
+          expireAfterMillis: wireMessage.expiresAfterMillis,
+          location: locationContent
+        })
+      }
+      : {
+        location: locationContent
+      })
   } as IGenericMessage
 }
 

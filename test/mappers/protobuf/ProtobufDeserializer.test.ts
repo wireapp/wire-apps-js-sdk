@@ -98,6 +98,79 @@ describe('Protobuf deserialization', () => {
     expect(result.type === 'text' ? result.timestamp : null).toStrictEqual(timestamp)
   })
 
+  it('deserializes ephemeral text messages as expiring text messages', () => {
+    const genericMessage = GenericMessage.create({
+      messageId: 'message-id',
+      ephemeral: {
+        expireAfterMillis: 5000,
+        text: {
+          content: 'Temporary hello',
+          mentions: [{
+            qualifiedUserId: {
+              id: 'user-id',
+              domain: 'wire.com'
+            },
+            start: 10,
+            length: 5
+          }]
+        }
+      }
+    })
+
+    const result = toWireMessage(genericMessage)
+
+    expect(result.type).toBe('text')
+    expect(result.type === 'text' ? result.id : null).toBe('message-id')
+    expect(result.type === 'text' ? result.text : null).toBe('Temporary hello')
+    expect(result.type === 'text' ? result.expiresAfterMillis : null).toBe(5000)
+    expect(result.type === 'text' ? result.sender : null).toStrictEqual(senderId)
+    expect(result.type === 'text' ? result.timestamp : null).toStrictEqual(timestamp)
+    expect(result.type === 'text' ? result.mentions : []).toStrictEqual([{
+      userId: new QualifiedId('user-id', 'wire.com'),
+      offset: 10,
+      length: 5
+    }])
+  })
+
+  it('deserializes ephemeral asset messages as expiring asset messages', () => {
+    const genericMessage = GenericMessage.create({
+      messageId: 'message-id',
+      ephemeral: {
+        expireAfterMillis: 5000,
+        asset: {
+          original: {
+            mimeType: 'image/png',
+            size: 123,
+            name: 'image.png'
+          },
+          uploaded: {
+            otrKey: new Uint8Array([1, 2, 3]),
+            sha256: new Uint8Array([4, 5, 6]),
+            assetId: 'asset-id',
+            assetToken: 'asset-token',
+            assetDomain: 'assets.wire.com'
+          }
+        }
+      }
+    })
+
+    const result = toWireMessage(genericMessage)
+
+    expect(result.type).toBe('asset')
+    expect(result.type === 'asset' ? result.id : null).toBe('message-id')
+    expect(result.type === 'asset' ? result.expiresAfterMillis : null).toBe(5000)
+    expect(result.type === 'asset' ? result.mimeType : null).toBe('image/png')
+    expect(result.type === 'asset' ? result.name : null).toBe('image.png')
+    expect(result.type === 'asset' ? result.sizeInBytes.toString() : null).toBe('123')
+    expect(result.type === 'asset' ? result.remoteData : null).toMatchObject({
+      assetId: 'asset-id',
+      assetToken: 'asset-token',
+      assetDomain: 'assets.wire.com'
+    })
+    expect(result.type === 'asset' ? result.sender : null).toStrictEqual(senderId)
+    expect(result.type === 'asset' ? result.timestamp : null).toStrictEqual(timestamp)
+  })
+
   it('deserializes knocks as pings', () => {
     const genericMessage = GenericMessage.create({
       messageId: 'message-id',
@@ -186,6 +259,33 @@ describe('Protobuf deserialization', () => {
 
     expect(result.type).toBe('location')
     expect(result.type === 'location' ? result.zoom : null).toBe(0)
+  })
+
+  it('deserializes ephemeral locations as expiring locations', () => {
+    const genericMessage = GenericMessage.create({
+      messageId: 'message-id',
+      ephemeral: {
+        expireAfterMillis: 5000,
+        location: {
+          latitude: 52.520008,
+          longitude: 13.404954,
+          name: 'Berlin',
+          zoom: 12
+        }
+      }
+    })
+
+    const result = toWireMessage(genericMessage)
+
+    expect(result.type).toBe('location')
+    expect(result.type === 'location' ? result.id : null).toBe('message-id')
+    expect(result.type === 'location' ? result.expiresAfterMillis : null).toBe(5000)
+    expect(result.type === 'location' ? result.latitude : null).toBeCloseTo(52.520008)
+    expect(result.type === 'location' ? result.longitude : null).toBeCloseTo(13.404954)
+    expect(result.type === 'location' ? result.name : null).toBe('Berlin')
+    expect(result.type === 'location' ? result.zoom : null).toBe(12)
+    expect(result.type === 'location' ? result.sender : null).toStrictEqual(senderId)
+    expect(result.type === 'location' ? result.timestamp : null).toStrictEqual(timestamp)
   })
 
   it('deserializes deleted messages', () => {
