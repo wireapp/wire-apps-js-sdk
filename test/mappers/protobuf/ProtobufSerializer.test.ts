@@ -19,7 +19,7 @@ import rootMessage from '../../../src/generated/messages.js'
 import { ProtobufDeserializer } from '../../../src/mappers/protobuf/ProtobufDeserializer.js'
 import { ProtobufSerializer } from '../../../src/mappers/protobuf/ProtobufSerializer.js'
 import { QualifiedId } from '../../../src/model/QualifiedId.js'
-import { CompositeButtonActionConfirmation, DeletedMessage, Location, Ping, Reaction, Receipt, ReceiptType, TextMessage } from '../../../src/model/WireMessage.js'
+import { AssetMessage, CompositeButtonActionConfirmation, DeletedMessage, Location, Ping, Reaction, Receipt, ReceiptType, TextMessage } from '../../../src/model/WireMessage.js'
 
 const { GenericMessage, Confirmation } = rootMessage
 
@@ -89,6 +89,55 @@ describe('Protobuf serialization', () => {
       start: 6,
       length: 5
     }])
+  })
+
+  it('serializes expiring text messages as ephemeral text', () => {
+    const message = TextMessage.create({
+      messageId: 'message-id',
+      conversationId,
+      text: 'Temporary hello',
+      expiresAfterMillis: 5000
+    })
+
+    const serialized = ProtobufSerializer.toGenericMessageByteArray(message)
+    const result = GenericMessage.decode(serialized)
+
+    expect(result.messageId).toBe('message-id')
+    expect(result.content).toBe('ephemeral')
+    expect(result.text).toBeNull()
+    expect(result.ephemeral?.expireAfterMillis.toString()).toBe('5000')
+    expect(result.ephemeral?.content).toBe('text')
+    expect(result.ephemeral?.text?.content).toBe('Temporary hello')
+  })
+
+  it('serializes expiring asset messages as ephemeral assets', () => {
+    const message = AssetMessage.create({
+      messageId: 'message-id',
+      conversationId,
+      mimeType: 'image/png',
+      name: 'image.png',
+      sizeInBytes: 123,
+      remoteData: {
+        otrKey: new Uint8Array([1, 2, 3]),
+        sha256: new Uint8Array([4, 5, 6]),
+        assetId: 'asset-id',
+        assetToken: 'asset-token',
+        assetDomain: 'assets.wire.com'
+      },
+      expiresAfterMillis: 5000
+    })
+
+    const serialized = ProtobufSerializer.toGenericMessageByteArray(message)
+    const result = GenericMessage.decode(serialized)
+
+    expect(result.messageId).toBe('message-id')
+    expect(result.content).toBe('ephemeral')
+    expect(result.asset).toBeNull()
+    expect(result.ephemeral?.expireAfterMillis.toString()).toBe('5000')
+    expect(result.ephemeral?.content).toBe('asset')
+    expect(result.ephemeral?.asset?.original?.mimeType).toBe('image/png')
+    expect(result.ephemeral?.asset?.original?.size.toString()).toBe('123')
+    expect(result.ephemeral?.asset?.uploaded?.assetId).toBe('asset-id')
   })
 
   it('deserializes text message link previews', () => {
@@ -207,6 +256,31 @@ describe('Protobuf serialization', () => {
     expect(result.location?.longitude).toBeCloseTo(13.404954)
     expect(result.location?.name).toBe('Berlin')
     expect(result.location?.zoom).toBe(12)
+  })
+
+  it('serializes expiring locations as ephemeral locations', () => {
+    const message = Location.create({
+      messageId: 'message-id',
+      conversationId,
+      latitude: 52.520008,
+      longitude: 13.404954,
+      name: 'Berlin',
+      zoom: 12,
+      expiresAfterMillis: 5000
+    })
+
+    const serialized = ProtobufSerializer.toGenericMessageByteArray(message)
+    const result = GenericMessage.decode(serialized)
+
+    expect(result.messageId).toBe('message-id')
+    expect(result.content).toBe('ephemeral')
+    expect(result.location).toBeNull()
+    expect(result.ephemeral?.expireAfterMillis.toString()).toBe('5000')
+    expect(result.ephemeral?.content).toBe('location')
+    expect(result.ephemeral?.location?.latitude).toBeCloseTo(52.520008)
+    expect(result.ephemeral?.location?.longitude).toBeCloseTo(13.404954)
+    expect(result.ephemeral?.location?.name).toBe('Berlin')
+    expect(result.ephemeral?.location?.zoom).toBe(12)
   })
 
   it('serializes deleted messages', () => {

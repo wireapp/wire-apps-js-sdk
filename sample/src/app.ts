@@ -515,6 +515,68 @@ class SampleEventsHandler extends WireEventsHandler {
         })
 
         await this.manager.sendMessage(deleted)
+      },
+      'test-ephemeral-text': async (conversationId) => {
+        this.appLogger?.info(`[Sample App] Sending an Ephemeral Text message`)
+
+        const message = TextMessage.create({
+          conversationId: conversationId,
+          text: "This is an Ephemeral Text message",
+          expiresAfterMillis: 10000
+        })
+
+        await this.manager.sendMessage(message)
+      },
+      'test-ephemeral-image': async (conversationId) => {
+        this.appLogger?.info(`[Sample App] Sending an Ephemeral Asset message`)
+        const filename = 'banana-icon.png'
+        const filePath = path.join(this.RESOURCES_PATH, filename)
+        fs.readFile(filePath, (err, data) => {
+          if (err) {
+            throw err;
+          }
+
+          const metadata: Image = {
+            type: 'image',
+            width: 240,
+            height: 240
+          }
+
+          this.manager.sendAsset(
+            conversationId,
+            {
+              data: data,
+              name: filename,
+              mimeType: "image/png",
+              metadata: metadata
+            },
+            10000
+          )
+        });
+      },
+      'test-ephemeral-location': async (conversationId) => {
+        this.appLogger?.info(`[Sample App] Sending an Ephemeral Location message`)
+
+        const message = Location.create({
+          conversationId: conversationId,
+          latitude: 52.5251,
+          longitude: 13.3694,
+          name: "Berlin Hauptbahnhof, Hauptbahnhof, Europaplatz 1, 10557 Berlin",
+          zoom: 11,
+          expiresAfterMillis: 10000
+        })
+
+        await this.manager.sendMessage(message)
+      },
+      'test-ephemeral-ping': async (conversationId) => {
+        this.appLogger?.info(`[Sample App] Sending an Ephemeral Ping message`)
+
+        const message = Ping.create({
+          conversationId: conversationId,
+          expiresAfterMillis: 10000
+        })
+
+        await this.manager.sendMessage(message)
       }
       // More reserved test commands will be added here
     }

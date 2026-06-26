@@ -68,7 +68,8 @@ export class WireApplicationManager {
 
   async sendAsset(
     conversationId: QualifiedId,
-    asset: Asset
+    asset: Asset,
+    expiresAfterMillis?: number | null | undefined
   ): Promise<string> {
     const remoteData = await this.assetsTransferService.uploadAssetForSending(asset.data)
 
@@ -78,7 +79,8 @@ export class WireApplicationManager {
       mimeType: asset.mimeType,
       name: asset.name,
       remoteData: remoteData,
-      sizeInBytes: asset.data.length
+      sizeInBytes: asset.data.length,
+      expiresAfterMillis: expiresAfterMillis
     })
 
     return await this.sendMessage(assetMessage)

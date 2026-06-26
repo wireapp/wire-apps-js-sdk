@@ -15,7 +15,7 @@
 */
 
 import rootMessage from "../../generated/messages.js";
-import type {Composite as ProtobufComposite, IGenericMessage} from "../../generated/messages.js";
+import type {Composite as ProtobufComposite, IGenericMessage, IText, IAsset, ILocation} from "../../generated/messages.js";
 import { QualifiedId } from "../../model/QualifiedId.js";
 const { GenericMessage, Confirmation } = rootMessage;
 import type {
@@ -74,8 +74,8 @@ export const ProtobufDeserializer = {
       return unpackComposite(genericMessage, qualifiedConversation, senderId)
     } else if (genericMessage.knock) {
       return unpackPing(genericMessage, qualifiedConversation, senderId)
-    } else if (genericMessage.ephemeral?.knock) { // TODO(alexandre): Move ephemeral to its own unpack method and handle all other cases
-      return unpackEphemeralPing(genericMessage, qualifiedConversation)
+    } else if (genericMessage.ephemeral) {
+      return unpackEphemeral(genericMessage, qualifiedConversation, senderId, timestamp)
     } else if (genericMessage.location) {
       return unpackLocation(genericMessage, qualifiedConversation, senderId, timestamp)
     } else if (genericMessage.deleted) {
@@ -94,7 +94,8 @@ function unpackTextMessage(
   genericMessage: IGenericMessage,
   qualifiedConversation: QualifiedId,
   senderId: QualifiedId,
-  timestamp: Date
+  timestamp: Date,
+  expiresAfterMillis?: number | null | undefined
 ): TextMessage {
   return TextMessage.create({
     messageId: genericMessage.messageId,
@@ -105,7 +106,8 @@ function unpackTextMessage(
       ?.map(MessageMentionMapper.fromProtobuf)
       .filter((mention): mention is Mention => mention !== null) ?? [],
     senderId: senderId,
-    timestamp: timestamp
+    timestamp: timestamp,
+    expiresAfterMillis: expiresAfterMillis
   })
 }
 
@@ -113,7 +115,8 @@ function unpackAssetMessage(
   genericMessage: IGenericMessage,
   qualifiedConversation: QualifiedId,
   senderId: QualifiedId,
-  timestamp: Date
+  timestamp: Date,
+  expiresAfterMillis?: number | null | undefined
 ): AssetMessage {
   const asset = genericMessage.asset
   const original = asset?.original
@@ -149,7 +152,8 @@ function unpackAssetMessage(
     remoteData: remoteData,
     sizeInBytes: original?.size ?? 0,
     senderId: senderId,
-    timestamp: timestamp
+    timestamp: timestamp,
+    expiresAfterMillis: expiresAfterMillis
   })
 }
 
@@ -220,23 +224,14 @@ function unpackComposite(
 function unpackPing(
   genericMessage: IGenericMessage,
   qualifiedConversation: QualifiedId,
-  senderId: QualifiedId
+  senderId: QualifiedId,
+  expiresAfterMillis?: number | null | undefined
 ): Ping {
   return Ping.create({
     messageId: genericMessage.messageId,
     conversationId: qualifiedConversation,
-    senderId: senderId
-  })
-}
-
-function unpackEphemeralPing(
-  genericMessage: IGenericMessage,
-  qualifiedConversation: QualifiedId
-): Ping {
-  return Ping.create({
-    messageId: genericMessage.messageId,
-    conversationId: qualifiedConversation,
-    expiresAfterMillis: toNumber(genericMessage.ephemeral!.expireAfterMillis)
+    senderId: senderId,
+    expiresAfterMillis: expiresAfterMillis
   })
 }
 
@@ -244,7 +239,8 @@ function unpackLocation(
   genericMessage: IGenericMessage,
   qualifiedConversation: QualifiedId,
   senderId: QualifiedId,
-  timestamp: Date
+  timestamp: Date,
+  expiresAfterMillis?: number | null
 ): Location {
   const location = genericMessage.location!
 
@@ -256,7 +252,8 @@ function unpackLocation(
     name: Object.hasOwn(location, 'name') ? location.name : null,
     zoom: Object.hasOwn(location, 'zoom') ? location.zoom : null,
     senderId: senderId,
-    timestamp: timestamp
+    timestamp: timestamp,
+    expiresAfterMillis: expiresAfterMillis
   })
 }
 
@@ -329,6 +326,90 @@ function unpackReaction(
     emojiSet: emojiSet,
     senderId: senderId
   })
+}
+
+function unpackEphemeral(
+  genericMessage: IGenericMessage,
+  qualifiedConversation: QualifiedId,
+  senderId: QualifiedId,
+  timestamp: Date
+): WireMessage {
+  const ephemeralMessage = genericMessage.ephemeral!
+
+  const builtMessage: Partial<IGenericMessage> = {
+    messageId: genericMessage.messageId
+  }
+
+  if (ephemeralMessage.text) {
+    const textContent = ephemeralMessage.text!
+    const textMessage: IText = {
+      content: textContent.content!,
+      mentions: textContent.mentions!,
+      linkPreview: textContent.linkPreview!,
+      expectsReadConfirmation: textContent.expectsReadConfirmation!,
+      legalHoldStatus: textContent.legalHoldStatus!
+    }
+
+    return unpackTextMessage(
+      {
+        ...builtMessage,
+        text: textMessage
+      } as IGenericMessage,
+      qualifiedConversation,
+      senderId,
+      timestamp,
+      toNumber(ephemeralMessage.expireAfterMillis)
+    )
+  } else if (ephemeralMessage.asset) {
+    const assetContent = ephemeralMessage.asset!
+    const assetMessage: IAsset = {
+      original: assetContent.original!,
+      uploaded: assetContent.uploaded!,
+      notUploaded: assetContent.notUploaded!,
+      expectsReadConfirmation: assetContent.expectsReadConfirmation!
+    }
+
+    return unpackAssetMessage(
+      {
+        ...builtMessage,
+        asset: assetMessage
+      } as IGenericMessage,
+      qualifiedConversation,
+      senderId,
+      timestamp,
+      toNumber(ephemeralMessage.expireAfterMillis)
+    )
+  } else if (ephemeralMessage.knock) {
+    return unpackPing(
+      {
+        ...builtMessage
+      } as IGenericMessage,
+      qualifiedConversation,
+      senderId,
+      toNumber(ephemeralMessage.expireAfterMillis)
+    )
+  } else if (ephemeralMessage.location) {
+    const locationContent = ephemeralMessage.location!
+    const locationMessage: ILocation = {
+      latitude: locationContent.latitude,
+      longitude: locationContent.longitude,
+      name: locationContent.name!,
+      zoom: locationContent.zoom!
+    }
+
+    return unpackLocation(
+      {
+        ...builtMessage,
+        location: locationMessage,
+      } as IGenericMessage,
+      qualifiedConversation,
+      senderId,
+      timestamp,
+      toNumber(ephemeralMessage.expireAfterMillis)
+    )
+  } else {
+    return new Ignored()
+  }
 }
 
 /**

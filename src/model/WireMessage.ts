@@ -146,7 +146,7 @@ export const TextMessage = {
       mentions?: Mention[]
       linkPreviews?: LinkPreview[]
       senderId?: QualifiedId
-      expiresAfterMillis?: number | null,
+      expiresAfterMillis?: number | null | undefined,
       timestamp?: Date
     }
   ): TextMessage {
@@ -184,7 +184,7 @@ export const AssetMessage = {
       metadata?: AssetMetadata | null
       remoteData?: AssetRemoteData | null
       senderId?: QualifiedId,
-      expiresAfterMillis?: number,
+      expiresAfterMillis?: number | null | undefined,
       timestamp?: Date
     }
   ): AssetMessage {
@@ -350,7 +350,7 @@ export const Ping = {
     params: {
       messageId?: string
       conversationId: QualifiedId
-      expiresAfterMillis?: number | null,
+      expiresAfterMillis?: number | null | undefined,
       senderId?: QualifiedId
     }
   ): Ping {
@@ -382,7 +382,7 @@ export const Location = {
       name?: string | null | undefined
       zoom?: number | null | undefined
       senderId?: QualifiedId,
-      expiresAfterMillis?: number | null,
+      expiresAfterMillis?: number | null | undefined,
       timestamp?: Date
     }
   ): Location {
