@@ -16,27 +16,52 @@
 
 import {singleton} from "tsyringe";
 import {UsersApiClient} from "./UsersApiClient.js";
+import {SearchApiClient} from "./SearchApiClient.js";
 import {QualifiedId} from "../model/QualifiedId.js";
 import type {UserResponse} from "./model/UserResponse.js";
 import {LoggerFactory} from "../utils/logger/LoggerFactory.js";
 import {CryptoClientId} from "../model/CryptoClientId.js";
 import {WireUser} from "../model/WireUser.js";
 import {TeamId} from "../model/TeamId.js";
+import type {ContactDocument} from "./response/SearchContactsResponse.js";
 
 @singleton()
 export class UserService {
   private logger = LoggerFactory.getLogger(this.constructor.name)
 
   constructor(
-    private usersApiClient: UsersApiClient) {
+    private usersApiClient: UsersApiClient,
+    private searchApiClient: SearchApiClient,
+  ) {
   }
 
   async getUser(userQualifiedId: QualifiedId): Promise<WireUser> {
     const response = await this.usersApiClient.getUser(userQualifiedId.id, userQualifiedId.domain);
-    return this.mapToWireUser(response);
+    return this.mapUserResponseToWireUser(response);
   }
 
-  private mapToWireUser(userResponse: UserResponse): WireUser {
+  /**
+   * Searches for users matching the given query on the specified domain.
+   *
+   * Fields not present in the search response (email) are set to undefined.
+   *
+   * @param query The search string to match against user names and handles.
+   * @param domain The domain to restrict the search to.
+   * @param numberOfResults The maximum number of results to return,
+   * or undefined to use the backend default.
+   * @returns A list of WireUser objects matching the query.
+   */
+  async searchUsers(
+    query: string,
+    domain: string,
+    numberOfResults?: number
+  ): Promise<WireUser[]> {
+    this.logger.info(`Searching users with query: ${query} on domain: ${domain}`);
+    const response = await this.searchApiClient.searchUsers(query, domain, numberOfResults);
+    return response.documents.map(doc => this.mapContactDocumentToWireUser(doc));
+  }
+
+  private mapUserResponseToWireUser(userResponse: UserResponse): WireUser {
     return new WireUser(
       new QualifiedId(userResponse.qualified_id.id, userResponse.qualified_id.domain),
       userResponse.name,
@@ -44,6 +69,17 @@ export class UserService {
       userResponse.email,
       userResponse.handle,
       userResponse.team ? new TeamId(userResponse.team) : undefined,
+    );
+  }
+
+  private mapContactDocumentToWireUser(doc: ContactDocument): WireUser {
+    return new WireUser(
+      new QualifiedId(doc.qualified_id.id, doc.qualified_id.domain),
+      doc.name,
+      false,
+      undefined,
+      doc.handle ?? undefined,
+      doc.team ? new TeamId(doc.team) : undefined,
     );
   }
 

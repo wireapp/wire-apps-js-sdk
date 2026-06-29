@@ -134,4 +134,8 @@ export class WireApplicationManager {
     this.logger.debug('App requested to get members of conversation. ConversationId: ' + obfuscateId(conversationId.id));
     return this.conversationService.getMembersByConversationId(conversationId)
   }
+
+  async searchUsers(query: string, domain: string, numberOfResults?: number): Promise<WireUser[]> {
+    return this.userService.searchUsers(query, domain, numberOfResults);
+  }
 }
