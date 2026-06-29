@@ -494,7 +494,7 @@ class SampleEventsHandler extends WireEventsHandler {
             })
           ]
         })
-  
+
         await this.manager.sendMessage(msg)
       },
       'test-deleted-message': async (conversationId) => {
@@ -577,7 +577,31 @@ class SampleEventsHandler extends WireEventsHandler {
         })
 
         await this.manager.sendMessage(message)
-      }
+      },
+      'search-user': async (conversationId, command) => {
+        this.appLogger?.info(`[Sample App] Executing handler for: search-user`)
+
+        const parts = command?.trim().split(' ')
+        const query = parts?.[1]
+        const domain = parts?.[2]
+        const numberOfResults = parts?.[3] ? parseInt(parts[3], 10) : undefined
+
+        if (!query || !domain) {
+          this.appLogger?.info(`[Sample App] Invalid command format. Expected: search-user [QUERY] [DOMAIN] [NUMBER_OF_RESULTS?]`)
+          return
+        }
+
+        const users: WireUser[] = await this.manager.searchUsers(query, domain, numberOfResults)
+
+        const userList = users.length > 0
+          ? users.map(u => `- ${u.name} | Handle: ${u.handle ?? 'N/A'} | Team: ${u.teamId?.value ?? 'N/A'}`).join('\n')
+          : 'No users found.'
+
+        await this.manager.sendMessage(TextMessage.create({
+          conversationId: conversationId,
+          text: `Search results for "${query}" on ${domain} (${users.length}):\n${userList}`
+        }))
+      },
       // More reserved test commands will be added here
     }
   }
