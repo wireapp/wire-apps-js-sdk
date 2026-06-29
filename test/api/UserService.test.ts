@@ -23,6 +23,7 @@ import {TeamId} from "../../src/model/TeamId.js";
 
 describe('UserService', () => {
   let mockUsersApiClient: any
+  let mockSearchApiClient: any // Added mock
   let service: UserService
 
   beforeEach(() => {
@@ -30,7 +31,13 @@ describe('UserService', () => {
       getUser: vi.fn()
     }
 
-    service = new UserService(mockUsersApiClient)
+    // Initialize the search client mock
+    mockSearchApiClient = {
+      searchUsers: vi.fn()
+    }
+
+    // Pass both mocked dependencies into the service
+    service = new UserService(mockUsersApiClient, mockSearchApiClient)
 
     vi.spyOn(console, 'info').mockImplementation(() => {
     })
@@ -102,8 +109,8 @@ describe('UserService', () => {
       mockUsersApiClient.getClientsByUserIds = vi.fn()
     })
 
-    const userId1: QualifiedId = { id: 'user-1', domain: 'example.com' }
-    const userId2: QualifiedId = { id: 'user-2', domain: 'example.com' }
+    const userId1: QualifiedId = {id: 'user-1', domain: 'example.com'}
+    const userId2: QualifiedId = {id: 'user-2', domain: 'example.com'}
 
     it('should return empty map when no users provided', async () => {
       const result = await service.getUsersClientIds([])
@@ -113,7 +120,7 @@ describe('UserService', () => {
     })
 
     it('should call getClientsByUserIds for single user', async () => {
-      const mockMap = new Map([[QualifiedId.toKey(userId1), [{ id: 'device-1' }]]])
+      const mockMap = new Map([[QualifiedId.toKey(userId1), [{id: 'device-1'}]]])
       vi.mocked(mockUsersApiClient.getClientsByUserIds).mockResolvedValue(mockMap)
 
       await service.getUsersClientIds([userId1])
@@ -123,8 +130,8 @@ describe('UserService', () => {
 
     it('should call getClientsByUserIds when multiple users are provided', async () => {
       const mockMap = new Map([
-        [QualifiedId.toKey(userId1), [{ id: 'device-1' }]],
-        [QualifiedId.toKey(userId2), [{ id: 'device-2' }]]
+        [QualifiedId.toKey(userId1), [{id: 'device-1'}]],
+        [QualifiedId.toKey(userId2), [{id: 'device-2'}]]
       ])
       vi.mocked(mockUsersApiClient.getClientsByUserIds).mockResolvedValue(mockMap)
 
@@ -134,7 +141,7 @@ describe('UserService', () => {
     })
 
     it('should return Map with string keys and CryptoClientId arrays as values', async () => {
-      const mockMap = new Map([[QualifiedId.toKey(userId1), [{ id: 'device-1' }, { id: 'device-2' }]]])
+      const mockMap = new Map([[QualifiedId.toKey(userId1), [{id: 'device-1'}, {id: 'device-2'}]]])
       vi.mocked(mockUsersApiClient.getClientsByUserIds).mockResolvedValue(mockMap)
 
       const result = await service.getUsersClientIds([userId1])
@@ -152,8 +159,8 @@ describe('UserService', () => {
 
     it('should correctly map multiple users to their CryptoClientIds with string keys', async () => {
       const mockMap = new Map([
-        [QualifiedId.toKey(userId1), [{ id: 'device-1' }]],
-        [QualifiedId.toKey(userId2), [{ id: 'device-2' }, { id: 'device-3' }]]
+        [QualifiedId.toKey(userId1), [{id: 'device-1'}]],
+        [QualifiedId.toKey(userId2), [{id: 'device-2'}, {id: 'device-3'}]]
       ])
       vi.mocked(mockUsersApiClient.getClientsByUserIds).mockResolvedValue(mockMap)
 
@@ -196,6 +203,87 @@ describe('UserService', () => {
       vi.mocked(mockUsersApiClient.getClientsByUserIds).mockRejectedValue(new Error('network-failure'))
 
       await expect(service.getUsersClientIds([userId1, userId2])).rejects.toThrow('network-failure')
+    })
+  })
+
+  describe('searchUsers', () => {
+    const query = 'Alice'
+    const domain = 'example.com'
+
+    const mockContactDocument = {
+      qualified_id: {id: 'user-alice', domain: 'example.com'},
+      name: 'Alice Smith',
+      handle: 'alice_s',
+      team: 'team-alpha'
+    }
+
+    const mockSearchResponse = {
+      documents: [mockContactDocument]
+    }
+
+    it('should call searchApiClient.searchUsers with query, domain, and numberOfResults', async () => {
+      vi.mocked(mockSearchApiClient.searchUsers).mockResolvedValue(mockSearchResponse)
+
+      await service.searchUsers(query, domain, 5)
+
+      expect(mockSearchApiClient.searchUsers).toHaveBeenCalledWith('Alice', 'example.com', 5)
+    })
+
+    it('should call searchApiClient.searchUsers with undefined numberOfResults if not provided', async () => {
+      vi.mocked(mockSearchApiClient.searchUsers).mockResolvedValue(mockSearchResponse)
+
+      await service.searchUsers(query, domain)
+
+      expect(mockSearchApiClient.searchUsers).toHaveBeenCalledWith('Alice', 'example.com', undefined)
+    })
+
+    it('should return an array of WireUser objects mapped from the search response', async () => {
+      vi.mocked(mockSearchApiClient.searchUsers).mockResolvedValue(mockSearchResponse)
+
+      const result = await service.searchUsers(query, domain)
+
+      expect(result).toBeInstanceOf(Array)
+      expect(result).toHaveLength(1)
+
+      const user = result[0]
+      expect(user).toBeInstanceOf(WireUser)
+      expect(user.id).toEqual(new QualifiedId('user-alice', 'example.com'))
+      expect(user.name).toBe('Alice Smith')
+      expect(user.handle).toBe('alice_s')
+      expect(user.teamId).toEqual(new TeamId('team-alpha'))
+
+      // search fields specific mapping assertions
+      expect(user.deleted).toBe(false)
+      expect(user.email).toBeUndefined()
+    })
+
+    it('should map optional missing fields like handle or team to undefined', async () => {
+      const minimalContactDocument = {
+        qualified_id: {id: 'user-bob', domain: 'example.com'},
+        name: 'Bob'
+        // handle and team are missing
+      }
+      vi.mocked(mockSearchApiClient.searchUsers).mockResolvedValue({documents: [minimalContactDocument]})
+
+      const result = await service.searchUsers(query, domain)
+      const user = result[0]
+
+      expect(user.handle).toBeUndefined()
+      expect(user.teamId).toBeUndefined()
+    })
+
+    it('should return an empty array if search response documents are empty', async () => {
+      vi.mocked(mockSearchApiClient.searchUsers).mockResolvedValue({documents: []})
+
+      const result = await service.searchUsers(query, domain)
+
+      expect(result).toEqual([])
+    })
+
+    it('should propagate errors from searchApiClient.searchUsers', async () => {
+      vi.mocked(mockSearchApiClient.searchUsers).mockRejectedValue(new Error('search-failed'))
+
+      await expect(service.searchUsers(query, domain)).rejects.toThrow('search-failed')
     })
   })
 })
