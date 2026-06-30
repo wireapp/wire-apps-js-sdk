@@ -17,6 +17,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { WireApplicationManager } from '../../src/core/WireApplicationManager.js'
 import { QualifiedId } from '../../src/model/QualifiedId.js'
+import {WireUser} from "../../src";
 
 describe('WireApplicationManager', () => {
   const conversationId = new QualifiedId('conversation-id', 'wire.com')
@@ -64,6 +65,64 @@ describe('WireApplicationManager', () => {
       sizeInBytes: 3,
       remoteData,
       expiresAfterMillis: 5000
+    })
+  })
+
+  describe('searchUsers', () => {
+    it('delegates to userService and returns results', async () => {
+      const mockUsers: WireUser[] = [
+        { id: new QualifiedId('user-1', 'wire.com'), name: 'Alice', handle: 'alice' },
+        { id: new QualifiedId('user-2', 'wire.com'), name: 'Bob', handle: 'bob' }
+      ]
+      const userService = {
+        searchUsers: vi.fn().mockResolvedValue(mockUsers)
+      }
+      const manager = new WireApplicationManager(
+        {} as any,
+        {} as any,
+        {} as any,
+        {} as any,
+        userService as any
+      )
+
+      const result = await manager.searchUsers('ali', 'wire.com', 10)
+
+      expect(result).toEqual(mockUsers)
+      expect(userService.searchUsers).toHaveBeenCalledWith('ali', 'wire.com', 10)
+    })
+
+    it('passes undefined numberOfResults when omitted', async () => {
+      const userService = {
+        searchUsers: vi.fn().mockResolvedValue([])
+      }
+      const manager = new WireApplicationManager(
+        {} as any,
+        {} as any,
+        {} as any,
+        {} as any,
+        userService as any
+      )
+
+      await manager.searchUsers('ali', 'wire.com')
+
+      expect(userService.searchUsers).toHaveBeenCalledWith('ali', 'wire.com', undefined)
+    })
+
+    it('returns an empty array when no users match', async () => {
+      const userService = {
+        searchUsers: vi.fn().mockResolvedValue([])
+      }
+      const manager = new WireApplicationManager(
+        {} as any,
+        {} as any,
+        {} as any,
+        {} as any,
+        userService as any
+      )
+
+      const result = await manager.searchUsers('nonexistent', 'wire.com', 5)
+
+      expect(result).toEqual([])
     })
   })
 })
