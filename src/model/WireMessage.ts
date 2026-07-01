@@ -38,6 +38,13 @@ interface Replyable {
   timestamp: Date
 }
 
+/**
+ * Interface for message types to be extended from that can be edited
+ */
+interface Editable {
+  replacingMessageId: string
+}
+
 export interface Mention {
   userId: QualifiedId
   offset: number
