@@ -24,7 +24,17 @@ import type {
   Asset,
   IButtonActionConfirmation
 } from "../../generated/messages.js";
-const { GenericMessage, Composite, Ephemeral, Knock, Location: ProtobufLocation, MessageDelete, Confirmation, Reaction: ProtobufReaction } = rootMessage;
+const {
+  GenericMessage,
+  Composite,
+  Ephemeral,
+  Knock,
+  Location: ProtobufLocation,
+  MessageDelete,
+  Confirmation,
+  MessageEdit,
+  Reaction: ProtobufReaction
+} = rootMessage;
 import type {
   WireMessage,
   Item,
@@ -36,6 +46,7 @@ import type {
 } from '../../model/WireMessage.js';
 import {
   TextMessage,
+  TextEditedMessage,
   AssetMessage,
   CompositeButton,
   CompositeButtonAction,
@@ -69,10 +80,14 @@ export const ProtobufSerializer = {
         builtMessage = packTextMessage(wireMessage, genericMessage)
         break
 
+      case 'text-edited':
+        builtMessage = packTextEditedMessage(wireMessage, genericMessage)
+        break
+
       case 'asset':
         builtMessage = packAssetMessage(wireMessage, genericMessage)
         break
-      
+
       case 'composite_button_action':
         builtMessage = packCompositeButtonAction(wireMessage, genericMessage)
         break
@@ -80,11 +95,11 @@ export const ProtobufSerializer = {
       case 'composite_button_action_confirmation':
         builtMessage = packCompositeButtonActionConfirmation(wireMessage, genericMessage)
         break
-      
+
       case 'composite':
         builtMessage = packCompositeMessage(wireMessage, genericMessage)
         break
-      
+
       case 'ping':
         builtMessage = packPing(wireMessage, genericMessage)
         break
@@ -160,6 +175,23 @@ function packText(
   }
 
   return textContent
+}
+
+function packTextEditedMessage(
+  wireMessage: TextEditedMessage,
+  genericMessage: Partial<IGenericMessage>
+): IGenericMessage {
+  return {
+    ...genericMessage,
+    edited: MessageEdit.create({
+      replacingMessageId: wireMessage.replacingMessageId,
+      content: "text",
+      text: {
+        content: wireMessage.text,
+        mentions: wireMessage.mentions?.map(MessageMentionMapper.toProtobuf) ?? []
+      },
+    })
+  } as IGenericMessage
 }
 
 function packAssetMessage(
@@ -308,7 +340,7 @@ function packPing(
       }
       : {
         knock: knock
-      })  
+      })
   } as IGenericMessage
 }
 
