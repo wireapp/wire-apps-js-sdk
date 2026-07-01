@@ -529,6 +529,7 @@ export type WireMessage =
   | Unknown
   | Ignored
   | TextMessage
+  | TextEditedMessage
   | AssetMessage
   | CompositeButtonAction
   | CompositeButtonActionConfirmation
