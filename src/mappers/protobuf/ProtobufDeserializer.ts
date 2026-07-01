@@ -29,6 +29,7 @@ import type {
 } from "../../model/WireMessage.js";
 import {
   TextMessage,
+  TextEditedMessage,
   Unknown,
   AssetMessage,
   CompositeButton,
@@ -64,6 +65,8 @@ export const ProtobufDeserializer = {
 
     if (genericMessage.text) {
       return unpackTextMessage(genericMessage, qualifiedConversation, senderId, timestamp)
+    } else if (genericMessage.edited) {
+      return unpackEditedMessage(genericMessage, qualifiedConversation, senderId)
     } else if (genericMessage.asset) {
       return unpackAssetMessage(genericMessage, qualifiedConversation, senderId, timestamp)
     } else if (genericMessage.buttonAction) {
@@ -109,6 +112,29 @@ function unpackTextMessage(
     timestamp: timestamp,
     expiresAfterMillis: expiresAfterMillis
   })
+}
+
+function unpackEditedMessage(
+  genericMessage: IGenericMessage,
+  qualifiedConversation: QualifiedId,
+  senderId: QualifiedId
+): TextEditedMessage | Ignored {
+  const messageEdit = genericMessage.edited
+  if (messageEdit?.text) {
+    return TextEditedMessage.create({
+      replacingMessageId: messageEdit?.replacingMessageId,
+      messageId: genericMessage.messageId,
+      conversationId: qualifiedConversation,
+      text: messageEdit.text.content ?? "",
+      linkPreviews: messageEdit.text.linkPreview?.map(MessageLinkPreviewMapper.fromProtobuf) ?? [],
+      mentions: messageEdit.text.mentions
+        ?.map(MessageMentionMapper.fromProtobuf)
+        .filter((mention): mention is Mention => mention !== null) ?? [],
+      senderId: senderId
+    })
+  }
+  // TODO: instead add other paths, i.e. composite and multipart, as specified in https://github.com/wireapp/generic-message-proto/blob/master/proto/messages.proto#L218
+  return new Ignored()
 }
 
 function unpackAssetMessage(
