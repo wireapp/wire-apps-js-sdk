@@ -19,7 +19,18 @@ import rootMessage from '../../../src/generated/messages.js'
 import { ProtobufDeserializer } from '../../../src/mappers/protobuf/ProtobufDeserializer.js'
 import { ProtobufSerializer } from '../../../src/mappers/protobuf/ProtobufSerializer.js'
 import { QualifiedId } from '../../../src/model/QualifiedId.js'
-import { AssetMessage, CompositeButtonActionConfirmation, DeletedMessage, Location, Ping, Reaction, Receipt, ReceiptType, TextMessage } from '../../../src/model/WireMessage.js'
+import {
+  AssetMessage,
+  CompositeButtonActionConfirmation,
+  DeletedMessage,
+  Location,
+  Ping,
+  Reaction,
+  Receipt,
+  ReceiptType,
+  TextEditedMessage,
+  TextMessage
+} from '../../../src/model/WireMessage.js'
 
 const { GenericMessage, Confirmation } = rootMessage
 
@@ -361,6 +372,23 @@ describe('Protobuf serialization', () => {
     expect(() => ProtobufSerializer.toGenericMessageByteArray(message)).toThrow(
       'First messageId for Receipt message type is null'
     )
+  })
+
+  it('serializes text edited message', () => {
+    const message = TextEditedMessage.create({
+      conversationId: conversationId,
+      messageId: "new-message-id",
+      replacingMessageId: "replacing-message-id",
+      text: "new content"
+    })
+
+    const serialized = ProtobufSerializer.toGenericMessageByteArray(message)
+    const result = GenericMessage.decode(serialized)
+
+    expect(result.content).toBe('edited')
+    expect(result.messageId).toBe('new-message-id')
+    expect(result.edited?.content).toBe('text')
+    expect(result.edited?.text?.content).toBe('new content')
   })
 
   it('deserializes composite button action confirmations', () => {
