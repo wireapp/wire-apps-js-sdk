@@ -375,11 +375,28 @@ describe('Protobuf serialization', () => {
   })
 
   it('serializes text edited message', () => {
+    const mention = {
+      userId: new QualifiedId('user-id', 'wire.com'),
+      offset: 6,
+      length: 5
+    }
+    const mentions = [mention]
+
+    const linkPreview = [{
+      url: wireBlogUrl,
+      urlOffset: 16,
+      permanentUrl: wireBlogUrl,
+      title: 'Wire',
+      summary: 'Secure collaboration'
+    }]
+
     const message = TextEditedMessage.create({
       conversationId: conversationId,
       messageId: "new-message-id",
       replacingMessageId: "replacing-message-id",
-      text: "new content"
+      text: `Hello @Wire see ${wireBlogUrl}`,
+      mentions: mentions,
+      linkPreviews: linkPreview
     })
 
     const serialized = ProtobufSerializer.toGenericMessageByteArray(message)
@@ -388,7 +405,16 @@ describe('Protobuf serialization', () => {
     expect(result.content).toBe('edited')
     expect(result.messageId).toBe('new-message-id')
     expect(result.edited?.content).toBe('text')
-    expect(result.edited?.text?.content).toBe('new content')
+    expect(result.edited?.text?.content).toBe(`Hello @Wire see ${wireBlogUrl}`)
+
+    const resultMention = result.edited?.text?.mentions?.at(0)
+    expect(resultMention).toBeDefined()
+    expect(resultMention!.length).toBe(mention.length)
+    expect(resultMention!.start).toBe(mention.offset)
+    expect(resultMention!.qualifiedUserId?.id).toBe(mention.userId.id)
+    expect(resultMention!.qualifiedUserId?.domain).toBe(mention.userId.domain)
+
+    expect(result.edited?.text?.linkPreview).toStrictEqual(linkPreview)
   })
 
   it('deserializes composite button action confirmations', () => {
