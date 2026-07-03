@@ -188,8 +188,9 @@ function packTextEditedMessage(
       content: "text",
       text: {
         content: wireMessage.text,
-        mentions: wireMessage.mentions?.map(MessageMentionMapper.toProtobuf) ?? []
-      },
+        mentions: wireMessage.mentions?.map(MessageMentionMapper.toProtobuf) ?? [],
+        linkPreview: wireMessage.linkPreviews?.map(it => MessageLinkPreviewMapper.toProtobuf(it)) ?? []
+      }
     })
   } as IGenericMessage
 }
