@@ -118,6 +118,17 @@ class SampleEventsHandler extends WireEventsHandler {
     }
   }
 
+  public override async onTextEditedMessageReceived(wireMessage: TextEditedMessage): Promise<void> {
+    this.appLogger?.info(`[Sample App] Received a Text Edit, notifying conversation that it happen`)
+
+    const textMessage = TextMessage.create({
+      conversationId: wireMessage.conversationId,
+      text: `Message with ID: ${wireMessage.replacingMessageId}, got edited. Now it's ID is: ${wireMessage.id}`
+    })
+
+    await this.manager.sendMessage(textMessage)
+  }
+
   public override async onPingReceived(wireMessage: Ping): Promise<void> {
     this.appLogger?.info(`[Sample App] Received a Ping, sending one back`)
 
@@ -616,10 +627,11 @@ class SampleEventsHandler extends WireEventsHandler {
 
         const messageEdit = TextEditedMessage.create({
           conversationId: conversationId,
+          replacingMessageId: message.id,
           text: "This message got edited"
         })
 
-        await this.manager.sendMessage(message)
+        await this.manager.sendMessage(messageEdit)
       }
       // More reserved test commands will be added here
     }
