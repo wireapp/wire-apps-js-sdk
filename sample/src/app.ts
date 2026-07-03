@@ -27,6 +27,7 @@ import {
   QualifiedId,
   TextMessage,
   AssetMessage,
+  TextEditedMessage,
   CompositeButton,
   CompositeMessage,
   Ping,
@@ -602,6 +603,24 @@ class SampleEventsHandler extends WireEventsHandler {
           text: `Search results for "${query}" on ${domain} (${users.length}):\n${userList}`
         }))
       },
+      'test-edit-text': async(conversationId) => {
+        this.appLogger?.info(`[Sample App] Sending a Text Edit message`)
+        const message = TextMessage.create({
+          conversationId: conversationId,
+          text: "This message will be edited in 3 seconds"
+        })
+
+        await this.manager.sendMessage(message)
+
+        await new Promise(resolve => setTimeout(resolve, 3000))
+
+        const messageEdit = TextEditedMessage.create({
+          conversationId: conversationId,
+          text: "This message got edited"
+        })
+
+        await this.manager.sendMessage(message)
+      }
       // More reserved test commands will be added here
     }
   }
