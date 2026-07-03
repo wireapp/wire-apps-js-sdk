@@ -358,4 +358,54 @@ describe('Protobuf deserialization', () => {
 
     expect(result.type).toBe('ignored')
   })
+
+  it('deserializes text edited message', () => {
+    const wireBlogUrl = "https://wire.com/blog"
+    const mention = {
+      qualifiedUserId: {
+        id: 'user-id',
+        domain: 'wire.com'
+      },
+      start: 6,
+      length: 5
+    }
+    const mentions = [mention]
+
+    const linkPreview = [{
+      url: wireBlogUrl,
+      urlOffset: 16,
+      permanentUrl: wireBlogUrl,
+      title: 'Wire',
+      summary: 'Secure collaboration',
+      image: null
+    }]
+
+    const genericMessage = GenericMessage.create({
+      messageId: 'edited-message-id',
+      edited: {
+        replacingMessageId: 'replacing-message-id',
+        content: 'text',
+        text: {
+          content: `Hello @Wire see ${wireBlogUrl}`,
+          mentions: mentions,
+          linkPreview: linkPreview
+        }
+      }
+    })
+
+    const result = ProtobufDeserializer.toWireMessage(GenericMessage.encode(genericMessage).finish(), conversationId)
+
+    expect(result.type).toBe('text-edited')
+    if (result.type == 'text-edited') {
+      expect(result.id).toBe('edited-message-id')
+      expect(result.text).toBe(`Hello @Wire see ${wireBlogUrl}`)
+      const resultMention = result.mentions?.at(0)
+      expect(resultMention).toBeDefined()
+      expect(resultMention!.length).toBe(mention.length)
+      expect(resultMention!.offset).toBe(mention.start)
+      expect(resultMention!.userId.id).toBe(mention.qualifiedUserId.id)
+      expect(resultMention!.userId.domain).toBe(mention.qualifiedUserId.domain)
+      expect(result.linkPreviews).toStrictEqual(linkPreview)
+    }
+  })
 })
