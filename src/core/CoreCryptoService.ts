@@ -246,6 +246,8 @@ export class CoreCryptoService {
       } catch (exception) {
         if (CoreCryptoError.Mls.instanceOf(exception) && MlsError.ConversationAlreadyExists.instanceOf(exception.inner.mlsError)) {
           throw Error("Conversation already exists.")
+        } else {
+          this.logger.error(`Unexpected exception receveid while creating a establishing a MLS conversation`, exception)
         }
       }
 
