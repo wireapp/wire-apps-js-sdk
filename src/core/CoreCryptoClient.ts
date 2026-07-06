@@ -128,11 +128,15 @@ export class CoreCryptoClient {
     })
   }
 
-  async mlsGenerateKeyPackages(): Promise<Uint8Array[]> {
+  async mlsGenerateKeyPackages(count: number = 100): Promise<Uint8Array[]> {
     return await this.coreCrypto.transaction(async (context) => {
-      return [(await context.generateKeyPackage(
-        this.credential!
-      )).serialize()]
+      const keyPackages: Uint8Array[] = []
+      for (let i = 0; i < count; i++) {
+        const kp = await context.generateKeyPackage(this.credential!)
+        keyPackages.push(kp.serialize())
+      }
+
+      return keyPackages
     })
   }
 

@@ -14,7 +14,7 @@
 * along with this program. If not, see http://www.gnu.org/licenses/.
 */
 
-import type { CommitBundle, HistorySecret, MlsTransport, MlsTransportData } from "@wireapp/core-crypto/native"; // TODO(alexandre): , MlsTransportResponse
+import type { CommitBundle, HistorySecret, MlsTransport, MlsTransportData } from "@wireapp/core-crypto/native";
 import { MlsService } from "../api/MlsService.js";
 import { singleton } from "tsyringe";
 
