@@ -14,7 +14,7 @@
 * along with this program. If not, see http://www.gnu.org/licenses/.
 */
 
-import {ConversationId, GroupInfo, isMlsConversationAlreadyExistsError, isMlsOrphanWelcomeError} from "@wireapp/core-crypto";
+import {ConversationId, CoreCryptoError, GroupInfo, MlsError} from "@wireapp/core-crypto/native";
 import {ClientsService} from "../api/ClientsService.js";
 import {CryptoClientId} from "../model/CryptoClientId.js";
 import {
@@ -137,7 +137,7 @@ export class CoreCryptoService {
     try {
       await this.coreCryptoClient!.processWelcomeMessage(welcomeMessageBytes)
     } catch (exception) {
-      if (isMlsOrphanWelcomeError(exception)) {
+      if (CoreCryptoError.Mls.instanceOf(exception) && MlsError.OrphanWelcome.instanceOf(exception.inner.mlsError)) {
         this.logger.warn("Cannot process welcome message, asking to join the conversation")
         await this.joinMlsConversation(groupInfoBytes)
       } else {
@@ -244,7 +244,7 @@ export class CoreCryptoService {
           removalKey
         )
       } catch (exception) {
-        if (isMlsConversationAlreadyExistsError(exception)) {
+        if (CoreCryptoError.Mls.instanceOf(exception) && MlsError.ConversationAlreadyExists.instanceOf(exception.inner.mlsError)) {
           throw Error("Conversation already exists.")
         }
       }
@@ -277,6 +277,6 @@ export class CoreCryptoService {
   }
 
   close() {
-    return this.coreCryptoClient?.close()
+    this.coreCryptoClient?.close()
   }
 }

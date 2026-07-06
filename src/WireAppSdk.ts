@@ -166,7 +166,7 @@ export class WireAppSdk {
 
     this.logger.debug("Closing CoreCrypto connections.")
     const coreCryptoService = container.resolve(CoreCryptoService)
-    await coreCryptoService.close()
+    coreCryptoService.close()
 
     this.logger.debug("Closing Database connections.")
     const databaseService = container.resolve(DatabaseService)

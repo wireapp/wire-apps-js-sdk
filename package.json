@@ -56,7 +56,9 @@
     "vitest": "^4.1.8"
   },
   "dependencies": {
-    "@wireapp/core-crypto": "^9.1.2",
+    "@ubjs/core": "^0.31.0-3",
+    "@ubjs/node": "^0.31.0-3",
+    "@wireapp/core-crypto": "^10.0.0",
     "bazinga64": "^6.5.13",
     "better-sqlite3": "^12.10.1",
     "drizzle-orm": "^0.45.1",

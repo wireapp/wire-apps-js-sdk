@@ -153,8 +153,12 @@ describe('UserService', () => {
       const clientIds = result.get(key)
       expect(clientIds).toBeDefined()
       expect(clientIds).toHaveLength(2)
-      expect(clientIds![0].value).toBe('user-1:device-1@example.com')
-      expect(clientIds![1].value).toBe('user-1:device-2@example.com')
+      expect(clientIds![0].userId).toBe('user-1')
+      expect(clientIds![0].deviceId).toBe('device-1')
+      expect(clientIds![0].userDomain).toBe('example.com')
+      expect(clientIds![1].userId).toBe('user-1')
+      expect(clientIds![1].deviceId).toBe('device-2')
+      expect(clientIds![1].userDomain).toBe('example.com')
     })
 
     it('should correctly map multiple users to their CryptoClientIds with string keys', async () => {
@@ -171,13 +175,20 @@ describe('UserService', () => {
       const key1 = QualifiedId.toKey(userId1)
       const user1Clients = result.get(key1)
       expect(user1Clients).toHaveLength(1)
-      expect(user1Clients![0].value).toBe('user-1:device-1@example.com')
+      expect(user1Clients![0].userId).toBe('user-1')
+      expect(user1Clients![0].deviceId).toBe('device-1')
+      expect(user1Clients![0].userDomain).toBe('example.com')
 
       const key2 = QualifiedId.toKey(userId2)
       const user2Clients = result.get(key2)
       expect(user2Clients).toHaveLength(2)
-      expect(user2Clients![0].value).toBe('user-2:device-2@example.com')
-      expect(user2Clients![1].value).toBe('user-2:device-3@example.com')
+      expect(user2Clients![0].userId).toBe('user-2')
+      expect(user2Clients![0].deviceId).toBe('device-2')
+      expect(user2Clients![0].userDomain).toBe('example.com')
+
+      expect(user2Clients![1].userId).toBe('user-2')
+      expect(user2Clients![1].deviceId).toBe('device-3')
+      expect(user2Clients![1].userDomain).toBe('example.com')
     })
 
     it('should return empty map for user with no clients', async () => {

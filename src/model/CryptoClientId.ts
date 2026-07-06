@@ -14,22 +14,27 @@
 * along with this program. If not, see http://www.gnu.org/licenses/.
 */
 
-import { obfuscateClientId } from "../utils/ObfuscateUtil.js"
-
 export class CryptoClientId {
-  readonly value: string
+  readonly userId: string
+  readonly deviceId: string
+  readonly userDomain: string
 
-  private constructor(value: string) {
-    this.value = value
-  }
-
-  toString(): string {
-    return obfuscateClientId(this.value)
+  private constructor(
+    userId: string,
+    deviceId: string,
+    userDomain: string
+  ) {
+    this.userId = userId
+    this.deviceId = deviceId
+    this.userDomain = userDomain
   }
 
   static create(userId: string, deviceId: string, userDomain: string): CryptoClientId {
-    const value = `${userId}:${deviceId}@${userDomain}`
-    return new CryptoClientId(value)
+    return new CryptoClientId(
+      userId,
+      deviceId,
+      userDomain
+    )
   }
 }
 

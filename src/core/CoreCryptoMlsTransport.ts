@@ -14,7 +14,7 @@
 * along with this program. If not, see http://www.gnu.org/licenses/.
 */
 
-import type { CommitBundle, HistorySecret, MlsTransport, MlsTransportData, MlsTransportResponse } from "@wireapp/core-crypto";
+import type { CommitBundle, HistorySecret, MlsTransport, MlsTransportData } from "@wireapp/core-crypto/native"; // TODO(alexandre): , MlsTransportResponse
 import { MlsService } from "../api/MlsService.js";
 import { singleton } from "tsyringe";
 
@@ -22,16 +22,10 @@ import { singleton } from "tsyringe";
 export class CoreCryptoMlsTransport implements MlsTransport {
   constructor(private mlsService: MlsService) {}
 
-  async sendCommitBundle(commitBundle: CommitBundle): Promise<MlsTransportResponse> {
+  async sendCommitBundle(commitBundle: CommitBundle): Promise<void> {
     await this.mlsService.uploadCommitBundle(
       this.parseBundleIntoUint8Array(commitBundle)
     )
-    return "success"
-  }
-
-  async sendMessage(message: Uint8Array): Promise<MlsTransportResponse> {
-    await this.mlsService.sendMessage(message)
-    return "success"
   }
 
   async prepareForTransport(__: HistorySecret): Promise<MlsTransportData> {
@@ -49,8 +43,8 @@ export class CoreCryptoMlsTransport implements MlsTransport {
    */
   private parseBundleIntoUint8Array(commitBundle: CommitBundle): Uint8Array {
     const commit = commitBundle.commit
-    const payload = commitBundle.groupInfo.payload.copyBytes()
-    const welcome = commitBundle.welcome ? commitBundle.welcome.copyBytes() : new Uint8Array(0)
+    const payload = commitBundle.groupInfo.payload
+    const welcome = commitBundle.welcome ? commitBundle.welcome.serialize() : new Uint8Array(0)
 
     const totalLength = commit.length + payload.length + welcome.length
     const combined = new Uint8Array(totalLength)
