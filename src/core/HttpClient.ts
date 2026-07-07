@@ -101,9 +101,8 @@ export class HttpClient {
   }
 
   private async fetchAccessToken() {
-    const storedDeviceId = this.appProperties.getDeviceId()
-    const path = storedDeviceId
-      ? `access?client_id=${storedDeviceId}`
+    const path = this.appProperties.hasDeviceId()
+      ? `access?client_id=${this.appProperties.getDeviceId()}`
       : `access`
 
     return this.request<AccessResponse>(path, {

@@ -170,11 +170,13 @@ describe('MlsWelcomeEventProcessor', () => {
         expect(mlsService.uploadMlsKeyPackages).not.toHaveBeenCalled()
       })
 
-      it('should not upload key packages when device id is not stored', async () => {
+      it('should reject when device id is not stored', async () => {
         vi.mocked(coreCryptoService.hasTooFewKeyPackageCount).mockResolvedValue(true)
-        vi.mocked(appProperties.getDeviceId).mockReturnValue(undefined)
+        vi.mocked(appProperties.getDeviceId).mockImplementation(() => {
+          throw new Error('No stored deviceId found')
+        })
 
-        await processor.process(makeEvent())
+        await expect(processor.process(makeEvent())).rejects.toThrow('No stored deviceId found')
 
         expect(mlsService.uploadMlsKeyPackages).not.toHaveBeenCalled()
       })

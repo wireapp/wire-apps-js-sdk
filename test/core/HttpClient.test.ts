@@ -81,7 +81,13 @@ describe('HttpClient', () => {
         storedCookie = cookie
       }),
       deleteBackendCookie: vi.fn(),
-      getDeviceId: vi.fn(() => storedDeviceId),
+      getDeviceId: vi.fn(() => {
+        if (!storedDeviceId) {
+          throw new Error("No stored deviceId found")
+        }
+        return storedDeviceId
+      }),
+      hasDeviceId: vi.fn(() => !!storedDeviceId),
     } as any
   })
 

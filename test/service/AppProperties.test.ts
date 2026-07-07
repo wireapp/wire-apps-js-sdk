@@ -160,4 +160,48 @@ describe('AppProperties', () => {
       expect(result).toBe(false)
     })
   })
+
+  describe('device ID', () => {
+    const DEVICE_ID = 'test-device-id'
+
+    it('should return the stored device ID', () => {
+      vi.mocked(mockAppPropertiesRepository.getByKey).mockReturnValue({
+        key: 'device_id',
+        value: DEVICE_ID
+      })
+
+      const result = appProperties.getDeviceId()
+
+      expect(mockAppPropertiesRepository.getByKey).toHaveBeenCalledWith('device_id')
+      expect(result).toBe(DEVICE_ID)
+    })
+
+    it('should throw when device ID is not stored', () => {
+      vi.mocked(mockAppPropertiesRepository.getByKey).mockReturnValue(undefined)
+
+      expect(() => appProperties.getDeviceId()).toThrow('No stored deviceId found')
+      expect(mockAppPropertiesRepository.getByKey).toHaveBeenCalledWith('device_id')
+    })
+
+    it('should return true when device ID is stored', () => {
+      vi.mocked(mockAppPropertiesRepository.getByKey).mockReturnValue({
+        key: 'device_id',
+        value: DEVICE_ID
+      })
+
+      const result = appProperties.hasDeviceId()
+
+      expect(mockAppPropertiesRepository.getByKey).toHaveBeenCalledWith('device_id')
+      expect(result).toBe(true)
+    })
+
+    it('should return false when device ID is not stored', () => {
+      vi.mocked(mockAppPropertiesRepository.getByKey).mockReturnValue(undefined)
+
+      const result = appProperties.hasDeviceId()
+
+      expect(mockAppPropertiesRepository.getByKey).toHaveBeenCalledWith('device_id')
+      expect(result).toBe(false)
+    })
+  })
 })

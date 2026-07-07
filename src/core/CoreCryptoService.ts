@@ -78,16 +78,17 @@ export class CoreCryptoService {
    * Initializes existing client device or register a new client device.
    *
    * Must be called only after [this.initCoreCryptoClient] was called first.
+   * 
+   * @note Saves the given deviceId (if first time for registration) into AppProperties
    */
   async initOrRegisterClient() {
     if (!this.coreCryptoClient) {
       throw new Error("CoreCryptoClient is not initialized.")
     }
 
-    const storedDeviceId = this.appProperties.getDeviceId()
-    if (storedDeviceId) {
-      // App has a client, load MLS client
-      this.logger.info(`Loading MLS Client for: ${obfuscateClientId(storedDeviceId)}`)
+    if (this.appProperties.hasDeviceId()) {
+      const storedDeviceId = this.appProperties.getDeviceId()
+      this.logger.info(`Loading MLS Client for deviceId: ${obfuscateClientId(storedDeviceId)}`)
       const cryptoClientId = CryptoClientId.create(
         this.wireUserId,
         storedDeviceId,
@@ -97,8 +98,8 @@ export class CoreCryptoService {
       await this.coreCryptoClient?.initMlsClient(cryptoClientId)
       this.appProperties.setShouldRejoinConversations(false)
     } else {
-      // App doesn't have a client, create one
-      this.logger.info("Initializing Proteus Client")
+      this.logger.info("App doesn't have a client. Creating one.")
+      this.logger.info(`Initializing Proteus Client. appId: ${obfuscateId(this.wireUserId)}`)
       await this.coreCryptoClient.initProteusClient()
 
       const proteusPreKeys = await this.coreCryptoClient.generateProteusPreKeys()
@@ -119,7 +120,7 @@ export class CoreCryptoService {
         this.wireUserDomain
       )
 
-      this.logger.info(`Initializing MLS Client ${obfuscateId(this.wireUserId)} on device: ${obfuscateClientId(registeredDeviceId)}`)
+      this.logger.info(`Initializing MLS Client. userId: ${obfuscateId(this.wireUserId)}, deviceId: ${obfuscateClientId(registeredDeviceId)}`)
 
       await this.coreCryptoClient?.initMlsClient(cryptoClientId)
       await this.uploadClientWithMlsPublicKey()
@@ -261,7 +262,7 @@ export class CoreCryptoService {
         if (CoreCryptoError.Mls.instanceOf(exception) && MlsError.ConversationAlreadyExists.instanceOf(exception.inner.mlsError)) {
           throw Error("Conversation already exists.")
         } else {
-          this.logger.error(`Unexpected exception receveid while creating a establishing a MLS conversation`, exception)
+          this.logger.error(`Unexpected exception received while creating a establishing a MLS conversation`, exception)
         }
       }
 

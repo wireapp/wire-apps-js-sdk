@@ -89,8 +89,17 @@ export class AppProperties {
     )
   }
 
-  getDeviceId(): string | undefined {
-    return this.appPropertiesRepository.getByKey(this.DEVICE_ID)?.value
+  getDeviceId(): string {
+    const deviceId = this.appPropertiesRepository.getByKey(this.DEVICE_ID)?.value
+    if (!deviceId) {
+      throw new Error("No stored deviceId found")
+    }
+
+    return deviceId
+  }
+
+  hasDeviceId(): boolean {
+    return !!this.appPropertiesRepository.getByKey(this.DEVICE_ID)?.value
   }
 
   private booleanToDatabaseValue = (value: boolean): string => value ? '1' : '0'
