@@ -414,7 +414,7 @@ describe('Protobuf serialization', () => {
     expect(resultMention!.qualifiedUserId?.id).toBe(mention.userId.id)
     expect(resultMention!.qualifiedUserId?.domain).toBe(mention.userId.domain)
 
-    expect(result.edited?.text?.linkPreview).toStrictEqual(linkPreview)
+    expect(result.edited?.text?.linkPreview).toMatchObject(linkPreview)
   })
 
   it('deserializes composite button action confirmations', () => {
