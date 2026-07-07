@@ -185,7 +185,6 @@ function packTextEditedMessage(
     ...genericMessage,
     edited: MessageEdit.create({
       replacingMessageId: wireMessage.replacingMessageId,
-      content: "text",
       text: {
         content: wireMessage.text,
         mentions: wireMessage.mentions?.map(MessageMentionMapper.toProtobuf) ?? [],
