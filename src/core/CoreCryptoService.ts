@@ -95,7 +95,7 @@ export class CoreCryptoService {
         this.wireUserDomain
       )
 
-      await this.coreCryptoClient?.initMlsClient(cryptoClientId)
+      await this.coreCryptoClient.initMlsClient(cryptoClientId)
       this.appProperties.setShouldRejoinConversations(false)
     } else {
       this.logger.info("App doesn't have a client. Creating one.")
@@ -122,7 +122,7 @@ export class CoreCryptoService {
 
       this.logger.info(`Initializing MLS Client. userId: ${obfuscateId(this.wireUserId)}, deviceId: ${obfuscateClientId(registeredDeviceId)}`)
 
-      await this.coreCryptoClient?.initMlsClient(cryptoClientId)
+      await this.coreCryptoClient.initMlsClient(cryptoClientId)
       await this.uploadClientWithMlsPublicKey()
       await this.uploadMlsKeyPackages()
 
@@ -187,7 +187,7 @@ export class CoreCryptoService {
     const mlsGroupIdBytes = Decoder.fromBase64(mlsGroupId).asBytes
     const encryptedMessageBytes = Decoder.fromBase64(encryptedMessage).asBytes
 
-    return await this.coreCryptoClient?.decryptMls(
+    return await this.coreCryptoClient!.decryptMls(
       new ConversationId(mlsGroupIdBytes),
       encryptedMessageBytes
     )
@@ -200,7 +200,7 @@ export class CoreCryptoService {
 
   async conversationExists(mlsGroupId: string) {
     const mlsGroupIdBytes = Decoder.fromBase64(mlsGroupId).asBytes
-    return await this.coreCryptoClient?.conversationExists(
+    return await this.coreCryptoClient!.conversationExists(
       new ConversationId(mlsGroupIdBytes)
     )
   }
@@ -213,7 +213,7 @@ export class CoreCryptoService {
   }
 
   async joinMlsConversation(groupInfoBytes: Uint8Array): Promise<void> {
-    await this.coreCryptoClient?.joinMlsConversation(
+    await this.coreCryptoClient!.joinMlsConversation(
       new GroupInfo(groupInfoBytes)
     )
   }
@@ -229,7 +229,7 @@ export class CoreCryptoService {
       this.defaultCiphersuiteCode!
     )
 
-    await this.coreCryptoClient?.addClientsToMlsConversation(mlsGroupId, claimedKeyPackagesResult.keyPackages)
+    await this.coreCryptoClient!.addClientsToMlsConversation(mlsGroupId, claimedKeyPackagesResult.keyPackages)
     // TODO: Handle custom exceptions (if needed) when introduced
 
     this.logger.debug(`Added ${claimedKeyPackagesResult.successUsers.length} clients to MLS group id: ${obfuscateId(mlsGroupId)}`)
@@ -254,7 +254,7 @@ export class CoreCryptoService {
 
     if (removalKey != null) {
       try {
-        await this.coreCryptoClient?.createConversation(
+        await this.coreCryptoClient!.createConversation(
           mlsGroupId,
           removalKey
         )
@@ -282,7 +282,7 @@ export class CoreCryptoService {
       if (claimedKeyPackagesResult.keyPackages.length === 0) {
         await this.coreCryptoClient!.updateKeyingMaterial(mlsGroupId)
       } else {
-        await this.coreCryptoClient?.addClientsToMlsConversation(
+        await this.coreCryptoClient!.addClientsToMlsConversation(
           mlsGroupId,
           claimedKeyPackagesResult.keyPackages
         )
@@ -291,9 +291,5 @@ export class CoreCryptoService {
       // TODO: Map to WireException
       throw Error("No Public Keys found, skipping creating a conversation.")
     }
-  }
-
-  close() {
-    this.coreCryptoClient?.close()
   }
 }

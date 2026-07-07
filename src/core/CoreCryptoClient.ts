@@ -47,19 +47,16 @@ export class CoreCryptoClient {
   private ciphersuite: CipherSuite
   private mlsTransport: CoreCryptoMlsTransport
   private coreCrypto: CoreCrypto
-  private db: Database
   private credential?: CredentialRef
 
   private constructor(
     ciphersuite: number,
     mlsTransport: CoreCryptoMlsTransport,
-    coreCrypto: CoreCrypto,
-    db: Database
+    coreCrypto: CoreCrypto
   ) {
     this.ciphersuite = ciphersuite
     this.mlsTransport = mlsTransport
     this.coreCrypto = coreCrypto
-    this.db = db
   }
 
   static async create(
@@ -79,8 +76,7 @@ export class CoreCryptoClient {
     const coreCryptoClient = new CoreCryptoClient(
       this.getMlsCiphersuiteName(ciphersuiteCode),
       mlsTransport,
-      coreCrypto,
-      db
+      coreCrypto
     )
 
     return coreCryptoClient
@@ -128,7 +124,7 @@ export class CoreCryptoClient {
     })
   }
 
-  async mlsGenerateKeyPackages(count: number = 100): Promise<Uint8Array[]> {
+  async mlsGenerateKeyPackages(count: number = this.MLS_DEFAULT_KEYPACKAGE_COUNT): Promise<Uint8Array[]> {
     return await this.coreCrypto.transaction(async (context) => {
       const keyPackages: Uint8Array[] = []
       for (let i = 0; i < count; i++) {
@@ -350,10 +346,6 @@ export class CoreCryptoClient {
 
       this.logger.debug(`Clients are removed from the conversation in CoreCrypto. mlsGroupId: ${obfuscateId(mlsGroupId)}`)
     });
-  }
-
-  close() {
-    this.db.uniffiDestroy()
   }
 
   private PROTEUS_PREKEYS_FROM_COUNT: number = 0
