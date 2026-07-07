@@ -22,10 +22,10 @@ import {CoreCryptoService} from "./../CoreCryptoService.js";
 import {ConversationService} from "../../api/ConversationService.js";
 import {MlsService} from "../../api/MlsService.js";
 import {WireEventsHandler} from "./../WireEventsHandler.js";
-import {WIRE_EVENTS_HANDLER, CRYPTO_CLIENT_ID, EVENT_PROCESSOR} from "../../utils/DependencyInjectionTokens.js";
+import {WIRE_EVENTS_HANDLER, EVENT_PROCESSOR} from "../../utils/DependencyInjectionTokens.js";
 import {ConversationMapper} from "../../mappers/conversation/ConversationMapper.js";
-import {container} from "tsyringe";
 import {QualifiedId} from "../../model/QualifiedId.js";
+import {AppProperties} from "../../service/AppProperties.js";
 
 @injectable({token: EVENT_PROCESSOR})
 export class MlsWelcomeEventProcessor implements EventProcessor<MLSWelcomeDTO> {
@@ -36,6 +36,7 @@ export class MlsWelcomeEventProcessor implements EventProcessor<MLSWelcomeDTO> {
     private coreCryptoService: CoreCryptoService,
     private conversationService: ConversationService,
     private mlsService: MlsService,
+    private appProperties: AppProperties,
     @inject(WIRE_EVENTS_HANDLER) private wireEventsHandler: WireEventsHandler
   ) {
   }
@@ -53,11 +54,10 @@ export class MlsWelcomeEventProcessor implements EventProcessor<MLSWelcomeDTO> {
       conversationResponse
     );
 
-    if (await this.coreCryptoService.hasTooFewKeyPackageCount()) {
-      if (container.isRegistered(CRYPTO_CLIENT_ID)) {
-        const keyPackages = await this.coreCryptoService.mlsGenerateKeyPackages();
-        await this.mlsService.uploadMlsKeyPackages(keyPackages);
-      }
+    const storedDeviceId = this.appProperties.getDeviceId()
+    if (await this.coreCryptoService.hasTooFewKeyPackageCount() && storedDeviceId) {
+      const keyPackages = await this.coreCryptoService.mlsGenerateKeyPackages();
+      await this.mlsService.uploadMlsKeyPackages(keyPackages);
     }
 
     await this.wireEventsHandler.onAppAddedToConversation(

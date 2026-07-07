@@ -19,7 +19,6 @@ export const WIRE_USER_ID = "WIRE_USER_ID"
 export const WIRE_SDK_API_TOKEN = "WIRE_SDK_API_TOKEN"
 export const WIRE_USER_DOMAIN = "WIRE_USER_DOMAIN"
 export const WIRE_CRYPTO_STORAGE_PASSWORD = "WIRE_CRYPTO_STORAGE_PASSWORD"
-export const CRYPTO_CLIENT_ID = "CRYPTO_CLIENT_ID"
 
 export const WIRE_DATABASE_PATH = "WIRE_DATABASE_PATH" // This is to be used only internally
 

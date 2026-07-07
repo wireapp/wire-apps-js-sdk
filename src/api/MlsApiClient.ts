@@ -20,11 +20,14 @@ import type {MlsKeyPackagesRequest} from "./request/MlsKeyPackagesRequest.js";
 import {singleton} from "tsyringe";
 import type {MlsPublicKeysResponse} from "./response/MlsPublicKeysResponse.js";
 import type {ClaimedKeyPackageList} from "./response/ClaimedKeyPackageList.js";
+import {AppProperties} from "../service/AppProperties.js";
 
 @singleton()
 export class MlsApiClient {
-  constructor(private httpClient: HttpClient) {
-  }
+  constructor(
+    private httpClient: HttpClient,
+    private appProperties: AppProperties
+  ) { }
 
   private readonly HEADER_MLS_CONTENT_TYPE = "message/mls"
   private readonly basePath = "mls"
@@ -52,7 +55,7 @@ export class MlsApiClient {
   }
 
   async uploadMlsKeyPackages(mlsKeyPackages: Uint8Array[]): Promise<void> {
-    const path = `${this.uploadMlsKeyPackagesPath}${this.httpClient.getCachedDeviceId()}`
+    const path = `${this.uploadMlsKeyPackagesPath}${this.appProperties.getDeviceId()}`
 
     const requestPayload: MlsKeyPackagesRequest = {
       key_packages: mlsKeyPackages.map((keyPackage) => {

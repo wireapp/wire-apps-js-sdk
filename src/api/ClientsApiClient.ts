@@ -22,11 +22,14 @@ import type {ClientUpdateRequest} from "./request/ClientUpdateRequest.js";
 import {mapToPreKeyRequest} from "../mappers/PreKeyMapper.js";
 import type {PreKeyCrypto} from "../model/PreKeyCrypto.js";
 import {singleton} from "tsyringe";
+import {AppProperties} from "../service/AppProperties.js";
 
 @singleton()
 export class ClientsApiClient {
-  constructor(private httpClient: HttpClient) {
-  }
+  constructor(
+    private httpClient: HttpClient,
+    private appProperties: AppProperties
+  ) { }
 
   private readonly basePath = "clients";
 
@@ -51,7 +54,6 @@ export class ClientsApiClient {
     // Clear the token to force a refresh with the full-scope token for next requests.
     this.httpClient.clearAuthorizationToken()
 
-    this.httpClient.setDeviceId(response.id)
     return response.id
   }
 
@@ -61,7 +63,7 @@ export class ClientsApiClient {
     }
 
     await this.httpClient.putRequest<void>(
-      `${this.basePath}/${this.httpClient.getCachedDeviceId()}`,
+      `${this.basePath}/${this.appProperties.getDeviceId()}`,
       requestPayload
     )
   }

@@ -30,6 +30,8 @@ import {AppProperties} from '../../src/service/AppProperties.js'
 import {CoreCryptoService} from '../../src/core/CoreCryptoService.js'
 import {TeamsApiClient} from "../../src/api/TeamsApiClient.js";
 import {ConversationRole} from "../../src/model/conversation/ConversationRole.js";
+import {UserService} from "../../src/api/UserService.js";
+import {CryptoProtocol} from '../../src/model/CryptoProtocol.js'
 
 describe('ConversationService Integration', () => {
   let testDbService: TestDatabaseService
@@ -40,6 +42,7 @@ describe('ConversationService Integration', () => {
   let mockTeamsApiClient: TeamsApiClient
   let mockAppProperties: AppProperties
   let mockCoreCryptoService: CoreCryptoService
+  let mockUserService: UserService
 
   beforeAll(() => {
     testDbService = new TestDatabaseService()
@@ -79,6 +82,10 @@ describe('ConversationService Integration', () => {
       wipeConversation: vi.fn()
     } as any
 
+    mockUserService = {
+      getUsersClientIds: vi.fn()
+    } as any
+
     conversationService = new ConversationService(
       SELF_USER_ID.id,
       SELF_USER_ID.domain,
@@ -87,7 +94,8 @@ describe('ConversationService Integration', () => {
       conversationRepository,
       conversationMemberRepository,
       mockAppProperties,
-      mockCoreCryptoService
+      mockCoreCryptoService,
+      mockUserService
     )
 
     // TODO: Can remove/replace this once we have implemented a proper logger lib
@@ -151,9 +159,7 @@ describe('ConversationService Integration', () => {
       await conversationService.saveConversationWithMembers(CONVERSATION_ID, CONVERSATION_RESPONSE)
     })
 
-    it('calls deleteAllConversationDataFromLocalStorages when CRYPTO_CLIENT_ID is in userIds', async () => {
-      process.env["CRYPTO_CLIENT_ID"] = SELF_USER_ID.id
-
+    it('calls deleteAllConversationDataFromLocalStorages when wire user is in userIds', async () => {
       const wipeSpy = vi
         .spyOn(conversationService as any, 'deleteAllConversationDataFromLocalStorages')
         .mockResolvedValue(undefined)
@@ -163,12 +169,9 @@ describe('ConversationService Integration', () => {
       expect(wipeSpy).toHaveBeenCalledWith(CONVERSATION_ID)
 
       wipeSpy.mockRestore()
-      delete process.env["CRYPTO_CLIENT_ID"]
     })
 
-    it('does not call deleteAllConversationDataFromLocalStorages when CRYPTO_CLIENT_ID is not in userIds', async () => {
-      process.env["CRYPTO_CLIENT_ID"] = USER_ID.id
-
+    it('does not call deleteAllConversationDataFromLocalStorages when wire user is not in userIds', async () => {
       const wipeSpy = vi
         .spyOn(conversationService as any, 'deleteAllConversationDataFromLocalStorages')
         .mockResolvedValue(undefined)
@@ -480,7 +483,9 @@ describe('ConversationService Integration', () => {
             qualified_id: SELF_USER_ID,
             conversation_role: 'wire_admin'
           }
-        }
+        },
+        protocol: CryptoProtocol.MLS,
+        epoch: 0
       } as ConversationResponse
 
       await conversationService.saveConversationWithMembers(CONVERSATION_ID, CONVERSATION_RESPONSE)
@@ -518,7 +523,9 @@ describe('ConversationService Integration', () => {
             qualified_id: SELF_USER_ID,
             conversation_role: 'wire_admin'
           }
-        }
+        },
+        protocol: CryptoProtocol.MLS,
+        epoch: 0
       } as ConversationResponse
 
       await conversationService.saveConversationWithMembers({

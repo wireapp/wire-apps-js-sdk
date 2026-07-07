@@ -65,7 +65,6 @@ beforeEach(() => {
   delete (globalThis as any).WebSocket
 
   mockHttpClient = {
-    getCachedDeviceId: vi.fn().mockReturnValue('device-id'),
     getCachedAccessToken: vi.fn().mockReturnValue('access-token'),
     refreshAccessToken: vi.fn().mockResolvedValue(undefined),
   } as any
@@ -83,6 +82,7 @@ beforeEach(() => {
   } as any
 
   mockAppProperties = {
+    getDeviceId: vi.fn().mockReturnValue('device-id'),
     setLastNotificationId: vi.fn(),
   } as any
 

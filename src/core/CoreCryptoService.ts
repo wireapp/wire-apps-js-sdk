@@ -18,7 +18,6 @@ import {ConversationId, CoreCryptoError, GroupInfo, MlsError} from "@wireapp/cor
 import {ClientsService} from "../api/ClientsService.js";
 import {CryptoClientId} from "../model/CryptoClientId.js";
 import {
-  CRYPTO_CLIENT_ID,
   WIRE_CRYPTO_STORAGE_PASSWORD,
   WIRE_USER_DOMAIN,
   WIRE_USER_ID
@@ -28,12 +27,12 @@ import {CoreCryptoClient} from "./CoreCryptoClient.js";
 import {CoreCryptoMlsTransport} from "./CoreCryptoMlsTransport.js";
 import {FeatureConfigsService} from "../api/FeatureConfigsService.js";
 import {Decoder} from "bazinga64";
-import {container, inject, singleton} from "tsyringe";
+import {inject, singleton} from "tsyringe";
 import {LoggerFactory} from "../utils/logger/LoggerFactory.js";
 import type {QualifiedId} from "../model/QualifiedId.js";
 import {AppProperties} from "../service/AppProperties.js";
 import type {AddMembersToConversationResult} from "../api/model/AddMembersToConversationResult.js";
-import {obfuscateId} from "../utils/ObfuscateUtil.js";
+import {obfuscateClientId, obfuscateId} from "../utils/ObfuscateUtil.js";
 
 /**
  * Service that handles initialization of CoreCrypto and provides a high-level API for:
@@ -79,40 +78,56 @@ export class CoreCryptoService {
    * Initializes existing client device or register a new client device.
    *
    * Must be called only after [this.initCoreCryptoClient] was called first.
-   *
-   * @note Registers CRYPTO_CLIENT_ID token in the container after successful client registration
+   * 
+   * @note Saves the given deviceId (if first time for registration) into AppProperties
    */
   async initOrRegisterClient() {
     if (!this.coreCryptoClient) {
       throw new Error("CoreCryptoClient is not initialized.")
     }
 
-    // TODO: Once moved out of in-memory database, then verify for existing deviceId
-    this.logger.info("Initializing Proteus Client")
-    await this.coreCryptoClient.initProteusClient()
-    const proteusPreKeys = await this.coreCryptoClient.generateProteusPreKeys()
-    const proteusLastPreKey = await this.coreCryptoClient.generateProteusLastPreKey()
+    if (this.appProperties.hasDeviceId()) {
+      const storedDeviceId = this.appProperties.getDeviceId()
+      this.logger.info(`Loading MLS Client for deviceId: ${obfuscateClientId(storedDeviceId)}`)
+      const cryptoClientId = CryptoClientId.create(
+        this.wireUserId,
+        storedDeviceId,
+        this.wireUserDomain
+      )
 
-    let registeredDeviceId;
-    try {
-      registeredDeviceId = await this.clientsService.registerClient(proteusPreKeys, proteusLastPreKey)
-    } catch (exception) {
-      throw new Error(`Error when registering client: ${(exception as Error).message}`);
+      await this.coreCryptoClient.initMlsClient(cryptoClientId)
+      this.appProperties.setShouldRejoinConversations(false)
+    } else {
+      this.logger.info("App doesn't have a client. Creating one.")
+      this.logger.info(`Initializing Proteus Client. appId: ${obfuscateId(this.wireUserId)}`)
+      await this.coreCryptoClient.initProteusClient()
+
+      const proteusPreKeys = await this.coreCryptoClient.generateProteusPreKeys()
+      const proteusLastPreKey = await this.coreCryptoClient.generateProteusLastPreKey()
+
+      let registeredDeviceId;
+      try {
+        registeredDeviceId = await this.clientsService.registerClient(proteusPreKeys, proteusLastPreKey)
+      } catch (exception) {
+        throw new Error(`Error when registering client: ${(exception as Error).message}`);
+      }
+
+      this.appProperties.setDeviceId(registeredDeviceId)
+
+      const cryptoClientId = CryptoClientId.create(
+        this.wireUserId,
+        registeredDeviceId,
+        this.wireUserDomain
+      )
+
+      this.logger.info(`Initializing MLS Client. userId: ${obfuscateId(this.wireUserId)}, deviceId: ${obfuscateClientId(registeredDeviceId)}`)
+
+      await this.coreCryptoClient.initMlsClient(cryptoClientId)
+      await this.uploadClientWithMlsPublicKey()
+      await this.uploadMlsKeyPackages()
+
+      this.appProperties.setShouldRejoinConversations(true)
     }
-
-    const cryptoClientId = CryptoClientId.create(
-      this.wireUserId,
-      registeredDeviceId,
-      this.wireUserDomain
-    )
-    container.registerInstance(CRYPTO_CLIENT_ID, cryptoClientId)
-
-    this.logger.info("Initializing MLS Client")
-    await this.coreCryptoClient?.initMlsClient(cryptoClientId)
-    await this.uploadClientWithMlsPublicKey()
-    await this.uploadMlsKeyPackages()
-
-    this.appProperties.setShouldRejoinConversations(true)
   }
 
   private conversationIdFromMlsGroupId(mlsGroupId: string): ConversationId {
@@ -172,7 +187,7 @@ export class CoreCryptoService {
     const mlsGroupIdBytes = Decoder.fromBase64(mlsGroupId).asBytes
     const encryptedMessageBytes = Decoder.fromBase64(encryptedMessage).asBytes
 
-    return await this.coreCryptoClient?.decryptMls(
+    return await this.coreCryptoClient!.decryptMls(
       new ConversationId(mlsGroupIdBytes),
       encryptedMessageBytes
     )
@@ -185,7 +200,7 @@ export class CoreCryptoService {
 
   async conversationExists(mlsGroupId: string) {
     const mlsGroupIdBytes = Decoder.fromBase64(mlsGroupId).asBytes
-    return await this.coreCryptoClient?.conversationExists(
+    return await this.coreCryptoClient!.conversationExists(
       new ConversationId(mlsGroupIdBytes)
     )
   }
@@ -198,7 +213,7 @@ export class CoreCryptoService {
   }
 
   async joinMlsConversation(groupInfoBytes: Uint8Array): Promise<void> {
-    await this.coreCryptoClient?.joinMlsConversation(
+    await this.coreCryptoClient!.joinMlsConversation(
       new GroupInfo(groupInfoBytes)
     )
   }
@@ -214,7 +229,7 @@ export class CoreCryptoService {
       this.defaultCiphersuiteCode!
     )
 
-    await this.coreCryptoClient?.addClientsToMlsConversation(mlsGroupId, claimedKeyPackagesResult.keyPackages)
+    await this.coreCryptoClient!.addClientsToMlsConversation(mlsGroupId, claimedKeyPackagesResult.keyPackages)
     // TODO: Handle custom exceptions (if needed) when introduced
 
     this.logger.debug(`Added ${claimedKeyPackagesResult.successUsers.length} clients to MLS group id: ${obfuscateId(mlsGroupId)}`)
@@ -239,7 +254,7 @@ export class CoreCryptoService {
 
     if (removalKey != null) {
       try {
-        await this.coreCryptoClient?.createConversation(
+        await this.coreCryptoClient!.createConversation(
           mlsGroupId,
           removalKey
         )
@@ -247,7 +262,7 @@ export class CoreCryptoService {
         if (CoreCryptoError.Mls.instanceOf(exception) && MlsError.ConversationAlreadyExists.instanceOf(exception.inner.mlsError)) {
           throw Error("Conversation already exists.")
         } else {
-          this.logger.error(`Unexpected exception receveid while creating a establishing a MLS conversation`, exception)
+          this.logger.error(`Unexpected exception received while creating a establishing a MLS conversation`, exception)
         }
       }
 
@@ -267,7 +282,7 @@ export class CoreCryptoService {
       if (claimedKeyPackagesResult.keyPackages.length === 0) {
         await this.coreCryptoClient!.updateKeyingMaterial(mlsGroupId)
       } else {
-        await this.coreCryptoClient?.addClientsToMlsConversation(
+        await this.coreCryptoClient!.addClientsToMlsConversation(
           mlsGroupId,
           claimedKeyPackagesResult.keyPackages
         )
@@ -276,9 +291,5 @@ export class CoreCryptoService {
       // TODO: Map to WireException
       throw Error("No Public Keys found, skipping creating a conversation.")
     }
-  }
-
-  close() {
-    this.coreCryptoClient?.close()
   }
 }

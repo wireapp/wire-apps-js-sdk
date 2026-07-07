@@ -26,6 +26,7 @@ export class AppProperties {
   private readonly SHOULD_REJOIN_CONVERSATIONS = "should_rejoin_conversations"
   private readonly LAST_NOTIFICATION_ID = "last_notification_id"
   private readonly BACKEND_COOKIE = "backend_cookie"
+  private readonly DEVICE_ID = "device_id"
 
   constructor(
     private appPropertiesRepository: AppPropertiesRepository,
@@ -79,6 +80,26 @@ export class AppProperties {
 
   deleteBackendCookie() {
     this.appPropertiesRepository.delete(this.BACKEND_COOKIE)
+  }
+
+  setDeviceId(deviceId: string) {
+    this.appPropertiesRepository.save(
+      this.DEVICE_ID,
+      deviceId
+    )
+  }
+
+  getDeviceId(): string {
+    const deviceId = this.appPropertiesRepository.getByKey(this.DEVICE_ID)?.value
+    if (!deviceId) {
+      throw new Error("No stored deviceId found")
+    }
+
+    return deviceId
+  }
+
+  hasDeviceId(): boolean {
+    return !!this.appPropertiesRepository.getByKey(this.DEVICE_ID)?.value
   }
 
   private booleanToDatabaseValue = (value: boolean): string => value ? '1' : '0'
