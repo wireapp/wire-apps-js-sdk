@@ -122,7 +122,7 @@ function unpackEditedMessage(
   const messageEdit = genericMessage.edited
   if (messageEdit?.text) {
     return TextEditedMessage.create({
-      replacingMessageId: messageEdit?.replacingMessageId,
+      replacingMessageId: messageEdit.replacingMessageId,
       messageId: genericMessage.messageId,
       conversationId: qualifiedConversation,
       text: messageEdit.text.content ?? "",
