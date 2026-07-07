@@ -14,7 +14,7 @@
 * along with this program. If not, see http://www.gnu.org/licenses/.
 */
 
-import {Ciphersuite} from "@wireapp/core-crypto";
+import {CipherSuite} from "@wireapp/core-crypto/native";
 import type {MlsPublicKeys} from "../../model/MlsPublicKeys.js";
 import {Decoder} from "bazinga64";
 
@@ -24,30 +24,30 @@ export interface MlsPublicKeysResponse {
 
 export function getRemovalKeyFromPublicKeysResponse(
   mlsPublicKeysResponse: MlsPublicKeysResponse,
-  cipherSuite: Ciphersuite
+  cipherSuite: CipherSuite
 ): Uint8Array | null {
   let key: string | null | undefined
 
   switch (cipherSuite) {
-    case Ciphersuite.MLS_128_DHKEMP256_AES128GCM_SHA256_P256:
+    case CipherSuite.Mls128Dhkemp256Aes128gcmSha256P256:
       key = mlsPublicKeysResponse.removal.ecdsa_secp256r1_sha256
       break;
 
-    case Ciphersuite.MLS_256_DHKEMP384_AES256GCM_SHA384_P384:
+    case CipherSuite.Mls256Dhkemp384Aes256gcmSha384P384:
       key = mlsPublicKeysResponse.removal.ecdsa_secp384r1_sha384
       break;
 
-    case Ciphersuite.MLS_256_DHKEMP521_AES256GCM_SHA512_P521:
+    case CipherSuite.Mls256Dhkemp521Aes256gcmSha512P521:
       key = mlsPublicKeysResponse.removal.ecdsa_secp521r1_sha512
       break;
 
-    case Ciphersuite.MLS_128_DHKEMX25519_CHACHA20POLY1305_SHA256_Ed25519:
-    case Ciphersuite.MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519:
+    case CipherSuite.Mls128Dhkemx25519Chacha20poly1305Sha256Ed25519:
+    case CipherSuite.Mls128Dhkemx25519Aes128gcmSha256Ed25519:
       key = mlsPublicKeysResponse.removal.ed25519
       break;
 
-    case Ciphersuite.MLS_256_DHKEMX448_AES256GCM_SHA512_Ed448:
-    case Ciphersuite.MLS_256_DHKEMX448_CHACHA20POLY1305_SHA512_Ed448:
+    case CipherSuite.Mls256Dhkemx448Aes256gcmSha512Ed448:
+    case CipherSuite.Mls256Dhkemx448Chacha20poly1305Sha512Ed448:
       throw new Error("Unsupported ciphersuite")
 
     default:
