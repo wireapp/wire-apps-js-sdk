@@ -82,7 +82,7 @@ export class MlsMessageEventProcessor implements EventProcessor<NewMLSMessageDTO
       case 'text':
         await this.wireEventsHandler.onTextMessageReceived(wireMessage)
         break
-      case "text-edited":
+      case 'text-edited':
         await this.wireEventsHandler.onTextEditedMessageReceived(wireMessage)
         break
       case 'asset':
