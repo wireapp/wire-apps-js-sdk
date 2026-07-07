@@ -27,7 +27,6 @@ export class HttpClient {
   private logger = LoggerFactory.getLogger(this.constructor.name)
   private cachedAccessToken: string | null = null
   private accessTokenRefreshLock: Promise<void> | null = null;
-  private cachedDeviceId: string | null = null
   private headers: Record<string, string> = {
     "Content-Type": "application/json"
   }
@@ -56,19 +55,6 @@ export class HttpClient {
       throw new Error("No cached access token found.")
     }
     return this.cachedAccessToken!
-  }
-
-  setDeviceId(deviceId: string) {
-    this.cachedDeviceId = deviceId
-  }
-
-  getCachedDeviceId(): string {
-    if (!this.cachedDeviceId) {
-      this.logger.error("No cached deviceId found.")
-      // TODO: Map to WireException
-      throw new Error("No cached deviceId found.")
-    }
-    return this.cachedDeviceId!
   }
 
   async refreshAccessToken() {
@@ -115,8 +101,9 @@ export class HttpClient {
   }
 
   private async fetchAccessToken() {
-    const path = this.cachedDeviceId
-      ? `access?client_id=${this.cachedDeviceId}`
+    const storedDeviceId = this.appProperties.getDeviceId()
+    const path = storedDeviceId
+      ? `access?client_id=${storedDeviceId}`
       : `access`
 
     return this.request<AccessResponse>(path, {

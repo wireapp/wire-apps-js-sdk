@@ -67,18 +67,21 @@ const server = setupServer(...restHandlers)
 describe('HttpClient', () => {
   let mockAppProperties: AppProperties
   let storedCookie: string | undefined
+  let storedDeviceId: string | undefined
 
   beforeEach(() => {
     container.clearInstances()
 
     storedCookie = undefined
+    storedDeviceId = undefined
 
     mockAppProperties = {
       getBackendCookie: vi.fn(() => storedCookie),
       saveBackendCookie: vi.fn((cookie) => {
         storedCookie = cookie
       }),
-      deleteBackendCookie: vi.fn()
+      deleteBackendCookie: vi.fn(),
+      getDeviceId: vi.fn(() => storedDeviceId),
     } as any
   })
 
@@ -105,9 +108,9 @@ describe('HttpClient', () => {
       const httpClient = createHttpClient(mockAppProperties)
 
       // when
-      const clientsApiClient = new ClientsApiClient(httpClient)
+      const clientsApiClient = new ClientsApiClient(httpClient, mockAppProperties)
       const testPreKeys: PreKeyCrypto[] = [new PreKeyCrypto(1, 'foo')]
-      await clientsApiClient.registerClient(testPreKeys, testPreKeys[0]!)
+      storedDeviceId = await clientsApiClient.registerClient(testPreKeys, testPreKeys[0]!)
 
       await httpClient.refreshAccessToken()
 

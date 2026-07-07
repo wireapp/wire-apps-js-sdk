@@ -101,7 +101,10 @@ export class WebSocketClient {
       .replace(/-https/, "-ssl")
 
     const url = new URL(`${webSocketBaseUrl}/await`)
-    url.searchParams.append("client", this.httpClient.getCachedDeviceId())
+    const storedDeviceId = this.appProperties.getDeviceId()
+    if (storedDeviceId) {
+      url.searchParams.append("client", storedDeviceId)
+    }
     url.searchParams.append("access_token", this.httpClient.getCachedAccessToken())
 
     return url.toString()

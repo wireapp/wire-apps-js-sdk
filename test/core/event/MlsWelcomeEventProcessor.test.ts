@@ -15,7 +15,6 @@
  */
 
 import {beforeEach, describe, expect, it, vi} from 'vitest'
-import {container} from 'tsyringe'
 import type {MLSWelcomeDTO} from '../../../src/model/EventContentDTO.js'
 import {ConversationService} from '../../../src/api/ConversationService.js'
 import {MlsService} from '../../../src/api/MlsService.js'
@@ -23,22 +22,13 @@ import {MlsWelcomeEventProcessor} from '../../../src/core/event/MlsWelcomeEventP
 import type {WireEventsHandler} from '../../../src/core/WireEventsHandler.js'
 import {CoreCryptoService} from '../../../src/core/CoreCryptoService.js'
 import {ConversationMapper} from '../../../src/mappers/conversation/ConversationMapper.js'
-import {CRYPTO_CLIENT_ID} from '../../../src/utils/DependencyInjectionTokens.js'
 import {ConversationRole} from '../../../src/model/conversation/ConversationRole.js'
+import {AppProperties} from '../../../src/service/AppProperties.js'
 
 vi.mock('../../../src/api/ConversationService.js')
 vi.mock('../../../src/api/MlsService.js')
 vi.mock('../../../src/core/CoreCryptoService.js')
 vi.mock('../../../src/mappers/conversation/ConversationMapper.js')
-vi.mock('tsyringe', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('tsyringe')>()
-  return {
-    ...actual,
-    container: {
-      isRegistered: vi.fn().mockReturnValue(false),
-    },
-  }
-})
 vi.mock('bazinga64', () => ({
   Decoder: {
     fromBase64: vi.fn().mockReturnValue({asBytes: new Uint8Array([1, 2, 3])}),
@@ -83,6 +73,7 @@ const makeMembers = () => [
 let coreCryptoService: CoreCryptoService
 let conversationService: ConversationService
 let mlsService: MlsService
+let appProperties: AppProperties
 let wireEventsHandler: WireEventsHandler
 let processor: MlsWelcomeEventProcessor
 
@@ -108,14 +99,17 @@ beforeEach(() => {
     uploadMlsKeyPackages: vi.fn().mockResolvedValue(undefined),
   } as any
 
+  appProperties = {
+    getDeviceId: vi.fn().mockReturnValue('device-id'),
+  } as any
+
   wireEventsHandler = {
     onAppAddedToConversation: vi.fn().mockResolvedValue(undefined),
   } as any
 
   vi.mocked(ConversationMapper.fromEntity).mockReturnValue(makeConversation() as any)
-  vi.mocked(container.isRegistered).mockReturnValue(false)
 
-  processor = new MlsWelcomeEventProcessor(coreCryptoService, conversationService, mlsService, wireEventsHandler)
+  processor = new MlsWelcomeEventProcessor(coreCryptoService, conversationService, mlsService, appProperties, wireEventsHandler)
 })
 
 describe('MlsWelcomeEventProcessor', () => {
@@ -176,22 +170,20 @@ describe('MlsWelcomeEventProcessor', () => {
         expect(mlsService.uploadMlsKeyPackages).not.toHaveBeenCalled()
       })
 
-      it('should not upload key packages when CRYPTO_CLIENT_ID is not registered', async () => {
+      it('should not upload key packages when device id is not stored', async () => {
         vi.mocked(coreCryptoService.hasTooFewKeyPackageCount).mockResolvedValue(true)
-        vi.mocked(container.isRegistered).mockReturnValue(false)
+        vi.mocked(appProperties.getDeviceId).mockReturnValue(undefined)
 
         await processor.process(makeEvent())
 
         expect(mlsService.uploadMlsKeyPackages).not.toHaveBeenCalled()
       })
 
-      it('should generate and upload key packages when count is low and CRYPTO_CLIENT_ID is registered', async () => {
+      it('should generate and upload key packages when count is low and device id is stored', async () => {
         vi.mocked(coreCryptoService.hasTooFewKeyPackageCount).mockResolvedValue(true)
-        vi.mocked(container.isRegistered).mockReturnValue(true)
 
         await processor.process(makeEvent())
 
-        expect(container.isRegistered).toHaveBeenCalledWith(CRYPTO_CLIENT_ID)
         expect(coreCryptoService.mlsGenerateKeyPackages).toHaveBeenCalledTimes(1)
         expect(mlsService.uploadMlsKeyPackages).toHaveBeenCalledTimes(1)
         expect(mlsService.uploadMlsKeyPackages).toHaveBeenCalledWith(keyPackages)

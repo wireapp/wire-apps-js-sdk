@@ -18,10 +18,14 @@ import {singleton} from "tsyringe"
 import {HttpClient} from "../core/HttpClient.js"
 import type {EventResponse} from "./response/EventResponse.js"
 import type {NotificationsResponse} from "./response/NotificationsResponse.js"
+import {AppProperties} from "../service/AppProperties.js"
 
 @singleton()
 export class NotificationsApiClient {
-  constructor(private httpClient: HttpClient) {}
+  constructor(
+    private httpClient: HttpClient,
+    private appProperties: AppProperties
+  ) {}
 
   private readonly basePath = "notifications"
   private readonly lastNotificationPath = this.basePath + "/last"
@@ -30,8 +34,8 @@ export class NotificationsApiClient {
   private readonly SIZE_QUERY_KEY = "size"
 
   async getLastNotification(): Promise<EventResponse> {
-    const cachedDeviceId = this.httpClient.getCachedDeviceId()
-    const path = `${this.lastNotificationPath}?${this.CLIENT_QUERY_KEY}=${cachedDeviceId}`
+    const storedDeviceId = this.appProperties.getDeviceId()
+    const path = `${this.lastNotificationPath}?${this.CLIENT_QUERY_KEY}=${storedDeviceId}`
 
     return await this.httpClient.getRequest<EventResponse>(
       path
@@ -42,9 +46,9 @@ export class NotificationsApiClient {
     querySize: number,
     querySince?: string
   ): Promise<NotificationsResponse> {
-    const cachedDeviceId = this.httpClient.getCachedDeviceId()
+    const storedDeviceId = this.appProperties.getDeviceId()
 
-    let path = `${this.basePath}?${this.SIZE_QUERY_KEY}=${querySize}&${this.CLIENT_QUERY_KEY}=${cachedDeviceId}`
+    let path = `${this.basePath}?${this.SIZE_QUERY_KEY}=${querySize}&${this.CLIENT_QUERY_KEY}=${storedDeviceId}`
     if (querySince) {
       path = `${path}&${this.SINCE_QUERY_KEY}=${querySince}`
     }
