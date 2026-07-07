@@ -27,6 +27,7 @@ import {
   QualifiedId,
   TextMessage,
   AssetMessage,
+  TextEditedMessage,
   CompositeButton,
   CompositeMessage,
   Ping,
@@ -115,6 +116,17 @@ class SampleEventsHandler extends WireEventsHandler {
 
       await this.manager.sendMessage(reaction)
     }
+  }
+
+  public override async onTextEditedMessageReceived(wireMessage: TextEditedMessage): Promise<void> {
+    this.appLogger?.info(`[Sample App] Received a Text Edit, notifying conversation that it happen`)
+
+    const textMessage = TextMessage.create({
+      conversationId: wireMessage.conversationId,
+      text: `Message with ID: ${wireMessage.replacingMessageId}, got edited. Now it's ID is: ${wireMessage.id}`
+    })
+
+    await this.manager.sendMessage(textMessage)
   }
 
   public override async onPingReceived(wireMessage: Ping): Promise<void> {
@@ -602,6 +614,25 @@ class SampleEventsHandler extends WireEventsHandler {
           text: `Search results for "${query}" on ${domain} (${users.length}):\n${userList}`
         }))
       },
+      'test-edit-text': async(conversationId) => {
+        this.appLogger?.info(`[Sample App] Sending a Text Edit message`)
+        const message = TextMessage.create({
+          conversationId: conversationId,
+          text: "This message will be edited in 3 seconds"
+        })
+
+        await this.manager.sendMessage(message)
+
+        await new Promise(resolve => setTimeout(resolve, 3000))
+
+        const messageEdit = TextEditedMessage.create({
+          conversationId: conversationId,
+          replacingMessageId: message.id,
+          text: "This message got edited"
+        })
+
+        await this.manager.sendMessage(messageEdit)
+      }
       // More reserved test commands will be added here
     }
   }

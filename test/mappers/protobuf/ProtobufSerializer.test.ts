@@ -19,7 +19,18 @@ import rootMessage from '../../../src/generated/messages.js'
 import { ProtobufDeserializer } from '../../../src/mappers/protobuf/ProtobufDeserializer.js'
 import { ProtobufSerializer } from '../../../src/mappers/protobuf/ProtobufSerializer.js'
 import { QualifiedId } from '../../../src/model/QualifiedId.js'
-import { AssetMessage, CompositeButtonActionConfirmation, DeletedMessage, Location, Ping, Reaction, Receipt, ReceiptType, TextMessage } from '../../../src/model/WireMessage.js'
+import {
+  AssetMessage,
+  CompositeButtonActionConfirmation,
+  DeletedMessage,
+  Location,
+  Ping,
+  Reaction,
+  Receipt,
+  ReceiptType,
+  TextEditedMessage,
+  TextMessage
+} from '../../../src/model/WireMessage.js'
 
 const { GenericMessage, Confirmation } = rootMessage
 
@@ -361,6 +372,49 @@ describe('Protobuf serialization', () => {
     expect(() => ProtobufSerializer.toGenericMessageByteArray(message)).toThrow(
       'First messageId for Receipt message type is null'
     )
+  })
+
+  it('serializes text edited message', () => {
+    const mention = {
+      userId: new QualifiedId('user-id', 'wire.com'),
+      offset: 6,
+      length: 5
+    }
+    const mentions = [mention]
+
+    const linkPreview = [{
+      url: wireBlogUrl,
+      urlOffset: 16,
+      permanentUrl: wireBlogUrl,
+      title: 'Wire',
+      summary: 'Secure collaboration'
+    }]
+
+    const message = TextEditedMessage.create({
+      conversationId: conversationId,
+      messageId: "new-message-id",
+      replacingMessageId: "replacing-message-id",
+      text: `Hello @Wire see ${wireBlogUrl}`,
+      mentions: mentions,
+      linkPreviews: linkPreview
+    })
+
+    const serialized = ProtobufSerializer.toGenericMessageByteArray(message)
+    const result = GenericMessage.decode(serialized)
+
+    expect(result.content).toBe('edited')
+    expect(result.messageId).toBe('new-message-id')
+    expect(result.edited?.content).toBe('text')
+    expect(result.edited?.text?.content).toBe(`Hello @Wire see ${wireBlogUrl}`)
+
+    const resultMention = result.edited?.text?.mentions?.at(0)
+    expect(resultMention).toBeDefined()
+    expect(resultMention!.length).toBe(mention.length)
+    expect(resultMention!.start).toBe(mention.offset)
+    expect(resultMention!.qualifiedUserId?.id).toBe(mention.userId.id)
+    expect(resultMention!.qualifiedUserId?.domain).toBe(mention.userId.domain)
+
+    expect(result.edited?.text?.linkPreview).toMatchObject(linkPreview)
   })
 
   it('deserializes composite button action confirmations', () => {
