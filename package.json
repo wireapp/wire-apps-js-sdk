@@ -60,7 +60,7 @@
     "@ubjs/node": "^0.31.0-3",
     "@wireapp/core-crypto": "^10.0.0",
     "bazinga64": "^6.5.13",
-    "better-sqlite3": "^12.10.1",
+    "better-sqlite3": "^12.11.1",
     "drizzle-orm": "^0.45.1",
     "protobufjs": "^8.6.4",
     "reflect-metadata": "^0.2.2",
