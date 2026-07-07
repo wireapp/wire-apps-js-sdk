@@ -52,13 +52,11 @@ export class CoreCryptoClient {
   private constructor(
     ciphersuite: number,
     mlsTransport: CoreCryptoMlsTransport,
-    coreCrypto: CoreCrypto,
-    db: Database
+    coreCrypto: CoreCrypto
   ) {
     this.ciphersuite = ciphersuite
     this.mlsTransport = mlsTransport
     this.coreCrypto = coreCrypto
-    this.db = db
   }
 
   static async create(
@@ -78,8 +76,7 @@ export class CoreCryptoClient {
     const coreCryptoClient = new CoreCryptoClient(
       this.getMlsCiphersuiteName(ciphersuiteCode),
       mlsTransport,
-      coreCrypto,
-      db
+      coreCrypto
     )
 
     return coreCryptoClient
@@ -119,11 +116,18 @@ export class CoreCryptoClient {
         this.mlsTransport
       )
 
-      const credential = Credential.basic(
-        this.ciphersuite,
-        clientId
-      )
-      this.credential = await context.addCredential(credential)
+      const credentials = await this.coreCrypto.getCredentials()
+      if (credentials.length == 0) {
+        this.logger.info(`Creating CoreCrypto Credential`)
+        const credential = Credential.basic(
+          this.ciphersuite,
+          clientId
+        )
+        this.credential = await context.addCredential(credential)
+      } else {
+        this.logger.info(`Loading CoreCrypto Credential`)
+        this.credential = credentials[1]!
+      }
     })
   }
 
