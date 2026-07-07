@@ -38,6 +38,13 @@ interface Replyable {
   timestamp: Date
 }
 
+/**
+ * Interface for message types to be extended from that can be edited
+ */
+interface Editable {
+  replacingMessageId: string
+}
+
 export interface Mention {
   userId: QualifiedId
   offset: number
@@ -160,6 +167,38 @@ export const TextMessage = {
       linkPreviews: params.linkPreviews ?? [],
       timestamp: params.timestamp ?? new Date(),
       expiresAfterMillis: params.expiresAfterMillis ?? null
+    }
+  }
+}
+
+export interface TextEditedMessage extends WireMessageBase, Editable {
+  type: 'text-edited'
+  text: string
+  mentions?: Mention[]
+  linkPreviews?: LinkPreview[]
+}
+
+export const TextEditedMessage = {
+  create(
+    params: {
+      messageId?: string
+      conversationId: QualifiedId
+      replacingMessageId: string
+      text: string
+      mentions?: Mention[]
+      linkPreviews?: LinkPreview[]
+      senderId?: QualifiedId
+    }
+  ): TextEditedMessage {
+    return {
+      type: 'text-edited',
+      id: params.messageId ?? crypto.randomUUID(),
+      conversationId: params.conversationId,
+      sender: params.senderId ?? appQualifiedId,
+      replacingMessageId: params.replacingMessageId,
+      text: params.text,
+      mentions: params.mentions ?? [],
+      linkPreviews: params.linkPreviews ?? [],
     }
   }
 }
@@ -490,6 +529,7 @@ export type WireMessage =
   | Unknown
   | Ignored
   | TextMessage
+  | TextEditedMessage
   | AssetMessage
   | CompositeButtonAction
   | CompositeButtonActionConfirmation

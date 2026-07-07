@@ -37,6 +37,7 @@ export { ConsoleLogger } from "./utils/logger/ConsoleLogger.js"
 export {
   type WireMessage,
   TextMessage,
+  TextEditedMessage,
   AssetMessage,
   CompositeButton,
   CompositeButtonAction,
