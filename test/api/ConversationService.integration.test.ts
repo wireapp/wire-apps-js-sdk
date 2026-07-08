@@ -25,7 +25,6 @@ import type { QualifiedId } from '../../src/model/QualifiedId.js'
 import type { ConversationResponse } from '../../src/api/response/ConversationResponse.js'
 import { TestDatabaseService } from '../helpers/TestDatabaseService.js'
 import type {ConversationEntity} from '../../src/db/model/ConversationEntity.js'
-import type {ConversationMemberEntity} from '../../src/db/model/ConversationMemberEntity.js'
 import {AppProperties} from '../../src/service/AppProperties.js'
 import {CoreCryptoService} from '../../src/core/CoreCryptoService.js'
 import {TeamsApiClient} from "../../src/api/TeamsApiClient.js";
@@ -367,7 +366,7 @@ describe('ConversationService Integration', () => {
       ).rejects.toThrow('Unable to add members to MLS conversation: MLS error')
 
       const members = conversationService.getMembersByConversationId(CONVERSATION_ID)
-      const memberIds = members.map((m: ConversationMemberEntity) => m.userId)
+      const memberIds = members.map(member => member.userId.id)
 
       expect(memberIds).not.toContain(USER_3_ID.id)
     })

@@ -152,13 +152,10 @@ describe('UserService', () => {
       const key = QualifiedId.toKey(userId1)
       const clientIds = result.get(key)
       expect(clientIds).toBeDefined()
-      expect(clientIds).toHaveLength(2)
-      expect(clientIds![0].userId).toBe('user-1')
-      expect(clientIds![0].deviceId).toBe('device-1')
-      expect(clientIds![0].userDomain).toBe('example.com')
-      expect(clientIds![1].userId).toBe('user-1')
-      expect(clientIds![1].deviceId).toBe('device-2')
-      expect(clientIds![1].userDomain).toBe('example.com')
+      expect(clientIds).toEqual([
+        expect.objectContaining({userId: 'user-1', deviceId: 'device-1', userDomain: 'example.com'}),
+        expect.objectContaining({userId: 'user-1', deviceId: 'device-2', userDomain: 'example.com'})
+      ])
     })
 
     it('should correctly map multiple users to their CryptoClientIds with string keys', async () => {
@@ -174,21 +171,16 @@ describe('UserService', () => {
 
       const key1 = QualifiedId.toKey(userId1)
       const user1Clients = result.get(key1)
-      expect(user1Clients).toHaveLength(1)
-      expect(user1Clients![0].userId).toBe('user-1')
-      expect(user1Clients![0].deviceId).toBe('device-1')
-      expect(user1Clients![0].userDomain).toBe('example.com')
+      expect(user1Clients).toEqual([
+        expect.objectContaining({userId: 'user-1', deviceId: 'device-1', userDomain: 'example.com'})
+      ])
 
       const key2 = QualifiedId.toKey(userId2)
       const user2Clients = result.get(key2)
-      expect(user2Clients).toHaveLength(2)
-      expect(user2Clients![0].userId).toBe('user-2')
-      expect(user2Clients![0].deviceId).toBe('device-2')
-      expect(user2Clients![0].userDomain).toBe('example.com')
-
-      expect(user2Clients![1].userId).toBe('user-2')
-      expect(user2Clients![1].deviceId).toBe('device-3')
-      expect(user2Clients![1].userDomain).toBe('example.com')
+      expect(user2Clients).toEqual([
+        expect.objectContaining({userId: 'user-2', deviceId: 'device-2', userDomain: 'example.com'}),
+        expect.objectContaining({userId: 'user-2', deviceId: 'device-3', userDomain: 'example.com'})
+      ])
     })
 
     it('should return empty map for user with no clients', async () => {
@@ -256,7 +248,7 @@ describe('UserService', () => {
       expect(result).toBeInstanceOf(Array)
       expect(result).toHaveLength(1)
 
-      const user = result[0]
+      const user = result[0]!
       expect(user).toBeInstanceOf(WireUser)
       expect(user.id).toEqual(new QualifiedId('user-alice', 'example.com'))
       expect(user.name).toBe('Alice Smith')
@@ -277,7 +269,7 @@ describe('UserService', () => {
       vi.mocked(mockSearchApiClient.searchUsers).mockResolvedValue({documents: [minimalContactDocument]})
 
       const result = await service.searchUsers(query, domain)
-      const user = result[0]
+      const user = result[0]!
 
       expect(user.handle).toBeUndefined()
       expect(user.teamId).toBeUndefined()

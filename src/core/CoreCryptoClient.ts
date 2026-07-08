@@ -68,7 +68,7 @@ export class CoreCryptoClient {
     const uint8Array = new TextEncoder().encode(cryptographyStoragePassword);
 
     const db = await Database.open(
-      `./storage/${userId}`,
+      `./storage/cryptography/${userId}`,
       new DatabaseKey(uint8Array)
     )
     const coreCrypto = CoreCrypto.new(db)

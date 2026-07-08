@@ -20,6 +20,10 @@ export default defineConfig({
   test: {
     include: ['test/**/*.test.ts'],
     setupFiles: ['./test/setup.ts'],
+    typecheck: {
+      tsconfig: './tsconfig.test.json',
+      include: ['test/**/*.test.ts']
+    },
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'json-summary', 'html']

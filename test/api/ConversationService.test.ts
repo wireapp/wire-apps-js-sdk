@@ -31,6 +31,7 @@ import {ConversationRole} from "../../src/model/conversation/ConversationRole.js
 import {TeamsApiClient} from "../../src/api/TeamsApiClient.js";
 import {TeamId} from "../../src/model/TeamId.js";
 import {UserService} from "../../src/api/UserService.js";
+import {CryptoClientId} from "../../src/model/CryptoClientId.js";
 
 describe('ConversationService', () => {
   let conversationService: ConversationService
@@ -115,6 +116,8 @@ describe('ConversationService', () => {
         name: null,
         team: TEAM_ID,
         group_id: MLS_GROUP_ID,
+        epoch: 0,
+        protocol: CryptoProtocol.MLS,
         members: {
           others: [
             {
@@ -174,6 +177,8 @@ describe('ConversationService', () => {
         name: 'Test Conversation',
         team: TEAM_ID,
         group_id: MLS_GROUP_ID,
+        epoch: 0,
+        protocol: CryptoProtocol.MLS,
         members: {
           others: [
             {
@@ -204,6 +209,8 @@ describe('ConversationService', () => {
         name: null,
         team: TEAM_ID,
         group_id: MLS_GROUP_ID,
+        epoch: 0,
+        protocol: CryptoProtocol.MLS,
         members: {
           others: [],
           self: {
@@ -286,6 +293,8 @@ describe('ConversationService', () => {
         name: 'API Conversation',
         team: TEAM_ID,
         group_id: MLS_GROUP_ID,
+        epoch: 0,
+        protocol: CryptoProtocol.MLS,
         members: {
           others: [],
           self: {
@@ -582,6 +591,8 @@ describe('ConversationService', () => {
         {
           qualified_id: CONVERSATION_ID,
           type: ConversationType.GROUP,
+          name: 'MLS Conversation',
+          team: TEAM_ID,
           protocol: CryptoProtocol.MLS,
           group_id: MLS_GROUP_ID,
           epoch: 0,
@@ -593,6 +604,8 @@ describe('ConversationService', () => {
         {
           qualified_id: {...CONVERSATION_ID, id: 'conv-2'},
           type: ConversationType.GROUP,
+          name: 'Proteus Conversation',
+          team: TEAM_ID,
           protocol: CryptoProtocol.PROTEUS, // Non-MLS conversation
           group_id: 'mls-group-2',
           epoch: 0,
@@ -623,6 +636,8 @@ describe('ConversationService', () => {
         {
           qualified_id: CONVERSATION_ID,
           type: ConversationType.GROUP,
+          name: 'MLS Conversation',
+          team: TEAM_ID,
           protocol: CryptoProtocol.MLS,
           group_id: MLS_GROUP_ID,
           epoch: 5,
@@ -634,6 +649,8 @@ describe('ConversationService', () => {
         {
           qualified_id: {...CONVERSATION_ID, id: 'conv-2'},
           type: ConversationType.SELF,
+          name: null,
+          team: TEAM_ID,
           protocol: CryptoProtocol.MLS,
           group_id: 'mls-group-2',
           epoch: 0,
@@ -665,6 +682,8 @@ describe('ConversationService', () => {
       const conversation: ConversationResponse = {
         qualified_id: CONVERSATION_ID,
         type: ConversationType.GROUP,
+        name: 'Existing Conversation',
+        team: TEAM_ID,
         protocol: CryptoProtocol.MLS,
         group_id: MLS_GROUP_ID,
         epoch: 5,
@@ -745,6 +764,8 @@ describe('ConversationService', () => {
       const conversation: ConversationResponse = {
         qualified_id: CONVERSATION_ID,
         type: ConversationType.SELF,
+        name: null,
+        team: TEAM_ID,
         protocol: CryptoProtocol.MLS,
         group_id: MLS_GROUP_ID,
         epoch: 0,
@@ -768,6 +789,8 @@ describe('ConversationService', () => {
       const conversation: ConversationResponse = {
         qualified_id: CONVERSATION_ID,
         type: ConversationType.GROUP,
+        name: 'Null Epoch Conversation',
+        team: TEAM_ID,
         protocol: CryptoProtocol.MLS,
         group_id: MLS_GROUP_ID,
         epoch: null as any,
@@ -803,6 +826,8 @@ describe('ConversationService', () => {
         return ids.map(id => ({
           qualified_id: id,
           type: ConversationType.GROUP,
+          name: `Conversation ${id.id}`,
+          team: TEAM_ID,
           protocol: CryptoProtocol.MLS,
           group_id: `mls-${id.id}`,
           epoch: 5,
@@ -844,6 +869,8 @@ describe('ConversationService', () => {
         return ids.map((id, idx) => ({
           qualified_id: id,
           type: ConversationType.GROUP,
+          name: `Conversation ${id.id}`,
+          team: TEAM_ID,
           protocol: idx % 2 === 0 ? CryptoProtocol.MLS : CryptoProtocol.PROTEUS,
           group_id: `mls-${id.id}`,
           epoch: 0,
@@ -1512,11 +1539,11 @@ describe('ConversationService', () => {
         .mockReturnValue(MEMBERS)
 
       // Create mock CryptoClientId objects
-      const mockClientId1 = { value: 'user-1:device-1@wire.com' }
-      const mockClientId2 = { value: 'user-2:device-1@wire.com' }
+      const mockClientId1 = CryptoClientId.create('user-1', 'device-1', 'wire.com')
+      const mockClientId2 = CryptoClientId.create('user-2', 'device-1', 'wire.com')
 
       // Mock userService.getUsersClientIds to return Map<string, CryptoClientId[]>
-      mockUserService.getUsersClientIds.mockResolvedValue(
+      vi.mocked(mockUserService.getUsersClientIds).mockResolvedValue(
         new Map([
           [QualifiedId.toKey(MEMBERS[0]!), [mockClientId1]],
           [QualifiedId.toKey(MEMBERS[1]!), [mockClientId2]]
@@ -1554,8 +1581,8 @@ describe('ConversationService', () => {
     })
 
     it('should remove members successfully from MLS conversation', async () => {
-      const mockClientId1 = { value: 'user-1:device-1@wire.com' }
-      const mockClientId2 = { value: 'user-2:device-1@wire.com' }
+      const mockClientId1 = CryptoClientId.create('user-1', 'device-1', 'wire.com')
+      const mockClientId2 = CryptoClientId.create('user-2', 'device-1', 'wire.com')
 
       await conversationService.removeMembersFromConversation(
         CONVERSATION_ID,
@@ -1599,7 +1626,7 @@ describe('ConversationService', () => {
 
     it('should return empty result when members have no clients', async () => {
       // Mock getUsersClientIds to return empty map (users have no clients)
-      mockUserService.getUsersClientIds.mockResolvedValue(new Map())
+      vi.mocked(mockUserService.getUsersClientIds).mockResolvedValue(new Map())
 
       const result = await conversationService.removeMembersFromConversation(
         CONVERSATION_ID,
@@ -1612,10 +1639,10 @@ describe('ConversationService', () => {
     })
 
     it('should handle partial success when some users have no clients', async () => {
-      const mockClientId1 = { value: 'user-1:device-1@wire.com' }
+      const mockClientId1 = CryptoClientId.create('user-1', 'device-1', 'wire.com')
 
       // Only first user has clients (second user not in map since they have no clients)
-      mockUserService.getUsersClientIds.mockResolvedValue(
+      vi.mocked(mockUserService.getUsersClientIds).mockResolvedValue(
         new Map([
           [QualifiedId.toKey(MEMBERS[0]!), [mockClientId1]]
         ])

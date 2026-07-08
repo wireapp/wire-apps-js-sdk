@@ -17,7 +17,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { WireApplicationManager } from '../../src/core/WireApplicationManager.js'
 import { QualifiedId } from '../../src/model/QualifiedId.js'
-import {WireUser} from "../../src";
+import type {WireUser} from "../../src/model/WireUser.js";
 
 describe('WireApplicationManager', () => {
   const conversationId = new QualifiedId('conversation-id', 'wire.com')
@@ -57,7 +57,7 @@ describe('WireApplicationManager', () => {
     expect(result).toBe('sent-message-id')
     expect(assetsTransferService.uploadAssetForSending).toHaveBeenCalledWith(new Uint8Array([7, 8, 9]))
     expect(sendMessage).toHaveBeenCalledOnce()
-    expect(sendMessage.mock.calls[0][0]).toMatchObject({
+    expect(sendMessage.mock.calls[0]![0]).toMatchObject({
       type: 'asset',
       conversationId,
       mimeType: 'image/png',
@@ -71,8 +71,8 @@ describe('WireApplicationManager', () => {
   describe('searchUsers', () => {
     it('delegates to userService and returns results', async () => {
       const mockUsers: WireUser[] = [
-        { id: new QualifiedId('user-1', 'wire.com'), name: 'Alice', handle: 'alice' },
-        { id: new QualifiedId('user-2', 'wire.com'), name: 'Bob', handle: 'bob' }
+        { id: new QualifiedId('user-1', 'wire.com'), name: 'Alice', handle: 'alice', deleted: false },
+        { id: new QualifiedId('user-2', 'wire.com'), name: 'Bob', handle: 'bob', deleted: false }
       ]
       const userService = {
         searchUsers: vi.fn().mockResolvedValue(mockUsers)

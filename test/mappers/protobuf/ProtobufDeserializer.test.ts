@@ -349,7 +349,7 @@ describe('Protobuf deserialization', () => {
     const genericMessage = GenericMessage.create({
       messageId: 'message-id',
       confirmation: {
-        type: 99,
+        type: 99 as unknown as rootMessage.Confirmation.Type,
         firstMessageId: 'message-id'
       }
     })
@@ -393,7 +393,7 @@ describe('Protobuf deserialization', () => {
       }
     })
 
-    const result = ProtobufDeserializer.toWireMessage(GenericMessage.encode(genericMessage).finish(), conversationId)
+    const result = toWireMessage(genericMessage)
 
     expect(result.type).toBe('text-edited')
     if (result.type == 'text-edited') {

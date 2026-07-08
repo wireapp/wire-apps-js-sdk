@@ -55,7 +55,7 @@ describe('MlsFallbackStrategy', () => {
 
       vi.mocked(mockCoreCryptoService.conversationExists).mockResolvedValue(false)
       vi.mocked(mockConversationService.fetchEpoch).mockResolvedValue(remoteEpoch)
-      vi.mocked(mockCoreCryptoService.conversationEpoch).mockResolvedValue(5)
+      vi.mocked(mockCoreCryptoService.conversationEpoch).mockResolvedValue(5n)
       vi.mocked(mockConversationService.getConversationGroupInfo).mockResolvedValue(mockGroupInfoBytes)
 
       await mlsFallbackStrategy.verifyConversationOutOfSync(MLS_GROUP_ID, CONVERSATION_ID)
@@ -72,7 +72,7 @@ describe('MlsFallbackStrategy', () => {
 
       vi.mocked(mockCoreCryptoService.conversationExists).mockResolvedValue(true)
       vi.mocked(mockConversationService.fetchEpoch).mockResolvedValue(remoteEpoch)
-      vi.mocked(mockCoreCryptoService.conversationEpoch).mockResolvedValue(5)
+      vi.mocked(mockCoreCryptoService.conversationEpoch).mockResolvedValue(5n)
       vi.mocked(mockConversationService.getConversationGroupInfo).mockResolvedValue(mockGroupInfoBytes)
 
       await mlsFallbackStrategy.verifyConversationOutOfSync(MLS_GROUP_ID, CONVERSATION_ID)
@@ -89,7 +89,7 @@ describe('MlsFallbackStrategy', () => {
 
       vi.mocked(mockCoreCryptoService.conversationExists).mockResolvedValue(true)
       vi.mocked(mockConversationService.fetchEpoch).mockResolvedValue(remoteEpoch)
-      vi.mocked(mockCoreCryptoService.conversationEpoch).mockResolvedValue(5)
+      vi.mocked(mockCoreCryptoService.conversationEpoch).mockResolvedValue(5n)
 
       await mlsFallbackStrategy.verifyConversationOutOfSync(MLS_GROUP_ID, CONVERSATION_ID)
 
@@ -105,7 +105,7 @@ describe('MlsFallbackStrategy', () => {
 
       vi.mocked(mockCoreCryptoService.conversationExists).mockResolvedValue(true)
       vi.mocked(mockConversationService.fetchEpoch).mockResolvedValue(remoteEpoch)
-      vi.mocked(mockCoreCryptoService.conversationEpoch).mockResolvedValue(10)
+      vi.mocked(mockCoreCryptoService.conversationEpoch).mockResolvedValue(10n)
 
       await mlsFallbackStrategy.verifyConversationOutOfSync(MLS_GROUP_ID, CONVERSATION_ID)
 
@@ -120,8 +120,8 @@ describe('MlsFallbackStrategy', () => {
       const remoteEpoch = null
 
       vi.mocked(mockCoreCryptoService.conversationExists).mockResolvedValue(true)
-      vi.mocked(mockConversationService.fetchEpoch).mockResolvedValue(remoteEpoch)
-      vi.mocked(mockCoreCryptoService.conversationEpoch).mockResolvedValue(5)
+      vi.mocked(mockConversationService.fetchEpoch).mockResolvedValue(remoteEpoch as unknown as number)
+      vi.mocked(mockCoreCryptoService.conversationEpoch).mockResolvedValue(5n)
 
       await mlsFallbackStrategy.verifyConversationOutOfSync(MLS_GROUP_ID, CONVERSATION_ID)
 
@@ -137,7 +137,7 @@ describe('MlsFallbackStrategy', () => {
 
       vi.mocked(mockCoreCryptoService.conversationExists).mockResolvedValue(false)
       vi.mocked(mockConversationService.fetchEpoch).mockResolvedValue(remoteEpoch)
-      vi.mocked(mockCoreCryptoService.conversationEpoch).mockResolvedValue(5)
+      vi.mocked(mockCoreCryptoService.conversationEpoch).mockResolvedValue(5n)
       vi.mocked(mockConversationService.getConversationGroupInfo).mockResolvedValue(mockGroupInfoBytes)
 
       await mlsFallbackStrategy.verifyConversationOutOfSync(MLS_GROUP_ID, CONVERSATION_ID)
@@ -152,7 +152,7 @@ describe('MlsFallbackStrategy', () => {
 
       vi.mocked(mockCoreCryptoService.conversationExists).mockResolvedValue(false)
       vi.mocked(mockConversationService.fetchEpoch).mockResolvedValue(remoteEpoch)
-      vi.mocked(mockCoreCryptoService.conversationEpoch).mockResolvedValue(5)
+      vi.mocked(mockCoreCryptoService.conversationEpoch).mockResolvedValue(5n)
       vi.mocked(mockConversationService.getConversationGroupInfo).mockResolvedValue(mockGroupInfoBytes)
 
       await mlsFallbackStrategy.verifyConversationOutOfSync(MLS_GROUP_ID, CONVERSATION_ID)

@@ -35,6 +35,8 @@ import {
 const { GenericMessage, Confirmation } = rootMessage
 
 const wireBlogUrl = "https://wire.com/blog"
+const senderId = new QualifiedId('wireUserId', 'wire.com')
+const timestamp = new Date()
 
 describe('Protobuf serialization', () => {
   const conversationId = new QualifiedId('conversation-id', 'wire.com')
@@ -166,7 +168,12 @@ describe('Protobuf serialization', () => {
       }
     })
 
-    const result = ProtobufDeserializer.toWireMessage(GenericMessage.encode(genericMessage).finish(), conversationId)
+    const result = ProtobufDeserializer.toWireMessage(
+      GenericMessage.encode(genericMessage).finish(),
+      conversationId,
+      senderId,
+      timestamp
+    )
 
     expect(result.type).toBe('text')
     expect(result.type === 'text' ? result.linkPreviews : []).toStrictEqual([{
@@ -188,7 +195,12 @@ describe('Protobuf serialization', () => {
       }
     })
 
-    const result = ProtobufDeserializer.toWireMessage(GenericMessage.encode(genericMessage).finish(), conversationId)
+    const result = ProtobufDeserializer.toWireMessage(
+      GenericMessage.encode(genericMessage).finish(),
+      conversationId,
+      senderId,
+      timestamp
+    )
 
     expect(result.type).toBe('text')
     expect(result.type === 'text' ? result.linkPreviews : null).toStrictEqual([])
@@ -407,7 +419,7 @@ describe('Protobuf serialization', () => {
     expect(result.edited?.content).toBe('text')
     expect(result.edited?.text?.content).toBe(`Hello @Wire see ${wireBlogUrl}`)
 
-    const resultMention = result.edited?.text?.mentions?.at(0)
+    const resultMention = result.edited?.text?.mentions?.[0]
     expect(resultMention).toBeDefined()
     expect(resultMention!.length).toBe(mention.length)
     expect(resultMention!.start).toBe(mention.offset)
@@ -426,7 +438,12 @@ describe('Protobuf serialization', () => {
       }
     })
 
-    const result = ProtobufDeserializer.toWireMessage(GenericMessage.encode(genericMessage).finish(), conversationId)
+    const result = ProtobufDeserializer.toWireMessage(
+      GenericMessage.encode(genericMessage).finish(),
+      conversationId,
+      senderId,
+      timestamp
+    )
 
     expect(result.type).toBe('composite_button_action_confirmation')
     expect(result.type === 'composite_button_action_confirmation' ? result.id : null).toBe('message-id')
@@ -442,7 +459,12 @@ describe('Protobuf serialization', () => {
       }
     })
 
-    const result = ProtobufDeserializer.toWireMessage(GenericMessage.encode(genericMessage).finish(), conversationId)
+    const result = ProtobufDeserializer.toWireMessage(
+      GenericMessage.encode(genericMessage).finish(),
+      conversationId,
+      senderId,
+      timestamp
+    )
 
     expect(result.type).toBe('composite_button_action_confirmation')
     expect(result.type === 'composite_button_action_confirmation' ? result.referenceMessageId : null).toBe('reference-message-id')
@@ -458,7 +480,12 @@ describe('Protobuf serialization', () => {
       }
     })
 
-    const result = ProtobufDeserializer.toWireMessage(GenericMessage.encode(genericMessage).finish(), conversationId)
+    const result = ProtobufDeserializer.toWireMessage(
+      GenericMessage.encode(genericMessage).finish(),
+      conversationId,
+      senderId,
+      timestamp
+    )
 
     expect(result.type).toBe('reaction')
     expect(result.type === 'reaction' ? result.id : null).toBe('reaction-message-id')
