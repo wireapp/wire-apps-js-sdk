@@ -793,7 +793,7 @@ describe('ConversationService', () => {
         team: TEAM_ID,
         protocol: CryptoProtocol.MLS,
         group_id: MLS_GROUP_ID,
-        epoch: null as any,
+        epoch: null,
         members: {
           others: [],
           self: {qualified_id: SELF_USER_ID, conversation_role: 'wire_admin'}

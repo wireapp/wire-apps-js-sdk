@@ -120,7 +120,7 @@ describe('MlsFallbackStrategy', () => {
       const remoteEpoch = null
 
       vi.mocked(mockCoreCryptoService.conversationExists).mockResolvedValue(true)
-      vi.mocked(mockConversationService.fetchEpoch).mockResolvedValue(remoteEpoch as unknown as number)
+      vi.mocked(mockConversationService.fetchEpoch).mockResolvedValue(remoteEpoch)
       vi.mocked(mockCoreCryptoService.conversationEpoch).mockResolvedValue(5n)
 
       await mlsFallbackStrategy.verifyConversationOutOfSync(MLS_GROUP_ID, CONVERSATION_ID)

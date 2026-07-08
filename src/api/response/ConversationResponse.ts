@@ -24,7 +24,7 @@ export interface ConversationResponse {
   name: string | null
   type: ConversationType
   group_id: string
-  epoch: number
+  epoch: number | null
   protocol: CryptoProtocol
   team: string
   members: ConversationMembersResponse
