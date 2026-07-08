@@ -7,7 +7,7 @@
     "sample"
   ],
   "scripts": {
-    "storage:mkdir:sample": "mkdir -p sample/storage",
+    "storage:mkdir:sample": "mkdir -p sample/storage/cryptography",
     "proto:mkdir": "mkdir -p src/generated",
     "proto:package": "node scripts/create-generated-package-json.js",
     "proto:js": "pbjs -t static-module -w commonjs -o src/generated/messages.js src/proto/messages.proto",
@@ -19,8 +19,9 @@
     "build": "tsc -p tsconfig.json && npm run proto:copy",
     "build:sample": "npm run build && npm run -w sample build && npm run storage:mkdir:sample && npx drizzle-kit push",
     "sample": "npm run build:sample && npm run -w sample start",
-    "test": "vitest run",
-    "test:coverage": "vitest run --coverage",
+    "test": "npm run test:typecheck",
+    "test:typecheck": "vitest run --typecheck --typecheck.tsconfig tsconfig.test.json",
+    "test:coverage": "vitest run --coverage --typecheck --typecheck.tsconfig tsconfig.test.json",
     "clean": "rm -rf build sample/build",
     "lint": "eslint src --ext .ts"
   },

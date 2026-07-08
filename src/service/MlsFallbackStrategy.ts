@@ -36,7 +36,7 @@ export class MlsFallbackStrategy {
     const conversationExists = await this.coreCryptoService.conversationExists(mlsGroupId)
     const remoteConversationEpoch = await this.conversationService.fetchEpoch(conversationId)
     const localConversationEpoch = await this.coreCryptoService.conversationEpoch(mlsGroupId)
-    const isEpochBehind = localConversationEpoch < remoteConversationEpoch
+    const isEpochBehind = remoteConversationEpoch != null && localConversationEpoch < BigInt(remoteConversationEpoch)
 
     this.logger.info(
       `Verifying Fallback Strategy for conversationId: ${conversationId}, ` +
