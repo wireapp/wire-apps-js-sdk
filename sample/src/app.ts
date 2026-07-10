@@ -22,7 +22,7 @@ import { PinoLogger } from './PinoLogger.js'
 import {
   type Conversation,
   type ConversationMember,
-  type ConversationRole,
+  ConversationRole,
   obfuscateId,
   QualifiedId,
   TextMessage,
@@ -82,6 +82,9 @@ class SampleEventsHandler extends WireEventsHandler {
     this.appLogger?.info(`[Sample App] Received message: ${wireMessage.text}`)
     if (this.isReservedTestCommand(wireMessage.text)) {
       await this.processReservedTestCommand(wireMessage.text, wireMessage.conversationId)
+    } else if (wireMessage.text.startsWith("create-group-conversation")) {
+      await this.processCreateGroupConversation(wireMessage)
+      //TODO : Move this into reserved commands side
     } else if (wireMessage.text == "asset-image") {
       this.processAssetImage(wireMessage);
     } else if (wireMessage.text == "asset-audio") {
@@ -221,6 +224,28 @@ class SampleEventsHandler extends WireEventsHandler {
   }
 
   private readonly RESOURCES_PATH = 'resources'
+
+  /**
+   * Processes a create-group-conversation command.
+   * Expected message format: `create-group-conversation [NAME] [USER_ID] [DOMAIN]`
+   */
+  private async processCreateGroupConversation(wireMessage: TextMessage): Promise<void> {
+    const split = wireMessage.text.trim().split(' ')
+    const name = split[1]
+    const userId = split[2]
+    const domain = split[3]
+
+    if (!name || !userId || !domain) {
+      this.appLogger?.info(`[Sample App] Invalid command format. Expected: create-group-conversation [NAME] [USER_ID] [DOMAIN]`)
+      return
+    }
+
+    const conversationId = await this.manager.createGroupConversation(
+      name,
+      [new QualifiedId(userId, domain)]
+      // [new QualifiedId(userId, domain)]
+    )
+  }
 
   private processAssetImage(wireMessage: TextMessage) {
     const filename = 'banana-icon.png'

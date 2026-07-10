@@ -86,6 +86,13 @@ export class WireApplicationManager {
     return await this.sendMessage(assetMessage)
   }
 
+  async createGroupConversation(name: string, userIds: QualifiedId[]): Promise<QualifiedId> {
+    this.logger.debug(`App requested to create a group conversation with name: ${name}`)
+    const conversationId = await this.conversationService.createGroup(name, userIds)
+    this.logger.debug(`Group conversation created with id: ${obfuscateId(conversationId.id)}`)
+    return conversationId
+  }
+
   async leaveConversation(conversationId: QualifiedId): Promise<void> {
     this.logger.debug('App requested to leave the conversation with id: ' + obfuscateId(conversationId.id));
 
