@@ -126,7 +126,8 @@ export class CoreCryptoClient {
         this.credential = await context.addCredential(credential)
       } else {
         this.logger.info(`Loading CoreCrypto Credential`)
-        this.credential = credentials[1]!
+        this.credential = credentials[0]!
+        // TODO :::: WARNING!! Before this change, group creation was failing.
       }
     })
   }
@@ -295,7 +296,7 @@ export class CoreCryptoClient {
       await context.createConversation(
         new ConversationId(mlsGroupIdBytes),
         this.credential!,
-        ExternalSender.parse(
+        ExternalSender.parsePublicKey(
           removalKey,
           this.credential!.signatureScheme()
         )
