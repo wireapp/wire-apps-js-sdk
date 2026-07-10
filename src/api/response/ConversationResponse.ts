@@ -1,7 +1,7 @@
 /*
 * Wire
 * Copyright (C) 2025 Wire Swiss GmbH
-* 
+*
 * This program is free software: you can redistribute it and/or modify
 * it under the terms of the GNU General Public License as published by
 * the Free Software Foundation, either version 3 of the License, or
@@ -18,14 +18,27 @@ import type { ConversationType } from "../../model/conversation/ConversationType
 import type {CryptoProtocol} from "../../model/CryptoProtocol.js"
 import type { QualifiedId } from "../../model/QualifiedId.js"
 import type { ConversationMembersResponse } from "../model/ConversationMembersResponse.js"
+import type { MlsPublicKeysResponse } from "./MlsPublicKeysResponse.js"
+import { ConversationId } from "@wireapp/core-crypto/native"
+import { Decoder } from "bazinga64"
 
 export interface ConversationResponse {
   qualified_id: QualifiedId
   name: string | null
   type: ConversationType
-  group_id: string
+  group_id: string | null
   epoch: number | null
   protocol: CryptoProtocol
-  team: string
+  team: string | null
   members: ConversationMembersResponse
+  public_keys?: MlsPublicKeysResponse | null
+  message_timer?: number | null
+}
+
+export function getDecodedMlsGroupId(conversationResponse: ConversationResponse): ConversationId {
+  if (!conversationResponse.group_id) {
+    throw new Error("MLSGroupId should not be empty or null.")
+  }
+  const bytes = Decoder.fromBase64(conversationResponse.group_id).asBytes
+  return new ConversationId(bytes)
 }
