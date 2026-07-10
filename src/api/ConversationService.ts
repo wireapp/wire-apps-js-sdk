@@ -40,6 +40,8 @@ import type {Conversation} from "../model/conversation/Conversation.js";
 import {ConversationMapper} from "../mappers/conversation/ConversationMapper.js";
 import {ConversationMemberMapper} from "../mappers/conversation/ConversationMemberMapper.js";
 import {UserService} from "./UserService.js";
+import {createGroupConversationRequest} from "./request/CreateConversationRequest.js";
+import type {MlsPublicKeysResponse} from "./response/MlsPublicKeysResponse.js";
 
 @singleton()
 export class ConversationService {
@@ -56,6 +58,101 @@ export class ConversationService {
     private coreCryptoService: CoreCryptoService,
     private userService: UserService,
   ) {
+  }
+
+  /**
+   * Creates a Group Conversation where currently the only admin is the App.
+   *
+   * @param name Name of the created conversation
+   * @param userIds List of QualifiedId of all the users to be added to the conversation
+   * (excluding the App user)
+   *
+   * @return QualifiedId The Id of the created conversation
+   */
+  async createGroup(name: string, userIds: QualifiedId[]): Promise<QualifiedId> {
+    this.logger.info(`Creating group conversation with name: ${name}, userIds count: ${userIds.length}`)
+    const teamId = await this.getSelfTeamId()
+
+    const response = await this.conversationsApiClient.createGroupConversation(
+      createGroupConversationRequest(name, teamId)
+    )
+
+    await this.establishMlsConversation(response, userIds, response.public_keys)
+
+    const conversationId = response.qualified_id
+    this.logger.info(`Group Conversation created with ID: ${obfuscateId(conversationId.id)}`)
+    return conversationId
+  }
+
+  /**
+   * Establishes an MLS conversation after it has been created or fetched from the backend.
+   * Mirrors Kotlin ConversationService.establishMlsConversation:
+   * - Pre-checks if the group already exists in CoreCrypto; if so, skips crypto setup
+   *   and only refreshes local storage (idempotent)
+   * - Otherwise delegates the full crypto setup to CoreCryptoService, then stores locally
+   */
+  private async establishMlsConversation(
+    conversationResponse: ConversationResponse,
+    userIds: QualifiedId[],
+    publicKeysResponse?: MlsPublicKeysResponse | null
+  ): Promise<void> {
+    if (!conversationResponse.group_id) {
+      throw new Error("ConversationResponse is missing MLS group_id.")
+    }
+
+    const mlsGroupId = conversationResponse.group_id
+
+    // If the MLS group already exists in CoreCrypto (e.g. called a second time),
+    // skip crypto setup and only refresh local storage
+    if (await this.coreCryptoService.conversationExists(mlsGroupId)) {
+      this.logger.info(`Conversation already exists in CoreCrypto, skipping MLS setup. conversationId: ${obfuscateId(conversationResponse.qualified_id.id)}`)
+      await this.storeEstablishedConversation(conversationResponse, userIds)
+      return
+    }
+
+    await this.coreCryptoService.establishMlsConversation(userIds, mlsGroupId, publicKeysResponse)
+    await this.storeEstablishedConversation(conversationResponse, userIds)
+  }
+
+  /**
+   * Persists an established conversation and its members to local storage.
+   * Mirrors Kotlin ConversationService.storeEstablishedConversation:
+   * - SELF conversations are skipped entirely
+   * - ONE_TO_ONE conversations: members list is replaced with the passed userIds
+   *   (response members are unreliable at establishment time)
+   * - GROUP/CHANNEL conversations: members from response are used as-is
+   */
+  private async storeEstablishedConversation(
+    conversationResponse: ConversationResponse,
+    userIds: QualifiedId[]
+  ): Promise<void> {
+    if (conversationResponse.type === ConversationType.SELF) {
+      return
+    }
+
+    const conversationToSave: ConversationResponse =
+      conversationResponse.type === ConversationType.ONE_TO_ONE
+        ? {
+          ...conversationResponse,
+          members: {
+            self: conversationResponse.members.self,
+            others: userIds.map(userId => ({
+              qualified_id: userId,
+              conversation_role: ConversationRole.MEMBER
+            }))
+          }
+        }
+        : conversationResponse
+
+    await this.saveConversationWithMembers(conversationResponse.qualified_id, conversationToSave)
+  }
+
+  private async getSelfTeamId(): Promise<TeamId> {
+    const selfUser = await this.userService.getUser(new QualifiedId(this.wireUserId, this.wireUserDomain))
+    if (!selfUser.teamId) {
+      throw new Error("App user does not belong to a team.")
+    }
+    return selfUser.teamId
   }
 
   getAllConversations(): Conversation[] {
@@ -88,7 +185,7 @@ export class ConversationService {
       domain: conversationId.domain,
       name: conversationName,
       teamId: conversation.team,
-      mlsGroupId: conversation.group_id,
+      mlsGroupId: conversation.group_id ?? "",
       creationDate: null,
       type: conversation.type
     }
@@ -462,6 +559,11 @@ export class ConversationService {
   }
 
   private async establishOrJoinMlsConversation(conversation: ConversationResponse): Promise<void> {
+    if (!conversation.group_id) {
+      this.logger.warn(`Skipping MLS conversation setup — group_id is null. conversationId: ${obfuscateId(conversation.qualified_id.id)}`)
+      return
+    }
+
     if (await this.coreCryptoService.conversationExists(conversation.group_id)) {
       this.logger.info(`Conversation ${obfuscateId(conversation.qualified_id.id)} already exists, skipping it`)
       return

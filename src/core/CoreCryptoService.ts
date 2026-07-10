@@ -33,6 +33,10 @@ import type {QualifiedId} from "../model/QualifiedId.js";
 import {AppProperties} from "../service/AppProperties.js";
 import type {AddMembersToConversationResult} from "../api/model/AddMembersToConversationResult.js";
 import {obfuscateClientId, obfuscateId} from "../utils/ObfuscateUtil.js";
+import {
+  getRemovalKeyFromPublicKeysResponse,
+  type MlsPublicKeysResponse
+} from "../api/response/MlsPublicKeysResponse.js";
 
 /**
  * Service that handles initialization of CoreCrypto and provides a high-level API for:
@@ -78,7 +82,7 @@ export class CoreCryptoService {
    * Initializes existing client device or register a new client device.
    *
    * Must be called only after [this.initCoreCryptoClient] was called first.
-   * 
+   *
    * @note Saves the given deviceId (if first time for registration) into AppProperties
    */
   async initOrRegisterClient() {
@@ -247,45 +251,43 @@ export class CoreCryptoService {
 
   async establishMlsConversation(
     userIds: QualifiedId[],
-    mlsGroupId: string
+    mlsGroupId: string,
+    publicKeysResponse?: MlsPublicKeysResponse | null
   ) {
     const ciphersuite = CoreCryptoClient.getMlsCiphersuiteName(this.defaultCiphersuiteCode!)
-    const removalKey = await this.mlsService.getRemovalKey(ciphersuite)
+
+    // Use public keys from the conversation response if available, otherwise fetch from the MLS API
+    const removalKey = publicKeysResponse
+      ? getRemovalKeyFromPublicKeysResponse(publicKeysResponse, ciphersuite)
+      : await this.mlsService.getRemovalKey(ciphersuite)
 
     if (removalKey != null) {
+      this.logger.debug(`Creating MLS conversation in CoreCrypto. mlsGroupId: ${obfuscateId(mlsGroupId)}`)
       try {
-        await this.coreCryptoClient!.createConversation(
-          mlsGroupId,
-          removalKey
-        )
+        await this.coreCryptoClient!.createConversation(mlsGroupId, removalKey)
       } catch (exception) {
         if (CoreCryptoError.Mls.instanceOf(exception) && MlsError.ConversationAlreadyExists.instanceOf(exception.inner.mlsError)) {
           throw Error("Conversation already exists.")
-        } else {
-          this.logger.error(`Unexpected exception received while creating a establishing a MLS conversation`, exception)
         }
+        this.logger.error(`Failed to create MLS conversation. mlsGroupId: ${obfuscateId(mlsGroupId)}`, exception)
+        throw exception
       }
 
+
       const users = [
-        {
-          id: this.wireUserId,
-          domain: this.wireUserDomain
-        } as QualifiedId,
+        {id: this.wireUserId, domain: this.wireUserDomain} as QualifiedId,
         ...userIds
       ]
 
-      const claimedKeyPackagesResult = await this.mlsService.claimKeyPackages(
-        users,
-        this.defaultCiphersuiteCode!
-      )
+      const claimedKeyPackagesResult = await this.mlsService.claimKeyPackages(users, this.defaultCiphersuiteCode!)
+      this.logger.debug(`Claimed ${claimedKeyPackagesResult.keyPackages.length} key packages for ${users.length} users. mlsGroupId: ${obfuscateId(mlsGroupId)}`)
 
       if (claimedKeyPackagesResult.keyPackages.length === 0) {
+        this.logger.info(`No key packages claimed, updating keying material. mlsGroupId: ${obfuscateId(mlsGroupId)}`)
         await this.coreCryptoClient!.updateKeyingMaterial(mlsGroupId)
       } else {
-        await this.coreCryptoClient!.addClientsToMlsConversation(
-          mlsGroupId,
-          claimedKeyPackagesResult.keyPackages
-        )
+        this.logger.debug(`Adding ${claimedKeyPackagesResult.keyPackages.length} clients to MLS conversation. mlsGroupId: ${obfuscateId(mlsGroupId)}`)
+        await this.coreCryptoClient!.addClientsToMlsConversation(mlsGroupId, claimedKeyPackagesResult.keyPackages)
       }
     } else {
       // TODO: Map to WireException

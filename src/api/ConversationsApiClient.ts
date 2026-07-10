@@ -26,6 +26,7 @@ import {LoggerFactory} from "../utils/logger/LoggerFactory.js";
 import {WIRE_USER_DOMAIN, WIRE_USER_ID} from "../utils/DependencyInjectionTokens.js";
 import {obfuscateId} from "../utils/ObfuscateUtil.js";
 import type {ConversationRole} from "../model/conversation/ConversationRole.js";
+import type {CreateConversationRequest} from "./request/CreateConversationRequest.js";
 
 @singleton()
 export class ConversationsApiClient {
@@ -118,6 +119,14 @@ export class ConversationsApiClient {
     await this.httpClient.putRequest(path, {conversation_role: newRole})
 
     this.logger.debug(`Updated conversation member role. conversationId: ${obfuscateId(conversationId.id)}, userId: ${obfuscateId(userId.id)}, newRole: ${newRole}`)
+  }
+
+  async createGroupConversation(createConversationRequest: CreateConversationRequest): Promise<ConversationResponse> {
+    this.logger.info(`Creating group conversation with name: ${createConversationRequest.name}`)
+    return await this.httpClient.postRequest<ConversationResponse>(
+      this.basePath,
+      createConversationRequest
+    )
   }
 
   async leaveConversation(conversationQualifiedId: QualifiedId): Promise<void> {
