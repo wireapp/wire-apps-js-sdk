@@ -36,6 +36,7 @@ import {
   CompositeButtonAction,
   CompositeButtonActionConfirmation,
   CompositeMessage,
+  CompositeEditedMessage,
   Ping,
   Location,
   DeletedMessage,
@@ -118,7 +119,7 @@ function unpackEditedMessage(
   genericMessage: IGenericMessage,
   qualifiedConversation: QualifiedId,
   senderId: QualifiedId
-): TextEditedMessage | Ignored {
+): TextEditedMessage | CompositeEditedMessage | Ignored {
   const messageEdit = genericMessage.edited
   if (messageEdit?.text) {
     return TextEditedMessage.create({
@@ -130,6 +131,14 @@ function unpackEditedMessage(
       mentions: messageEdit.text.mentions
         ?.map(MessageMentionMapper.fromProtobuf)
         .filter((mention): mention is Mention => mention !== null) ?? [],
+      senderId: senderId
+    })
+  } else if (messageEdit?.composite) {
+    return CompositeEditedMessage.create({
+      replacingMessageId: messageEdit.replacingMessageId,
+      messageId: genericMessage.messageId,
+      conversationId: qualifiedConversation,
+      itemList: unpackItemList(qualifiedConversation, messageEdit.composite.items ?? []),
       senderId: senderId
     })
   }
