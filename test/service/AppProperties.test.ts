@@ -20,7 +20,7 @@ import {AppPropertiesRepository} from '../../src/db/AppPropertiesRepository.js'
 import {container} from 'tsyringe'
 import {AESUtils} from "../../src/utils/AESUtils.js";
 
-const CRYPTO_STORAGE_PASSWORD = 'test-crypto-key-of-32-characters'
+const CRYPTO_STORAGE_KEY = new Uint8Array(32).fill(1)
 
 describe('AppProperties', () => {
   let appProperties: AppProperties
@@ -34,7 +34,7 @@ describe('AppProperties', () => {
       save: vi.fn()
     } as any
 
-    appProperties = new AppProperties(mockAppPropertiesRepository, CRYPTO_STORAGE_PASSWORD)
+    appProperties = new AppProperties(mockAppPropertiesRepository, CRYPTO_STORAGE_KEY)
   })
 
   describe('getShouldRejoinConversations', () => {
