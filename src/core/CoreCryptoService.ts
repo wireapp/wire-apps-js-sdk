@@ -273,7 +273,7 @@ export class CoreCryptoService {
           throw Error("Conversation already exists.")
         }
         this.logger.error(`Failed to create MLS conversation. mlsGroupId: ${obfuscateId(mlsGroupId)}`, exception)
-        throw exception
+        throw exception // TODO: (Clarify during code review) Here ideally we need to throw but previously we didn't. Was it on purpose?
       }
 
       const users = [
