@@ -89,14 +89,14 @@ export class WireApplicationManager {
   async createGroupConversation(name: string, userIds: QualifiedId[]): Promise<QualifiedId> {
     this.logger.debug(`App requested to create a group conversation with name: ${name}`)
     const conversationId = await this.conversationService.createGroup(name, userIds)
-    this.logger.debug(`Group conversation created with id: ${obfuscateId(conversationId.id)}`)
+    this.logger.debug(`Group conversation created with id: ${conversationId}`)
     return conversationId
   }
 
   async createChannelConversation(name: string, userIds: QualifiedId[]): Promise<QualifiedId> {
     this.logger.debug(`App requested to create a channel conversation with name: ${name}`)
     const conversationId = await this.conversationService.createChannel(name, userIds)
-    this.logger.debug(`Channel conversation created with id: ${obfuscateId(conversationId.id)}`)
+    this.logger.debug(`Channel conversation created with id: ${conversationId}`)
     return conversationId
   }
 

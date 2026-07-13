@@ -264,7 +264,10 @@ export class CoreCryptoService {
     if (removalKey != null) {
       this.logger.debug(`Creating MLS conversation in CoreCrypto. mlsGroupId: ${obfuscateId(mlsGroupId)}`)
       try {
-        await this.coreCryptoClient!.createConversation(mlsGroupId, removalKey)
+        await this.coreCryptoClient!.createConversation(
+          mlsGroupId,
+          removalKey
+        )
       } catch (exception) {
         if (CoreCryptoError.Mls.instanceOf(exception) && MlsError.ConversationAlreadyExists.instanceOf(exception.inner.mlsError)) {
           throw Error("Conversation already exists.")
@@ -273,21 +276,26 @@ export class CoreCryptoService {
         throw exception
       }
 
-
       const users = [
-        {id: this.wireUserId, domain: this.wireUserDomain} as QualifiedId,
+        {
+          id: this.wireUserId,
+          domain: this.wireUserDomain
+        } as QualifiedId,
         ...userIds
       ]
 
-      const claimedKeyPackagesResult = await this.mlsService.claimKeyPackages(users, this.defaultCiphersuiteCode!)
-      this.logger.debug(`Claimed ${claimedKeyPackagesResult.keyPackages.length} key packages for ${users.length} users. mlsGroupId: ${obfuscateId(mlsGroupId)}`)
+      const claimedKeyPackagesResult = await this.mlsService.claimKeyPackages(
+        users,
+        this.defaultCiphersuiteCode!
+      )
 
       if (claimedKeyPackagesResult.keyPackages.length === 0) {
-        this.logger.info(`No key packages claimed, updating keying material. mlsGroupId: ${obfuscateId(mlsGroupId)}`)
         await this.coreCryptoClient!.updateKeyingMaterial(mlsGroupId)
       } else {
-        this.logger.debug(`Adding ${claimedKeyPackagesResult.keyPackages.length} clients to MLS conversation. mlsGroupId: ${obfuscateId(mlsGroupId)}`)
-        await this.coreCryptoClient!.addClientsToMlsConversation(mlsGroupId, claimedKeyPackagesResult.keyPackages)
+        await this.coreCryptoClient!.addClientsToMlsConversation(
+          mlsGroupId,
+          claimedKeyPackagesResult.keyPackages
+        )
       }
     } else {
       // TODO: Map to WireException
