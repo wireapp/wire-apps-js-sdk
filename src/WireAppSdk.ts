@@ -37,6 +37,7 @@ import {ConversationService} from "./api/ConversationService.js";
 import {AppProperties} from "./service/AppProperties.js";
 
 export class WireAppSdk {
+  private readonly CRYPTOGRAPHY_STORAGE_KEY_BYTES = 32
   private userId: string
   private apiToken: string
   private userDomain: string
@@ -62,6 +63,13 @@ export class WireAppSdk {
     wireEventsHandler: WireEventsHandler,
     logger?: Logger
   ) {
+    if (cryptographyStorageKey.length !== this.CRYPTOGRAPHY_STORAGE_KEY_BYTES) {
+      throw new Error(
+        `cryptographyStorageKey must be exactly ${this.CRYPTOGRAPHY_STORAGE_KEY_BYTES} bytes long`
+      );
+    }
+    
+
     this.userId = userId
     this.apiToken = apiToken
     this.userDomain = userDomain
