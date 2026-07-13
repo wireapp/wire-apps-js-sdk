@@ -93,6 +93,13 @@ export class WireApplicationManager {
     return conversationId
   }
 
+  async createChannelConversation(name: string, userIds: QualifiedId[]): Promise<QualifiedId> {
+    this.logger.debug(`App requested to create a channel conversation with name: ${name}`)
+    const conversationId = await this.conversationService.createChannel(name, userIds)
+    this.logger.debug(`Channel conversation created with id: ${obfuscateId(conversationId.id)}`)
+    return conversationId
+  }
+
   async leaveConversation(conversationId: QualifiedId): Promise<void> {
     this.logger.debug('App requested to leave the conversation with id: ' + obfuscateId(conversationId.id));
 

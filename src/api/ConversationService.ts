@@ -40,7 +40,7 @@ import type {Conversation} from "../model/conversation/Conversation.js";
 import {ConversationMapper} from "../mappers/conversation/ConversationMapper.js";
 import {ConversationMemberMapper} from "../mappers/conversation/ConversationMemberMapper.js";
 import {UserService} from "./UserService.js";
-import {createGroupConversationRequest} from "./request/CreateConversationRequest.js";
+import {createChannelConversationRequest, createGroupConversationRequest} from "./request/CreateConversationRequest.js";
 import type {MlsPublicKeysResponse} from "./response/MlsPublicKeysResponse.js";
 
 @singleton()
@@ -81,6 +81,21 @@ export class ConversationService {
 
     const conversationId = response.qualified_id
     this.logger.info(`Group Conversation created with ID: ${obfuscateId(conversationId.id)}`)
+    return conversationId
+  }
+
+  async createChannel(name: string, userIds: QualifiedId[]): Promise<QualifiedId> {
+    this.logger.info(`Creating channel conversation with name: ${name}, userIds count: ${userIds.length}`)
+    const teamId = await this.getSelfTeamId()
+
+    const response = await this.conversationsApiClient.createGroupConversation(
+      createChannelConversationRequest(name, teamId)
+    )
+
+    await this.establishMlsConversation(response, userIds, response.public_keys)
+
+    const conversationId = response.qualified_id
+    this.logger.info(`Channel Conversation created with ID: ${obfuscateId(conversationId.id)}`)
     return conversationId
   }
 
