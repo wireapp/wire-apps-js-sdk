@@ -127,7 +127,6 @@ export class CoreCryptoClient {
       } else {
         this.logger.info(`Loading CoreCrypto Credential`)
         this.credential = credentials[0]!
-        // TODO :::: WARNING!! Before this change, group creation was failing.
       }
     })
   }

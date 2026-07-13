@@ -85,6 +85,9 @@ class SampleEventsHandler extends WireEventsHandler {
     } else if (wireMessage.text.startsWith("create-group-conversation")) {
       await this.processCreateGroupConversation(wireMessage)
       //TODO : Move this into reserved commands side
+    } else if (wireMessage.text.startsWith("create-channel-conversation")) {
+      await this.processCreateChannelConversation(wireMessage)
+      //TODO : Move this into reserved commands side
     } else if (wireMessage.text == "asset-image") {
       this.processAssetImage(wireMessage);
     } else if (wireMessage.text == "asset-audio") {
@@ -227,24 +230,56 @@ class SampleEventsHandler extends WireEventsHandler {
 
   /**
    * Processes a create-group-conversation command.
-   * Expected message format: `create-group-conversation [NAME] [USER_ID] [DOMAIN]`
+   * Expected message format: `create-group-conversation [NAME] [USER_ID] [DOMAIN]...`
    */
   private async processCreateGroupConversation(wireMessage: TextMessage): Promise<void> {
-    const split = wireMessage.text.trim().split(' ')
-    const name = split[1]
-    const userId = split[2]
-    const domain = split[3]
+    const args = wireMessage.text.trim().split(/\s+/);
+    const name = args[1];
+    const userArgs = args.slice(2);
 
-    if (!name || !userId || !domain) {
-      this.appLogger?.info(`[Sample App] Invalid command format. Expected: create-group-conversation [NAME] [USER_ID] [DOMAIN]`)
-      return
+    if (!name || userArgs.length === 0 || userArgs.length % 2 !== 0) {
+      this.appLogger?.info(
+        `[Sample App] Invalid command format. Expected: create-group-conversation [NAME] [USER_ID] [DOMAIN]...`
+      );
+      return;
     }
 
-    const conversationId = await this.manager.createGroupConversation(
-      name,
-      [new QualifiedId(userId, domain)]
-      // [new QualifiedId(userId, domain)]
-    )
+    const participants: QualifiedId[] = [];
+
+    for (let i = 0; i < userArgs.length; i += 2) {
+      const userId = userArgs[i];
+      const domain = userArgs[i + 1];
+      participants.push(new QualifiedId(userId, domain));
+    }
+
+    await this.manager.createGroupConversation(name, participants);
+  }
+
+  /**
+   * Processes a create-channel-conversation command.
+   * Expected message format: `create-channel-conversation [NAME] [USER_ID] [DOMAIN]...`
+   */
+  private async processCreateChannelConversation(wireMessage: TextMessage): Promise<void> {
+    const args = wireMessage.text.trim().split(/\s+/);
+    const name = args[1];
+    const userArgs = args.slice(2);
+
+    if (!name || userArgs.length === 0 || userArgs.length % 2 !== 0) {
+      this.appLogger?.info(
+        `[Sample App] Invalid command format. Expected: create-channel-conversation [NAME] [USER_ID] [DOMAIN]...`
+      );
+      return;
+    }
+
+    const participants: QualifiedId[] = [];
+
+    for (let i = 0; i < userArgs.length; i += 2) {
+      const userId = userArgs[i];
+      const domain = userArgs[i + 1];
+      participants.push(new QualifiedId(userId, domain));
+    }
+
+    await this.manager.createChannelConversation(name, participants);
   }
 
   private processAssetImage(wireMessage: TextMessage) {
