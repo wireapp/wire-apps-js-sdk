@@ -295,7 +295,7 @@ export class CoreCryptoClient {
       await context.createConversation(
         new ConversationId(mlsGroupIdBytes),
         this.credential!,
-        ExternalSender.parsePublicKey(
+        ExternalSender.parse(
           removalKey,
           this.credential!.signatureScheme()
         )
