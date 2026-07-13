@@ -18,7 +18,7 @@ import {ConversationId, CoreCryptoError, GroupInfo, MlsError} from "@wireapp/cor
 import {ClientsService} from "../api/ClientsService.js";
 import {CryptoClientId} from "../model/CryptoClientId.js";
 import {
-  WIRE_CRYPTO_STORAGE_PASSWORD,
+  WIRE_CRYPTOGRAPHY_STORAGE_KEY,
   WIRE_USER_DOMAIN,
   WIRE_USER_ID
 } from "../utils/DependencyInjectionTokens.js";
@@ -49,7 +49,7 @@ export class CoreCryptoService {
   constructor(
     @inject(WIRE_USER_ID) private wireUserId: string,
     @inject(WIRE_USER_DOMAIN) private wireUserDomain: string,
-    @inject(WIRE_CRYPTO_STORAGE_PASSWORD) private wireCryptoStoragePassword: string,
+    @inject(WIRE_CRYPTOGRAPHY_STORAGE_KEY) private cryptographyStorageKey: Uint8Array,
     private featureConfigsService: FeatureConfigsService,
     private clientsService: ClientsService,
     private mlsService: MlsService,
@@ -69,7 +69,7 @@ export class CoreCryptoService {
     this.coreCryptoClient = await CoreCryptoClient.create(
       this.wireUserId,
       this.defaultCiphersuiteCode,
-      this.wireCryptoStoragePassword,
+      this.cryptographyStorageKey,
       this.mlsTransport
     )
   }

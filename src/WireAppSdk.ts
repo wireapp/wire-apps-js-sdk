@@ -19,7 +19,7 @@ import './core/event/processors.index.js'
 import {CoreCryptoService} from "./core/CoreCryptoService.js";
 import {
   WIRE_API_HOST,
-  WIRE_CRYPTO_STORAGE_PASSWORD,
+  WIRE_CRYPTOGRAPHY_STORAGE_KEY,
   WIRE_DATABASE_PATH,
   WIRE_EVENTS_HANDLER,
   WIRE_USER_DOMAIN,
@@ -37,11 +37,12 @@ import {ConversationService} from "./api/ConversationService.js";
 import {AppProperties} from "./service/AppProperties.js";
 
 export class WireAppSdk {
+  private readonly CRYPTOGRAPHY_STORAGE_KEY_BYTES = 32
   private userId: string
   private apiToken: string
   private userDomain: string
   private apiHost: string
-  private cryptographyStoragePassword: string
+  private cryptographyStorageKey: Uint8Array
 
   private isShuttingDown = false
 
@@ -58,15 +59,22 @@ export class WireAppSdk {
     apiToken: string,
     userDomain: string,
     apiHost: string,
-    cryptographyStoragePassword: string,
+    cryptographyStorageKey: Uint8Array,
     wireEventsHandler: WireEventsHandler,
     logger?: Logger
   ) {
+    if (cryptographyStorageKey.length !== this.CRYPTOGRAPHY_STORAGE_KEY_BYTES) {
+      throw new Error(
+        `cryptographyStorageKey must be exactly ${this.CRYPTOGRAPHY_STORAGE_KEY_BYTES} bytes long`
+      );
+    }
+    
+
     this.userId = userId
     this.apiToken = apiToken
     this.userDomain = userDomain
     this.apiHost = apiHost
-    this.cryptographyStoragePassword = cryptographyStoragePassword
+    this.cryptographyStorageKey = cryptographyStorageKey
     this.wireEventsHandler = wireEventsHandler
     LoggerFactory.setRootLogger(logger ?? new ConsoleLogger())
     this.logger = LoggerFactory.getLogger(this.constructor.name)
@@ -77,7 +85,7 @@ export class WireAppSdk {
     apiToken: string,
     userDomain: string,
     apiHost: string,
-    cryptographyStoragePassword: string,
+    cryptographyStorageKey: Uint8Array,
     wireEventsHandler: WireEventsHandler,
     logger?: Logger,
   ): Promise<WireAppSdk> {
@@ -86,7 +94,7 @@ export class WireAppSdk {
       apiToken,
       userDomain,
       apiHost,
-      cryptographyStoragePassword,
+      cryptographyStorageKey,
       wireEventsHandler,
       logger
     )
@@ -110,7 +118,7 @@ export class WireAppSdk {
     container.registerInstance(WIRE_SDK_API_TOKEN, this.apiToken)
     container.registerInstance(WIRE_USER_ID, this.userId)
     container.registerInstance(WIRE_USER_DOMAIN, this.userDomain)
-    container.registerInstance(WIRE_CRYPTO_STORAGE_PASSWORD, this.cryptographyStoragePassword)
+    container.registerInstance(WIRE_CRYPTOGRAPHY_STORAGE_KEY, this.cryptographyStorageKey)
     container.registerInstance(WIRE_DATABASE_PATH, DatabaseService.DEFAULT_DATABASE_PATH)
 
     container.registerInstance(WIRE_EVENTS_HANDLER, this.wireEventsHandler)

@@ -16,7 +16,7 @@
 
 import {inject, singleton} from "tsyringe";
 import {AppPropertiesRepository} from "../db/AppPropertiesRepository.js";
-import {WIRE_CRYPTO_STORAGE_PASSWORD} from "../utils/DependencyInjectionTokens.js";
+import {WIRE_CRYPTOGRAPHY_STORAGE_KEY} from "../utils/DependencyInjectionTokens.js";
 import {AESUtils} from "../utils/AESUtils.js";
 import {LoggerFactory} from "../utils/logger/LoggerFactory.js";
 
@@ -30,7 +30,7 @@ export class AppProperties {
 
   constructor(
     private appPropertiesRepository: AppPropertiesRepository,
-    @inject(WIRE_CRYPTO_STORAGE_PASSWORD) private wireCryptoStoragePassword: string,
+    @inject(WIRE_CRYPTOGRAPHY_STORAGE_KEY) private wireCryptoStorageKey: Uint8Array,
   ) {}
 
   getShouldRejoinConversations(): boolean {
@@ -60,13 +60,13 @@ export class AppProperties {
 
   getBackendCookie(): string | undefined {
     const encryptedData = this.appPropertiesRepository.getByKey(this.BACKEND_COOKIE)?.value
-    const key = Buffer.from(this.wireCryptoStoragePassword)
+    const key = Buffer.from(this.wireCryptoStorageKey)
 
     return encryptedData ? AESUtils.decryptData(Buffer.from(encryptedData, 'base64'), key).toString() : undefined
   }
 
   saveBackendCookie(cookie: string) {
-    const key = Buffer.from(this.wireCryptoStoragePassword)
+    const key = Buffer.from(this.wireCryptoStorageKey)
     const encryptedCookie = AESUtils.encryptData(Buffer.from(cookie), key).toString('base64')
     this.appPropertiesRepository.save(this.BACKEND_COOKIE, encryptedCookie)
   }

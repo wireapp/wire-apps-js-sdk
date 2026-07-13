@@ -52,7 +52,6 @@ const userId = process.env['WIRE_SDK_USER_ID'];
 const apiToken = process.env['WIRE_SDK_API_TOKEN'];
 const userDomain = process.env['WIRE_SDK_USER_DOMAIN'];
 const apiHost = process.env['WIRE_SDK_API_HOST'];
-const cryptographyStoragePassword = process.env['WIRE_SDK_CRYPTO_PASSWORD'];
 
 if (!userId) {
   throw new Error('WIRE_SDK_USER_ID must be set in .env file');
@@ -68,10 +67,6 @@ if (!userDomain) {
 
 if (!apiHost) {
   throw new Error('WIRE_SDK_API_HOST must be set in .env file');
-}
-
-if (!cryptographyStoragePassword) {
-  throw new Error('WIRE_SDK_CRYPTO_PASSWORD must be set in .env file');
 }
 
 class SampleEventsHandler extends WireEventsHandler {
@@ -657,12 +652,14 @@ class SampleEventsHandler extends WireEventsHandler {
 
 const sampleEventsHandler = new SampleEventsHandler()
 sampleEventsHandler.appLogger = new PinoLogger()
+const cryptographyStorageKey = new Uint8Array(32).fill(1)
+
 const sdk = await WireAppSdk.create(
   userId,
   apiToken,
   userDomain,
   apiHost,
-  cryptographyStoragePassword,
+  cryptographyStorageKey,
   sampleEventsHandler,
   sampleEventsHandler.appLogger
 )

@@ -62,14 +62,12 @@ export class CoreCryptoClient {
   static async create(
     userId: string,
     ciphersuiteCode: number,
-    cryptographyStoragePassword: string,
+    cryptographyStorageKey: Uint8Array,
     mlsTransport: CoreCryptoMlsTransport
   ): Promise<CoreCryptoClient> {
-    const uint8Array = new TextEncoder().encode(cryptographyStoragePassword);
-
     const db = await Database.open(
       `./storage/cryptography/${userId}`,
-      new DatabaseKey(uint8Array)
+      new DatabaseKey(cryptographyStorageKey)
     )
     const coreCrypto = CoreCrypto.new(db)
 
@@ -126,7 +124,7 @@ export class CoreCryptoClient {
         this.credential = await context.addCredential(credential)
       } else {
         this.logger.info(`Loading CoreCrypto Credential`)
-        this.credential = credentials[1]!
+        this.credential = credentials[0]!
       }
     })
   }
