@@ -199,7 +199,12 @@ function unpackItemList(
   return compositeItemList.flatMap((item): (TextMessage | CompositeButton)[] => {
     switch (item.content) {
       case 'text':
-        return item.text ? [TextMessage.create({ conversationId, text: item.text.content })] : []
+        return item.text ? [TextMessage.create({
+          conversationId: conversationId,
+          text: item.text.content,
+          mentions: item.text.mentions?.map(MessageMentionMapper.fromProtobuf)
+            .filter((mention): mention is Mention => mention !== null) ?? []
+        })] : []
       case 'button':
         return item.button ? [CompositeButton.create({ id: item.button.id, text: item.button.text })] : []
       default:
