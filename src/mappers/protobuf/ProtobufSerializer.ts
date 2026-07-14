@@ -52,6 +52,7 @@ import {
   CompositeButtonAction,
   CompositeButtonActionConfirmation,
   CompositeMessage,
+  CompositeEditedMessage,
   ReceiptType
 } from '../../model/WireMessage.js';
 import {MessageLinkPreviewMapper} from "./MessageLinkPreviewMapper.js";
@@ -98,6 +99,10 @@ export const ProtobufSerializer = {
 
       case 'composite':
         builtMessage = packCompositeMessage(wireMessage, genericMessage)
+        break
+
+      case 'composite-edited':
+        builtMessage = packCompositeEditedMessage(wireMessage, genericMessage)
         break
 
       case 'ping':
@@ -320,6 +325,21 @@ function packCompositeMessage(
     ...genericMessage,
     composite: Composite.create({
       items: packItemList(wireMessage.items)
+    })
+  } as IGenericMessage
+}
+
+function packCompositeEditedMessage(
+  wireMessage: CompositeEditedMessage,
+  genericMessage: Partial<IGenericMessage>
+): IGenericMessage {
+  return {
+    ...genericMessage,
+    edited: MessageEdit.create({
+      replacingMessageId: wireMessage.replacingMessageId,
+      composite: {
+        items: packItemList(wireMessage.items)
+      }
     })
   } as IGenericMessage
 }

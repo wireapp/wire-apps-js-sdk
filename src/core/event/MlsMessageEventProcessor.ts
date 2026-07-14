@@ -97,6 +97,9 @@ export class MlsMessageEventProcessor implements EventProcessor<NewMLSMessageDTO
       case 'composite':
         this.logger.debug('Composite event received.')
         break
+      case 'composite-edited':
+        this.logger.debug('CompositeEdited event received.')
+        break
       case 'ping':
         await this.wireEventsHandler.onPingReceived(wireMessage)
         break

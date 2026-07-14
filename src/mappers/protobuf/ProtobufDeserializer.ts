@@ -36,6 +36,7 @@ import {
   CompositeButtonAction,
   CompositeButtonActionConfirmation,
   CompositeMessage,
+  CompositeEditedMessage,
   Ping,
   Location,
   DeletedMessage,
@@ -118,7 +119,7 @@ function unpackEditedMessage(
   genericMessage: IGenericMessage,
   qualifiedConversation: QualifiedId,
   senderId: QualifiedId
-): TextEditedMessage | Ignored {
+): TextEditedMessage | CompositeEditedMessage | Ignored {
   const messageEdit = genericMessage.edited
   if (messageEdit?.text) {
     return TextEditedMessage.create({
@@ -132,8 +133,16 @@ function unpackEditedMessage(
         .filter((mention): mention is Mention => mention !== null) ?? [],
       senderId: senderId
     })
+  } else if (messageEdit?.composite) {
+    return CompositeEditedMessage.create({
+      replacingMessageId: messageEdit.replacingMessageId,
+      messageId: genericMessage.messageId,
+      conversationId: qualifiedConversation,
+      itemList: unpackItemList(qualifiedConversation, messageEdit.composite.items ?? []),
+      senderId: senderId
+    })
   }
-  // TODO: instead add other paths, i.e. composite and multipart, as specified in https://github.com/wireapp/generic-message-proto/blob/master/proto/messages.proto#L218
+  // TODO: add support for multipart, as specified in https://github.com/wireapp/generic-message-proto/blob/master/proto/messages.proto#L218
   return new Ignored()
 }
 
@@ -190,7 +199,12 @@ function unpackItemList(
   return compositeItemList.flatMap((item): (TextMessage | CompositeButton)[] => {
     switch (item.content) {
       case 'text':
-        return item.text ? [TextMessage.create({ conversationId, text: item.text.content })] : []
+        return item.text ? [TextMessage.create({
+          conversationId: conversationId,
+          text: item.text.content,
+          mentions: item.text.mentions?.map(MessageMentionMapper.fromProtobuf)
+            .filter((mention): mention is Mention => mention !== null) ?? []
+        })] : []
       case 'button':
         return item.button ? [CompositeButton.create({ id: item.button.id, text: item.button.text })] : []
       default:

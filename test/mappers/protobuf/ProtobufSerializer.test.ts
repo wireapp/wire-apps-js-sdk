@@ -21,7 +21,9 @@ import { ProtobufSerializer } from '../../../src/mappers/protobuf/ProtobufSerial
 import { QualifiedId } from '../../../src/model/QualifiedId.js'
 import {
   AssetMessage,
+  CompositeButton,
   CompositeButtonActionConfirmation,
+  CompositeEditedMessage,
   DeletedMessage,
   Location,
   Ping,
@@ -427,6 +429,60 @@ describe('Protobuf serialization', () => {
     expect(resultMention!.qualifiedUserId?.domain).toBe(mention.userId.domain)
 
     expect(result.edited?.text?.linkPreview).toMatchObject(linkPreview)
+  })
+
+  it('serializes composite edited message', () => {
+    const mention = {
+      userId: new QualifiedId('user-id', 'wire.com'),
+      offset: 6,
+      length: 5
+    }
+    const mentions = [mention]
+
+    const message = CompositeEditedMessage.create({
+      conversationId: conversationId,
+      itemList: [
+        TextMessage.create({
+          conversationId: conversationId,
+          text: 'hello @Wire',
+          mentions: mentions
+        }),
+        CompositeButton.create({ text: 'button1' }),
+        CompositeButton.create({ text: 'button2' })
+      ],
+      messageId: 'new-message-id',
+      replacingMessageId: 'replacing-message-id'
+    })
+
+    const serialized = ProtobufSerializer.toGenericMessageByteArray(message)
+    const result = GenericMessage.decode(serialized)
+
+    expect(result.content).toBe('edited')
+    expect(result.messageId).toBe('new-message-id')
+    expect(result.edited?.content).toBe('composite')
+
+    const compositeItems = result.edited?.composite?.items
+    const firstItem = compositeItems?.at(0)
+    expect(firstItem).toBeDefined()
+    expect(firstItem!.content).toBe('text')
+    expect(firstItem!.text?.content).toBe('hello @Wire')
+
+    const firstItemMention = firstItem?.text?.mentions?.at(0)
+    expect(firstItemMention).toBeDefined()
+    expect(firstItemMention!.length).toBe(mention.length)
+    expect(firstItemMention!.start).toBe(mention.offset)
+    expect(firstItemMention!.qualifiedUserId?.id).toBe(mention.userId.id)
+    expect(firstItemMention!.qualifiedUserId?.domain).toBe(mention.userId.domain)
+
+    const secondItem = compositeItems?.at(1)
+    expect(secondItem).toBeDefined()
+    expect(secondItem!.content).toBe('button')
+    expect(secondItem!.button!.text).toBe('button1')
+
+    const thirdItem = compositeItems?.at(2)
+    expect(thirdItem).toBeDefined()
+    expect(thirdItem!.content).toBe('button')
+    expect(thirdItem!.button!.text).toBe('button2')
   })
 
   it('deserializes composite button action confirmations', () => {

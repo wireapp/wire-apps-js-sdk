@@ -18,6 +18,7 @@ import { describe, expect, it } from 'vitest'
 import rootMessage from '../../../src/generated/messages.js'
 import { ProtobufDeserializer } from '../../../src/mappers/protobuf/ProtobufDeserializer.js'
 import { QualifiedId } from '../../../src/model/QualifiedId.js'
+import { CompositeButton, TextMessage } from "../../../src/index.js"
 
 const { GenericMessage, Confirmation } = rootMessage
 
@@ -406,6 +407,135 @@ describe('Protobuf deserialization', () => {
       expect(resultMention!.userId.id).toBe(mention.qualifiedUserId.id)
       expect(resultMention!.userId.domain).toBe(mention.qualifiedUserId.domain)
       expect(result.linkPreviews).toStrictEqual(linkPreview)
+    }
+  })
+
+  it('deserializes composited message', () => {
+    const mention = {
+      qualifiedUserId: {
+        id: 'user-id',
+        domain: 'wire.com'
+      },
+      start: 6,
+      length: 5
+    }
+    const mentions = [mention]
+
+    const genericMessage = GenericMessage.create({
+      messageId: 'edited-message-id',
+      composite: {
+        items: [
+          {
+            content: 'text',
+            text: {
+              content: 'hello @Wire',
+              mentions: mentions
+            }
+          },
+          {
+            content: 'button',
+            button: {
+              text: 'text',
+              id: 'id'
+            }
+          }
+        ]
+      }
+    })
+
+    const result = toWireMessage(genericMessage)
+
+    expect(result.type).toBe('composite')
+    if (result.type == 'composite') {
+      expect(result.id).toBe('edited-message-id')
+
+      const firstItem = result.items.at(0) as TextMessage | null | undefined
+      expect(firstItem).toBeDefined()
+      if (firstItem) {
+        expect(firstItem.type).toBe('text')
+        expect(firstItem.text).toBe('hello @Wire')
+        const resultMention = firstItem.mentions?.at(0)
+        expect(resultMention).toBeDefined()
+        expect(resultMention!.length).toBe(mention.length)
+        expect(resultMention!.offset).toBe(mention.start)
+        expect(resultMention!.userId.id).toBe(mention.qualifiedUserId.id)
+        expect(resultMention!.userId.domain).toBe(mention.qualifiedUserId.domain)
+      }
+
+      const secondItem = result.items.at(1) as CompositeButton | null | undefined
+      expect(secondItem).toBeDefined()
+      if (secondItem) {
+        expect(secondItem.type).toBe('composite_button')
+        expect(secondItem.id).toBe('id')
+        expect(secondItem.text).toBe('text')
+      }
+    }
+  })
+
+  it('deserializes composited edited message', () => {
+    const mention = {
+      qualifiedUserId: {
+        id: 'user-id',
+        domain: 'wire.com'
+      },
+      start: 6,
+      length: 5
+    }
+    const mentions = [mention]
+
+    const genericMessage = GenericMessage.create({
+      messageId: 'edited-message-id',
+      edited: {
+        replacingMessageId: 'replacing-message-id',
+        content: 'composite',
+        composite: {
+          items: [
+            {
+              content: 'text',
+              text: {
+                content: 'hello @Wire',
+                mentions: mentions
+              }
+            },
+            {
+              content: 'button',
+              button: {
+                text: 'text',
+                id: 'id'
+              }
+            }
+          ]
+        }
+      }
+    })
+
+    const result = toWireMessage(genericMessage)
+
+    expect(result.type).toBe('composite-edited')
+    if (result.type == 'composite-edited') {
+      expect(result.id).toBe('edited-message-id')
+      expect(result.replacingMessageId).toBe('replacing-message-id')
+
+      const firstItem = result.items.at(0) as TextMessage | null | undefined
+      expect(firstItem).toBeDefined()
+      if (firstItem) {
+        expect(firstItem.type).toBe('text')
+        expect(firstItem.text).toBe('hello @Wire')
+        const resultMention = firstItem.mentions?.at(0)
+        expect(resultMention).toBeDefined()
+        expect(resultMention!.length).toBe(mention.length)
+        expect(resultMention!.offset).toBe(mention.start)
+        expect(resultMention!.userId.id).toBe(mention.qualifiedUserId.id)
+        expect(resultMention!.userId.domain).toBe(mention.qualifiedUserId.domain)
+      }
+
+      const secondItem = result.items.at(1) as CompositeButton | null | undefined
+      expect(secondItem).toBeDefined()
+      if (secondItem) {
+        expect(secondItem.type).toBe('composite_button')
+        expect(secondItem.id).toBe('id')
+        expect(secondItem.text).toBe('text')
+      }
     }
   })
 })

@@ -30,6 +30,7 @@ import {
   TextEditedMessage,
   CompositeButton,
   CompositeMessage,
+  CompositeEditedMessage,
   Ping,
   Location,
   DeletedMessage,
@@ -627,6 +628,38 @@ class SampleEventsHandler extends WireEventsHandler {
         })
 
         await this.manager.sendMessage(messageEdit)
+      },
+      'test-edit-composite': async(conversationId) => {
+        const mutableItemList = [
+          TextMessage.create({
+            conversationId: conversationId,
+            text: "Text item that will be removed in 9 seconds"
+          }),
+          CompositeButton.create({
+            text: "Button item that will be removed in 6 seconds"
+          }),
+          CompositeButton.create({
+            text: "Button item that will be removed in 3 seconds"
+          })
+        ]
+
+        let latestMessageID = await this.manager.sendMessage(
+          CompositeMessage.create({
+            conversationId: conversationId,
+            itemList: mutableItemList
+          })
+        )
+
+        while (mutableItemList.length != 0) {
+          await new Promise(resolve => setTimeout(resolve, 3000))
+          mutableItemList.pop()
+          const compositeEdit = CompositeEditedMessage.create({
+            conversationId: conversationId,
+            itemList: mutableItemList,
+            replacingMessageId: latestMessageID
+          })
+          latestMessageID = await this.manager.sendMessage(compositeEdit)
+        }
       }
       // More reserved test commands will be added here
     }

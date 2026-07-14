@@ -198,7 +198,7 @@ export const TextEditedMessage = {
       replacingMessageId: params.replacingMessageId,
       text: params.text,
       mentions: params.mentions ?? [],
-      linkPreviews: params.linkPreviews ?? [],
+      linkPreviews: params.linkPreviews ?? []
     }
   }
 }
@@ -380,6 +380,32 @@ export const CompositeMessage = {
   }
 }
 
+export interface CompositeEditedMessage extends WireMessageBase, Editable {
+  type: 'composite-edited'
+  items: Item[]
+}
+
+export const CompositeEditedMessage = {
+  create(
+    params: {
+      messageId?: string
+      conversationId: QualifiedId
+      replacingMessageId: string,
+      itemList: Item[],
+      senderId?: QualifiedId
+    }
+  ): CompositeEditedMessage {
+    return {
+      type: 'composite-edited',
+      id: params.messageId ?? crypto.randomUUID(),
+      conversationId: params.conversationId,
+      items: params.itemList,
+      sender: params.senderId ?? appQualifiedId,
+      replacingMessageId: params.replacingMessageId
+    }
+  }
+}
+
 export interface Ping extends WireMessageBase, Ephemeral {
   type: 'ping'
 }
@@ -534,6 +560,7 @@ export type WireMessage =
   | CompositeButtonAction
   | CompositeButtonActionConfirmation
   | CompositeMessage
+  | CompositeEditedMessage
   | Ping
   | Location
   | DeletedMessage
