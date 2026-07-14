@@ -42,6 +42,7 @@ export {
   CompositeButton,
   CompositeButtonAction,
   CompositeMessage,
+  CompositeEditedMessage,
   Ping,
   Location,
   DeletedMessage,
