@@ -410,7 +410,7 @@ describe('Protobuf deserialization', () => {
     }
   })
 
-  it('deserializes composited edited message', () => {
+  it('deserializes composited message', () => {
     const mention = {
       qualifiedUserId: {
         id: 'user-id',
