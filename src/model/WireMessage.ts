@@ -198,7 +198,7 @@ export const TextEditedMessage = {
       replacingMessageId: params.replacingMessageId,
       text: params.text,
       mentions: params.mentions ?? [],
-      linkPreviews: params.linkPreviews ?? [],
+      linkPreviews: params.linkPreviews ?? []
     }
   }
 }

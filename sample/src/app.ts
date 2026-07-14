@@ -635,7 +635,7 @@ class SampleEventsHandler extends WireEventsHandler {
         await this.manager.sendMessage(messageEdit)
       },
       'test-edit-composite': async(conversationId) => {
-        let mutableItemList = [
+        const mutableItemList = [
           TextMessage.create({
             conversationId: conversationId,
             text: "Text item that will be removed in 9 seconds"

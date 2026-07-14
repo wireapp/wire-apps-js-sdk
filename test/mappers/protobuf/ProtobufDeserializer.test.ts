@@ -18,7 +18,7 @@ import { describe, expect, it } from 'vitest'
 import rootMessage from '../../../src/generated/messages.js'
 import { ProtobufDeserializer } from '../../../src/mappers/protobuf/ProtobufDeserializer.js'
 import { QualifiedId } from '../../../src/model/QualifiedId.js'
-import { CompositeButton, TextMessage } from "../../../src/index.js";
+import { CompositeButton, TextMessage } from "../../../src/index.js"
 
 const { GenericMessage, Confirmation } = rootMessage
 
