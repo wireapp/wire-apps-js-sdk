@@ -142,7 +142,7 @@ function unpackEditedMessage(
       senderId: senderId
     })
   }
-  // TODO: instead add other paths, i.e. composite and multipart, as specified in https://github.com/wireapp/generic-message-proto/blob/master/proto/messages.proto#L218
+  // TODO: add support for multipart, as specified in https://github.com/wireapp/generic-message-proto/blob/master/proto/messages.proto#L218
   return new Ignored()
 }
 
