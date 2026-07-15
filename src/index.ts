@@ -67,7 +67,6 @@ export { ChannelAddPermissionType } from "./model/conversation/ChannelAddPermiss
 export { ReceiptMode } from "./model/conversation/ReceiptMode.js";
 export type { RemoveMembersFromConversationResult } from "./api/model/RemoveMembersFromConversationResult.js";
 export type { OneToOneConversationResponse } from "./api/response/OneToOneConversationResponse.js";
-export { getDecodedMlsGroupId } from "./api/response/ConversationResponse.js";
 export type { ConversationTeamInfo } from "./api/model/ConversationTeamInfo.js";
 export type {
   CreateConversationRequest

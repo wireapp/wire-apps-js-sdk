@@ -15,7 +15,7 @@
 */
 
 import {QualifiedId} from "../model/QualifiedId.js";
-import type {ConversationResponse} from "./response/ConversationResponse.js";
+import {type ConversationResponse} from "./response/ConversationResponse.js";
 import {ConversationRepository} from "../db/ConversationRepository.js";
 import {ConversationMemberRepository} from "../db/ConversationMemberRepository.js";
 import {ConversationType} from "../model/conversation/ConversationType.js";
@@ -59,77 +59,39 @@ export class ConversationService {
   ) {
   }
 
-  async createGroup(name: string, userIds: QualifiedId[]): Promise<QualifiedId> {
-    this.logger.info(`Creating group conversation with name: ${name}, userIds count: ${userIds.length}`)
+  async createGroup(name: string, usersToAdd: QualifiedId[]): Promise<QualifiedId> {
+    this.logger.info(`Creating group conversation with name: ${name}, usersToAdd count: ${usersToAdd.length}`)
     const teamId = await this.getSelfTeamId()
-    const response = await this.conversationsApiClient.createGroupConversation(
-      createGroupConversationRequest(name, teamId)
-    )
 
-    await this.establishMlsConversation(response, userIds)
+    let conversationResponse: ConversationResponse = await this.conversationsApiClient
+      .createGroupConversation(createGroupConversationRequest(name, teamId))
+    const conversationId: QualifiedId = new QualifiedId(conversationResponse.qualified_id.id, conversationResponse.qualified_id.domain)
+    const usersAdded: QualifiedId[] = await this.coreCryptoService
+      .establishMlsConversation(usersToAdd, conversationResponse.group_id, conversationResponse.public_keys)
 
-    const conversationId = new QualifiedId(response.qualified_id.id, response.qualified_id.domain)
-    this.logger.info(`Group Conversation created with ID: ${conversationId}`)
+    // !! Override conversationResponse members with the actual users successfully claimed in CoreCrypto side
+    conversationResponse = this.overrideMembersInConversationResponse(conversationResponse, usersAdded);
+
+    await this.saveConversationWithMembers(conversationId, conversationResponse)
+    this.logger.info(`Group Conversation created. conversationId: ${conversationId}`)
     return conversationId
   }
 
-  async createChannel(name: string, userIds: QualifiedId[]): Promise<QualifiedId> {
-    this.logger.info(`Creating channel conversation with name: ${name}, userIds count: ${userIds.length}`)
+  async createChannel(name: string, usersToAdd: QualifiedId[]): Promise<QualifiedId> {
+    this.logger.info(`Creating channel conversation with name: ${name}, usersToAdd count: ${usersToAdd.length}`)
     const teamId = await this.getSelfTeamId()
-    const response = await this.conversationsApiClient.createGroupConversation(
-      createChannelConversationRequest(name, teamId)
-    )
 
-    await this.establishMlsConversation(response, userIds)
+    let conversationResponse: ConversationResponse = await this.conversationsApiClient
+      .createGroupConversation(createChannelConversationRequest(name, teamId))
+    const usersAdded: QualifiedId[] = await this.coreCryptoService
+      .establishMlsConversation(usersToAdd, conversationResponse.group_id, conversationResponse.public_keys)
 
-    const conversationId = new QualifiedId(response.qualified_id.id, response.qualified_id.domain)
-    this.logger.info(`Channel Conversation created with ID: ${conversationId}`)
-    return conversationId
-  }
+    // !! Override conversationResponse members with the actual users successfully claimed in CoreCrypto side
+    conversationResponse = this.overrideMembersInConversationResponse(conversationResponse, usersAdded);
 
-  private async establishMlsConversation(
-    conversationResponse: ConversationResponse,
-    userIds: QualifiedId[]
-  ): Promise<void> {
-    if (!conversationResponse.group_id) {
-      throw new Error("ConversationResponse is missing MLS group_id.")
-    }
-
-    const mlsGroupId = conversationResponse.group_id
-
-    if (await this.coreCryptoService.conversationExists(mlsGroupId)) {
-      this.logger.info(`Conversation already exists in CoreCrypto, skipping MLS setup. conversationId: ${obfuscateId(conversationResponse.qualified_id.id)}`)
-      await this.storeEstablishedConversation(conversationResponse, userIds)
-      return
-    }
-
-    await this.coreCryptoService.establishMlsConversation(userIds, mlsGroupId, conversationResponse.public_keys)
-    await this.storeEstablishedConversation(conversationResponse, userIds)
-  }
-
-  private async storeEstablishedConversation(
-    conversationResponse: ConversationResponse,
-    userIds: QualifiedId[]
-  ): Promise<void> {
-    if (conversationResponse.type === ConversationType.SELF) {
-      return
-    }
-
-    const conversationToSave: ConversationResponse =
-      conversationResponse.type === ConversationType.ONE_TO_ONE
-        ? {
-          ...conversationResponse,
-          members: {
-            self: conversationResponse.members.self,
-            others: userIds.map(userId => ({
-              qualified_id: userId,
-              conversation_role: ConversationRole.MEMBER
-            }))
-          }
-        }
-        : conversationResponse
-
-    await this.saveConversationWithMembers(conversationResponse.qualified_id, conversationToSave)
+    await this.saveConversationWithMembers(conversationResponse.qualified_id, conversationResponse)
+    this.logger.info(`Channel Conversation created. conversationId: ${conversationResponse.qualified_id}`)
+    return conversationResponse.qualified_id
   }
 
   // TODO: (Separate PR later) Introduce SelfApi and move this method there, so it will be usable from different services.
@@ -139,6 +101,21 @@ export class ConversationService {
       throw new Error("App user does not belong to a team.")
     }
     return selfUser.teamId
+  }
+
+  private overrideMembersInConversationResponse(conversationResponse: ConversationResponse, newMembers: QualifiedId[]) {
+    const conversationResponseWithMembers: ConversationResponse =
+      {
+        ...conversationResponse,
+        members: {
+          self: conversationResponse.members.self,
+          others: newMembers.map(userId => ({
+            qualified_id: userId,
+            conversation_role: ConversationRole.MEMBER
+          }))
+        }
+      }
+    return conversationResponseWithMembers;
   }
 
   getAllConversations(): Conversation[] {
@@ -161,7 +138,7 @@ export class ConversationService {
   //  as two separate methods that we call within this method just to have them together pactically.
   //  We can have "saving members" methods accepting different type of arrays. (This can be thought further.)
   async saveConversationWithMembers(
-    conversationId: QualifiedId,
+    conversationId: QualifiedId, //TODO: Remove this and use from ConversationResponse
     conversation: ConversationResponse
   ): Promise<{ conversation: ConversationEntity, members: ConversationMember[] }> {
     const conversationName = await this.getConversationName(conversation)

@@ -251,12 +251,17 @@ export class CoreCryptoService {
 
   async establishMlsConversation(
     userIds: QualifiedId[],
-    mlsGroupId: string,
+    mlsGroupId: string | null,
     publicKeysResponse?: MlsPublicKeysResponse | null
-  ) {
+  ): Promise<QualifiedId[]> {
+    if (!mlsGroupId) {
+      throw new Error("Missing mlsGroupId.") //TODO: Use custom exceptions
+    }
+
     const ciphersuite = CoreCryptoClient.getMlsCiphersuiteName(this.defaultCiphersuiteCode!)
 
     // Use public keys from the conversation response if available, otherwise fetch from the MLS API
+    // TODO: This should go to mlsService. We can just call getRemovalKey (or whatever the correct wording), MlsService should provide it from api or response.
     const removalKey = publicKeysResponse
       ? getRemovalKeyFromPublicKeysResponse(publicKeysResponse, ciphersuite)
       : await this.mlsService.getRemovalKey(ciphersuite)
@@ -276,16 +281,8 @@ export class CoreCryptoService {
         throw exception // TODO: (Clarify during code review) Here ideally we need to throw but previously we didn't. Was it on purpose?
       }
 
-      const users = [
-        {
-          id: this.wireUserId,
-          domain: this.wireUserDomain
-        } as QualifiedId,
-        ...userIds
-      ]
-
       const claimedKeyPackagesResult = await this.mlsService.claimKeyPackages(
-        users,
+        userIds,
         this.defaultCiphersuiteCode!
       )
 
@@ -297,6 +294,9 @@ export class CoreCryptoService {
           claimedKeyPackagesResult.keyPackages
         )
       }
+
+      return claimedKeyPackagesResult.successUsers
+
     } else {
       // TODO: Map to WireException
       throw Error("No Public Keys found, skipping creating a conversation.")

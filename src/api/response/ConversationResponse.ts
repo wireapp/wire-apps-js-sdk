@@ -19,8 +19,6 @@ import type {CryptoProtocol} from "../../model/CryptoProtocol.js"
 import type { QualifiedId } from "../../model/QualifiedId.js"
 import type { ConversationMembersResponse } from "../model/ConversationMembersResponse.js"
 import type { MlsPublicKeysResponse } from "./MlsPublicKeysResponse.js"
-import { ConversationId } from "@wireapp/core-crypto/native"
-import { Decoder } from "bazinga64"
 
 export interface ConversationResponse {
   qualified_id: QualifiedId
@@ -35,10 +33,3 @@ export interface ConversationResponse {
   message_timer?: number | null
 }
 
-export function getDecodedMlsGroupId(conversationResponse: ConversationResponse): ConversationId {
-  if (!conversationResponse.group_id) {
-    throw new Error("MLSGroupId should not be empty or null.")
-  }
-  const bytes = Decoder.fromBase64(conversationResponse.group_id).asBytes
-  return new ConversationId(bytes)
-}
