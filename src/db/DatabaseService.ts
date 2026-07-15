@@ -15,24 +15,27 @@
 */
 
 import Database, { type Database as DB } from "better-sqlite3";
-import {inject, singleton} from "tsyringe";
-import {WIRE_DATABASE_PATH} from "../utils/DependencyInjectionTokens.js";
+import {singleton} from "tsyringe";
 import {LoggerFactory} from "../utils/logger/LoggerFactory.js";
 import {BetterSQLite3Database, drizzle} from 'drizzle-orm/better-sqlite3';
+import {DATABASE_PATH} from "../utils/StoragePaths.js";
 
 @singleton()
 export class DatabaseService {
   private logger = LoggerFactory.getLogger(this.constructor.name)
   private readonly sqliteClient: DB;
   public readonly db: BetterSQLite3Database;
-  static readonly DEFAULT_DATABASE_PATH = "storage/apps.db";
 
-  constructor(@inject(WIRE_DATABASE_PATH) path: string) {
+  constructor() {
     this.logger.info("DatabaseService being created")
-    this.sqliteClient = new Database(path)
+    this.sqliteClient = new Database(this.getDatabasePath())
     this.sqliteClient.pragma("foreign_keys = ON")
 
     this.db = drizzle({ client: this.sqliteClient });
+  }
+
+  protected getDatabasePath(): string {
+    return DATABASE_PATH
   }
 
   close() {

@@ -20,9 +20,13 @@ import * as schema from '../../src/db/schema.js'
 
 export class TestDatabaseService extends DatabaseService {
   constructor() {
-    super(':memory:')
+    super()
 
     this.initSchema()
+  }
+
+  protected override getDatabasePath(): string {
+    return ':memory:'
   }
 
   private initSchema() {

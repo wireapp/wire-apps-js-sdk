@@ -7,7 +7,6 @@
     "sample"
   ],
   "scripts": {
-    "storage:mkdir:sample": "mkdir -p sample/storage/cryptography",
     "proto:mkdir": "mkdir -p src/generated",
     "proto:package": "node scripts/create-generated-package-json.js",
     "proto:js": "pbjs -t static-module -w commonjs -o src/generated/messages.js src/proto/messages.proto",
@@ -16,7 +15,7 @@
     "proto:generate": "npm run proto:mkdir && npm run proto:package && npm run proto:js && npm run proto:ts",
     "build:setup": "npm install && npm run proto:generate",
     "build": "tsc -p tsconfig.json && npm run proto:copy",
-    "build:sample": "npm run build && npm run -w sample build && npm run storage:mkdir:sample && npx drizzle-kit push",
+    "build:sample": "npm run build && npm run -w sample build && npx drizzle-kit push",
     "sample": "npm run build:sample && npm run -w sample start",
     "test": "npm run test:typecheck",
     "test:typecheck": "vitest run --typecheck --typecheck.tsconfig tsconfig.test.json",
