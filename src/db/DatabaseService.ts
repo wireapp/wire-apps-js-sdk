@@ -18,7 +18,10 @@ import Database, { type Database as DB } from "better-sqlite3";
 import {singleton} from "tsyringe";
 import {LoggerFactory} from "../utils/logger/LoggerFactory.js";
 import {BetterSQLite3Database, drizzle} from 'drizzle-orm/better-sqlite3';
+import {migrate} from "drizzle-orm/better-sqlite3/migrator";
 import {DATABASE_PATH} from "../utils/StoragePaths.js";
+import {dirname, join} from "node:path";
+import {fileURLToPath} from "node:url";
 
 @singleton()
 export class DatabaseService {
@@ -32,10 +35,22 @@ export class DatabaseService {
     this.sqliteClient.pragma("foreign_keys = ON")
 
     this.db = drizzle({ client: this.sqliteClient });
+    this.migrate()
   }
 
   protected getDatabasePath(): string {
     return DATABASE_PATH
+  }
+
+  protected getMigrationsFolder(): string {
+    return join(dirname(fileURLToPath(import.meta.url)), "migrations")
+  }
+
+  private migrate() {
+    this.logger.info("Running database migrations")
+    migrate(this.db, {
+      migrationsFolder: this.getMigrationsFolder()
+    })
   }
 
   close() {

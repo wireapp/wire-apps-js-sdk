@@ -15,24 +15,11 @@
 */
 
 import { DatabaseService } from '../../src/db/DatabaseService.js'
-import { migrate } from 'drizzle-orm/better-sqlite3/migrator'
 import * as schema from '../../src/db/schema.js'
 
 export class TestDatabaseService extends DatabaseService {
-  constructor() {
-    super()
-
-    this.initSchema()
-  }
-
   protected override getDatabasePath(): string {
     return ':memory:'
-  }
-
-  private initSchema() {
-    migrate(this.db, {
-      migrationsFolder: 'src/db/migrations'
-    })
   }
 
   clearData() {
