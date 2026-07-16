@@ -48,7 +48,7 @@
     "@vitest/coverage-v8": "^4.1.9",
     "cpy-cli": "^7.0.0",
     "drizzle-kit": "^0.31.9",
-    "eslint": "^10.5.0",
+    "eslint": "^10.6.0",
     "globals": "^17.7.0",
     "msw": "^2.14.6",
     "protobufjs-cli": "^2.5.5",
