@@ -70,8 +70,6 @@ export class ConversationService {
     const conversationId: QualifiedId = new QualifiedId(conversationResponse.qualified_id.id, conversationResponse.qualified_id.domain)
     const usersAdded: QualifiedId[] = await this.coreCryptoService
       .establishMlsConversation(usersToAdd, conversationResponse.group_id)
-
-    // !! Override conversationResponse members with the actual users successfully claimed in CoreCrypto side
     conversationResponse = this.overrideMembersInConversationResponse(conversationResponse, usersAdded);
 
     await this.saveConversationWithMembers(conversationId, conversationResponse)
@@ -89,8 +87,6 @@ export class ConversationService {
     const conversationId: QualifiedId = new QualifiedId(conversationResponse.qualified_id.id, conversationResponse.qualified_id.domain)
     const usersAdded: QualifiedId[] = await this.coreCryptoService
       .establishMlsConversation(usersToAdd, conversationResponse.group_id)
-
-    // !! Override conversationResponse members with the actual users successfully claimed in CoreCrypto side
     conversationResponse = this.overrideMembersInConversationResponse(conversationResponse, usersAdded);
 
     await this.saveConversationWithMembers(conversationId, conversationResponse)
@@ -107,6 +103,7 @@ export class ConversationService {
     return selfUser.teamId
   }
 
+  // Overrides conversationResponse 'members' with the actual users successfully claimed in CoreCrypto side
   private overrideMembersInConversationResponse(conversationResponse: ConversationResponse, newMembers: QualifiedId[]) {
     const conversationResponseWithMembers: ConversationResponse =
       {
@@ -152,7 +149,7 @@ export class ConversationService {
       domain: conversationId.domain,
       name: conversationName,
       teamId: conversation.team,
-      mlsGroupId: conversation.group_id ?? "",
+      mlsGroupId: conversation.group_id,
       creationDate: null,
       type: conversation.type
     }

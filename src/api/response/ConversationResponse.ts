@@ -23,7 +23,7 @@ export interface ConversationResponse {
   qualified_id: QualifiedId
   name: string | null
   type: ConversationType
-  group_id: string | null
+  group_id: string
   epoch: number | null
   protocol: CryptoProtocol
   team: string | null

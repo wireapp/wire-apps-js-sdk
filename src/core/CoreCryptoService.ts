@@ -247,7 +247,7 @@ export class CoreCryptoService {
 
   async establishMlsConversation(
     userIds: QualifiedId[],
-    mlsGroupId: string | null
+    mlsGroupId: string
   ): Promise<QualifiedId[]> {
     if (!mlsGroupId) {
       throw new Error("Missing mlsGroupId.") //TODO: Use custom exceptions
