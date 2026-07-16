@@ -38,6 +38,8 @@ import {PreKeyCrypto} from "../model/PreKeyCrypto.js";
 import {Decoder, Encoder} from "bazinga64";
 import {LoggerFactory} from "../utils/logger/LoggerFactory.js";
 import {obfuscateId} from "../utils/ObfuscateUtil.js";
+import {join} from "node:path";
+import {CRYPTOGRAPHY_STORAGE_PATH} from "../utils/StoragePaths.js";
 
 // TODO: Baris: If we can find a way to make this class only reachable from CoreCryptoService, that will be awesome.
 
@@ -66,7 +68,7 @@ export class CoreCryptoClient {
     mlsTransport: CoreCryptoMlsTransport
   ): Promise<CoreCryptoClient> {
     const db = await Database.open(
-      `./storage/cryptography/${userId}`,
+      join(CRYPTOGRAPHY_STORAGE_PATH, userId),
       new DatabaseKey(cryptographyStorageKey)
     )
     const coreCrypto = CoreCrypto.new(db)

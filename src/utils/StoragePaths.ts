@@ -14,21 +14,10 @@
 * along with this program. If not, see http://www.gnu.org/licenses/.
 */
 
-import {readFileSync, writeFileSync, existsSync} from 'fs';
+import {join} from "node:path";
 
-const filePath = 'node_modules/@wireapp/core-crypto/package.json';
-
-if (!existsSync(filePath)) {
-  console.log('⚠️  Core-Crypto package.json not found, skipping main fix');
-  // eslint-disable-next-line no-undef
-  process.exit(0);
-}
-
-let content = readFileSync(filePath, 'utf8');
-
-// Fix CoreCrypto main used file
-content = content.replace('"main": "src/CoreCrypto.ts"', '"main": "src/corecrypto.js"');
-content = content.replace('"main": "src/CoreCrypto.js"', '"main": "src/corecrypto.js"');
-
-writeFileSync(filePath, content, 'utf8');
-console.log('✓ Fixed CoreCrypto main in package.json');
+// These paths are intentionally relative to process.cwd(), so host apps get
+// the SDK-managed storage folder in the directory where the process starts.
+export const STORAGE_PATH = "./storage"
+export const DATABASE_PATH = join(STORAGE_PATH, "apps.db")
+export const CRYPTOGRAPHY_STORAGE_PATH = join(STORAGE_PATH, "cryptography")

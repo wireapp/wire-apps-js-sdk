@@ -15,24 +15,52 @@
 */
 
 import Database, { type Database as DB } from "better-sqlite3";
-import {inject, singleton} from "tsyringe";
-import {WIRE_DATABASE_PATH} from "../utils/DependencyInjectionTokens.js";
+import {singleton} from "tsyringe";
 import {LoggerFactory} from "../utils/logger/LoggerFactory.js";
 import {BetterSQLite3Database, drizzle} from 'drizzle-orm/better-sqlite3';
+import {migrate} from "drizzle-orm/better-sqlite3/migrator";
+import {DATABASE_PATH} from "../utils/StoragePaths.js";
+import {dirname, join} from "node:path";
+import {fileURLToPath} from "node:url";
 
 @singleton()
 export class DatabaseService {
   private logger = LoggerFactory.getLogger(this.constructor.name)
   private readonly sqliteClient: DB;
   public readonly db: BetterSQLite3Database;
-  static readonly DEFAULT_DATABASE_PATH = "storage/apps.db";
 
-  constructor(@inject(WIRE_DATABASE_PATH) path: string) {
+  constructor() {
     this.logger.info("DatabaseService being created")
-    this.sqliteClient = new Database(path)
+    this.sqliteClient = new Database(this.getDatabasePath())
     this.sqliteClient.pragma("foreign_keys = ON")
 
     this.db = drizzle({ client: this.sqliteClient });
+    this.migrate()
+  }
+
+  protected getDatabasePath(): string {
+    return DATABASE_PATH
+  }
+
+  protected getMigrationsFolder(): string {
+    return join(dirname(fileURLToPath(import.meta.url)), "migrations")
+  }
+
+  private migrate() {
+    const migrationsFolder = this.getMigrationsFolder()
+    this.logger.info("Running database migrations")
+    try {
+      migrate(this.db, {
+        migrationsFolder
+      })
+    } catch (exception) {
+      throw new Error(
+        `Failed to run Wire Apps SDK database migrations from "${migrationsFolder}". ` +
+          `Make sure the database migration files are included next to the built ` +
+          `DatabaseService.js file, for example in "build/db/migrations".`,
+        { cause: exception }
+      ) 
+    }
   }
 
   close() {

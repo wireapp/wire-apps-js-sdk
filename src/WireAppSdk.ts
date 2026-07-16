@@ -16,11 +16,11 @@
 
 import "reflect-metadata";
 import './core/event/processors.index.js'
+import {mkdirSync} from "node:fs";
 import {CoreCryptoService} from "./core/CoreCryptoService.js";
 import {
   WIRE_API_HOST,
   WIRE_CRYPTOGRAPHY_STORAGE_KEY,
-  WIRE_DATABASE_PATH,
   WIRE_EVENTS_HANDLER,
   WIRE_USER_DOMAIN,
   WIRE_USER_ID,
@@ -35,6 +35,7 @@ import {LoggerFactory} from "./utils/logger/LoggerFactory.js";
 import {ConsoleLogger} from "./utils/logger/ConsoleLogger.js";
 import {ConversationService} from "./api/ConversationService.js";
 import {AppProperties} from "./service/AppProperties.js";
+import {CRYPTOGRAPHY_STORAGE_PATH, STORAGE_PATH} from "./utils/StoragePaths.js";
 
 export class WireAppSdk {
   private readonly CRYPTOGRAPHY_STORAGE_KEY_BYTES = 32
@@ -105,6 +106,7 @@ export class WireAppSdk {
   }
 
   private async init() {
+    this.prepareStorage()
     this.configureDependencies()
     // Save cookie from constructor parameter only at first application start.
     // Once BE provides new token, the one stored in `apiToken` will be obsolete.
@@ -113,13 +115,17 @@ export class WireAppSdk {
     await this.initCryptoClient()
   }
 
+  private prepareStorage() {
+    mkdirSync(STORAGE_PATH, {recursive: true})
+    mkdirSync(CRYPTOGRAPHY_STORAGE_PATH, {recursive: true})
+  }
+
   private configureDependencies() {
     container.registerInstance(WIRE_API_HOST, this.apiHost)
     container.registerInstance(WIRE_SDK_API_TOKEN, this.apiToken)
     container.registerInstance(WIRE_USER_ID, this.userId)
     container.registerInstance(WIRE_USER_DOMAIN, this.userDomain)
     container.registerInstance(WIRE_CRYPTOGRAPHY_STORAGE_KEY, this.cryptographyStorageKey)
-    container.registerInstance(WIRE_DATABASE_PATH, DatabaseService.DEFAULT_DATABASE_PATH)
 
     container.registerInstance(WIRE_EVENTS_HANDLER, this.wireEventsHandler)
 

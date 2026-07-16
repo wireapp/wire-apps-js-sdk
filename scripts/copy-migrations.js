@@ -14,16 +14,12 @@
 * along with this program. If not, see http://www.gnu.org/licenses/.
 */
 
-import { DatabaseService } from '../../src/db/DatabaseService.js'
-import * as schema from '../../src/db/schema.js'
+import {cpSync} from "node:fs";
 
-export class TestDatabaseService extends DatabaseService {
-  protected override getDatabasePath(): string {
-    return ':memory:'
-  }
+const source = "./src/db/migrations";
+const destination = "./build/db/migrations";
 
-  clearData() {
-    this.db.delete(schema.conversationMember).run()
-    this.db.delete(schema.conversation).run()
-  }
-}
+// DatabaseService looks for migrations next to the built DatabaseService.js.
+cpSync(source, destination, {recursive: true});
+
+console.log(`✓ Copied database migrations to ${destination}`);
