@@ -121,6 +121,7 @@ export class ConversationsApiClient {
     this.logger.debug(`Updated conversation member role. conversationId: ${obfuscateId(conversationId.id)}, userId: ${obfuscateId(userId.id)}, newRole: ${newRole}`)
   }
 
+  // This method is used to create both GROUP and CHANNEL type conversations
   async createGroupConversation(createConversationRequest: CreateConversationRequest): Promise<ConversationResponse> {
     this.logger.info(`Creating group conversation with name: ${createConversationRequest.name}`)
     return await this.httpClient.postRequest<ConversationResponse>(

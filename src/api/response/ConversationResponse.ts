@@ -32,4 +32,3 @@ export interface ConversationResponse {
   public_keys?: MlsPublicKeysResponse | null
   message_timer?: number | null
 }
-

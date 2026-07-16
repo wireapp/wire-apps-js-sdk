@@ -60,24 +60,7 @@ export {
 export type { Conversation } from "./model/conversation/Conversation.js";
 export type { ConversationMember } from "./model/conversation/ConversationMember.js";
 export { ConversationRole } from "./model/conversation/ConversationRole.js";
-export { ConversationAccess } from "./model/conversation/ConversationAccess.js";
-export { ConversationAccessRole } from "./model/conversation/ConversationAccessRole.js";
-export { GroupConversationType } from "./model/conversation/GroupConversationType.js";
-export { ChannelAddPermissionType } from "./model/conversation/ChannelAddPermissionType.js";
-export { ReceiptMode } from "./model/conversation/ReceiptMode.js";
 export type { RemoveMembersFromConversationResult } from "./api/model/RemoveMembersFromConversationResult.js";
-export type { OneToOneConversationResponse } from "./api/response/OneToOneConversationResponse.js";
-export type { ConversationTeamInfo } from "./api/model/ConversationTeamInfo.js";
-export type {
-  CreateConversationRequest
-} from "./api/request/CreateConversationRequest.js";
-export {
-  createGroupConversationRequest,
-  createChannelConversationRequest,
-  DEFAULT_MEMBER_ROLE,
-  DEFAULT_ACCESS_LIST,
-  DEFAULT_ACCESS_ROLE_LIST
-} from "./api/request/CreateConversationRequest.js";
 export { QualifiedId } from "./model/QualifiedId.js";
 export { WireUser } from "./model/WireUser.js";
 export { obfuscateId } from "./utils/ObfuscateUtil.js"

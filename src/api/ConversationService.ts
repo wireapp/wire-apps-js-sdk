@@ -15,7 +15,7 @@
 */
 
 import {QualifiedId} from "../model/QualifiedId.js";
-import {type ConversationResponse} from "./response/ConversationResponse.js";
+import type {ConversationResponse} from "./response/ConversationResponse.js";
 import {ConversationRepository} from "../db/ConversationRepository.js";
 import {ConversationMemberRepository} from "../db/ConversationMemberRepository.js";
 import {ConversationType} from "../model/conversation/ConversationType.js";
@@ -523,7 +523,7 @@ export class ConversationService {
 
   private async establishOrJoinMlsConversation(conversation: ConversationResponse): Promise<void> {
     if (!conversation.group_id) {
-      this.logger.warn(`Skipping MLS conversation setup — group_id is null. conversationId: ${obfuscateId(conversation.qualified_id.id)}`)
+      this.logger.warn(`Skipping MLS conversation setup. mlsGroupId is null. conversationId: ${obfuscateId(conversation.qualified_id.id)}`)
       return
     }
 

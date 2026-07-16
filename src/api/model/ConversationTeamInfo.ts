@@ -15,8 +15,6 @@
  */
 
 export interface ConversationTeamInfo {
-  /** @deprecated Not parsed any more */
   managed: boolean
   teamid: string
 }
-

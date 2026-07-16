@@ -18,7 +18,7 @@
 
 import "reflect-metadata";
 import dotenv from 'dotenv';
-import {PinoLogger} from './PinoLogger.js'
+import { PinoLogger } from './PinoLogger.js'
 import {
   type Conversation,
   type ConversationMember,
@@ -47,7 +47,7 @@ import {
 import fs from 'fs'
 import path from 'node:path'
 
-dotenv.config({path: '../.env'})
+dotenv.config({ path: '../.env' })
 
 const userId = process.env['WIRE_SDK_USER_ID'];
 const apiToken = process.env['WIRE_SDK_API_TOKEN'];
@@ -207,12 +207,12 @@ class SampleEventsHandler extends WireEventsHandler {
     }
     const filePath = dir + filename;
     fs.writeFile(filePath, asset, (err) => {
-        if (err) {
-          console.log("There was an error writing the image")
-        } else {
-          console.log(`Downloaded asset with size: ${asset.length} bytes, saved to: ${filePath}`)
-        }
+      if (err) {
+        console.log("There was an error writing the image")
+      } else {
+        console.log(`Downloaded asset with size: ${asset.length} bytes, saved to: ${filePath}`)
       }
+    }
     )
   }
 
@@ -610,7 +610,7 @@ class SampleEventsHandler extends WireEventsHandler {
           text: `Search results for "${query}" on ${domain} (${users.length}):\n${userList}`
         }))
       },
-      'test-edit-text': async (conversationId) => {
+      'test-edit-text': async(conversationId) => {
         this.appLogger?.info(`[Sample App] Sending a Text Edit message`)
         const message = TextMessage.create({
           conversationId: conversationId,
