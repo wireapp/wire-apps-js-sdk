@@ -175,6 +175,40 @@ describe('ConversationsApiClient', () => {
     })
   })
 
+  describe('createGroupConversation', () => {
+    const CREATE_CONVERSATION_REQUEST = {
+      name: 'Test Conversation',
+      qualified_users: [USER_ID],
+      team: { teamid: 'team-id' }
+    } as any
+
+    it('should call postRequest with the correct path and body', async () => {
+      vi.mocked(mockHttpClient.postRequest).mockResolvedValue({ qualified_id: CONVERSATION_ID })
+
+      await client.createGroupConversation(CREATE_CONVERSATION_REQUEST)
+
+      expect(mockHttpClient.postRequest).toHaveBeenCalledWith(
+        'conversations',
+        CREATE_CONVERSATION_REQUEST
+      )
+    })
+
+    it('should return the created conversation response', async () => {
+      const mockConversationResponse = { qualified_id: CONVERSATION_ID, name: 'Test Conversation' }
+      vi.mocked(mockHttpClient.postRequest).mockResolvedValue(mockConversationResponse)
+
+      const result = await client.createGroupConversation(CREATE_CONVERSATION_REQUEST)
+
+      expect(result).toEqual(mockConversationResponse)
+    })
+
+    it('should propagate errors from postRequest', async () => {
+      vi.mocked(mockHttpClient.postRequest).mockRejectedValue(new Error('network-failure'))
+
+      await expect(client.createGroupConversation(CREATE_CONVERSATION_REQUEST)).rejects.toThrow('network-failure')
+    })
+  })
+
   describe('leaveConversation', () => {
     it('should call deleteRequest with the correct path', async () => {
       vi.mocked(mockHttpClient.deleteRequest).mockResolvedValue(undefined)
