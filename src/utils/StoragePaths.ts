@@ -14,6 +14,10 @@
 * along with this program. If not, see http://www.gnu.org/licenses/.
 */
 
+import {join} from "node:path";
+
+// These paths are intentionally relative to process.cwd(), so host apps get
+// the SDK-managed storage folder in the directory where the process starts.
 export const STORAGE_PATH = "./storage"
-export const DATABASE_PATH = `${STORAGE_PATH}/apps.db`
-export const CRYPTOGRAPHY_STORAGE_PATH = `${STORAGE_PATH}/cryptography`
+export const DATABASE_PATH = join(STORAGE_PATH, "apps.db")
+export const CRYPTOGRAPHY_STORAGE_PATH = join(STORAGE_PATH, "cryptography")
