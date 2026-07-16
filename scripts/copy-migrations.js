@@ -16,8 +16,8 @@
 
 import {cpSync} from "node:fs";
 
-const source = "src/db/migrations";
-const destination = "build/db/migrations";
+const source = "./src/db/migrations";
+const destination = "./build/db/migrations";
 
 // DatabaseService looks for migrations next to the built DatabaseService.js.
 cpSync(source, destination, {recursive: true});
