@@ -65,9 +65,11 @@ export class ConversationService {
 
     let conversationResponse: ConversationResponse = await this.conversationsApiClient
       .createGroupConversation(createGroupConversationRequest(name, teamId))
+    this.logger.debug("createGroup -> conversationResponse: "+JSON.stringify(conversationResponse))
+
     const conversationId: QualifiedId = new QualifiedId(conversationResponse.qualified_id.id, conversationResponse.qualified_id.domain)
     const usersAdded: QualifiedId[] = await this.coreCryptoService
-      .establishMlsConversation(usersToAdd, conversationResponse.group_id, conversationResponse.public_keys)
+      .establishMlsConversation(usersToAdd, conversationResponse.group_id)
 
     // !! Override conversationResponse members with the actual users successfully claimed in CoreCrypto side
     conversationResponse = this.overrideMembersInConversationResponse(conversationResponse, usersAdded);
@@ -83,15 +85,17 @@ export class ConversationService {
 
     let conversationResponse: ConversationResponse = await this.conversationsApiClient
       .createGroupConversation(createChannelConversationRequest(name, teamId))
+    this.logger.debug("createChannel -> conversationResponse: "+JSON.stringify(conversationResponse))
+    const conversationId: QualifiedId = new QualifiedId(conversationResponse.qualified_id.id, conversationResponse.qualified_id.domain)
     const usersAdded: QualifiedId[] = await this.coreCryptoService
-      .establishMlsConversation(usersToAdd, conversationResponse.group_id, conversationResponse.public_keys)
+      .establishMlsConversation(usersToAdd, conversationResponse.group_id)
 
     // !! Override conversationResponse members with the actual users successfully claimed in CoreCrypto side
     conversationResponse = this.overrideMembersInConversationResponse(conversationResponse, usersAdded);
 
-    await this.saveConversationWithMembers(conversationResponse.qualified_id, conversationResponse)
-    this.logger.info(`Channel Conversation created. conversationId: ${conversationResponse.qualified_id}`)
-    return conversationResponse.qualified_id
+    await this.saveConversationWithMembers(conversationId, conversationResponse)
+    this.logger.info(`Channel Conversation created. conversationId: ${conversationId}`)
+    return conversationId
   }
 
   // TODO: (Separate PR later) Introduce SelfApi and move this method there, so it will be usable from different services.

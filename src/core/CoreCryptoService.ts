@@ -33,10 +33,6 @@ import type {QualifiedId} from "../model/QualifiedId.js";
 import {AppProperties} from "../service/AppProperties.js";
 import type {AddMembersToConversationResult} from "../api/model/AddMembersToConversationResult.js";
 import {obfuscateClientId, obfuscateId} from "../utils/ObfuscateUtil.js";
-import {
-  getRemovalKeyFromPublicKeysResponse,
-  type MlsPublicKeysResponse
-} from "../api/response/MlsPublicKeysResponse.js";
 
 /**
  * Service that handles initialization of CoreCrypto and provides a high-level API for:
@@ -251,20 +247,14 @@ export class CoreCryptoService {
 
   async establishMlsConversation(
     userIds: QualifiedId[],
-    mlsGroupId: string | null,
-    publicKeysResponse?: MlsPublicKeysResponse | null
+    mlsGroupId: string | null
   ): Promise<QualifiedId[]> {
     if (!mlsGroupId) {
       throw new Error("Missing mlsGroupId.") //TODO: Use custom exceptions
     }
 
     const ciphersuite = CoreCryptoClient.getMlsCiphersuiteName(this.defaultCiphersuiteCode!)
-
-    // Use public keys from the conversation response if available, otherwise fetch from the MLS API
-    // TODO: This should go to mlsService. We can just call getRemovalKey (or whatever the correct wording), MlsService should provide it from api or response.
-    const removalKey = publicKeysResponse
-      ? getRemovalKeyFromPublicKeysResponse(publicKeysResponse, ciphersuite)
-      : await this.mlsService.getRemovalKey(ciphersuite)
+    const removalKey = await this.mlsService.getRemovalKey(ciphersuite)
 
     if (removalKey != null) {
       this.logger.debug(`Creating MLS conversation in CoreCrypto. mlsGroupId: ${obfuscateId(mlsGroupId)}`)

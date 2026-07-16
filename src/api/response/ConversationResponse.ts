@@ -18,7 +18,6 @@ import type { ConversationType } from "../../model/conversation/ConversationType
 import type {CryptoProtocol} from "../../model/CryptoProtocol.js"
 import type { QualifiedId } from "../../model/QualifiedId.js"
 import type { ConversationMembersResponse } from "../model/ConversationMembersResponse.js"
-import type { MlsPublicKeysResponse } from "./MlsPublicKeysResponse.js"
 
 export interface ConversationResponse {
   qualified_id: QualifiedId
@@ -29,6 +28,5 @@ export interface ConversationResponse {
   protocol: CryptoProtocol
   team: string | null
   members: ConversationMembersResponse
-  public_keys?: MlsPublicKeysResponse | null
   message_timer?: number | null
 }

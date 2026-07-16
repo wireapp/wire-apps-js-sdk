@@ -1676,7 +1676,6 @@ describe('ConversationService', () => {
 
   describe('createGroup', () => {
     const GROUP_NAME = 'Test Group'
-    const PUBLIC_KEYS = {ed25519: new Uint8Array([1, 2, 3])} as any
 
     beforeEach(() => {
       ;(mockUserService as any).getUser = vi.fn()
@@ -1695,7 +1694,6 @@ describe('ConversationService', () => {
         group_id: MLS_GROUP_ID,
         epoch: 0,
         protocol: CryptoProtocol.MLS,
-        public_keys: PUBLIC_KEYS,
         members: {
           others: [],
           self: {qualified_id: SELF_USER_ID, conversation_role: 'wire_admin'}
@@ -1709,7 +1707,7 @@ describe('ConversationService', () => {
 
       expect((mockUserService as any).getUser).toHaveBeenCalledWith(new QualifiedId(SELF_USER_ID.id, SELF_USER_ID.domain))
       expect((mockConversationsApiClient as any).createGroupConversation).toHaveBeenCalled()
-      expect((mockCoreCryptoService as any).establishMlsConversation).toHaveBeenCalledWith([USER_ID], MLS_GROUP_ID, PUBLIC_KEYS)
+      expect((mockCoreCryptoService as any).establishMlsConversation).toHaveBeenCalledWith([USER_ID], MLS_GROUP_ID)
 
       expect(mockConversationRepository.save).toHaveBeenCalledWith({
         id: CONVERSATION_ID.id,
@@ -1766,7 +1764,6 @@ describe('ConversationService', () => {
         group_id: MLS_GROUP_ID,
         epoch: 0,
         protocol: CryptoProtocol.MLS,
-        public_keys: PUBLIC_KEYS,
         members: {
           others: [],
           self: {qualified_id: SELF_USER_ID, conversation_role: 'wire_admin'}
@@ -1802,7 +1799,6 @@ describe('ConversationService', () => {
 
   describe('createChannel', () => {
     const CHANNEL_NAME = 'Test Channel'
-    const PUBLIC_KEYS = {ed25519: new Uint8Array([4, 5, 6])} as any
 
     beforeEach(() => {
       ;(mockUserService as any).getUser = vi.fn()
@@ -1821,7 +1817,6 @@ describe('ConversationService', () => {
         group_id: MLS_GROUP_ID,
         epoch: 0,
         protocol: CryptoProtocol.MLS,
-        public_keys: PUBLIC_KEYS,
         members: {
           others: [],
           self: {qualified_id: SELF_USER_ID, conversation_role: 'wire_admin'}
@@ -1835,7 +1830,7 @@ describe('ConversationService', () => {
 
       expect((mockUserService as any).getUser).toHaveBeenCalledWith(new QualifiedId(SELF_USER_ID.id, SELF_USER_ID.domain))
       expect((mockConversationsApiClient as any).createGroupConversation).toHaveBeenCalled()
-      expect((mockCoreCryptoService as any).establishMlsConversation).toHaveBeenCalledWith([USER_ID], MLS_GROUP_ID, PUBLIC_KEYS)
+      expect((mockCoreCryptoService as any).establishMlsConversation).toHaveBeenCalledWith([USER_ID], MLS_GROUP_ID)
 
       expect(mockConversationRepository.save).toHaveBeenCalledWith({
         id: CONVERSATION_ID.id,
