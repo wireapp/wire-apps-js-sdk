@@ -35,7 +35,7 @@ import {LoggerFactory} from "./utils/logger/LoggerFactory.js";
 import {ConsoleLogger} from "./utils/logger/ConsoleLogger.js";
 import {ConversationService} from "./api/ConversationService.js";
 import {AppProperties} from "./service/AppProperties.js";
-import {CRYPTOGRAPHY_STORAGE_PATH} from "./utils/StoragePaths.js";
+import {CRYPTOGRAPHY_STORAGE_PATH, STORAGE_PATH} from "./utils/StoragePaths.js";
 
 export class WireAppSdk {
   private readonly CRYPTOGRAPHY_STORAGE_KEY_BYTES = 32
@@ -116,6 +116,7 @@ export class WireAppSdk {
   }
 
   private prepareStorage() {
+    mkdirSync(STORAGE_PATH, {recursive: true})
     mkdirSync(CRYPTOGRAPHY_STORAGE_PATH, {recursive: true})
   }
 
