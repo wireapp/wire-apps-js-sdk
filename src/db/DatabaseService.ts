@@ -55,9 +55,11 @@ export class DatabaseService {
       })
     } catch (exception) {
       throw new Error(
-        `Failed to run Wire Apps SDK database migrations from "${migrationsFolder}". Make sure the database migration files are included next to the built DatabaseService.js file, for example in "build/db/migrations".`,
-        {cause: exception}
-      )
+        `Failed to run Wire Apps SDK database migrations from "${migrationsFolder}". ` +
+          `Make sure the database migration files are included next to the built ` +
+          `DatabaseService.js file, for example in "build/db/migrations".`,
+        { cause: exception }
+      ) 
     }
   }
 

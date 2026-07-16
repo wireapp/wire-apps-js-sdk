@@ -52,8 +52,12 @@ The SDK manages its own local storage under `./storage`, relative to the host pr
 It creates and uses:
 
 ```text
-./storage/apps.db
-./storage/cryptography/
+storage/
+├── apps.db
+└── cryptography
+    ├── <App_ID>
+    ├── <App_ID>-shm
+    └── <App_ID>-wal
 ```
 
 The SQLite schema is initialized by SDK startup through migrations shipped with the package. If you bundle the SDK with tools such as webpack, esbuild, or Rollup, make sure `build/db/migrations/**` is copied and preserved next to `build/db/DatabaseService.js`. Bundlers often do not include `.sql` files automatically.

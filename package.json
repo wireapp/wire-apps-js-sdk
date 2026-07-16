@@ -12,6 +12,7 @@
     "proto:js": "pbjs -t static-module -w commonjs -o src/generated/messages.js src/proto/messages.proto",
     "proto:ts": "pbts -t static-module -w commonjs -o src/generated/messages.d.ts src/generated/messages.js",
     "proto:copy": "cpy 'src/generated/*' build/generated/",
+    "db:migration": "npx drizzle-kit generate",
     "migrations:copy": "node scripts/copy-migrations.js",
     "proto:generate": "npm run proto:mkdir && npm run proto:package && npm run proto:js && npm run proto:ts",
     "build:setup": "npm install && npm run proto:generate",
@@ -21,7 +22,7 @@
     "test": "npm run test:typecheck",
     "test:typecheck": "vitest run --typecheck --typecheck.tsconfig tsconfig.test.json",
     "test:coverage": "vitest run --coverage --typecheck --typecheck.tsconfig tsconfig.test.json",
-    "clean": "rm -rf build sample/build",
+    "clean": "rm -rf ./build ./node_modules ./sample/build ./sample/storage ./src/generated",
     "lint": "eslint src --ext .ts"
   },
   "files": [
