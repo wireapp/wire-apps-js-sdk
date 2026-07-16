@@ -83,7 +83,8 @@ describe('ConversationService', () => {
       joinMlsConversation: vi.fn(),
       establishMlsConversation: vi.fn(),
       wipeConversation: vi.fn(),
-      removeClientsFromMlsConversation: vi.fn()
+      removeClientsFromMlsConversation: vi.fn(),
+      addClientsToMlsConversation: vi.fn()
     } as any
 
     mockUserService = {
@@ -672,7 +673,7 @@ describe('ConversationService', () => {
 
       expect(mockCoreCryptoService.conversationExists).toHaveBeenCalledTimes(2)
       expect(mockCoreCryptoService.joinMlsConversation).toHaveBeenCalledWith(mockGroupInfoBytes)
-      expect(mockCoreCryptoService.establishMlsConversation).toHaveBeenCalledWith([], 'mls-group-2')
+      expect(mockCoreCryptoService.establishMlsConversation).toHaveBeenCalledWith('mls-group-2')
       expect(mockAppProperties.setShouldRejoinConversations).toHaveBeenCalledWith(false)
     })
   })
@@ -780,7 +781,7 @@ describe('ConversationService', () => {
       await (conversationService as any).establishOrJoinMlsConversation(conversation)
 
       expect(mockCoreCryptoService.conversationExists).toHaveBeenCalledWith(MLS_GROUP_ID)
-      expect(mockCoreCryptoService.establishMlsConversation).toHaveBeenCalledWith([], MLS_GROUP_ID)
+      expect(mockCoreCryptoService.establishMlsConversation).toHaveBeenCalledWith(MLS_GROUP_ID)
       expect(mockConversationsApiClient.getConversationGroupInfo).not.toHaveBeenCalled()
       expect(mockCoreCryptoService.joinMlsConversation).not.toHaveBeenCalled()
     })
@@ -1681,6 +1682,7 @@ describe('ConversationService', () => {
       ;(mockUserService as any).getUser = vi.fn()
       ;(mockConversationsApiClient as any).createGroupConversation = vi.fn()
       ;(mockCoreCryptoService as any).establishMlsConversation = vi.fn()
+      ;(mockCoreCryptoService as any).addClientsToMlsConversation = vi.fn()
     })
 
     it('should create group conversation, establish MLS group, and save conversation with members', async () => {
@@ -1701,13 +1703,18 @@ describe('ConversationService', () => {
       } as ConversationResponse
 
       vi.mocked((mockConversationsApiClient as any).createGroupConversation).mockResolvedValue(conversationResponse)
-      vi.mocked((mockCoreCryptoService as any).establishMlsConversation).mockResolvedValue([USER_ID])
+      vi.mocked((mockCoreCryptoService as any).establishMlsConversation).mockResolvedValue(undefined)
+      vi.mocked((mockCoreCryptoService as any).addClientsToMlsConversation).mockResolvedValue({
+        membersAdded: [USER_ID],
+        membersFailedToAdd: []
+      })
 
       const result = await conversationService.createGroup(GROUP_NAME, [USER_ID])
 
       expect((mockUserService as any).getUser).toHaveBeenCalledWith(new QualifiedId(SELF_USER_ID.id, SELF_USER_ID.domain))
       expect((mockConversationsApiClient as any).createGroupConversation).toHaveBeenCalled()
-      expect((mockCoreCryptoService as any).establishMlsConversation).toHaveBeenCalledWith([USER_ID], MLS_GROUP_ID)
+      expect((mockCoreCryptoService as any).establishMlsConversation).toHaveBeenCalledWith(MLS_GROUP_ID)
+      expect((mockCoreCryptoService as any).addClientsToMlsConversation).toHaveBeenCalledWith(MLS_GROUP_ID, [USER_ID])
 
       expect(mockConversationRepository.save).toHaveBeenCalledWith({
         id: CONVERSATION_ID.id,
@@ -1771,10 +1778,16 @@ describe('ConversationService', () => {
       } as ConversationResponse
 
       vi.mocked((mockConversationsApiClient as any).createGroupConversation).mockResolvedValue(conversationResponse)
+      vi.mocked((mockCoreCryptoService as any).establishMlsConversation).mockResolvedValue(undefined)
       // Only USER_ID was successfully claimed by CoreCrypto; anotherUserId failed
-      vi.mocked((mockCoreCryptoService as any).establishMlsConversation).mockResolvedValue([USER_ID])
+      vi.mocked((mockCoreCryptoService as any).addClientsToMlsConversation).mockResolvedValue({
+        membersAdded: [USER_ID],
+        membersFailedToAdd: [anotherUserId]
+      })
 
       await conversationService.createGroup(GROUP_NAME, [USER_ID, anotherUserId])
+
+      expect((mockCoreCryptoService as any).addClientsToMlsConversation).toHaveBeenCalledWith(MLS_GROUP_ID, [USER_ID, anotherUserId])
 
       expect(mockConversationMemberRepository.saveMany).toHaveBeenCalledWith([
         {
@@ -1804,6 +1817,7 @@ describe('ConversationService', () => {
       ;(mockUserService as any).getUser = vi.fn()
       ;(mockConversationsApiClient as any).createGroupConversation = vi.fn()
       ;(mockCoreCryptoService as any).establishMlsConversation = vi.fn()
+      ;(mockCoreCryptoService as any).addClientsToMlsConversation = vi.fn()
     })
 
     it('should create channel conversation, establish MLS group, and save conversation with members', async () => {
@@ -1824,13 +1838,18 @@ describe('ConversationService', () => {
       } as ConversationResponse
 
       vi.mocked((mockConversationsApiClient as any).createGroupConversation).mockResolvedValue(conversationResponse)
-      vi.mocked((mockCoreCryptoService as any).establishMlsConversation).mockResolvedValue([USER_ID])
+      vi.mocked((mockCoreCryptoService as any).establishMlsConversation).mockResolvedValue(undefined)
+      vi.mocked((mockCoreCryptoService as any).addClientsToMlsConversation).mockResolvedValue({
+        membersAdded: [USER_ID],
+        membersFailedToAdd: []
+      })
 
       const result = await conversationService.createChannel(CHANNEL_NAME, [USER_ID])
 
       expect((mockUserService as any).getUser).toHaveBeenCalledWith(new QualifiedId(SELF_USER_ID.id, SELF_USER_ID.domain))
       expect((mockConversationsApiClient as any).createGroupConversation).toHaveBeenCalled()
-      expect((mockCoreCryptoService as any).establishMlsConversation).toHaveBeenCalledWith([USER_ID], MLS_GROUP_ID)
+      expect((mockCoreCryptoService as any).establishMlsConversation).toHaveBeenCalledWith(MLS_GROUP_ID)
+      expect((mockCoreCryptoService as any).addClientsToMlsConversation).toHaveBeenCalledWith(MLS_GROUP_ID, [USER_ID])
 
       expect(mockConversationRepository.save).toHaveBeenCalledWith({
         id: CONVERSATION_ID.id,

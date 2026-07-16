@@ -229,8 +229,11 @@ export class CoreCryptoService {
       this.defaultCiphersuiteCode!
     )
 
-    await this.coreCryptoClient!.addClientsToMlsConversation(mlsGroupId, claimedKeyPackagesResult.keyPackages)
-    // TODO: Handle custom exceptions (if needed) when introduced
+    if (claimedKeyPackagesResult.keyPackages.length === 0) {
+      await this.coreCryptoClient!.updateKeyingMaterial(mlsGroupId)
+    } else {
+      await this.coreCryptoClient!.addClientsToMlsConversation(mlsGroupId, claimedKeyPackagesResult.keyPackages)
+    }
 
     this.logger.debug(`Added ${claimedKeyPackagesResult.successUsers.length} clients to MLS group id: ${obfuscateId(mlsGroupId)}`)
     return {
@@ -246,9 +249,8 @@ export class CoreCryptoService {
   }
 
   async establishMlsConversation(
-    userIds: QualifiedId[],
     mlsGroupId: string
-  ): Promise<QualifiedId[]> {
+  ): Promise<void> {
     if (!mlsGroupId) {
       throw new Error("Missing mlsGroupId.") //TODO: Use custom exceptions
     }
@@ -268,25 +270,7 @@ export class CoreCryptoService {
           throw Error("Conversation already exists.")
         }
         this.logger.error(`Failed to create MLS conversation. mlsGroupId: ${obfuscateId(mlsGroupId)}`, exception)
-        throw exception // TODO: (Clarify during code review) Here ideally we need to throw but previously we didn't. Was it on purpose?
       }
-
-      const claimedKeyPackagesResult = await this.mlsService.claimKeyPackages(
-        userIds,
-        this.defaultCiphersuiteCode!
-      )
-
-      if (claimedKeyPackagesResult.keyPackages.length === 0) {
-        await this.coreCryptoClient!.updateKeyingMaterial(mlsGroupId)
-      } else {
-        await this.coreCryptoClient!.addClientsToMlsConversation(
-          mlsGroupId,
-          claimedKeyPackagesResult.keyPackages
-        )
-      }
-
-      return claimedKeyPackagesResult.successUsers
-
     } else {
       // TODO: Map to WireException
       throw Error("No Public Keys found, skipping creating a conversation.")

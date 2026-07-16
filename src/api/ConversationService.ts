@@ -40,7 +40,12 @@ import type {Conversation} from "../model/conversation/Conversation.js";
 import {ConversationMapper} from "../mappers/conversation/ConversationMapper.js";
 import {ConversationMemberMapper} from "../mappers/conversation/ConversationMemberMapper.js";
 import {UserService} from "./UserService.js";
-import {createChannelConversationRequest, createGroupConversationRequest} from "./request/CreateConversationRequest.js";
+import {
+  createChannelConversationRequest,
+  type CreateConversationRequest,
+  createGroupConversationRequest
+} from "./request/CreateConversationRequest.js";
+import {GroupConversationType} from "../model/conversation/GroupConversationType.js";
 
 @singleton()
 export class ConversationService {
@@ -60,37 +65,38 @@ export class ConversationService {
   }
 
   async createGroup(name: string, usersToAdd: QualifiedId[]): Promise<QualifiedId> {
-    this.logger.info(`Creating group conversation with name: ${name}, usersToAdd count: ${usersToAdd.length}`)
-    const teamId = await this.getSelfTeamId()
-
-    let conversationResponse: ConversationResponse = await this.conversationsApiClient
-      .createGroupConversation(createGroupConversationRequest(name, teamId))
-    this.logger.debug("createGroup -> conversationResponse: "+JSON.stringify(conversationResponse))
-
-    const conversationId: QualifiedId = new QualifiedId(conversationResponse.qualified_id.id, conversationResponse.qualified_id.domain)
-    const usersAdded: QualifiedId[] = await this.coreCryptoService
-      .establishMlsConversation(usersToAdd, conversationResponse.group_id)
-    conversationResponse = this.overrideMembersInConversationResponse(conversationResponse, usersAdded);
-
-    await this.saveConversationWithMembers(conversationId, conversationResponse)
-    this.logger.info(`Group Conversation created. conversationId: ${conversationId}`)
-    return conversationId
+    return this.createGroupTypeConversation(name, usersToAdd, GroupConversationType.REGULAR_GROUP)
   }
 
   async createChannel(name: string, usersToAdd: QualifiedId[]): Promise<QualifiedId> {
-    this.logger.info(`Creating channel conversation with name: ${name}, usersToAdd count: ${usersToAdd.length}`)
+    return this.createGroupTypeConversation(name, usersToAdd, GroupConversationType.CHANNEL)
+  }
+
+  private async createGroupTypeConversation(
+    name: string,
+    usersToAdd: QualifiedId[],
+    groupConversationType: GroupConversationType
+  ): Promise<QualifiedId> {
     const teamId = await this.getSelfTeamId()
 
-    let conversationResponse: ConversationResponse = await this.conversationsApiClient
-      .createGroupConversation(createChannelConversationRequest(name, teamId))
-    this.logger.debug("createChannel -> conversationResponse: "+JSON.stringify(conversationResponse))
-    const conversationId: QualifiedId = new QualifiedId(conversationResponse.qualified_id.id, conversationResponse.qualified_id.domain)
-    const usersAdded: QualifiedId[] = await this.coreCryptoService
-      .establishMlsConversation(usersToAdd, conversationResponse.group_id)
-    conversationResponse = this.overrideMembersInConversationResponse(conversationResponse, usersAdded);
+    let apiRequest: CreateConversationRequest
+    switch (groupConversationType) {
+      case GroupConversationType.REGULAR_GROUP:
+        apiRequest = createGroupConversationRequest(name, teamId)
+        break
+      case GroupConversationType.CHANNEL:
+        apiRequest = createChannelConversationRequest(name, teamId)
+        break
+    }
 
-    await this.saveConversationWithMembers(conversationId, conversationResponse)
-    this.logger.info(`Channel Conversation created. conversationId: ${conversationId}`)
+    let apiResponse = await this.conversationsApiClient.createGroupConversation(apiRequest)
+    const conversationId = new QualifiedId(apiResponse.qualified_id.id, apiResponse.qualified_id.domain)
+    await this.coreCryptoService.establishMlsConversation(apiResponse.group_id)
+    const addMembersToConversationResult = await this.coreCryptoService.addClientsToMlsConversation(apiResponse.group_id, usersToAdd)
+
+    apiResponse = this.overrideMembersInConversationResponse(apiResponse, addMembersToConversationResult.membersAdded)
+
+    await this.saveConversationWithMembers(conversationId, apiResponse)
     return conversationId
   }
 
@@ -539,7 +545,7 @@ export class ConversationService {
       await this.coreCryptoService.joinMlsConversation(conversationGroupInfoBytes)
       await this.saveConversationWithMembers(conversation.qualified_id, conversation)
     } else if (conversation.type === ConversationType.SELF) {
-      await this.coreCryptoService.establishMlsConversation([], conversation.group_id)
+      await this.coreCryptoService.establishMlsConversation(conversation.group_id)
     }
   }
 

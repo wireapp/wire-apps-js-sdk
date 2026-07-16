@@ -55,30 +55,24 @@ export interface CreateConversationRequest {
 }
 
 export function createGroupConversationRequest(name: string, teamId: TeamId): CreateConversationRequest {
-  return {
-    qualified_users: [],
-    name,
-    access: DEFAULT_ACCESS_LIST,
-    access_role: DEFAULT_ACCESS_ROLE_LIST,
-    group_conv_type: GroupConversationType.REGULAR_GROUP,
-    add_permission: ChannelAddPermissionType.ADMINS,
-    team: {managed: false, teamid: teamId.value},
-    message_timer: null,
-    receipt_mode: ReceiptMode.DISABLED,
-    conversation_role: DEFAULT_MEMBER_ROLE,
-    protocol: CryptoProtocol.MLS,
-    cells: false,
-    skip_creator: false
-  }
+  return createBaseConversationRequest(name, teamId, {group_conv_type: GroupConversationType.REGULAR_GROUP})
 }
 
 export function createChannelConversationRequest(name: string, teamId: TeamId): CreateConversationRequest {
+  return createBaseConversationRequest(name, teamId, {group_conv_type: GroupConversationType.CHANNEL})
+}
+
+function createBaseConversationRequest(
+  name: string,
+  teamId: TeamId,
+  overrides: Partial<CreateConversationRequest> = {}
+): CreateConversationRequest {
   return {
     qualified_users: [],
     name,
     access: DEFAULT_ACCESS_LIST,
     access_role: DEFAULT_ACCESS_ROLE_LIST,
-    group_conv_type: GroupConversationType.CHANNEL,
+    group_conv_type: null,
     add_permission: ChannelAddPermissionType.ADMINS,
     team: {managed: false, teamid: teamId.value},
     message_timer: null,
@@ -86,7 +80,7 @@ export function createChannelConversationRequest(name: string, teamId: TeamId): 
     conversation_role: DEFAULT_MEMBER_ROLE,
     protocol: CryptoProtocol.MLS,
     cells: false,
-    skip_creator: false
+    skip_creator: false,
+    ...overrides
   }
 }
-
