@@ -78,7 +78,7 @@ export class CoreCryptoService {
    * Initializes existing client device or register a new client device.
    *
    * Must be called only after [this.initCoreCryptoClient] was called first.
-   * 
+   *
    * @note Saves the given deviceId (if first time for registration) into AppProperties
    */
   async initOrRegisterClient() {
@@ -229,8 +229,11 @@ export class CoreCryptoService {
       this.defaultCiphersuiteCode!
     )
 
-    await this.coreCryptoClient!.addClientsToMlsConversation(mlsGroupId, claimedKeyPackagesResult.keyPackages)
-    // TODO: Handle custom exceptions (if needed) when introduced
+    if (claimedKeyPackagesResult.keyPackages.length === 0) {
+      await this.coreCryptoClient!.updateKeyingMaterial(mlsGroupId)
+    } else {
+      await this.coreCryptoClient!.addClientsToMlsConversation(mlsGroupId, claimedKeyPackagesResult.keyPackages)
+    }
 
     this.logger.debug(`Added ${claimedKeyPackagesResult.successUsers.length} clients to MLS group id: ${obfuscateId(mlsGroupId)}`)
     return {
@@ -246,13 +249,17 @@ export class CoreCryptoService {
   }
 
   async establishMlsConversation(
-    userIds: QualifiedId[],
     mlsGroupId: string
-  ) {
+  ): Promise<void> {
+    if (!mlsGroupId) {
+      throw new Error("Missing mlsGroupId.") //TODO: Use custom exceptions
+    }
+
     const ciphersuite = CoreCryptoClient.getMlsCiphersuiteName(this.defaultCiphersuiteCode!)
     const removalKey = await this.mlsService.getRemovalKey(ciphersuite)
 
     if (removalKey != null) {
+      this.logger.debug(`Creating MLS conversation in CoreCrypto. mlsGroupId: ${obfuscateId(mlsGroupId)}`)
       try {
         await this.coreCryptoClient!.createConversation(
           mlsGroupId,
@@ -261,31 +268,8 @@ export class CoreCryptoService {
       } catch (exception) {
         if (CoreCryptoError.Mls.instanceOf(exception) && MlsError.ConversationAlreadyExists.instanceOf(exception.inner.mlsError)) {
           throw Error("Conversation already exists.")
-        } else {
-          this.logger.error(`Unexpected exception received while creating a establishing a MLS conversation`, exception)
         }
-      }
-
-      const users = [
-        {
-          id: this.wireUserId,
-          domain: this.wireUserDomain
-        } as QualifiedId,
-        ...userIds
-      ]
-
-      const claimedKeyPackagesResult = await this.mlsService.claimKeyPackages(
-        users,
-        this.defaultCiphersuiteCode!
-      )
-
-      if (claimedKeyPackagesResult.keyPackages.length === 0) {
-        await this.coreCryptoClient!.updateKeyingMaterial(mlsGroupId)
-      } else {
-        await this.coreCryptoClient!.addClientsToMlsConversation(
-          mlsGroupId,
-          claimedKeyPackagesResult.keyPackages
-        )
+        this.logger.error(`Failed to create MLS conversation. mlsGroupId: ${obfuscateId(mlsGroupId)}`, exception)
       }
     } else {
       // TODO: Map to WireException

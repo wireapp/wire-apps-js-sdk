@@ -83,7 +83,8 @@ describe('ConversationService', () => {
       joinMlsConversation: vi.fn(),
       establishMlsConversation: vi.fn(),
       wipeConversation: vi.fn(),
-      removeClientsFromMlsConversation: vi.fn()
+      removeClientsFromMlsConversation: vi.fn(),
+      addClientsToMlsConversation: vi.fn()
     } as any
 
     mockUserService = {
@@ -672,7 +673,7 @@ describe('ConversationService', () => {
 
       expect(mockCoreCryptoService.conversationExists).toHaveBeenCalledTimes(2)
       expect(mockCoreCryptoService.joinMlsConversation).toHaveBeenCalledWith(mockGroupInfoBytes)
-      expect(mockCoreCryptoService.establishMlsConversation).toHaveBeenCalledWith([], 'mls-group-2')
+      expect(mockCoreCryptoService.establishMlsConversation).toHaveBeenCalledWith('mls-group-2')
       expect(mockAppProperties.setShouldRejoinConversations).toHaveBeenCalledWith(false)
     })
   })
@@ -780,7 +781,7 @@ describe('ConversationService', () => {
       await (conversationService as any).establishOrJoinMlsConversation(conversation)
 
       expect(mockCoreCryptoService.conversationExists).toHaveBeenCalledWith(MLS_GROUP_ID)
-      expect(mockCoreCryptoService.establishMlsConversation).toHaveBeenCalledWith([], MLS_GROUP_ID)
+      expect(mockCoreCryptoService.establishMlsConversation).toHaveBeenCalledWith(MLS_GROUP_ID)
       expect(mockConversationsApiClient.getConversationGroupInfo).not.toHaveBeenCalled()
       expect(mockCoreCryptoService.joinMlsConversation).not.toHaveBeenCalled()
     })
@@ -1671,6 +1672,225 @@ describe('ConversationService', () => {
 
       expect(result.membersRemoved).toEqual([])
       expect(mockConversationMemberRepository.deleteMany).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('createGroup', () => {
+    const GROUP_NAME = 'Test Group'
+
+    beforeEach(() => {
+      ;(mockUserService as any).getUser = vi.fn()
+      ;(mockConversationsApiClient as any).createGroupConversation = vi.fn()
+      ;(mockCoreCryptoService as any).establishMlsConversation = vi.fn()
+      ;(mockCoreCryptoService as any).addClientsToMlsConversation = vi.fn()
+    })
+
+    it('should create group conversation, establish MLS group, and save conversation with members', async () => {
+      vi.mocked((mockUserService as any).getUser).mockResolvedValue({teamId: new TeamId(TEAM_ID)} as any)
+
+      const conversationResponse: ConversationResponse = {
+        qualified_id: CONVERSATION_ID,
+        type: ConversationType.GROUP,
+        name: GROUP_NAME,
+        team: TEAM_ID,
+        group_id: MLS_GROUP_ID,
+        epoch: 0,
+        protocol: CryptoProtocol.MLS,
+        members: {
+          others: [],
+          self: {qualified_id: SELF_USER_ID, conversation_role: 'wire_admin'}
+        }
+      } as ConversationResponse
+
+      vi.mocked((mockConversationsApiClient as any).createGroupConversation).mockResolvedValue(conversationResponse)
+      vi.mocked((mockCoreCryptoService as any).establishMlsConversation).mockResolvedValue(undefined)
+      vi.mocked((mockCoreCryptoService as any).addClientsToMlsConversation).mockResolvedValue({
+        membersAdded: [USER_ID],
+        membersFailedToAdd: []
+      })
+
+      const result = await conversationService.createGroup(GROUP_NAME, [USER_ID])
+
+      expect((mockUserService as any).getUser).toHaveBeenCalledWith(new QualifiedId(SELF_USER_ID.id, SELF_USER_ID.domain))
+      expect((mockConversationsApiClient as any).createGroupConversation).toHaveBeenCalled()
+      expect((mockCoreCryptoService as any).establishMlsConversation).toHaveBeenCalledWith(MLS_GROUP_ID)
+      expect((mockCoreCryptoService as any).addClientsToMlsConversation).toHaveBeenCalledWith(MLS_GROUP_ID, [USER_ID])
+
+      expect(mockConversationRepository.save).toHaveBeenCalledWith({
+        id: CONVERSATION_ID.id,
+        domain: CONVERSATION_ID.domain,
+        name: GROUP_NAME,
+        teamId: TEAM_ID,
+        mlsGroupId: MLS_GROUP_ID,
+        creationDate: null,
+        type: ConversationType.GROUP
+      })
+
+      expect(mockConversationMemberRepository.saveMany).toHaveBeenCalledWith([
+        {
+          userId: SELF_USER_ID.id,
+          userDomain: SELF_USER_ID.domain,
+          conversationId: CONVERSATION_ID.id,
+          conversationDomain: CONVERSATION_ID.domain,
+          role: 'wire_admin',
+          creationDate: null
+        },
+        {
+          userId: USER_ID.id,
+          userDomain: USER_ID.domain,
+          conversationId: CONVERSATION_ID.id,
+          conversationDomain: CONVERSATION_ID.domain,
+          role: ConversationRole.MEMBER,
+          creationDate: null
+        }
+      ])
+
+      expect(result).toEqual(CONVERSATION_ID)
+    })
+
+    it('should throw when app user does not belong to a team', async () => {
+      vi.mocked((mockUserService as any).getUser).mockResolvedValue({teamId: null} as any)
+
+      await expect(conversationService.createGroup(GROUP_NAME, [USER_ID]))
+        .rejects.toThrow('App user does not belong to a team.')
+
+      expect((mockConversationsApiClient as any).createGroupConversation).not.toHaveBeenCalled()
+      expect((mockCoreCryptoService as any).establishMlsConversation).not.toHaveBeenCalled()
+    })
+
+    it('should only save members successfully claimed by CoreCrypto, not all usersToAdd', async () => {
+      vi.mocked((mockUserService as any).getUser).mockResolvedValue({teamId: new TeamId(TEAM_ID)} as any)
+
+      const anotherUserId: QualifiedId = {id: 'another-user-id', domain: 'wire.com'}
+
+      const conversationResponse: ConversationResponse = {
+        qualified_id: CONVERSATION_ID,
+        type: ConversationType.GROUP,
+        name: GROUP_NAME,
+        team: TEAM_ID,
+        group_id: MLS_GROUP_ID,
+        epoch: 0,
+        protocol: CryptoProtocol.MLS,
+        members: {
+          others: [],
+          self: {qualified_id: SELF_USER_ID, conversation_role: 'wire_admin'}
+        }
+      } as ConversationResponse
+
+      vi.mocked((mockConversationsApiClient as any).createGroupConversation).mockResolvedValue(conversationResponse)
+      vi.mocked((mockCoreCryptoService as any).establishMlsConversation).mockResolvedValue(undefined)
+      // Only USER_ID was successfully claimed by CoreCrypto; anotherUserId failed
+      vi.mocked((mockCoreCryptoService as any).addClientsToMlsConversation).mockResolvedValue({
+        membersAdded: [USER_ID],
+        membersFailedToAdd: [anotherUserId]
+      })
+
+      await conversationService.createGroup(GROUP_NAME, [USER_ID, anotherUserId])
+
+      expect((mockCoreCryptoService as any).addClientsToMlsConversation).toHaveBeenCalledWith(MLS_GROUP_ID, [USER_ID, anotherUserId])
+
+      expect(mockConversationMemberRepository.saveMany).toHaveBeenCalledWith([
+        {
+          userId: SELF_USER_ID.id,
+          userDomain: SELF_USER_ID.domain,
+          conversationId: CONVERSATION_ID.id,
+          conversationDomain: CONVERSATION_ID.domain,
+          role: 'wire_admin',
+          creationDate: null
+        },
+        {
+          userId: USER_ID.id,
+          userDomain: USER_ID.domain,
+          conversationId: CONVERSATION_ID.id,
+          conversationDomain: CONVERSATION_ID.domain,
+          role: ConversationRole.MEMBER,
+          creationDate: null
+        }
+      ])
+    })
+  })
+
+  describe('createChannel', () => {
+    const CHANNEL_NAME = 'Test Channel'
+
+    beforeEach(() => {
+      ;(mockUserService as any).getUser = vi.fn()
+      ;(mockConversationsApiClient as any).createGroupConversation = vi.fn()
+      ;(mockCoreCryptoService as any).establishMlsConversation = vi.fn()
+      ;(mockCoreCryptoService as any).addClientsToMlsConversation = vi.fn()
+    })
+
+    it('should create channel conversation, establish MLS group, and save conversation with members', async () => {
+      vi.mocked((mockUserService as any).getUser).mockResolvedValue({teamId: new TeamId(TEAM_ID)} as any)
+
+      const conversationResponse: ConversationResponse = {
+        qualified_id: CONVERSATION_ID,
+        type: ConversationType.GROUP,
+        name: CHANNEL_NAME,
+        team: TEAM_ID,
+        group_id: MLS_GROUP_ID,
+        epoch: 0,
+        protocol: CryptoProtocol.MLS,
+        members: {
+          others: [],
+          self: {qualified_id: SELF_USER_ID, conversation_role: 'wire_admin'}
+        }
+      } as ConversationResponse
+
+      vi.mocked((mockConversationsApiClient as any).createGroupConversation).mockResolvedValue(conversationResponse)
+      vi.mocked((mockCoreCryptoService as any).establishMlsConversation).mockResolvedValue(undefined)
+      vi.mocked((mockCoreCryptoService as any).addClientsToMlsConversation).mockResolvedValue({
+        membersAdded: [USER_ID],
+        membersFailedToAdd: []
+      })
+
+      const result = await conversationService.createChannel(CHANNEL_NAME, [USER_ID])
+
+      expect((mockUserService as any).getUser).toHaveBeenCalledWith(new QualifiedId(SELF_USER_ID.id, SELF_USER_ID.domain))
+      expect((mockConversationsApiClient as any).createGroupConversation).toHaveBeenCalled()
+      expect((mockCoreCryptoService as any).establishMlsConversation).toHaveBeenCalledWith(MLS_GROUP_ID)
+      expect((mockCoreCryptoService as any).addClientsToMlsConversation).toHaveBeenCalledWith(MLS_GROUP_ID, [USER_ID])
+
+      expect(mockConversationRepository.save).toHaveBeenCalledWith({
+        id: CONVERSATION_ID.id,
+        domain: CONVERSATION_ID.domain,
+        name: CHANNEL_NAME,
+        teamId: TEAM_ID,
+        mlsGroupId: MLS_GROUP_ID,
+        creationDate: null,
+        type: ConversationType.GROUP
+      })
+
+      expect(mockConversationMemberRepository.saveMany).toHaveBeenCalledWith([
+        {
+          userId: SELF_USER_ID.id,
+          userDomain: SELF_USER_ID.domain,
+          conversationId: CONVERSATION_ID.id,
+          conversationDomain: CONVERSATION_ID.domain,
+          role: 'wire_admin',
+          creationDate: null
+        },
+        {
+          userId: USER_ID.id,
+          userDomain: USER_ID.domain,
+          conversationId: CONVERSATION_ID.id,
+          conversationDomain: CONVERSATION_ID.domain,
+          role: ConversationRole.MEMBER,
+          creationDate: null
+        }
+      ])
+
+      expect(result).toEqual(CONVERSATION_ID)
+    })
+
+    it('should throw when app user does not belong to a team', async () => {
+      vi.mocked((mockUserService as any).getUser).mockResolvedValue({teamId: null} as any)
+
+      await expect(conversationService.createChannel(CHANNEL_NAME, [USER_ID]))
+        .rejects.toThrow('App user does not belong to a team.')
+
+      expect((mockConversationsApiClient as any).createGroupConversation).not.toHaveBeenCalled()
+      expect((mockCoreCryptoService as any).establishMlsConversation).not.toHaveBeenCalled()
     })
   })
 

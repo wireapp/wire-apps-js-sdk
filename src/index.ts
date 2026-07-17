@@ -59,7 +59,7 @@ export {
 
 export type { Conversation } from "./model/conversation/Conversation.js";
 export type { ConversationMember } from "./model/conversation/ConversationMember.js";
-export type { ConversationRole } from "./model/conversation/ConversationRole.js";
+export { ConversationRole } from "./model/conversation/ConversationRole.js";
 export type { RemoveMembersFromConversationResult } from "./api/model/RemoveMembersFromConversationResult.js";
 export { QualifiedId } from "./model/QualifiedId.js";
 export { WireUser } from "./model/WireUser.js";

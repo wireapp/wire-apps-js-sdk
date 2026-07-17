@@ -40,6 +40,12 @@ import type {Conversation} from "../model/conversation/Conversation.js";
 import {ConversationMapper} from "../mappers/conversation/ConversationMapper.js";
 import {ConversationMemberMapper} from "../mappers/conversation/ConversationMemberMapper.js";
 import {UserService} from "./UserService.js";
+import {
+  createChannelConversationRequest,
+  type CreateConversationRequest,
+  createGroupConversationRequest
+} from "./request/CreateConversationRequest.js";
+import {GroupConversationType} from "../model/conversation/GroupConversationType.js";
 
 @singleton()
 export class ConversationService {
@@ -56,6 +62,67 @@ export class ConversationService {
     private coreCryptoService: CoreCryptoService,
     private userService: UserService,
   ) {
+  }
+
+  async createGroup(name: string, usersToAdd: QualifiedId[]): Promise<QualifiedId> {
+    return this.createGroupTypeConversation(name, usersToAdd, GroupConversationType.REGULAR_GROUP)
+  }
+
+  async createChannel(name: string, usersToAdd: QualifiedId[]): Promise<QualifiedId> {
+    return this.createGroupTypeConversation(name, usersToAdd, GroupConversationType.CHANNEL)
+  }
+
+  private async createGroupTypeConversation(
+    name: string,
+    usersToAdd: QualifiedId[],
+    groupConversationType: GroupConversationType
+  ): Promise<QualifiedId> {
+    const teamId = await this.getSelfTeamId()
+
+    let apiRequest: CreateConversationRequest
+    switch (groupConversationType) {
+      case GroupConversationType.REGULAR_GROUP:
+        apiRequest = createGroupConversationRequest(name, teamId)
+        break
+      case GroupConversationType.CHANNEL:
+        apiRequest = createChannelConversationRequest(name, teamId)
+        break
+    }
+
+    let apiResponse = await this.conversationsApiClient.createGroupConversation(apiRequest)
+    const conversationId = new QualifiedId(apiResponse.qualified_id.id, apiResponse.qualified_id.domain)
+    await this.coreCryptoService.establishMlsConversation(apiResponse.group_id)
+    const addMembersToConversationResult = await this.coreCryptoService.addClientsToMlsConversation(apiResponse.group_id, usersToAdd)
+
+    apiResponse = this.overrideMembersInConversationResponse(apiResponse, addMembersToConversationResult.membersAdded)
+
+    await this.saveConversationWithMembers(conversationId, apiResponse)
+    return conversationId
+  }
+
+  // TODO: (Separate PR later) Introduce SelfApi and move this method there, so it will be usable from different services.
+  private async getSelfTeamId(): Promise<TeamId> {
+    const selfUser = await this.userService.getUser(new QualifiedId(this.wireUserId, this.wireUserDomain))
+    if (!selfUser.teamId) {
+      throw new Error("App user does not belong to a team.")
+    }
+    return selfUser.teamId
+  }
+
+  // Overrides conversationResponse 'members' with the actual users successfully claimed in CoreCrypto side
+  private overrideMembersInConversationResponse(conversationResponse: ConversationResponse, newMembers: QualifiedId[]) {
+    const conversationResponseWithMembers: ConversationResponse =
+      {
+        ...conversationResponse,
+        members: {
+          self: conversationResponse.members.self,
+          others: newMembers.map(userId => ({
+            qualified_id: userId,
+            conversation_role: ConversationRole.MEMBER
+          }))
+        }
+      }
+    return conversationResponseWithMembers;
   }
 
   getAllConversations(): Conversation[] {
@@ -78,7 +145,7 @@ export class ConversationService {
   //  as two separate methods that we call within this method just to have them together pactically.
   //  We can have "saving members" methods accepting different type of arrays. (This can be thought further.)
   async saveConversationWithMembers(
-    conversationId: QualifiedId,
+    conversationId: QualifiedId, //TODO: Remove this and use from ConversationResponse
     conversation: ConversationResponse
   ): Promise<{ conversation: ConversationEntity, members: ConversationMember[] }> {
     const conversationName = await this.getConversationName(conversation)
@@ -462,6 +529,11 @@ export class ConversationService {
   }
 
   private async establishOrJoinMlsConversation(conversation: ConversationResponse): Promise<void> {
+    if (!conversation.group_id) {
+      this.logger.warn(`Skipping MLS conversation setup. mlsGroupId is null. conversationId: ${obfuscateId(conversation.qualified_id.id)}`)
+      return
+    }
+
     if (await this.coreCryptoService.conversationExists(conversation.group_id)) {
       this.logger.info(`Conversation ${obfuscateId(conversation.qualified_id.id)} already exists, skipping it`)
       return
@@ -473,7 +545,7 @@ export class ConversationService {
       await this.coreCryptoService.joinMlsConversation(conversationGroupInfoBytes)
       await this.saveConversationWithMembers(conversation.qualified_id, conversation)
     } else if (conversation.type === ConversationType.SELF) {
-      await this.coreCryptoService.establishMlsConversation([], conversation.group_id)
+      await this.coreCryptoService.establishMlsConversation(conversation.group_id)
     }
   }
 

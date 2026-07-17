@@ -22,7 +22,7 @@ import { PinoLogger } from './PinoLogger.js'
 import {
   type Conversation,
   type ConversationMember,
-  type ConversationRole,
+  ConversationRole,
   obfuscateId,
   QualifiedId,
   TextMessage,
@@ -629,7 +629,7 @@ class SampleEventsHandler extends WireEventsHandler {
 
         await this.manager.sendMessage(messageEdit)
       },
-      'test-edit-composite': async(conversationId) => {
+      'test-edit-composite': async (conversationId) => {
         const mutableItemList = [
           TextMessage.create({
             conversationId: conversationId,
@@ -660,6 +660,12 @@ class SampleEventsHandler extends WireEventsHandler {
           })
           latestMessageID = await this.manager.sendMessage(compositeEdit)
         }
+      },
+      'create-group-conversation': async (conversationId: QualifiedId, command) => {
+        await this.processCreateGroupConversation(command ?? "")
+      },
+      'create-channel-conversation': async (conversationId: QualifiedId, command) => {
+        await this.processCreateChannelConversation(command ?? "")
       }
       // More reserved test commands will be added here
     }
@@ -680,6 +686,54 @@ class SampleEventsHandler extends WireEventsHandler {
     this.appLogger?.info(`[Sample App] Processing reserved test command: ${cmd}`)
     await handler(conversationId, command)
     return true
+  }
+
+  // TODO: In a separate PR, extract all reserved command implementations above to methods
+  //  to make this class more readable and maintainable (just like these two methods below)
+  private async processCreateGroupConversation(command: string): Promise<void> {
+    const args = command.trim().split(/\s+/);
+    const name = args[1];
+    const userArgs = args.slice(2);
+
+    if (!name || userArgs.length === 0 || userArgs.length % 2 !== 0) {
+      this.appLogger?.info(
+        `[Sample App] Invalid command format. Expected: create-group-conversation [NAME] [USER_ID] [DOMAIN]...`
+      );
+      return;
+    }
+
+    const participants: QualifiedId[] = [];
+
+    for (let i = 0; i < userArgs.length; i += 2) {
+      const userId = userArgs[i];
+      const domain = userArgs[i + 1];
+      participants.push(new QualifiedId(userId, domain));
+    }
+
+    await this.manager.createGroupConversation(name, participants);
+  }
+
+  private async processCreateChannelConversation(command: string): Promise<void> {
+    const args = command.trim().split(/\s+/);
+    const name = args[1];
+    const userArgs = args.slice(2);
+
+    if (!name || userArgs.length === 0 || userArgs.length % 2 !== 0) {
+      this.appLogger?.info(
+        `[Sample App] Invalid command format. Expected: create-channel-conversation [NAME] [USER_ID] [DOMAIN]...`
+      );
+      return;
+    }
+
+    const participants: QualifiedId[] = [];
+
+    for (let i = 0; i < userArgs.length; i += 2) {
+      const userId = userArgs[i];
+      const domain = userArgs[i + 1];
+      participants.push(new QualifiedId(userId, domain));
+    }
+
+    await this.manager.createChannelConversation(name, participants);
   }
 }
 

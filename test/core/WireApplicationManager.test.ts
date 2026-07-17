@@ -125,4 +125,78 @@ describe('WireApplicationManager', () => {
       expect(result).toEqual([])
     })
   })
+
+  describe('createGroupConversation', () => {
+    it('delegates to conversationService.createGroup and returns the conversation id', async () => {
+      const userIds = [new QualifiedId('user-1', 'wire.com'), new QualifiedId('user-2', 'wire.com')]
+      const createdConversationId = new QualifiedId('new-conversation-id', 'wire.com')
+      const conversationService = {
+        createGroup: vi.fn().mockResolvedValue(createdConversationId)
+      }
+      const manager = new WireApplicationManager(
+        {} as any,
+        conversationService as any,
+        {} as any,
+        {} as any,
+        {} as any
+      )
+
+      const result = await manager.createGroupConversation('Test Group', userIds)
+
+      expect(conversationService.createGroup).toHaveBeenCalledWith('Test Group', userIds)
+      expect(result).toBe(createdConversationId)
+    })
+
+    it('propagates errors from conversationService.createGroup', async () => {
+      const conversationService = {
+        createGroup: vi.fn().mockRejectedValue(new Error('create-group-failed'))
+      }
+      const manager = new WireApplicationManager(
+        {} as any,
+        conversationService as any,
+        {} as any,
+        {} as any,
+        {} as any
+      )
+
+      await expect(manager.createGroupConversation('Test Group', [])).rejects.toThrow('create-group-failed')
+    })
+  })
+
+  describe('createChannelConversation', () => {
+    it('delegates to conversationService.createChannel and returns the conversation id', async () => {
+      const userIds = [new QualifiedId('user-1', 'wire.com'), new QualifiedId('user-2', 'wire.com')]
+      const createdConversationId = new QualifiedId('new-channel-id', 'wire.com')
+      const conversationService = {
+        createChannel: vi.fn().mockResolvedValue(createdConversationId)
+      }
+      const manager = new WireApplicationManager(
+        {} as any,
+        conversationService as any,
+        {} as any,
+        {} as any,
+        {} as any
+      )
+
+      const result = await manager.createChannelConversation('Test Channel', userIds)
+
+      expect(conversationService.createChannel).toHaveBeenCalledWith('Test Channel', userIds)
+      expect(result).toBe(createdConversationId)
+    })
+
+    it('propagates errors from conversationService.createChannel', async () => {
+      const conversationService = {
+        createChannel: vi.fn().mockRejectedValue(new Error('create-channel-failed'))
+      }
+      const manager = new WireApplicationManager(
+        {} as any,
+        conversationService as any,
+        {} as any,
+        {} as any,
+        {} as any
+      )
+
+      await expect(manager.createChannelConversation('Test Channel', [])).rejects.toThrow('create-channel-failed')
+    })
+  })
 })
