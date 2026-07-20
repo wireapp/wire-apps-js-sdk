@@ -56,7 +56,7 @@ describe("AssetsApiClient", () => {
 
       expect(mockHttpClient.getRequest).toHaveBeenCalledWith(
         `assets/${assetDomain}/${assetId}`,
-        expect.objectContaining({additionalHeaders: {}})
+        {additionalHeaders: {}}
       );
     });
 
@@ -142,9 +142,7 @@ describe("AssetsApiClient", () => {
       expect(mockHttpClient.postRequest).toHaveBeenCalledWith(
         expect.anything(),
         expect.anything(),
-        expect.objectContaining({
-          headerContentType: "multipart/mixed; boundary=Frontiertest-uuid-1234",
-        })
+        {headerContentType: "multipart/mixed; boundary=Frontiertest-uuid-1234"}
       );
     });
 
