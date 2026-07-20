@@ -21,6 +21,14 @@ import {LoggerFactory} from "../utils/logger/LoggerFactory.js";
 import {AppProperties} from "../service/AppProperties.js";
 import {WireApiException} from "../model/exception/WireApiException.js";
 import type {AccessResponse} from "../api/response/AccessResponse.js";
+import type {HttpRetryPolicy} from "./HttpRetryPolicy.js";
+import {
+  calculateHttpRetryDelay,
+  isRetryableHttpError,
+  isRetryableHttpStatus,
+  RetryableHttpStatusError,
+  waitForHttpRetry
+} from "./HttpRetryHelper.js";
 
 @singleton()
 export class HttpClient {
@@ -57,12 +65,16 @@ export class HttpClient {
     return this.cachedAccessToken!
   }
 
-  async refreshAccessToken() {
+  async refreshAccessToken(retryPolicy?: HttpRetryPolicy) {
     if (this.accessTokenRefreshLock) {
       return this.accessTokenRefreshLock
     }
 
-    this.accessTokenRefreshLock = this.updateAccessToken().finally(() => {
+    this.accessTokenRefreshLock = this.withRetry(
+      () => this.updateAccessToken(),
+      retryPolicy,
+      "access"
+    ).finally(() => {
       this.accessTokenRefreshLock = null
     })
 
@@ -97,6 +109,7 @@ export class HttpClient {
         // TODO: Map to WireException
         throw new Error("Current cookie/api-token is expired. Get a new apiToken and restart the App")
       }
+      throw exception
     }
   }
 
@@ -120,7 +133,30 @@ export class HttpClient {
     path: string,
     options: RequestInit = {},
     includeApiVersion: boolean = true,
-    shouldRetry: boolean = true
+    shouldRetry: boolean = true,
+    retryPolicy?: HttpRetryPolicy
+  ): Promise<{ data: T; response: Response }> {
+    return this.withRetry(
+      shouldRetryOnStatus => this.requestOnce<T>(
+        path,
+        options,
+        includeApiVersion,
+        shouldRetry,
+        retryPolicy,
+        shouldRetryOnStatus
+      ),
+      retryPolicy,
+      path
+    )
+  }
+
+  private async requestOnce<T>(
+    path: string,
+    options: RequestInit,
+    includeApiVersion: boolean,
+    shouldRetryUnauthorized: boolean,
+    retryPolicy: HttpRetryPolicy | undefined,
+    shouldRetryOnStatus: boolean
   ): Promise<{ data: T; response: Response }> {
     const optionsAndHeaders = {
       ...options,
@@ -137,11 +173,16 @@ export class HttpClient {
     const response = await fetch(url, optionsAndHeaders)
 
     if (!response.ok) {
-      if (response.status === 401 && shouldRetry) {
+      if (response.status === 401 && shouldRetryUnauthorized) {
         this.logger.info("Access token not valid, getting a new one.")
-        await this.refreshAccessToken()
-        return this.request(path, options, includeApiVersion, false)
+        await this.refreshAccessToken(retryPolicy)
+        return this.requestOnce(path, options, includeApiVersion, false, retryPolicy, shouldRetryOnStatus)
       }
+
+      if (shouldRetryOnStatus && isRetryableHttpStatus(response.status)) {
+        throw new RetryableHttpStatusError(response.status, path)
+      }
+
       let standardError: WireApiError | undefined
 
       const contentType = response.headers.get("content-type")
@@ -178,6 +219,35 @@ export class HttpClient {
     return { data: undefined as unknown as T, response }
   }
 
+  private async withRetry<T>(
+    operation: (shouldRetryOnStatus: boolean) => Promise<T>,
+    retryPolicy: HttpRetryPolicy | undefined,
+    path: string
+  ): Promise<T> {
+    const maxAttempts = retryPolicy?.maxAttempts ?? 1
+
+    for (let attemptIndex = 0; attemptIndex < maxAttempts; attemptIndex++) {
+      const shouldRetryOnStatus = retryPolicy != null && attemptIndex < maxAttempts - 1
+
+      try {
+        return await operation(shouldRetryOnStatus)
+      } catch (exception) {
+        if (!retryPolicy || attemptIndex >= maxAttempts - 1 || !isRetryableHttpError(exception)) {
+          throw exception
+        }
+
+        const delayMs = calculateHttpRetryDelay(retryPolicy, attemptIndex)
+        this.logger.warn(
+          `Retrying HTTP request for ${path} in ${delayMs}ms ` +
+          `(attempt ${attemptIndex + 2}/${maxAttempts})`
+        )
+        await waitForHttpRetry(delayMs)
+      }
+    }
+
+    throw new Error(`HTTP request failed for ${path}`)
+  }
+
   async getRequest<T>(
     path: string,
     options?: {
@@ -185,13 +255,15 @@ export class HttpClient {
       headerAccept?: string;
       includeApiVersion?: boolean;
       additionalHeaders?: Record<string, string>
+      retryPolicy?: HttpRetryPolicy
     }
   ): Promise<T> {
     const {
       headerContentType = this.HEADER_DEFAULT_CONTENT_TYPE,
       headerAccept = this.HEADER_DEFAULT_ACCEPT,
       includeApiVersion = true,
-      additionalHeaders = {}
+      additionalHeaders = {},
+      retryPolicy
     } = options ?? {}
 
     const requestConfig = {
@@ -202,7 +274,7 @@ export class HttpClient {
         ...additionalHeaders
       }
     }
-    return (await this.request<T>(path, requestConfig, includeApiVersion)).data
+    return (await this.request<T>(path, requestConfig, includeApiVersion, true, retryPolicy)).data
   }
 
   async postRequest<T>(
@@ -212,12 +284,14 @@ export class HttpClient {
       headerContentType?: string;
       headerAccept?: string;
       includeApiVersion?: boolean;
+      retryPolicy?: HttpRetryPolicy
     }
   ): Promise<T> {
     const {
       headerContentType = this.HEADER_DEFAULT_CONTENT_TYPE,
       headerAccept = this.HEADER_DEFAULT_ACCEPT,
       includeApiVersion = true,
+      retryPolicy,
     } = options ?? {}
 
     const isBinary = body instanceof Uint8Array || body instanceof ArrayBuffer
@@ -233,15 +307,24 @@ export class HttpClient {
         "Accept": headerAccept
       }
     }
-    return (await this.request<T>(path, requestConfig, includeApiVersion)).data
+    return (await this.request<T>(path, requestConfig, includeApiVersion, true, retryPolicy)).data
   }
 
   async putRequest<T>(
     path: string,
     body: unknown,
-    headerContentType: string = this.HEADER_DEFAULT_CONTENT_TYPE,
-    headerAccept: string = this.HEADER_DEFAULT_ACCEPT
+    options?: {
+      headerContentType?: string;
+      headerAccept?: string;
+      retryPolicy?: HttpRetryPolicy
+    }
   ): Promise<T> {
+    const {
+      headerContentType = this.HEADER_DEFAULT_CONTENT_TYPE,
+      headerAccept = this.HEADER_DEFAULT_ACCEPT,
+      retryPolicy,
+    } = options ?? {}
+
     return (await this.request<T>(path, {
       method: "PUT",
       body: JSON.stringify(body),
@@ -249,7 +332,7 @@ export class HttpClient {
         "Content-Type": headerContentType,
         "Accept": headerAccept
       }
-    })).data
+    }, true, true, retryPolicy)).data
   }
 
   async deleteRequest<T>(
@@ -258,11 +341,13 @@ export class HttpClient {
     options?: {
       headerContentType?: string;
       headerAccept?: string;
+      retryPolicy?: HttpRetryPolicy
     }
   ): Promise<T> {
     const {
       headerContentType = this.HEADER_DEFAULT_CONTENT_TYPE,
-      headerAccept = this.HEADER_DEFAULT_ACCEPT
+      headerAccept = this.HEADER_DEFAULT_ACCEPT,
+      retryPolicy,
     } = options ?? {}
 
     const isBinary = body instanceof Uint8Array || body instanceof ArrayBuffer
@@ -277,7 +362,7 @@ export class HttpClient {
         "Content-Type": headerContentType,
         "Accept": headerAccept
       }
-    })).data
+    }, true, true, retryPolicy)).data
   }
 
   private API_HOST_VERSION: string = "v15"
