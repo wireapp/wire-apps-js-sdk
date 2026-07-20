@@ -22,6 +22,7 @@ import {ConversationMemberRepository} from '../../src/db/ConversationMemberRepos
 import {ConversationType} from '../../src/model/conversation/ConversationType.js'
 import {QualifiedId} from '../../src/model/QualifiedId.js'
 import type {ConversationResponse} from '../../src/api/response/ConversationResponse.js'
+import {STARTUP_HTTP_RETRY_POLICY} from '../../src/core/HttpRetryPolicy.js'
 import type {ConversationEntity} from '../../src/db/model/ConversationEntity.js'
 import {container} from 'tsyringe'
 import {AppProperties} from '../../src/service/AppProperties.js'
@@ -673,7 +674,10 @@ describe('ConversationService', () => {
 
       expect(mockCoreCryptoService.conversationExists).toHaveBeenCalledTimes(2)
       expect(mockCoreCryptoService.joinMlsConversation).toHaveBeenCalledWith(mockGroupInfoBytes)
-      expect(mockCoreCryptoService.establishMlsConversation).toHaveBeenCalledWith('mls-group-2')
+      expect(mockCoreCryptoService.establishMlsConversation).toHaveBeenCalledWith(
+        'mls-group-2',
+        STARTUP_HTTP_RETRY_POLICY
+      )
       expect(mockAppProperties.setShouldRejoinConversations).toHaveBeenCalledWith(false)
     })
   })
@@ -727,7 +731,10 @@ describe('ConversationService', () => {
       await (conversationService as any).establishOrJoinMlsConversation(conversation)
 
       expect(mockCoreCryptoService.conversationExists).toHaveBeenCalledWith(MLS_GROUP_ID)
-      expect(mockConversationsApiClient.getConversationGroupInfo).toHaveBeenCalledWith(CONVERSATION_ID)
+      expect(mockConversationsApiClient.getConversationGroupInfo).toHaveBeenCalledWith(
+        CONVERSATION_ID,
+        STARTUP_HTTP_RETRY_POLICY
+      )
       expect(mockCoreCryptoService.joinMlsConversation).toHaveBeenCalledWith(mockGroupInfoBytes)
       expect(mockCoreCryptoService.establishMlsConversation).not.toHaveBeenCalled()
 
@@ -781,7 +788,10 @@ describe('ConversationService', () => {
       await (conversationService as any).establishOrJoinMlsConversation(conversation)
 
       expect(mockCoreCryptoService.conversationExists).toHaveBeenCalledWith(MLS_GROUP_ID)
-      expect(mockCoreCryptoService.establishMlsConversation).toHaveBeenCalledWith(MLS_GROUP_ID)
+      expect(mockCoreCryptoService.establishMlsConversation).toHaveBeenCalledWith(
+        MLS_GROUP_ID,
+        STARTUP_HTTP_RETRY_POLICY
+      )
       expect(mockConversationsApiClient.getConversationGroupInfo).not.toHaveBeenCalled()
       expect(mockCoreCryptoService.joinMlsConversation).not.toHaveBeenCalled()
     })

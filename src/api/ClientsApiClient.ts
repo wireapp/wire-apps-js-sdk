@@ -23,6 +23,7 @@ import {mapToPreKeyRequest} from "../mappers/PreKeyMapper.js";
 import type {PreKeyCrypto} from "../model/PreKeyCrypto.js";
 import {singleton} from "tsyringe";
 import {AppProperties} from "../service/AppProperties.js";
+import {STARTUP_HTTP_RETRY_POLICY} from "../core/HttpRetryPolicy.js";
 
 @singleton()
 export class ClientsApiClient {
@@ -47,7 +48,8 @@ export class ClientsApiClient {
 
     const response = await this.httpClient.postRequest<RegisterClientResponse>(
       this.basePath,
-      requestPayload
+      requestPayload,
+      {retryPolicy: STARTUP_HTTP_RETRY_POLICY}
     )
 
     // Register client is performed with an access_token having limited scope.
@@ -64,7 +66,8 @@ export class ClientsApiClient {
 
     await this.httpClient.putRequest<void>(
       `${this.basePath}/${this.appProperties.getDeviceId()}`,
-      requestPayload
+      requestPayload,
+      {retryPolicy: STARTUP_HTTP_RETRY_POLICY}
     )
   }
 

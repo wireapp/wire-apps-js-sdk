@@ -17,6 +17,7 @@
 import {HttpClient} from "../core/HttpClient.js";
 import type {FeatureConfigsResponse} from "./response/FeatureConfigsResponse.js";
 import { singleton } from "tsyringe";
+import {STARTUP_HTTP_RETRY_POLICY} from "../core/HttpRetryPolicy.js";
 
 @singleton()
 export class FeatureConfigsApiClient {
@@ -25,7 +26,10 @@ export class FeatureConfigsApiClient {
   private readonly basePath = "feature-configs";
 
   async getFeatureConfigs(): Promise<FeatureConfigsResponse> {
-    await this.httpClient.refreshAccessToken()
-    return await this.httpClient.getRequest<FeatureConfigsResponse>(this.basePath)
+    await this.httpClient.refreshAccessToken(STARTUP_HTTP_RETRY_POLICY)
+    return await this.httpClient.getRequest<FeatureConfigsResponse>(
+      this.basePath,
+      {retryPolicy: STARTUP_HTTP_RETRY_POLICY}
+    )
   }
 }

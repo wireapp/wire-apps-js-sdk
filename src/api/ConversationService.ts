@@ -46,6 +46,7 @@ import {
   createGroupConversationRequest
 } from "./request/CreateConversationRequest.js";
 import {GroupConversationType} from "../model/conversation/GroupConversationType.js";
+import {STARTUP_HTTP_RETRY_POLICY} from "../core/HttpRetryPolicy.js";
 
 @singleton()
 export class ConversationService {
@@ -541,11 +542,17 @@ export class ConversationService {
 
     const isAlreadyEstablishedMlsConversation = conversation.epoch != null && conversation.epoch !== 0;
     if (isAlreadyEstablishedMlsConversation) {
-      const conversationGroupInfoBytes = await this.conversationsApiClient.getConversationGroupInfo(conversation.qualified_id)
+      const conversationGroupInfoBytes = await this.conversationsApiClient.getConversationGroupInfo(
+        conversation.qualified_id,
+        STARTUP_HTTP_RETRY_POLICY
+      )
       await this.coreCryptoService.joinMlsConversation(conversationGroupInfoBytes)
       await this.saveConversationWithMembers(conversation.qualified_id, conversation)
     } else if (conversation.type === ConversationType.SELF) {
-      await this.coreCryptoService.establishMlsConversation(conversation.group_id)
+      await this.coreCryptoService.establishMlsConversation(
+        conversation.group_id,
+        STARTUP_HTTP_RETRY_POLICY
+      )
     }
   }
 

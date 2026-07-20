@@ -21,6 +21,7 @@ import {singleton} from "tsyringe";
 import type {MlsPublicKeysResponse} from "./response/MlsPublicKeysResponse.js";
 import type {ClaimedKeyPackageList} from "./response/ClaimedKeyPackageList.js";
 import {AppProperties} from "../service/AppProperties.js";
+import type {HttpRetryPolicy} from "../core/HttpRetryPolicy.js";
 
 @singleton()
 export class MlsApiClient {
@@ -54,7 +55,10 @@ export class MlsApiClient {
     )
   }
 
-  async uploadMlsKeyPackages(mlsKeyPackages: Uint8Array[]): Promise<void> {
+  async uploadMlsKeyPackages(
+    mlsKeyPackages: Uint8Array[],
+    retryPolicy?: HttpRetryPolicy
+  ): Promise<void> {
     const path = `${this.uploadMlsKeyPackagesPath}${this.appProperties.getDeviceId()}`
 
     const requestPayload: MlsKeyPackagesRequest = {
@@ -63,11 +67,18 @@ export class MlsApiClient {
       })
     }
 
-    await this.httpClient.postRequest<void>(path, requestPayload)
+    await this.httpClient.postRequest<void>(
+      path,
+      requestPayload,
+      retryPolicy ? {retryPolicy} : undefined
+    )
   }
 
-  async getPublicKeys(): Promise<MlsPublicKeysResponse> {
-    return await this.httpClient.getRequest<MlsPublicKeysResponse>(this.getPublicKeysPath)
+  async getPublicKeys(retryPolicy?: HttpRetryPolicy): Promise<MlsPublicKeysResponse> {
+    return await this.httpClient.getRequest<MlsPublicKeysResponse>(
+      this.getPublicKeysPath,
+      retryPolicy ? {retryPolicy} : undefined
+    )
   }
 
   async claimKeyPackages(

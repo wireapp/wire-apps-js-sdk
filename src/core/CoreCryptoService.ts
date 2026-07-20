@@ -33,6 +33,8 @@ import type {QualifiedId} from "../model/QualifiedId.js";
 import {AppProperties} from "../service/AppProperties.js";
 import type {AddMembersToConversationResult} from "../api/model/AddMembersToConversationResult.js";
 import {obfuscateClientId, obfuscateId} from "../utils/ObfuscateUtil.js";
+import type {HttpRetryPolicy} from "./HttpRetryPolicy.js";
+import {STARTUP_HTTP_RETRY_POLICY} from "./HttpRetryPolicy.js";
 
 /**
  * Service that handles initialization of CoreCrypto and provides a high-level API for:
@@ -142,7 +144,7 @@ export class CoreCryptoService {
 
   private async uploadMlsKeyPackages() {
     const keyPackages = await this.coreCryptoClient!.mlsGenerateKeyPackages()
-    await this.mlsService.uploadMlsKeyPackages(keyPackages)
+    await this.mlsService.uploadMlsKeyPackages(keyPackages, STARTUP_HTTP_RETRY_POLICY)
   }
 
   async processWelcomeMessage(
@@ -249,14 +251,15 @@ export class CoreCryptoService {
   }
 
   async establishMlsConversation(
-    mlsGroupId: string
+    mlsGroupId: string,
+    retryPolicy?: HttpRetryPolicy
   ): Promise<void> {
     if (!mlsGroupId) {
       throw new Error("Missing mlsGroupId.") //TODO: Use custom exceptions
     }
 
     const ciphersuite = CoreCryptoClient.getMlsCiphersuiteName(this.defaultCiphersuiteCode!)
-    const removalKey = await this.mlsService.getRemovalKey(ciphersuite)
+    const removalKey = await this.mlsService.getRemovalKey(ciphersuite, retryPolicy)
 
     if (removalKey != null) {
       this.logger.debug(`Creating MLS conversation in CoreCrypto. mlsGroupId: ${obfuscateId(mlsGroupId)}`)
