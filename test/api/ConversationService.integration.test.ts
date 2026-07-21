@@ -31,6 +31,8 @@ import {TeamsApiClient} from "../../src/api/TeamsApiClient.js";
 import {ConversationRole} from "../../src/model/conversation/ConversationRole.js";
 import {UserService} from "../../src/api/UserService.js";
 import {CryptoProtocol} from '../../src/model/CryptoProtocol.js'
+import type {OneToOneConversationsApiClient} from "../../src/api/OneToOneConversationsApiClient.js";
+import {TeamId} from "../../src/model/TeamId.js";
 
 describe('ConversationService Integration', () => {
   let testDbService: TestDatabaseService
@@ -38,6 +40,7 @@ describe('ConversationService Integration', () => {
   let conversationRepository: ConversationRepository
   let conversationMemberRepository: ConversationMemberRepository
   let mockConversationsApiClient: ConversationsApiClient
+  let mockOneToOneConversationsApiClient: OneToOneConversationsApiClient
   let mockTeamsApiClient: TeamsApiClient
   let mockAppProperties: AppProperties
   let mockCoreCryptoService: CoreCryptoService
@@ -69,6 +72,10 @@ describe('ConversationService Integration', () => {
       getConversation: vi.fn()
     } as any
 
+    mockOneToOneConversationsApiClient = {
+      getOneToOneConversation: vi.fn()
+    } as any
+
     mockAppProperties = {
       getShouldRejoinConversations: vi.fn(),
       setShouldRejoinConversations: vi.fn()
@@ -78,10 +85,12 @@ describe('ConversationService Integration', () => {
       conversationExists: vi.fn(),
       joinMlsConversation: vi.fn(),
       establishMlsConversation: vi.fn(),
-      wipeConversation: vi.fn()
+      wipeConversation: vi.fn(),
+      addClientsToMlsConversation: vi.fn(),
     } as any
 
     mockUserService = {
+      getUser: vi.fn(),
       getUsersClientIds: vi.fn()
     } as any
 
@@ -90,6 +99,7 @@ describe('ConversationService Integration', () => {
       SELF_USER_ID.domain,
       mockTeamsApiClient,
       mockConversationsApiClient,
+      mockOneToOneConversationsApiClient,
       conversationRepository,
       conversationMemberRepository,
       mockAppProperties,
@@ -541,6 +551,130 @@ describe('ConversationService Integration', () => {
       const result = await conversationService.getAllConversations()
 
       expect(result).toHaveLength(0)
+    })
+  })
+
+  describe('createOneToOne', () => {
+    it('should return existing conversation when MLS group already exists', async () => {
+      await conversationService.saveConversationWithMembers(CONVERSATION_ID, ONE_TO_ONE_CONVERSATION_RESPONSE)
+      vi.mocked(mockCoreCryptoService.conversationExists).mockResolvedValue(true)
+
+      const result = await conversationService.createOneToOne(USER_ID)
+
+      expect(result).toEqual(CONVERSATION_ID)
+      expect(mockOneToOneConversationsApiClient.getOneToOneConversation).not.toHaveBeenCalled()
+      expect(mockCoreCryptoService.establishMlsConversation).not.toHaveBeenCalled()
+    })
+
+    it('should create a new one-to-one conversation when none exists locally', async () => {
+      const newOneToOneResponse: ConversationResponse = {
+        qualified_id: OTHER_CONVERSATION_ID,
+        type: ConversationType.ONE_TO_ONE,
+        name: null,
+        team: TEAM_ID,
+        group_id: OTHER_MLS_GROUP_ID,
+        members: {
+          others: [{qualified_id: USER_ID, conversation_role: 'wire_member'}],
+          self: {qualified_id: SELF_USER_ID, conversation_role: 'wire_admin'}
+        }
+      } as ConversationResponse
+
+      vi.mocked(mockOneToOneConversationsApiClient.getOneToOneConversation).mockResolvedValue({
+        conversation: newOneToOneResponse,
+        public_keys: {}
+      } as any)
+      vi.mocked((mockCoreCryptoService as any).addClientsToMlsConversation).mockResolvedValue({
+        membersAdded: [USER_ID],
+        membersFailedToAdd: []
+      })
+
+      const result = await conversationService.createOneToOne(USER_ID)
+
+      expect(mockOneToOneConversationsApiClient.getOneToOneConversation).toHaveBeenCalledWith(USER_ID)
+      expect(mockCoreCryptoService.establishMlsConversation).toHaveBeenCalledWith(OTHER_MLS_GROUP_ID, {})
+      expect(result).toEqual(OTHER_CONVERSATION_ID)
+
+      const savedConversation = await conversationService.getConversationById(OTHER_CONVERSATION_ID)
+      expect(savedConversation.mlsGroupId).toBe(OTHER_MLS_GROUP_ID)
+
+      const memberIds = conversationService.getMembersByConversationId(OTHER_CONVERSATION_ID).map(m => m.userId.id)
+      expect(memberIds).toEqual([SELF_USER_ID.id, USER_ID.id])
+    })
+
+    it('should re-fetch and re-establish when a local record exists but the MLS group does not', async () => {
+      await conversationService.saveConversationWithMembers(CONVERSATION_ID, ONE_TO_ONE_CONVERSATION_RESPONSE)
+      vi.mocked(mockCoreCryptoService.conversationExists).mockResolvedValue(false)
+      vi.mocked(mockOneToOneConversationsApiClient.getOneToOneConversation).mockResolvedValue({
+        conversation: ONE_TO_ONE_CONVERSATION_RESPONSE,
+        public_keys: {}
+      } as any)
+      vi.mocked((mockCoreCryptoService as any).addClientsToMlsConversation).mockResolvedValue({
+        membersAdded: [USER_ID],
+        membersFailedToAdd: []
+      })
+
+      const result = await conversationService.createOneToOne(USER_ID)
+
+      expect(mockOneToOneConversationsApiClient.getOneToOneConversation).toHaveBeenCalledWith(USER_ID)
+      expect(mockCoreCryptoService.establishMlsConversation).toHaveBeenCalledWith(MLS_GROUP_ID, {})
+      expect(result).toEqual(CONVERSATION_ID)
+    })
+  })
+
+  describe('createGroup / createChannel (addUsersInCoreCryptoAndSaveInLocalDB)', () => {
+    beforeEach(() => {
+      ;(mockConversationsApiClient as any).createGroupConversation = vi.fn()
+      vi.mocked(mockUserService.getUser).mockResolvedValue({teamId: new TeamId(TEAM_ID)} as any)
+    })
+
+    it('should establish the MLS group and save only the members CoreCrypto confirmed', async () => {
+      const groupResponse: ConversationResponse = {
+        qualified_id: OTHER_CONVERSATION_ID,
+        type: ConversationType.GROUP,
+        name: OTHER_CONVERSATION_NAME,
+        team: TEAM_ID,
+        group_id: OTHER_MLS_GROUP_ID,
+        members: {others: [], self: {qualified_id: SELF_USER_ID, conversation_role: 'wire_admin'}}
+      } as ConversationResponse
+
+      vi.mocked((mockConversationsApiClient as any).createGroupConversation).mockResolvedValue(groupResponse)
+      vi.mocked((mockCoreCryptoService as any).addClientsToMlsConversation).mockResolvedValue({
+        membersAdded: [USER_3_ID],
+        membersFailedToAdd: [USER_4_ID]
+      })
+
+      const result = await conversationService.createGroup(OTHER_CONVERSATION_NAME, [USER_3_ID, USER_4_ID])
+
+      expect(mockCoreCryptoService.establishMlsConversation).toHaveBeenCalledWith(OTHER_MLS_GROUP_ID)
+      expect(result).toEqual(OTHER_CONVERSATION_ID)
+
+      const memberIds = conversationService.getMembersByConversationId(OTHER_CONVERSATION_ID).map(m => m.userId.id)
+      expect(memberIds).toContain(SELF_USER_ID.id)
+      expect(memberIds).toContain(USER_3_ID.id)
+      expect(memberIds).not.toContain(USER_4_ID.id)
+    })
+
+    it('should create and save a channel conversation', async () => {
+      const channelResponse: ConversationResponse = {
+        qualified_id: OTHER_CONVERSATION_ID,
+        type: ConversationType.GROUP,
+        name: OTHER_CONVERSATION_NAME,
+        team: TEAM_ID,
+        group_id: OTHER_MLS_GROUP_ID,
+        members: {others: [], self: {qualified_id: SELF_USER_ID, conversation_role: 'wire_admin'}}
+      } as ConversationResponse
+
+      vi.mocked((mockConversationsApiClient as any).createGroupConversation).mockResolvedValue(channelResponse)
+      vi.mocked((mockCoreCryptoService as any).addClientsToMlsConversation).mockResolvedValue({
+        membersAdded: [],
+        membersFailedToAdd: []
+      })
+
+      const result = await conversationService.createChannel(OTHER_CONVERSATION_NAME, [])
+
+      expect(result).toEqual(OTHER_CONVERSATION_ID)
+      const savedConversation = await conversationService.getConversationById(OTHER_CONVERSATION_ID)
+      expect(savedConversation.name).toBe(OTHER_CONVERSATION_NAME)
     })
   })
 
