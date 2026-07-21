@@ -32,6 +32,7 @@ export class QualifiedId {
    */
   static toKey(qualifiedId: QualifiedId): string {
     return `${qualifiedId.id}:${qualifiedId.domain}`;
+    // TODO: Change this and following method with @ seperator. Then use it for 1-1 conversation naming.
   }
 
   /**

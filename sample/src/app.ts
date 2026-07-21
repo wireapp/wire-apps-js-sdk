@@ -666,6 +666,9 @@ class SampleEventsHandler extends WireEventsHandler {
       },
       'create-channel-conversation': async (conversationId: QualifiedId, command) => {
         await this.processCreateChannelConversation(command ?? "")
+      },
+      'create-onetoone-conversation': async (conversationId: QualifiedId, command) => {
+        await this.processCreateOneToOneConversation(command ?? "")
       }
       // More reserved test commands will be added here
     }
@@ -734,6 +737,22 @@ class SampleEventsHandler extends WireEventsHandler {
     }
 
     await this.manager.createChannelConversation(name, participants);
+  }
+
+  private async processCreateOneToOneConversation(command: string): Promise<void> {
+    const args = command.trim().split(/\s+/);
+
+    const userId = args[1];
+    const domain = args[2];
+
+    if (!userId || !domain || args.length !== 3) {
+      this.appLogger?.info(
+        "[Sample App] Invalid command format. Expected: create-onetoone-conversation [USER_ID] [DOMAIN]"
+      );
+      return;
+    }
+
+    await this.manager.createOneToOneConversation(new QualifiedId(userId, domain));
   }
 }
 
