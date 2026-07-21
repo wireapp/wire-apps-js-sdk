@@ -33,6 +33,7 @@ import type {QualifiedId} from "../model/QualifiedId.js";
 import {AppProperties} from "../service/AppProperties.js";
 import type {AddMembersToConversationResult} from "../api/model/AddMembersToConversationResult.js";
 import {obfuscateClientId, obfuscateId} from "../utils/ObfuscateUtil.js";
+import {type MlsPublicKeysResponse} from "../api/response/MlsPublicKeysResponse.js";
 
 /**
  * Service that handles initialization of CoreCrypto and provides a high-level API for:
@@ -249,31 +250,27 @@ export class CoreCryptoService {
   }
 
   async establishMlsConversation(
-    mlsGroupId: string
+    mlsGroupId: string,
+    mlsPublicKeysResponse?: MlsPublicKeysResponse // Exists only for 1-1 conversations
   ): Promise<void> {
     if (!mlsGroupId) {
       throw new Error("Missing mlsGroupId.") //TODO: Use custom exceptions
     }
 
-    const ciphersuite = CoreCryptoClient.getMlsCiphersuiteName(this.defaultCiphersuiteCode!)
-    const removalKey = await this.mlsService.getRemovalKey(ciphersuite)
+    const cipherSuite = CoreCryptoClient.getMlsCiphersuiteName(this.defaultCiphersuiteCode!)
+    const removalKey = await this.mlsService.getRemovalKey(cipherSuite, mlsPublicKeysResponse);
+    if (removalKey == null) {
+      throw Error("No Public Keys found, skipping creating a conversation.") // TODO: Map to WireException
+    }
 
-    if (removalKey != null) {
+    try {
       this.logger.debug(`Creating MLS conversation in CoreCrypto. mlsGroupId: ${obfuscateId(mlsGroupId)}`)
-      try {
-        await this.coreCryptoClient!.createConversation(
-          mlsGroupId,
-          removalKey
-        )
-      } catch (exception) {
-        if (CoreCryptoError.Mls.instanceOf(exception) && MlsError.ConversationAlreadyExists.instanceOf(exception.inner.mlsError)) {
-          throw Error("Conversation already exists.")
-        }
-        this.logger.error(`Failed to create MLS conversation. mlsGroupId: ${obfuscateId(mlsGroupId)}`, exception)
+      await this.coreCryptoClient!.createConversation(mlsGroupId, removalKey)
+    } catch (exception) {
+      if (CoreCryptoError.Mls.instanceOf(exception) && MlsError.ConversationAlreadyExists.instanceOf(exception.inner.mlsError)) {
+        throw Error("Conversation already exists.")
       }
-    } else {
-      // TODO: Map to WireException
-      throw Error("No Public Keys found, skipping creating a conversation.")
+      this.logger.error(`Failed to create MLS conversation. mlsGroupId: ${obfuscateId(mlsGroupId)}`, exception)
     }
   }
 }

@@ -46,6 +46,8 @@ import {
   createGroupConversationRequest
 } from "./request/CreateConversationRequest.js";
 import {GroupConversationType} from "../model/conversation/GroupConversationType.js";
+import type {OneToOneConversationResponse} from "./response/OneToOneConversationResponse.js";
+import {OneToOneConversationsApiClient} from "./OneToOneConversationsApiClient.js";
 
 @singleton()
 export class ConversationService {
@@ -56,12 +58,38 @@ export class ConversationService {
     @inject(WIRE_USER_DOMAIN) private wireUserDomain: string,
     private teamsApiClient: TeamsApiClient,
     private conversationsApiClient: ConversationsApiClient,
+    private oneToOneConversationsApiClient: OneToOneConversationsApiClient,
     private conversationRepository: ConversationRepository,
     private conversationMemberRepository: ConversationMemberRepository,
     private appProperties: AppProperties,
     private coreCryptoService: CoreCryptoService,
     private userService: UserService,
   ) {
+  }
+
+  async createOneToOne(
+    withUser: QualifiedId): Promise<QualifiedId> {
+    this.logger.debug("createOneToOne --> START")
+
+    // Return the conversation if it was already created
+    const conversationRecordInDB = this.conversationRepository.findOneToOneByNameAndDomain(withUser.id + "@" + withUser.domain, withUser.domain) //TODO fix
+    if (conversationRecordInDB != null) {
+      if (await this.coreCryptoService.conversationExists(conversationRecordInDB.mlsGroupId)) {
+        this.logger.info(`OneToOne Conversation was already established. userId: ${withUser}, conversationId: ${conversationRecordInDB.id}`)
+        return new QualifiedId(conversationRecordInDB.id, conversationRecordInDB.domain)
+      } else {
+        this.logger.warn(`(Unexpected case) OneToOne Conversation was already established but MLS group does not exist. userId: ${withUser}, conversationId: ${conversationRecordInDB.id}`)
+      }
+    }
+
+    // Create 1-1 conversation.
+    const oneToOneConversationResponse: OneToOneConversationResponse = await this.oneToOneConversationsApiClient.getOneToOneConversation(withUser)
+    const conversationResponse = oneToOneConversationResponse.conversation
+    // Handle CoreCrypto and local database operations
+    await this.coreCryptoService.establishMlsConversation(conversationResponse.group_id, oneToOneConversationResponse.public_keys)
+    await this.addUsersInCoreCryptoAndSaveInLocalDB(conversationResponse, [withUser])
+
+    return new QualifiedId(conversationResponse.qualified_id.id, conversationResponse.qualified_id.domain)
   }
 
   async createGroup(name: string, usersToAdd: QualifiedId[]): Promise<QualifiedId> {
@@ -89,15 +117,42 @@ export class ConversationService {
         break
     }
 
-    let apiResponse = await this.conversationsApiClient.createGroupConversation(apiRequest)
-    const conversationId = new QualifiedId(apiResponse.qualified_id.id, apiResponse.qualified_id.domain)
-    await this.coreCryptoService.establishMlsConversation(apiResponse.group_id)
-    const addMembersToConversationResult = await this.coreCryptoService.addClientsToMlsConversation(apiResponse.group_id, usersToAdd)
+    // Create group/channel conversation.
+    const conversationResponse = await this.conversationsApiClient.createGroupConversation(apiRequest)
+    // Handle CoreCrypto and local database operations
+    await this.coreCryptoService.establishMlsConversation(conversationResponse.group_id)
+    await this.addUsersInCoreCryptoAndSaveInLocalDB(conversationResponse, usersToAdd)
 
-    apiResponse = this.overrideMembersInConversationResponse(apiResponse, addMembersToConversationResult.membersAdded)
+    return new QualifiedId(conversationResponse.qualified_id.id, conversationResponse.qualified_id.domain)
+  }
 
-    await this.saveConversationWithMembers(conversationId, apiResponse)
-    return conversationId
+  /**
+   * This method is adding the users in CoreCrypto side first.
+   * And then saving the conversation and its members (that are verified by CoreCrypto)
+   *
+   * This method is wrapping both operations since they are tightly connected
+   * to each other in an order for any kind of conversation creation.
+   */
+  private async addUsersInCoreCryptoAndSaveInLocalDB(
+    conversationResponse: ConversationResponse,
+    usersToAdd: QualifiedId[]) {
+
+    const addMembersToConversationResult = await this.coreCryptoService.addClientsToMlsConversation(conversationResponse.group_id, usersToAdd)
+
+    // Overrides conversationResponse 'members' with the actual users successfully claimed in CoreCrypto side
+    const conversationResponseWithUpdatedMembers: ConversationResponse =
+      {
+        ...conversationResponse,
+        members: {
+          self: conversationResponse.members.self,
+          others: addMembersToConversationResult.membersAdded.map(userId => ({
+            qualified_id: userId,
+            conversation_role: ConversationRole.MEMBER
+          }))
+        }
+      }
+
+    await this.saveConversationWithMembers(conversationResponseWithUpdatedMembers.qualified_id, conversationResponseWithUpdatedMembers)
   }
 
   // TODO: (Separate PR later) Introduce SelfApi and move this method there, so it will be usable from different services.
@@ -107,22 +162,6 @@ export class ConversationService {
       throw new Error("App user does not belong to a team.")
     }
     return selfUser.teamId
-  }
-
-  // Overrides conversationResponse 'members' with the actual users successfully claimed in CoreCrypto side
-  private overrideMembersInConversationResponse(conversationResponse: ConversationResponse, newMembers: QualifiedId[]) {
-    const conversationResponseWithMembers: ConversationResponse =
-      {
-        ...conversationResponse,
-        members: {
-          self: conversationResponse.members.self,
-          others: newMembers.map(userId => ({
-            qualified_id: userId,
-            conversation_role: ConversationRole.MEMBER
-          }))
-        }
-      }
-    return conversationResponseWithMembers;
   }
 
   getAllConversations(): Conversation[] {
