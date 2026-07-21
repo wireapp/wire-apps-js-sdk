@@ -19,12 +19,14 @@ import type {ConversationEntity} from "./model/ConversationEntity.js";
 import {singleton} from "tsyringe";
 import {conversation} from "./schema.js";
 import {and, eq, sql} from "drizzle-orm";
+import {ConversationType} from "../model/conversation/ConversationType.js";
 
 @singleton()
 export class ConversationRepository {
 
   private selectAllStmt
   private selectByIdAndDomainStmt
+  private selectOneToOneByName
   private insertStmt
   private deleteStmt
 
@@ -37,6 +39,15 @@ export class ConversationRepository {
           eq(conversation.id, sql.placeholder('id')),
           eq(conversation.domain, sql.placeholder('domain')
           )
+        )
+      ).prepare();
+
+    this.selectOneToOneByName =
+      this.databaseService.db.select().from(conversation).where(
+        and(
+          eq(conversation.name, sql.placeholder('name')),
+          eq(conversation.domain, sql.placeholder('domain')),
+          eq(conversation.type, ConversationType.ONE_TO_ONE)
         )
       ).prepare();
 
@@ -77,6 +88,13 @@ export class ConversationRepository {
   findByIdAndDomain(id: string, domain: string): ConversationEntity | null {
     return this.selectByIdAndDomainStmt.get({
       id: id,
+      domain: domain
+    }) ?? null;
+  }
+
+  findOneToOneByNameAndDomain(name: string, domain: string): ConversationEntity | null {
+    return this.selectOneToOneByName.get({
+      name: name,
       domain: domain
     }) ?? null;
   }
