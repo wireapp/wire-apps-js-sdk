@@ -30,7 +30,7 @@ export class OneToOneConversationsApiClient {
   private readonly basePath = "one2one-conversations";
 
   async getOneToOneConversation(userId: QualifiedId): Promise<OneToOneConversationResponse> {
-    this.logger.debug(`Getting OneToOne conversation. userId: ${userId.id}`) //TODO: Verify obfuscation in logs
+    this.logger.debug(`Getting OneToOne conversation. userId: ${userId}`)
     return await this.httpClient.getRequest<OneToOneConversationResponse>(
       `${this.basePath}/${userId.domain}/${userId.id}`
     )
