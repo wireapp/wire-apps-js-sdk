@@ -27,20 +27,19 @@ export class QualifiedId {
   }
 
   /**
-   * Creates a consistent string key from a QualifiedId for use in Maps and other data structures.
-   * Format: "id:domain"
+   * Creates a consistent string key from a QualifiedId for use in Maps and database (e.g. OneToOne conversation name).
+   * Format: "id@domain"
    */
   static toKey(qualifiedId: QualifiedId): string {
-    return `${qualifiedId.id}:${qualifiedId.domain}`;
-    // TODO: Change this and following method with @ seperator. Then use it for 1-1 conversation naming.
+    return `${qualifiedId.id}@${qualifiedId.domain}`;
   }
 
   /**
    * Reconstructs a QualifiedId object from a string key.
-   * Expected format: "id:domain"
+   * Expected format: "id@domain"
    */
   static fromKey(key: string): QualifiedId {
-    const [id, domain] = key.split(':');
+    const [id, domain] = key.split('@');
     return new QualifiedId(id!, domain!);
   }
 }

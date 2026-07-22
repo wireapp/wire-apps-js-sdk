@@ -69,10 +69,12 @@ export class ConversationService {
 
   async createOneToOne(
     withUser: QualifiedId): Promise<QualifiedId> {
-    this.logger.debug("createOneToOne --> START")
 
     // Return the conversation if it was already created
-    const conversationRecordInDB = this.conversationRepository.findOneToOneByNameAndDomain(withUser.id + "@" + withUser.domain, withUser.domain) //TODO fix
+    const conversationRecordInDB = this.conversationRepository.findOneToOneByNameAndDomain(
+      this.getOneToOneConversationNameByUserId(withUser),
+      withUser.domain)
+
     if (conversationRecordInDB != null) {
       if (await this.coreCryptoService.conversationExists(conversationRecordInDB.mlsGroupId)) {
         this.logger.info(`OneToOne Conversation was already established. userId: ${withUser}, conversationId: ${conversationRecordInDB.id}`)
@@ -90,6 +92,10 @@ export class ConversationService {
     await this.addUsersInCoreCryptoAndSaveInLocalDB(conversationResponse, [withUser])
 
     return new QualifiedId(conversationResponse.qualified_id.id, conversationResponse.qualified_id.domain)
+  }
+
+  private getOneToOneConversationNameByUserId(userId: QualifiedId) : string {
+    return QualifiedId.toKey(userId)
   }
 
   async createGroup(name: string, usersToAdd: QualifiedId[]): Promise<QualifiedId> {
@@ -127,11 +133,11 @@ export class ConversationService {
   }
 
   /**
-   * This method is adding the users in CoreCrypto side first.
-   * And then saving the conversation and its members (that are verified by CoreCrypto)
+   * 1. Add the users in CoreCrypto
+   * 2. Save the conversation and its members (that are verified by CoreCrypto in the first step) in the local database
    *
-   * This method is wrapping both operations since they are tightly connected
-   * to each other in an order for any kind of conversation creation.
+   * This method is wrapping both operations since they are tightly connected to each other in an order
+   * for any kind of conversation creation.
    */
   private async addUsersInCoreCryptoAndSaveInLocalDB(
     conversationResponse: ConversationResponse,
@@ -174,7 +180,7 @@ export class ConversationService {
   private getConversationName(conversation: ConversationResponse) : string {
     if (conversation.type === ConversationType.ONE_TO_ONE && conversation.members.others.length > 0) {
       const firstUser = (conversation.members.others[0] as ConversationMemberOtherResponse).qualified_id
-      return `${firstUser.id}@${firstUser.domain}`
+      return this.getOneToOneConversationNameByUserId(firstUser)
     } else {
       return conversation.name ?? ""
     }
