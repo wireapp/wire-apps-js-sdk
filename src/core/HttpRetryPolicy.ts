@@ -35,7 +35,7 @@ export const RETRYABLE_STATUS_CODES = new Set([
 export const STARTUP_HTTP_RETRY_POLICY: HttpRetryPolicy = {
   maxAttempts: 5,
   baseDelayMs: 500,
-  maxDelayMs: 8_000,
+  maxDelayMs: 30_000,
   factor: 2,
   jitter: true
 }

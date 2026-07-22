@@ -70,11 +70,7 @@ export class HttpClient {
       return this.accessTokenRefreshLock
     }
 
-    this.accessTokenRefreshLock = this.withRetry(
-      () => this.updateAccessToken(),
-      retryPolicy,
-      "access"
-    ).finally(() => {
+    this.accessTokenRefreshLock = this.updateAccessToken(retryPolicy).finally(() => {
       this.accessTokenRefreshLock = null
     })
 
@@ -90,10 +86,10 @@ export class HttpClient {
       this.appProperties.saveBackendCookie(zuidCookie)
   }
 
-  private async updateAccessToken() {
+  private async updateAccessToken(retryPolicy?: HttpRetryPolicy) {
     try {
       this.logger.info('Obtaining new access token')
-      const accessResponse = await this.fetchAccessToken()
+      const accessResponse = await this.fetchAccessToken(retryPolicy)
       this.persistBackendCookie(accessResponse.response.headers.getSetCookie())
 
       const accessToken = accessResponse.data.access_token
@@ -113,19 +109,21 @@ export class HttpClient {
     }
   }
 
-  private async fetchAccessToken() {
+  private async fetchAccessToken(retryPolicy?: HttpRetryPolicy) {
     const path = this.appProperties.hasDeviceId()
       ? `access?client_id=${this.appProperties.getDeviceId()}`
       : `access`
 
-    return this.request<AccessResponse>(path, {
-      method: "POST",
-      headers: {
-        "Cookie": `zuid=${this.appProperties.getBackendCookie()}`
-      }
-    },
-    true,
-    false
+    return this.request<AccessResponse>(
+      path, {
+        method: "POST",
+        headers: {
+          "Cookie": `zuid=${this.appProperties.getBackendCookie()}`
+        }
+      },
+      true,
+      false,
+      retryPolicy
     )
   }
 
