@@ -32,11 +32,14 @@ import {TeamsApiClient} from "../../src/api/TeamsApiClient.js";
 import {TeamId} from "../../src/model/TeamId.js";
 import {UserService} from "../../src/api/UserService.js";
 import {CryptoClientId} from "../../src/model/CryptoClientId.js";
+import type {OneToOneConversationsApiClient} from "../../src/api/OneToOneConversationsApiClient.js";
+import type {OneToOneConversationResponse} from "../../src/api/response/OneToOneConversationResponse.js";
 
 describe('ConversationService', () => {
   let conversationService: ConversationService
   let mockTeamsApiClient: TeamsApiClient
   let mockConversationsApiClient: ConversationsApiClient
+  let mockOneToOneConversationsApiClient: OneToOneConversationsApiClient
   let mockConversationRepository: ConversationRepository
   let mockConversationMemberRepository: ConversationMemberRepository
   let mockAppProperties: AppProperties
@@ -58,9 +61,14 @@ describe('ConversationService', () => {
       leaveConversation: vi.fn(),
     } as any
 
+    mockOneToOneConversationsApiClient = {
+      getOneToOneConversation: vi.fn()
+    } as any
+
     mockConversationRepository = {
       save: vi.fn(),
       findByIdAndDomain: vi.fn(),
+      findOneToOneByNameAndDomain: vi.fn(),
       delete: vi.fn(),
       getAll: vi.fn()
     } as any
@@ -88,6 +96,7 @@ describe('ConversationService', () => {
     } as any
 
     mockUserService = {
+      getUser: vi.fn(),
       getUsersClientIds: vi.fn()
     } as any
 
@@ -96,6 +105,7 @@ describe('ConversationService', () => {
       SELF_USER_ID.domain,
       mockTeamsApiClient,
       mockConversationsApiClient,
+      mockOneToOneConversationsApiClient,
       mockConversationRepository,
       mockConversationMemberRepository,
       mockAppProperties,
@@ -103,8 +113,6 @@ describe('ConversationService', () => {
       mockUserService
     )
 
-    // TODO: Can remove/replace this once we have implemented a proper logger lib
-    // Suppress console.info for cleaner test output
     vi.spyOn(console, 'info').mockImplementation(() => {
     })
   })
@@ -1672,6 +1680,153 @@ describe('ConversationService', () => {
 
       expect(result.membersRemoved).toEqual([])
       expect(mockConversationMemberRepository.deleteMany).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('createOneToOne', () => {
+    const OTHER_USER_ID: QualifiedId = {id: 'other-user-id', domain: 'wire.com'}
+
+    const buildOneToOneResponse = (): OneToOneConversationResponse => ({
+      conversation: {
+        qualified_id: CONVERSATION_ID,
+        type: ConversationType.ONE_TO_ONE,
+        name: null,
+        team: TEAM_ID,
+        group_id: MLS_GROUP_ID,
+        epoch: 0,
+        protocol: CryptoProtocol.MLS,
+        members: {
+          others: [],
+          self: {qualified_id: SELF_USER_ID, conversation_role: 'wire_admin'}
+        }
+      } as ConversationResponse,
+      public_keys: {} as any
+    } as any)
+
+    it('should return existing conversation when it exists in DB and MLS group exists', async () => {
+      const existingEntity: ConversationEntity = {
+        id: CONVERSATION_ID.id,
+        domain: CONVERSATION_ID.domain,
+        name: `${OTHER_USER_ID.id}@${OTHER_USER_ID.domain}`,
+        teamId: TEAM_ID,
+        mlsGroupId: MLS_GROUP_ID,
+        creationDate: null,
+        type: ConversationType.ONE_TO_ONE
+      }
+
+      vi.mocked((mockConversationRepository as any).findOneToOneByNameAndDomain).mockReturnValue(existingEntity)
+      vi.mocked(mockCoreCryptoService.conversationExists).mockResolvedValue(true)
+
+      const result = await conversationService.createOneToOne(OTHER_USER_ID)
+
+      expect((mockConversationRepository as any).findOneToOneByNameAndDomain).toHaveBeenCalledWith(
+        `${OTHER_USER_ID.id}@${OTHER_USER_ID.domain}`,
+        OTHER_USER_ID.domain
+      )
+      expect(mockCoreCryptoService.conversationExists).toHaveBeenCalledWith(MLS_GROUP_ID)
+      expect((mockOneToOneConversationsApiClient as any).getOneToOneConversation).not.toHaveBeenCalled()
+      expect(result).toEqual(new QualifiedId(existingEntity.id, existingEntity.domain))
+    })
+
+    it('should create a new conversation when DB record exists but MLS group does not', async () => {
+      const staleEntity: ConversationEntity = {
+        id: CONVERSATION_ID.id,
+        domain: CONVERSATION_ID.domain,
+        name: `${OTHER_USER_ID.id}@${OTHER_USER_ID.domain}`,
+        teamId: TEAM_ID,
+        mlsGroupId: MLS_GROUP_ID,
+        creationDate: null,
+        type: ConversationType.ONE_TO_ONE
+      }
+
+      vi.mocked((mockConversationRepository as any).findOneToOneByNameAndDomain).mockReturnValue(staleEntity)
+      vi.mocked(mockCoreCryptoService.conversationExists).mockResolvedValue(false)
+
+      const response = buildOneToOneResponse()
+      vi.mocked((mockOneToOneConversationsApiClient as any).getOneToOneConversation).mockResolvedValue(response)
+      vi.mocked(mockCoreCryptoService.establishMlsConversation).mockResolvedValue(undefined)
+      vi.mocked((mockCoreCryptoService as any).addClientsToMlsConversation).mockResolvedValue({
+        membersAdded: [OTHER_USER_ID],
+        membersFailedToAdd: []
+      })
+
+      const result = await conversationService.createOneToOne(OTHER_USER_ID)
+
+      expect((mockOneToOneConversationsApiClient as any).getOneToOneConversation).toHaveBeenCalledWith(OTHER_USER_ID)
+      expect(mockCoreCryptoService.establishMlsConversation).toHaveBeenCalledWith(MLS_GROUP_ID, response.public_keys)
+      expect((mockCoreCryptoService as any).addClientsToMlsConversation).toHaveBeenCalledWith(MLS_GROUP_ID, [OTHER_USER_ID])
+      expect(mockConversationRepository.save).toHaveBeenCalled()
+      expect(result).toEqual(new QualifiedId(CONVERSATION_ID.id, CONVERSATION_ID.domain))
+    })
+
+    it('should create a new conversation when no DB record exists', async () => {
+      vi.mocked((mockConversationRepository as any).findOneToOneByNameAndDomain).mockReturnValue(null)
+
+      const response = buildOneToOneResponse()
+      vi.mocked((mockOneToOneConversationsApiClient as any).getOneToOneConversation).mockResolvedValue(response)
+      vi.mocked(mockCoreCryptoService.establishMlsConversation).mockResolvedValue(undefined)
+      vi.mocked((mockCoreCryptoService as any).addClientsToMlsConversation).mockResolvedValue({
+        membersAdded: [OTHER_USER_ID],
+        membersFailedToAdd: []
+      })
+
+      const result = await conversationService.createOneToOne(OTHER_USER_ID)
+
+      expect(mockCoreCryptoService.conversationExists).not.toHaveBeenCalled()
+      expect(result).toEqual(new QualifiedId(CONVERSATION_ID.id, CONVERSATION_ID.domain))
+      expect(mockConversationMemberRepository.saveMany).toHaveBeenCalledWith([
+        {
+          userId: SELF_USER_ID.id,
+          userDomain: SELF_USER_ID.domain,
+          conversationId: CONVERSATION_ID.id,
+          conversationDomain: CONVERSATION_ID.domain,
+          role: 'wire_admin',
+          creationDate: null
+        },
+        {
+          userId: OTHER_USER_ID.id,
+          userDomain: OTHER_USER_ID.domain,
+          conversationId: CONVERSATION_ID.id,
+          conversationDomain: CONVERSATION_ID.domain,
+          role: ConversationRole.MEMBER,
+          creationDate: null
+        }
+      ])
+    })
+
+    it('should only persist members successfully claimed by CoreCrypto', async () => {
+      vi.mocked((mockConversationRepository as any).findOneToOneByNameAndDomain).mockReturnValue(null)
+
+      const response = buildOneToOneResponse()
+      vi.mocked((mockOneToOneConversationsApiClient as any).getOneToOneConversation).mockResolvedValue(response)
+      vi.mocked(mockCoreCryptoService.establishMlsConversation).mockResolvedValue(undefined)
+      vi.mocked((mockCoreCryptoService as any).addClientsToMlsConversation).mockResolvedValue({
+        membersAdded: [],
+        membersFailedToAdd: [OTHER_USER_ID]
+      })
+
+      await conversationService.createOneToOne(OTHER_USER_ID)
+
+      expect(mockConversationMemberRepository.saveMany).toHaveBeenCalledWith([
+        {
+          userId: SELF_USER_ID.id,
+          userDomain: SELF_USER_ID.domain,
+          conversationId: CONVERSATION_ID.id,
+          conversationDomain: CONVERSATION_ID.domain,
+          role: 'wire_admin',
+          creationDate: null
+        }
+      ])
+    })
+
+    it('should propagate error and skip local persistence when API call fails', async () => {
+      vi.mocked((mockConversationRepository as any).findOneToOneByNameAndDomain).mockReturnValue(null)
+      vi.mocked((mockOneToOneConversationsApiClient as any).getOneToOneConversation).mockRejectedValue(new Error('network error'))
+
+      await expect(conversationService.createOneToOne(OTHER_USER_ID)).rejects.toThrow('network error')
+
+      expect(mockCoreCryptoService.establishMlsConversation).not.toHaveBeenCalled()
+      expect(mockConversationRepository.save).not.toHaveBeenCalled()
     })
   })
 
