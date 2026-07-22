@@ -81,7 +81,11 @@ export class ConversationService {
         this.logger.info(`OneToOne Conversation was already established. userId: ${withUser}, conversationId: ${conversationRecordInDB.id}`)
         return new QualifiedId(conversationRecordInDB.id, conversationRecordInDB.domain)
       } else {
-        this.logger.warn(`(Unexpected case) OneToOne Conversation was already established but MLS group does not exist. userId: ${withUser}, conversationId: ${conversationRecordInDB.id}`)
+        this.logger.warn(
+          `(Unexpected case) OneToOne conversation exists in the local database but is missing from CoreCrypto. ` +
+          `This indicates an inconsistent state. The SDK will recreate and re-establish the MLS conversation to recover. ` +
+          `userId: ${withUser}, conversationId: ${conversationRecordInDB.id}`
+        )
       }
     }
 
