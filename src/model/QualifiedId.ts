@@ -27,7 +27,7 @@ export class QualifiedId {
   }
 
   /**
-   * Creates a consistent string key from a QualifiedId for use in Maps and database (e.g. OneToOne conversation name).
+   * Creates a consistent string key from a QualifiedId for use in Mappers and database (e.g. OneToOne conversation name)
    * Format: "id@domain"
    */
   static toKey(qualifiedId: QualifiedId): string {

@@ -73,7 +73,8 @@ export class ConversationService {
     // Return the conversation if it was already created
     const conversationRecordInDB = this.conversationRepository.findOneToOneByNameAndDomain(
       this.getOneToOneConversationNameByUserId(withUser),
-      withUser.domain)
+      withUser.domain
+    )
 
     if (conversationRecordInDB != null) {
       if (await this.coreCryptoService.conversationExists(conversationRecordInDB.mlsGroupId)) {
@@ -141,7 +142,8 @@ export class ConversationService {
    */
   private async addUsersInCoreCryptoAndSaveInLocalDB(
     conversationResponse: ConversationResponse,
-    usersToAdd: QualifiedId[]) {
+    usersToAdd: QualifiedId[]
+  ) {
 
     const addMembersToConversationResult = await this.coreCryptoService.addClientsToMlsConversation(conversationResponse.group_id, usersToAdd)
 
