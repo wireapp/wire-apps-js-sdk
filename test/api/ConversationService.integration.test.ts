@@ -33,6 +33,7 @@ import {UserService} from "../../src/api/UserService.js";
 import {CryptoProtocol} from '../../src/model/CryptoProtocol.js'
 import type {OneToOneConversationsApiClient} from "../../src/api/OneToOneConversationsApiClient.js";
 import {TeamId} from "../../src/model/TeamId.js";
+import type {ConversationMemberOtherResponse} from "../../src/api/model/ConversationMemberOtherResponse.js";
 
 describe('ConversationService Integration', () => {
   let testDbService: TestDatabaseService
@@ -634,7 +635,10 @@ describe('ConversationService Integration', () => {
         name: OTHER_CONVERSATION_NAME,
         team: TEAM_ID,
         group_id: OTHER_MLS_GROUP_ID,
-        members: {others: [], self: {qualified_id: SELF_USER_ID, conversation_role: 'wire_admin'}}
+        members: {
+          others: [] as ConversationMemberOtherResponse[],
+          self: {qualified_id: SELF_USER_ID, conversation_role: 'wire_admin'}
+        }
       } as ConversationResponse
 
       vi.mocked((mockConversationsApiClient as any).createGroupConversation).mockResolvedValue(groupResponse)
@@ -661,7 +665,10 @@ describe('ConversationService Integration', () => {
         name: OTHER_CONVERSATION_NAME,
         team: TEAM_ID,
         group_id: OTHER_MLS_GROUP_ID,
-        members: {others: [], self: {qualified_id: SELF_USER_ID, conversation_role: 'wire_admin'}}
+        members: {
+          others: [] as ConversationMemberOtherResponse[],
+          self: {qualified_id: SELF_USER_ID, conversation_role: 'wire_admin'}
+        }
       } as ConversationResponse
 
       vi.mocked((mockConversationsApiClient as any).createGroupConversation).mockResolvedValue(channelResponse)
