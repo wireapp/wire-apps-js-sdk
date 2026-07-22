@@ -17,7 +17,7 @@
 import {singleton} from "tsyringe";
 import {MlsApiClient} from "./MlsApiClient.js";
 import type {CipherSuite} from "@wireapp/core-crypto/native";
-import {getRemovalKeyFromPublicKeysResponse} from "./response/MlsPublicKeysResponse.js";
+import {getRemovalKeyFromPublicKeysResponse, type MlsPublicKeysResponse} from "./response/MlsPublicKeysResponse.js";
 import type {ClaimedKeyPackagesResult} from "../model/ClaimedKeyPackagesResult.js";
 import type {QualifiedId} from "../model/QualifiedId.js";
 import type {KeyPackage} from "./response/ClaimedKeyPackageList.js";
@@ -48,12 +48,12 @@ export class MlsService {
   }
 
   async getRemovalKey(
-    ciphersuite: CipherSuite,
+    cipherSuite: CipherSuite,
+    existingPublicKeysResponse?: MlsPublicKeysResponse,
     retryPolicy?: HttpRetryPolicy
   ): Promise<Uint8Array | null> {
-    const publicKeysResponse = await this.mlsApiClient.getPublicKeys(retryPolicy)
-
-    return getRemovalKeyFromPublicKeysResponse(publicKeysResponse, ciphersuite)
+    const publicKeysResponse = existingPublicKeysResponse ?? await this.mlsApiClient.getPublicKeys(retryPolicy)
+    return getRemovalKeyFromPublicKeysResponse(publicKeysResponse, cipherSuite)
   }
 
   async claimKeyPackages(
