@@ -15,6 +15,11 @@
  */
 
 export interface HttpRetryPolicy {
+  /*
+  * maxAttempts includes the first request. So 5 means:
+  * 1 initial request
+  * up to 4 retries
+  */
   maxAttempts: number
   baseDelayMs: number
 }
