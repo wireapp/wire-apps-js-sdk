@@ -735,7 +735,9 @@ describe('ConversationService', () => {
       await (conversationService as any).establishOrJoinMlsConversation(conversation)
 
       expect(mockCoreCryptoService.conversationExists).toHaveBeenCalledWith(MLS_GROUP_ID)
-      expect(mockConversationsApiClient.getConversationGroupInfo).toHaveBeenCalledWith(CONVERSATION_ID)
+      expect(mockConversationsApiClient.getConversationGroupInfo).toHaveBeenCalledWith(
+        CONVERSATION_ID
+      )
       expect(mockCoreCryptoService.joinMlsConversation).toHaveBeenCalledWith(mockGroupInfoBytes)
       expect(mockCoreCryptoService.establishMlsConversation).not.toHaveBeenCalled()
 

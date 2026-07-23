@@ -15,6 +15,17 @@
 */
 
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+
+vi.mock('../../src/core/HttpRetryHelper.js', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../src/core/HttpRetryHelper.js')>()
+
+  return {
+    ...actual,
+    calculateHttpRetryDelay: vi.fn(() => 0),
+    waitForHttpRetry: vi.fn(async () => {})
+  }
+})
+
 import { HttpClient } from '../../src/core/HttpClient.js';
 import { http, HttpResponse } from "msw";
 import { setupServer } from "msw/node";
@@ -22,6 +33,7 @@ import { AppProperties } from "../../src/service/AppProperties.js";
 import { container } from "tsyringe";
 import { ClientsApiClient } from "../../src/api/ClientsApiClient.js";
 import { PreKeyCrypto } from "../../src/model/PreKeyCrypto.js";
+import {HTTP_RETRY_POLICY} from "../../src/core/HttpRetryPolicy.js";
 
 const TEST_API_HOST = 'https://test.api.host'
 const TEST_ACCESS_TOKEN = 'test-access-token'
@@ -225,6 +237,235 @@ describe('HttpClient', () => {
         // then
         expect(tokenRefreshCount).toBe(1)
       });
+    })
+
+    describe('with default retry policy', () => {
+      it('should retry a retryable HTTP status and return the successful response', async () => {
+        // given
+        const TEST_TRANSIENT_ENDPOINT = 'transient-endpoint'
+        let requestCount = 0
+        server.use(
+          http.get(`${TEST_API_HOST}/v*/${TEST_TRANSIENT_ENDPOINT}`, () => {
+            requestCount++
+            if (requestCount === 1) {
+              return HttpResponse.text('temporary failure', {status: 503})
+            }
+
+            return HttpResponse.json({data: 'example'}, {status: 200})
+          })
+        )
+        const httpClient = createHttpClient(mockAppProperties)
+
+        // when
+        const response = await httpClient.getRequest<{ data: string }>(
+          TEST_TRANSIENT_ENDPOINT
+        )
+
+        // then
+        expect(requestCount).toBe(2)
+        expect(response).toEqual({data: 'example'})
+      })
+
+      it('should retry a network failure and return the successful response', async () => {
+        // given
+        const TEST_NETWORK_ENDPOINT = 'network-failure-then-success'
+        let requestCount = 0
+        server.use(
+          http.get(`${TEST_API_HOST}/v*/${TEST_NETWORK_ENDPOINT}`, () => {
+            requestCount++
+            if (requestCount === 1) {
+              return HttpResponse.error()
+            }
+
+            return HttpResponse.json({data: 'example'}, {status: 200})
+          })
+        )
+        const httpClient = createHttpClient(mockAppProperties)
+
+        // when
+        const response = await httpClient.getRequest<{ data: string }>(
+          TEST_NETWORK_ENDPOINT
+        )
+
+        // then
+        expect(requestCount).toBe(2)
+        expect(response).toEqual({data: 'example'})
+      })
+
+      it('should retry a retryable HTTP status by default', async () => {
+        // given
+        const TEST_TRANSIENT_ENDPOINT = 'transient-by-default'
+        let requestCount = 0
+        server.use(
+          http.get(`${TEST_API_HOST}/v*/${TEST_TRANSIENT_ENDPOINT}`, () => {
+            requestCount++
+            if (requestCount === 1) {
+              return HttpResponse.text('temporary failure', {status: 503})
+            }
+
+            return HttpResponse.json({data: 'example'}, {status: 200})
+          })
+        )
+        const httpClient = createHttpClient(mockAppProperties)
+
+        // when
+        const response = await httpClient.getRequest<{ data: string }>(TEST_TRANSIENT_ENDPOINT)
+
+        // then
+        expect(requestCount).toBe(2)
+        expect(response).toEqual({data: 'example'})
+      })
+
+      it('should exhaust default retry attempts for retryable HTTP status', async () => {
+        // given
+        const TEST_TRANSIENT_ENDPOINT = 'transient-default-exhausted'
+        let requestCount = 0
+        server.use(
+          http.get(`${TEST_API_HOST}/v*/${TEST_TRANSIENT_ENDPOINT}`, () => {
+            requestCount++
+            return HttpResponse.text('temporary failure', {status: 503})
+          })
+        )
+        const httpClient = createHttpClient(mockAppProperties)
+
+        // when & then
+        await expect(httpClient.getRequest(TEST_TRANSIENT_ENDPOINT)).rejects.toThrow(
+          'HTTP 503 for transient-default-exhausted'
+        )
+        expect(requestCount).toBe(HTTP_RETRY_POLICY.maxAttempts)
+      })
+
+      it('should not retry a non-retryable HTTP status', async () => {
+        // given
+        const TEST_BAD_REQUEST_ENDPOINT = 'bad-request'
+        let requestCount = 0
+        server.use(
+          http.get(`${TEST_API_HOST}/v*/${TEST_BAD_REQUEST_ENDPOINT}`, () => {
+            requestCount++
+            return HttpResponse.text('bad request', {status: 400})
+          })
+        )
+        const httpClient = createHttpClient(mockAppProperties)
+
+        // when & then
+        await expect(
+          httpClient.getRequest(TEST_BAD_REQUEST_ENDPOINT)
+        ).rejects.toThrow('HTTP 400 for bad-request')
+        expect(requestCount).toBe(1)
+      })
+
+      it('should preserve final error handling after retry attempts are exhausted', async () => {
+        // given
+        const TEST_ALWAYS_TRANSIENT_ENDPOINT = 'always-transient'
+        let requestCount = 0
+        server.use(
+          http.get(`${TEST_API_HOST}/v*/${TEST_ALWAYS_TRANSIENT_ENDPOINT}`, () => {
+            requestCount++
+            return HttpResponse.text('temporary failure', {status: 503})
+          })
+        )
+        const httpClient = createHttpClient(mockAppProperties)
+
+        // when & then
+        await expect(
+          httpClient.getRequest(TEST_ALWAYS_TRANSIENT_ENDPOINT)
+        ).rejects.toThrow('HTTP 503 for always-transient')
+        expect(requestCount).toBe(HTTP_RETRY_POLICY.maxAttempts)
+      })
+
+      it('should retry access token refresh and cache token on success', async () => {
+        // given
+        vi.mocked(mockAppProperties.getBackendCookie).mockReturnValue(COOKIE)
+        let tokenRefreshCount = 0
+        server.use(
+          http.post(`${TEST_API_HOST}/v*/access`, () => {
+            tokenRefreshCount++
+            if (tokenRefreshCount === 1) {
+              return HttpResponse.text('temporary failure', {status: 503})
+            }
+
+            return HttpResponse.json({access_token: TEST_ACCESS_TOKEN})
+          })
+        )
+        const httpClient = createHttpClient(mockAppProperties)
+
+        // when
+        await httpClient.refreshAccessToken()
+
+        // then
+        expect(tokenRefreshCount).toBe(2)
+        expect(httpClient.getCachedAccessToken()).toEqual(TEST_ACCESS_TOKEN)
+      })
+
+      it('should reject access token refresh after default retry attempts are exhausted', async () => {
+        // given
+        vi.mocked(mockAppProperties.getBackendCookie).mockReturnValue(COOKIE)
+        let tokenRefreshCount = 0
+        server.use(
+          http.post(`${TEST_API_HOST}/v*/access`, () => {
+            tokenRefreshCount++
+            return HttpResponse.text('temporary failure', {status: 503})
+          })
+        )
+        const httpClient = createHttpClient(mockAppProperties)
+
+        // when & then
+        await expect(httpClient.refreshAccessToken()).rejects.toThrow('HTTP 503 for access')
+        expect(tokenRefreshCount).toBe(HTTP_RETRY_POLICY.maxAttempts)
+      })
+
+      it('should not retry invalid credentials and should delete the backend cookie', async () => {
+        // given
+        storedCookie = 'test-expired-cookie'
+        let tokenRefreshCount = 0
+        server.use(
+          http.post(`${TEST_API_HOST}/v*/access`, () => {
+            tokenRefreshCount++
+            return HttpResponse.json({
+              code: 403,
+              label: 'invalid-credentials',
+              message: 'Authentication failed'
+            }, {
+              status: 403
+            })
+          })
+        )
+        const httpClient = createHttpClient(mockAppProperties)
+
+        // when & then
+        await expect(httpClient.refreshAccessToken()).rejects.toThrow(
+          'Current cookie/api-token is expired. Get a new apiToken and restart the App'
+        )
+        expect(tokenRefreshCount).toBe(1)
+        expect(mockAppProperties.deleteBackendCookie).toHaveBeenCalled()
+      })
+
+      it('should share one retry sequence for concurrent access token refreshes', async () => {
+        // given
+        vi.mocked(mockAppProperties.getBackendCookie).mockReturnValue(COOKIE)
+        let tokenRefreshCount = 0
+        server.use(
+          http.post(`${TEST_API_HOST}/v*/access`, () => {
+            tokenRefreshCount++
+            if (tokenRefreshCount === 1) {
+              return HttpResponse.text('temporary failure', {status: 503})
+            }
+
+            return HttpResponse.json({access_token: TEST_ACCESS_TOKEN})
+          })
+        )
+        const httpClient = createHttpClient(mockAppProperties)
+
+        // when
+        await Promise.all([
+          httpClient.refreshAccessToken(),
+          httpClient.refreshAccessToken()
+        ])
+
+        // then
+        expect(tokenRefreshCount).toBe(2)
+        expect(httpClient.getCachedAccessToken()).toEqual(TEST_ACCESS_TOKEN)
+      })
     })
   })
   describe('App token', () => {
