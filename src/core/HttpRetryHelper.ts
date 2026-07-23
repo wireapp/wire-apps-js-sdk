@@ -27,6 +27,16 @@ export class RetryableHttpStatusError extends Error {
   }
 }
 
+export class RetryableNetworkError extends Error {
+  constructor(
+    readonly path: string,
+    readonly originalError: unknown
+  ) {
+    super(`Retryable network error for ${path}`)
+    this.name = "RetryableNetworkError"
+  }
+}
+
 export function calculateHttpRetryDelay(
   policy: HttpRetryPolicy,
   retryAttemptIndex: number
@@ -48,7 +58,7 @@ export function isRetryableHttpStatus(status: number): boolean {
 }
 
 export function isRetryableHttpError(exception: unknown): boolean {
-  return exception instanceof RetryableHttpStatusError || exception instanceof TypeError
+  return exception instanceof RetryableHttpStatusError || exception instanceof RetryableNetworkError
 }
 
 export async function waitForHttpRetry(delayMs: number): Promise<void> {

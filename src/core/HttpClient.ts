@@ -27,6 +27,7 @@ import {
   isRetryableHttpError,
   isRetryableHttpStatus,
   RetryableHttpStatusError,
+  RetryableNetworkError,
   waitForHttpRetry
 } from "./HttpRetryHelper.js";
 
@@ -168,7 +169,12 @@ export class HttpClient {
       includeApiVersion ? this.API_HOST_VERSION : null,
       path
     ].filter(Boolean).join("/")
-    const response = await fetch(url, optionsAndHeaders)
+    let response: Response
+    try {
+      response = await fetch(url, optionsAndHeaders)
+    } catch (exception) {
+      throw new RetryableNetworkError(path, exception)
+    }
 
     if (!response.ok) {
       if (response.status === 401 && shouldRetryUnauthorized) {
@@ -178,6 +184,7 @@ export class HttpClient {
       }
 
       if (shouldRetryOnStatus && isRetryableHttpStatus(response.status)) {
+        await response.arrayBuffer().catch(() => undefined)
         throw new RetryableHttpStatusError(response.status, path)
       }
 
