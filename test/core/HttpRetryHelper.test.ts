@@ -15,7 +15,7 @@
  */
 
 import {afterEach, describe, expect, it, vi} from 'vitest'
-import type {HttpRetryPolicy} from '../../src/core/HttpRetryPolicy.js'
+import {HTTP_RETRY_POLICY, type HttpRetryPolicy} from '../../src/core/HttpRetryPolicy.js'
 import {
   calculateHttpRetryDelay,
   isRetryableHttpError,
@@ -79,6 +79,16 @@ describe('HttpRetryHelper', () => {
       }
 
       expect(calculateHttpRetryDelay(policy, 10)).toBe(1_000)
+    })
+
+    it('should keep the default retry policy total delay below five seconds', () => {
+      const retryDelays = Array.from(
+        {length: HTTP_RETRY_POLICY.maxAttempts - 1},
+        (_, retryIndex) => calculateHttpRetryDelay({...HTTP_RETRY_POLICY, jitter: false}, retryIndex)
+      )
+
+      expect(retryDelays).toEqual([500, 1_000, 1_500, 1_500])
+      expect(retryDelays.reduce((totalDelay, retryDelay) => totalDelay + retryDelay, 0)).toBeLessThanOrEqual(5_000)
     })
   })
 
