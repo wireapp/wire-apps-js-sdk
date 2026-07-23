@@ -14,7 +14,7 @@
  * along with this program. If not, see http://www.gnu.org/licenses/.
  */
 
-import {afterEach, describe, expect, it, vi} from 'vitest'
+import {describe, expect, it} from 'vitest'
 import {HTTP_RETRY_POLICY, type HttpRetryPolicy} from '../../src/core/HttpRetryPolicy.js'
 import {
   calculateHttpRetryDelay,
@@ -23,71 +23,27 @@ import {
   RetryableNetworkError
 } from '../../src/core/HttpRetryHelper.js'
 
-const RETRY_POLICY_WITHOUT_JITTER: HttpRetryPolicy = {
+const RETRY_POLICY: HttpRetryPolicy = {
   maxAttempts: 5,
-  baseDelayMs: 500,
-  maxDelayMs: 30_000,
-  factor: 2,
-  jitter: false
-}
-
-const RETRY_POLICY_WITH_JITTER: HttpRetryPolicy = {
-  ...RETRY_POLICY_WITHOUT_JITTER,
-  jitter: true
+  baseDelayMs: 200
 }
 
 describe('HttpRetryHelper', () => {
-  afterEach(() => {
-    vi.restoreAllMocks()
-  })
-
   describe('calculateHttpRetryDelay', () => {
-    it('should calculate exponential delay when jitter is disabled', () => {
-      expect(calculateHttpRetryDelay(RETRY_POLICY_WITHOUT_JITTER, 0)).toBe(500)
-      expect(calculateHttpRetryDelay(RETRY_POLICY_WITHOUT_JITTER, 1)).toBe(1_000)
-      expect(calculateHttpRetryDelay(RETRY_POLICY_WITHOUT_JITTER, 2)).toBe(2_000)
-      expect(calculateHttpRetryDelay(RETRY_POLICY_WITHOUT_JITTER, 3)).toBe(4_000)
-    })
-
-    it('should cap exponential delay at maxDelayMs', () => {
-      const policy: HttpRetryPolicy = {
-        ...RETRY_POLICY_WITHOUT_JITTER,
-        maxDelayMs: 2_000
-      }
-
-      expect(calculateHttpRetryDelay(policy, 3)).toBe(2_000)
-      expect(calculateHttpRetryDelay(policy, 10)).toBe(2_000)
-    })
-
-    it('should use half of calculated delay as the lower jitter bound', () => {
-      vi.spyOn(Math, 'random').mockReturnValue(0)
-
-      expect(calculateHttpRetryDelay(RETRY_POLICY_WITH_JITTER, 2)).toBe(1_000)
-    })
-
-    it('should use calculated delay as the upper jitter bound', () => {
-      vi.spyOn(Math, 'random').mockReturnValue(1)
-
-      expect(calculateHttpRetryDelay(RETRY_POLICY_WITH_JITTER, 2)).toBe(2_000)
-    })
-
-    it('should apply jitter after maxDelayMs cap', () => {
-      vi.spyOn(Math, 'random').mockReturnValue(0)
-      const policy: HttpRetryPolicy = {
-        ...RETRY_POLICY_WITH_JITTER,
-        maxDelayMs: 2_000
-      }
-
-      expect(calculateHttpRetryDelay(policy, 10)).toBe(1_000)
+    it('should calculate linear delay', () => {
+      expect(calculateHttpRetryDelay(RETRY_POLICY, 1)).toBe(200)
+      expect(calculateHttpRetryDelay(RETRY_POLICY, 2)).toBe(400)
+      expect(calculateHttpRetryDelay(RETRY_POLICY, 3)).toBe(600)
+      expect(calculateHttpRetryDelay(RETRY_POLICY, 4)).toBe(800)
     })
 
     it('should keep the default retry policy total delay below five seconds', () => {
       const retryDelays = Array.from(
         {length: HTTP_RETRY_POLICY.maxAttempts - 1},
-        (_, retryIndex) => calculateHttpRetryDelay({...HTTP_RETRY_POLICY, jitter: false}, retryIndex)
+        (_, retryIndex) => calculateHttpRetryDelay(HTTP_RETRY_POLICY, retryIndex + 1)
       )
 
-      expect(retryDelays).toEqual([500, 1_000, 1_500, 1_500])
+      expect(retryDelays).toEqual([300, 600, 900, 1200])
       expect(retryDelays.reduce((totalDelay, retryDelay) => totalDelay + retryDelay, 0)).toBeLessThanOrEqual(5_000)
     })
   })

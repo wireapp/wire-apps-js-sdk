@@ -236,7 +236,7 @@ export class HttpClient {
           throw exception
         }
 
-        const delayMs = calculateHttpRetryDelay(retryPolicy, attemptIndex)
+        const delayMs = calculateHttpRetryDelay(retryPolicy, attemptIndex + 1)
         this.logger.warn(
           `Retrying HTTP request for ${path} in ${delayMs}ms ` +
           `(attempt ${attemptIndex + 2}/${maxAttempts})`

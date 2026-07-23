@@ -39,18 +39,9 @@ export class RetryableNetworkError extends Error {
 
 export function calculateHttpRetryDelay(
   policy: HttpRetryPolicy,
-  retryAttemptIndex: number
+  retryAttemptNumber: number
 ): number {
-  const exponentialDelay = Math.min(
-    policy.baseDelayMs * (policy.factor ** retryAttemptIndex),
-    policy.maxDelayMs
-  )
-
-  if (!policy.jitter) {
-    return exponentialDelay
-  }
-
-  return Math.round(exponentialDelay * (0.5 + Math.random() * 0.5))
+  return policy.baseDelayMs * retryAttemptNumber
 }
 
 export function isRetryableHttpStatus(status: number): boolean {
