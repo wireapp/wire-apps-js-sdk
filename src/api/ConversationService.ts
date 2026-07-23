@@ -596,10 +596,7 @@ export class ConversationService {
       await this.coreCryptoService.joinMlsConversation(conversationGroupInfoBytes)
       await this.saveConversationWithMembers(conversation.qualified_id, conversation)
     } else if (conversation.type === ConversationType.SELF) {
-      await this.coreCryptoService.establishMlsConversation(
-        conversation.group_id,
-        undefined
-      )
+      await this.coreCryptoService.establishMlsConversation(conversation.group_id)
     }
   }
 

@@ -258,7 +258,7 @@ export class CoreCryptoService {
     }
 
     const cipherSuite = CoreCryptoClient.getMlsCiphersuiteName(this.defaultCiphersuiteCode!)
-    const removalKey = await this.mlsService.getRemovalKey(cipherSuite, mlsPublicKeysResponse)
+    const removalKey = await this.mlsService.getRemovalKey(cipherSuite, mlsPublicKeysResponse);
     if (removalKey == null) {
       throw Error("No Public Keys found, skipping creating a conversation.") // TODO: Map to WireException
     }

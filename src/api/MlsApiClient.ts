@@ -63,10 +63,7 @@ export class MlsApiClient {
       })
     }
 
-    await this.httpClient.postRequest<void>(
-      path,
-      requestPayload
-    )
+    await this.httpClient.postRequest<void>(path, requestPayload)
   }
 
   async getPublicKeys(): Promise<MlsPublicKeysResponse> {
