@@ -27,8 +27,6 @@ import {WIRE_USER_DOMAIN, WIRE_USER_ID} from "../utils/DependencyInjectionTokens
 import {obfuscateId} from "../utils/ObfuscateUtil.js";
 import type {ConversationRole} from "../model/conversation/ConversationRole.js";
 import type {CreateConversationRequest} from "./request/CreateConversationRequest.js";
-import type {HttpRetryPolicy} from "../core/HttpRetryPolicy.js";
-import {STARTUP_HTTP_RETRY_POLICY} from "../core/HttpRetryPolicy.js";
 
 @singleton()
 export class ConversationsApiClient {
@@ -55,16 +53,10 @@ export class ConversationsApiClient {
     )
   }
 
-  async getConversationGroupInfo(
-    conversationQualifiedId: QualifiedId,
-    retryPolicy?: HttpRetryPolicy
-  ): Promise<Uint8Array> {
+  async getConversationGroupInfo(conversationQualifiedId: QualifiedId): Promise<Uint8Array> {
     return await this.httpClient.getRequest<Uint8Array>(
       `${this.basePath}/${conversationQualifiedId.domain}/${conversationQualifiedId.id}/groupinfo`,
-      {
-        headerAccept: this.HEADER_MLS_ACCEPT,
-        ...(retryPolicy && {retryPolicy})
-      }
+      { headerAccept: this.HEADER_MLS_ACCEPT }
     )
   }
 
@@ -80,8 +72,7 @@ export class ConversationsApiClient {
     do {
       const conversationIdsResponse = await this.httpClient.postRequest<ConversationIdsResponse>(
         `${this.basePath}/list-ids`,
-        paginationConfig,
-        {retryPolicy: STARTUP_HTTP_RETRY_POLICY}
+        paginationConfig
       )
 
       hasMorePages = conversationIdsResponse.has_more
@@ -109,8 +100,7 @@ export class ConversationsApiClient {
 
     const conversationListResponse = await this.httpClient.postRequest<ConversationsResponse>(
       `${this.basePath}/list`,
-      conversationIdsRequest,
-      {retryPolicy: STARTUP_HTTP_RETRY_POLICY}
+      conversationIdsRequest
     )
 
     this.logger.info(`Returning ${conversationListResponse.found.length} found conversations`)

@@ -24,7 +24,6 @@ import type {KeyPackage} from "./response/ClaimedKeyPackageList.js";
 import {LoggerFactory} from "../utils/logger/LoggerFactory.js";
 import {obfuscateId} from "../utils/ObfuscateUtil.js";
 import {Decoder} from "bazinga64";
-import type {HttpRetryPolicy} from "../core/HttpRetryPolicy.js";
 
 @singleton()
 export class MlsService {
@@ -40,19 +39,15 @@ export class MlsService {
     await this.mlsApiClient.sendMessage(message)
   }
 
-  async uploadMlsKeyPackages(
-    mlsKeyPackages: Uint8Array[],
-    retryPolicy?: HttpRetryPolicy
-  ): Promise<void> {
-    await this.mlsApiClient.uploadMlsKeyPackages(mlsKeyPackages, retryPolicy)
+  async uploadMlsKeyPackages(mlsKeyPackages: Uint8Array[]): Promise<void> {
+    await this.mlsApiClient.uploadMlsKeyPackages(mlsKeyPackages)
   }
 
   async getRemovalKey(
     cipherSuite: CipherSuite,
-    existingPublicKeysResponse?: MlsPublicKeysResponse,
-    retryPolicy?: HttpRetryPolicy
+    existingPublicKeysResponse?: MlsPublicKeysResponse
   ): Promise<Uint8Array | null> {
-    const publicKeysResponse = existingPublicKeysResponse ?? await this.mlsApiClient.getPublicKeys(retryPolicy)
+    const publicKeysResponse = existingPublicKeysResponse ?? await this.mlsApiClient.getPublicKeys()
     return getRemovalKeyFromPublicKeysResponse(publicKeysResponse, cipherSuite)
   }
 

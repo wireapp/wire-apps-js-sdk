@@ -16,7 +16,6 @@
 
 import {beforeEach, describe, expect, it, vi} from 'vitest'
 import {MlsApiClient} from '../../src/api/MlsApiClient.js'
-import {STARTUP_HTTP_RETRY_POLICY} from '../../src/core/HttpRetryPolicy.js'
 
 vi.mock('bazinga64', () => ({
   Encoder: {
@@ -72,7 +71,7 @@ describe('MlsApiClient', () => {
   })
 
   describe('uploadMlsKeyPackages', () => {
-    it('should call postRequest without retry policy by default', async () => {
+    it('should call postRequest with encoded key packages', async () => {
       const keyPackages = [new Uint8Array([7, 8, 9])]
       vi.mocked(mockHttpClient.postRequest).mockResolvedValue(undefined)
 
@@ -80,45 +79,19 @@ describe('MlsApiClient', () => {
 
       expect(mockHttpClient.postRequest).toHaveBeenCalledWith(
         'mls/key-packages/self/device-id',
-        {key_packages: ['encoded-key-package']},
-        undefined
-      )
-    })
-
-    it('should pass retry policy when explicitly provided', async () => {
-      const keyPackages = [new Uint8Array([7, 8, 9])]
-      vi.mocked(mockHttpClient.postRequest).mockResolvedValue(undefined)
-
-      await client.uploadMlsKeyPackages(keyPackages, STARTUP_HTTP_RETRY_POLICY)
-
-      expect(mockHttpClient.postRequest).toHaveBeenCalledWith(
-        'mls/key-packages/self/device-id',
-        {key_packages: ['encoded-key-package']},
-        {retryPolicy: STARTUP_HTTP_RETRY_POLICY}
+        {key_packages: ['encoded-key-package']}
       )
     })
   })
 
   describe('getPublicKeys', () => {
-    it('should call getRequest without retry policy by default', async () => {
+    it('should call getRequest with the public keys path', async () => {
       vi.mocked(mockHttpClient.getRequest).mockResolvedValue({})
 
       await client.getPublicKeys()
 
       expect(mockHttpClient.getRequest).toHaveBeenCalledWith(
-        'mls/public-keys',
-        undefined
-      )
-    })
-
-    it('should pass retry policy when explicitly provided', async () => {
-      vi.mocked(mockHttpClient.getRequest).mockResolvedValue({})
-
-      await client.getPublicKeys(STARTUP_HTTP_RETRY_POLICY)
-
-      expect(mockHttpClient.getRequest).toHaveBeenCalledWith(
-        'mls/public-keys',
-        {retryPolicy: STARTUP_HTTP_RETRY_POLICY}
+        'mls/public-keys'
       )
     })
   })

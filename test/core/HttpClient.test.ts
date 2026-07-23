@@ -15,6 +15,17 @@
 */
 
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+
+vi.mock('../../src/core/HttpRetryHelper.js', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../src/core/HttpRetryHelper.js')>()
+
+  return {
+    ...actual,
+    calculateHttpRetryDelay: vi.fn(() => 0),
+    waitForHttpRetry: vi.fn(async () => {})
+  }
+})
+
 import { HttpClient } from '../../src/core/HttpClient.js';
 import { http, HttpResponse } from "msw";
 import { setupServer } from "msw/node";
@@ -22,20 +33,13 @@ import { AppProperties } from "../../src/service/AppProperties.js";
 import { container } from "tsyringe";
 import { ClientsApiClient } from "../../src/api/ClientsApiClient.js";
 import { PreKeyCrypto } from "../../src/model/PreKeyCrypto.js";
-import type {HttpRetryPolicy} from "../../src/core/HttpRetryPolicy.js";
+import {HTTP_RETRY_POLICY} from "../../src/core/HttpRetryPolicy.js";
 
 const TEST_API_HOST = 'https://test.api.host'
 const TEST_ACCESS_TOKEN = 'test-access-token'
 const FULL_FLEDGED_ACCESS_TOKEN = 'test-access-token-with-client-id'
 const COOKIE = 'test-cookie'
 const NEW_COOKIE = 'new-test-cookie'
-const TEST_RETRY_POLICY: HttpRetryPolicy = {
-  maxAttempts: 3,
-  baseDelayMs: 0,
-  maxDelayMs: 0,
-  factor: 2,
-  jitter: false
-}
 
 const createHttpClient = (appProperties: AppProperties) =>
   new HttpClient(TEST_API_HOST, appProperties)
@@ -235,7 +239,7 @@ describe('HttpClient', () => {
       });
     })
 
-    describe('with retry policy', () => {
+    describe('with default retry policy', () => {
       it('should retry a retryable HTTP status and return the successful response', async () => {
         // given
         const TEST_TRANSIENT_ENDPOINT = 'transient-endpoint'
@@ -254,8 +258,7 @@ describe('HttpClient', () => {
 
         // when
         const response = await httpClient.getRequest<{ data: string }>(
-          TEST_TRANSIENT_ENDPOINT,
-          {retryPolicy: TEST_RETRY_POLICY}
+          TEST_TRANSIENT_ENDPOINT
         )
 
         // then
@@ -281,8 +284,7 @@ describe('HttpClient', () => {
 
         // when
         const response = await httpClient.getRequest<{ data: string }>(
-          TEST_NETWORK_ENDPOINT,
-          {retryPolicy: TEST_RETRY_POLICY}
+          TEST_NETWORK_ENDPOINT
         )
 
         // then
@@ -290,9 +292,33 @@ describe('HttpClient', () => {
         expect(response).toEqual({data: 'example'})
       })
 
-      it('should not retry a retryable HTTP status without retry policy', async () => {
+      it('should retry a retryable HTTP status by default', async () => {
         // given
-        const TEST_TRANSIENT_ENDPOINT = 'transient-without-policy'
+        const TEST_TRANSIENT_ENDPOINT = 'transient-by-default'
+        let requestCount = 0
+        server.use(
+          http.get(`${TEST_API_HOST}/v*/${TEST_TRANSIENT_ENDPOINT}`, () => {
+            requestCount++
+            if (requestCount === 1) {
+              return HttpResponse.text('temporary failure', {status: 503})
+            }
+
+            return HttpResponse.json({data: 'example'}, {status: 200})
+          })
+        )
+        const httpClient = createHttpClient(mockAppProperties)
+
+        // when
+        const response = await httpClient.getRequest<{ data: string }>(TEST_TRANSIENT_ENDPOINT)
+
+        // then
+        expect(requestCount).toBe(2)
+        expect(response).toEqual({data: 'example'})
+      })
+
+      it('should exhaust default retry attempts for retryable HTTP status', async () => {
+        // given
+        const TEST_TRANSIENT_ENDPOINT = 'transient-default-exhausted'
         let requestCount = 0
         server.use(
           http.get(`${TEST_API_HOST}/v*/${TEST_TRANSIENT_ENDPOINT}`, () => {
@@ -304,9 +330,9 @@ describe('HttpClient', () => {
 
         // when & then
         await expect(httpClient.getRequest(TEST_TRANSIENT_ENDPOINT)).rejects.toThrow(
-          'HTTP 503 for transient-without-policy'
+          'HTTP 503 for transient-default-exhausted'
         )
-        expect(requestCount).toBe(1)
+        expect(requestCount).toBe(HTTP_RETRY_POLICY.maxAttempts)
       })
 
       it('should not retry a non-retryable HTTP status', async () => {
@@ -323,7 +349,7 @@ describe('HttpClient', () => {
 
         // when & then
         await expect(
-          httpClient.getRequest(TEST_BAD_REQUEST_ENDPOINT, {retryPolicy: TEST_RETRY_POLICY})
+          httpClient.getRequest(TEST_BAD_REQUEST_ENDPOINT)
         ).rejects.toThrow('HTTP 400 for bad-request')
         expect(requestCount).toBe(1)
       })
@@ -342,9 +368,9 @@ describe('HttpClient', () => {
 
         // when & then
         await expect(
-          httpClient.getRequest(TEST_ALWAYS_TRANSIENT_ENDPOINT, {retryPolicy: TEST_RETRY_POLICY})
+          httpClient.getRequest(TEST_ALWAYS_TRANSIENT_ENDPOINT)
         ).rejects.toThrow('HTTP 503 for always-transient')
-        expect(requestCount).toBe(TEST_RETRY_POLICY.maxAttempts)
+        expect(requestCount).toBe(HTTP_RETRY_POLICY.maxAttempts)
       })
 
       it('should retry access token refresh and cache token on success', async () => {
@@ -364,14 +390,14 @@ describe('HttpClient', () => {
         const httpClient = createHttpClient(mockAppProperties)
 
         // when
-        await httpClient.refreshAccessToken(TEST_RETRY_POLICY)
+        await httpClient.refreshAccessToken()
 
         // then
         expect(tokenRefreshCount).toBe(2)
         expect(httpClient.getCachedAccessToken()).toEqual(TEST_ACCESS_TOKEN)
       })
 
-      it('should reject access token refresh on transient failure without retry policy', async () => {
+      it('should reject access token refresh after default retry attempts are exhausted', async () => {
         // given
         vi.mocked(mockAppProperties.getBackendCookie).mockReturnValue(COOKIE)
         let tokenRefreshCount = 0
@@ -385,7 +411,7 @@ describe('HttpClient', () => {
 
         // when & then
         await expect(httpClient.refreshAccessToken()).rejects.toThrow('HTTP 503 for access')
-        expect(tokenRefreshCount).toBe(1)
+        expect(tokenRefreshCount).toBe(HTTP_RETRY_POLICY.maxAttempts)
       })
 
       it('should not retry invalid credentials and should delete the backend cookie', async () => {
@@ -407,7 +433,7 @@ describe('HttpClient', () => {
         const httpClient = createHttpClient(mockAppProperties)
 
         // when & then
-        await expect(httpClient.refreshAccessToken(TEST_RETRY_POLICY)).rejects.toThrow(
+        await expect(httpClient.refreshAccessToken()).rejects.toThrow(
           'Current cookie/api-token is expired. Get a new apiToken and restart the App'
         )
         expect(tokenRefreshCount).toBe(1)
@@ -432,8 +458,8 @@ describe('HttpClient', () => {
 
         // when
         await Promise.all([
-          httpClient.refreshAccessToken(TEST_RETRY_POLICY),
-          httpClient.refreshAccessToken(TEST_RETRY_POLICY)
+          httpClient.refreshAccessToken(),
+          httpClient.refreshAccessToken()
         ])
 
         // then

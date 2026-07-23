@@ -23,7 +23,6 @@ import {LoggerFactory} from "../utils/logger/LoggerFactory.js";
 import type {EventResponse} from "../api/response/EventResponse.js";
 import {NotificationsService} from "../service/NotificationsService.js";
 import {AppProperties} from "../service/AppProperties.js";
-import {STARTUP_HTTP_RETRY_POLICY} from "./HttpRetryPolicy.js";
 
 const getWebSocketImpl = (): typeof WebSocket => (globalThis.WebSocket ?? NodeWebSocket) as typeof WebSocket;
 
@@ -67,7 +66,7 @@ export class WebSocketClient {
     try {
       while (!this._stopped) {
         try {
-          await this.httpClient.refreshAccessToken(STARTUP_HTTP_RETRY_POLICY)
+          await this.httpClient.refreshAccessToken()
           this.logger.info('Connecting')
           await this.connectWebSocket(this.buildUrl())
         } catch (exception) {

@@ -32,7 +32,7 @@ export const RETRYABLE_STATUS_CODES = new Set([
   504  // Gateway Timeout
 ])
 
-export const STARTUP_HTTP_RETRY_POLICY: HttpRetryPolicy = {
+export const HTTP_RETRY_POLICY: HttpRetryPolicy = {
   maxAttempts: 5,
   baseDelayMs: 500,
   maxDelayMs: 30_000,

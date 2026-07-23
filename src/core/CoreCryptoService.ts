@@ -33,8 +33,6 @@ import type {QualifiedId} from "../model/QualifiedId.js";
 import {AppProperties} from "../service/AppProperties.js";
 import type {AddMembersToConversationResult} from "../api/model/AddMembersToConversationResult.js";
 import {obfuscateClientId, obfuscateId} from "../utils/ObfuscateUtil.js";
-import type {HttpRetryPolicy} from "./HttpRetryPolicy.js";
-import {STARTUP_HTTP_RETRY_POLICY} from "./HttpRetryPolicy.js";
 import {type MlsPublicKeysResponse} from "../api/response/MlsPublicKeysResponse.js";
 
 /**
@@ -145,7 +143,7 @@ export class CoreCryptoService {
 
   private async uploadMlsKeyPackages() {
     const keyPackages = await this.coreCryptoClient!.mlsGenerateKeyPackages()
-    await this.mlsService.uploadMlsKeyPackages(keyPackages, STARTUP_HTTP_RETRY_POLICY)
+    await this.mlsService.uploadMlsKeyPackages(keyPackages)
   }
 
   async processWelcomeMessage(
@@ -253,15 +251,14 @@ export class CoreCryptoService {
 
   async establishMlsConversation(
     mlsGroupId: string,
-    mlsPublicKeysResponse?: MlsPublicKeysResponse, // Exists only for 1-1 conversations
-    retryPolicy?: HttpRetryPolicy
+    mlsPublicKeysResponse?: MlsPublicKeysResponse // Exists only for 1-1 conversations
   ): Promise<void> {
     if (!mlsGroupId) {
       throw new Error("Missing mlsGroupId.") //TODO: Use custom exceptions
     }
 
     const cipherSuite = CoreCryptoClient.getMlsCiphersuiteName(this.defaultCiphersuiteCode!)
-    const removalKey = await this.mlsService.getRemovalKey(cipherSuite, mlsPublicKeysResponse, retryPolicy)
+    const removalKey = await this.mlsService.getRemovalKey(cipherSuite, mlsPublicKeysResponse)
     if (removalKey == null) {
       throw Error("No Public Keys found, skipping creating a conversation.") // TODO: Map to WireException
     }

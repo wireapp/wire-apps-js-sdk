@@ -18,7 +18,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { ConversationsApiClient } from '../../src/api/ConversationsApiClient.js'
 import type { QualifiedId } from '../../src/model/QualifiedId.js'
 import { ConversationRole } from '../../src/model/conversation/ConversationRole.js'
-import {STARTUP_HTTP_RETRY_POLICY} from '../../src/core/HttpRetryPolicy.js'
 
 const WIRE_USER_ID = 'self-user-id'
 const WIRE_USER_DOMAIN = 'wire.com'
@@ -96,8 +95,7 @@ describe('ConversationsApiClient', () => {
 
       expect(mockHttpClient.postRequest).toHaveBeenCalledWith(
         'conversations/list',
-        { qualified_ids: [CONVERSATION_ID] },
-        {retryPolicy: STARTUP_HTTP_RETRY_POLICY}
+        { qualified_ids: [CONVERSATION_ID] }
       )
     })
 
