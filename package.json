@@ -1,6 +1,18 @@
 {
-  "name": "wire-apps-js-sdk",
-  "version": "0.0.1",
+  "name": "@wireapp/wire-apps-js-sdk",
+  "version": "0.0.1-alpha",
+  "description": "SDK for Wire third-party applications written in Typescript.",
+  "license": "GPL-3.0",
+  "keywords": [
+    "wire",
+    "wireapp",
+    "sdk",
+    "apps",
+    "typescript",
+    "javascript",
+    "messaging",
+    "mls"
+  ],
   "main": "build/index.js",
   "types": "build/index.d.ts",
   "workspaces": [
@@ -34,8 +46,9 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/wireapp/wire-apps-js-sdk"
+    "url": "git+https://github.com/wireapp/wire-apps-js-sdk.git"
   },
+  "homepage": "https://github.com/wireapp/wire-apps-js-sdk#readme",
   "bugs": {
     "url": "https://github.com/wireapp/wire-apps-js-sdk/issues"
   },
