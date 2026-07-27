@@ -51,7 +51,7 @@
     "eslint": "^10.7.0",
     "globals": "^17.7.0",
     "msw": "^2.14.6",
-    "protobufjs-cli": "^2.5.5",
+    "protobufjs-cli": "^2.6.1",
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.62.1",
     "vitest": "^4.1.10"
