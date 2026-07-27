@@ -14,7 +14,16 @@
     "mls"
   ],
   "main": "build/index.js",
+  "module": "build/index.js",
   "types": "build/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./build/index.d.ts",
+      "import": "./build/index.js",
+      "default": "./build/index.js"
+    },
+    "./package.json": "./package.json"
+  },
   "workspaces": [
     "sample"
   ],
