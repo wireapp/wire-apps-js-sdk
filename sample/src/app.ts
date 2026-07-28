@@ -85,32 +85,7 @@ class SampleEventsHandler extends WireEventsHandler {
     } else if (wireMessage.text == "asset-video") {
       this.processAssetVideo(wireMessage);
     } else {
-      const replyMessage = TextMessage.createReply({
-        originalMessage: wireMessage,
-        text: `${wireMessage.text} -- Sent from the TS Sample SDK`,
-        linkPreviews: wireMessage.linkPreviews,
-        mentions: wireMessage.mentions
-      })
-
-      await this.manager.sendMessage(replyMessage)
-
-      // Sending a Read Receipt for the received message
-      const receipt = Receipt.create({
-        conversationId: wireMessage.conversationId,
-        receiptType: ReceiptType.READ,
-        messageIds: [wireMessage.id]
-      })
-
-      await this.manager.sendMessage(receipt)
-
-      // Set an emoji on the received text message
-      const reaction = Reaction.create({
-        conversationId: wireMessage.conversationId,
-        messageId: wireMessage.id,
-        emojiSet: new Set<string>(["🧩", "T", "S", "🚀"])
-      })
-
-      await this.manager.sendMessage(reaction)
+      await this.processSimpleTextMessage(wireMessage);
     }
   }
 
@@ -199,6 +174,7 @@ class SampleEventsHandler extends WireEventsHandler {
     console.log(`[SampleEventsHandler] Received asset: ${wireMessage.name}`)
     if (!wireMessage.remoteData) return
 
+    // Download the asset
     const asset = await this.manager.downloadAsset(wireMessage.remoteData)
     const filename = wireMessage.name ? wireMessage.name : `unknown-${crypto.randomUUID()}`
     const dir = 'build/downloaded_assets/'
@@ -214,6 +190,13 @@ class SampleEventsHandler extends WireEventsHandler {
       }
     }
     )
+
+    // Reply the asset message
+    const replyMessage = TextMessage.createReply({
+      originalMessage: wireMessage,
+      text: `😍Very nice!`,
+    })
+    await this.manager.sendMessage(replyMessage)
   }
 
   private readonly RESOURCES_PATH = 'resources'
@@ -304,6 +287,35 @@ class SampleEventsHandler extends WireEventsHandler {
         }
       )
     });
+  }
+
+  private async processSimpleTextMessage(wireMessage: TextMessage) {
+      const replyMessage = TextMessage.createReply({
+        originalMessage: wireMessage,
+        text: `${wireMessage.text} -- Sent from the TS Sample SDK`,
+        linkPreviews: wireMessage.linkPreviews,
+        mentions: wireMessage.mentions
+      })
+
+      await this.manager.sendMessage(replyMessage)
+
+      // Sending a Read Receipt for the received message
+      const receipt = Receipt.create({
+        conversationId: wireMessage.conversationId,
+        receiptType: ReceiptType.READ,
+        messageIds: [wireMessage.id]
+      })
+
+      await this.manager.sendMessage(receipt)
+
+      // Add emojis on the received text message
+      const reaction = Reaction.create({
+        conversationId: wireMessage.conversationId,
+        messageId: wireMessage.id,
+        emojiSet: new Set<string>(["🧩", "T", "S", "🚀"])
+      })
+
+      await this.manager.sendMessage(reaction)
   }
 
   // - - -  RESERVED TEST COMMANDS - - -
