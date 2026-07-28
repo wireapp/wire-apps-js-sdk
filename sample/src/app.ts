@@ -85,14 +85,14 @@ class SampleEventsHandler extends WireEventsHandler {
     } else if (wireMessage.text == "asset-video") {
       this.processAssetVideo(wireMessage);
     } else {
-      const textMessage = TextMessage.create({
-        conversationId: wireMessage.conversationId,
+      const replyMessage = TextMessage.createReply({
+        originalMessage: wireMessage,
         text: `${wireMessage.text} -- Sent from the TS Sample SDK`,
         linkPreviews: wireMessage.linkPreviews,
         mentions: wireMessage.mentions
       })
 
-      await this.manager.sendMessage(textMessage)
+      await this.manager.sendMessage(replyMessage)
 
       // Sending a Read Receipt for the received message
       const receipt = Receipt.create({
@@ -107,7 +107,7 @@ class SampleEventsHandler extends WireEventsHandler {
       const reaction = Reaction.create({
         conversationId: wireMessage.conversationId,
         messageId: wireMessage.id,
-        emojiSet: new Set<string>(["🧩"])
+        emojiSet: new Set<string>(["🧩", "T", "S", "🚀"])
       })
 
       await this.manager.sendMessage(reaction)
