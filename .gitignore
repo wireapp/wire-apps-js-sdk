@@ -18,6 +18,7 @@ coverage/
 .temp/
 .cache/
 storage/
+sample/storage/
 
 # TypeScript
 *.tsbuildinfo

@@ -37,7 +37,8 @@
     "migrations:copy": "node scripts/copy-migrations.js",
     "proto:generate": "npm run proto:mkdir && npm run proto:package && npm run proto:js && npm run proto:ts",
     "build:setup": "npm install && npm run proto:generate",
-    "build": "tsc -p tsconfig.json && npm run proto:copy && npm run migrations:copy",
+    "build": "npm run proto:generate && tsc -p tsconfig.json && npm run proto:copy && npm run migrations:copy",
+    "prepack": "npm run build",
     "build:sample": "npm run build && npm run -w sample build",
     "sample": "npm run build:sample && npm run -w sample start",
     "test": "npm run test:typecheck",
@@ -47,7 +48,11 @@
     "lint": "eslint src --ext .ts"
   },
   "files": [
-    "build/**/*"
+    "build/**/*",
+    "src/**/*.ts",
+    "!src/generated/**/*",
+    "src/proto/**/*.proto",
+    "src/db/migrations/**/*"
   ],
   "type": "module",
   "engines": {
