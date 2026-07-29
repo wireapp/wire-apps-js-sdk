@@ -17,6 +17,7 @@
 import { QualifiedId } from "./QualifiedId.js";
 import { MessageEncryptionAlgorithm } from "./protobuf/MessageEncryptionAlgorithm.js";
 import Long from "long";
+import {MessageContentEncoder} from "../mappers/protobuf/MessageContentEncoder.js";
 
 const appUserId = process.env['WIRE_SDK_USER_ID']!
 const appUserDomain = process.env['WIRE_SDK_USER_DOMAIN']!
@@ -144,6 +145,12 @@ export interface TextMessage extends WireMessageBase, Item, Ephemeral, Replyable
   expiresAfterMillis?: number | null
 }
 
+type ReplyableMessageType = TextMessage | AssetMessage | Location
+
+function isReplyable(message: WireMessage): message is ReplyableMessageType {
+  return message.type === 'text' || message.type === 'asset' || message.type === 'location'
+}
+
 export const TextMessage = {
   create(
     params: {
@@ -164,6 +171,41 @@ export const TextMessage = {
       sender: params.senderId ?? appQualifiedId,
       text: params.text,
       mentions: params.mentions ?? [],
+      linkPreviews: params.linkPreviews ?? [],
+      timestamp: params.timestamp ?? new Date(),
+      expiresAfterMillis: params.expiresAfterMillis ?? null
+    }
+  },
+
+  createReply(
+    params: {
+      messageId?: string
+      text: string
+      mentions?: Mention[]
+      linkPreviews?: LinkPreview[]
+      originalMessage: WireMessage
+      senderId?: QualifiedId
+      expiresAfterMillis?: number | null | undefined
+      timestamp?: Date
+    }
+  ): TextMessage {
+    if (!isReplyable(params.originalMessage)) {
+      throw new Error(`Cannot reply to unreplyable WireMessage type: ${params.originalMessage.type}`)
+    }
+
+    if (params.originalMessage.expiresAfterMillis) {
+      throw new Error(`Cannot reply to an expiring message: ${params.originalMessage.type}`)
+    }
+
+    return {
+      type: 'text',
+      id: params.messageId ?? crypto.randomUUID(),
+      conversationId: params.originalMessage.conversationId,
+      sender: params.senderId ?? appQualifiedId,
+      text: params.text,
+      mentions: params.mentions ?? [],
+      quotedMessageId: params.originalMessage.id,
+      quotedMessageSha256: MessageContentEncoder.encodeMessageContent(params.originalMessage)?.sha256Digest ?? null,
       linkPreviews: params.linkPreviews ?? [],
       timestamp: params.timestamp ?? new Date(),
       expiresAfterMillis: params.expiresAfterMillis ?? null

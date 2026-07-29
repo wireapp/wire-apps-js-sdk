@@ -18,7 +18,7 @@
 
 import "reflect-metadata";
 import dotenv from 'dotenv';
-import { PinoLogger } from './PinoLogger.js'
+import {PinoLogger} from './PinoLogger.js'
 import {
   type Conversation,
   type ConversationMember,
@@ -47,7 +47,7 @@ import {
 import fs from 'fs'
 import path from 'node:path'
 
-dotenv.config({ path: '../.env' })
+dotenv.config({path: '../.env'})
 
 const userId = process.env['WIRE_SDK_USER_ID'];
 const apiToken = process.env['WIRE_SDK_API_TOKEN'];
@@ -85,32 +85,7 @@ class SampleEventsHandler extends WireEventsHandler {
     } else if (wireMessage.text == "asset-video") {
       this.processAssetVideo(wireMessage);
     } else {
-      const textMessage = TextMessage.create({
-        conversationId: wireMessage.conversationId,
-        text: `${wireMessage.text} -- Sent from the TS Sample SDK`,
-        linkPreviews: wireMessage.linkPreviews,
-        mentions: wireMessage.mentions
-      })
-
-      await this.manager.sendMessage(textMessage)
-
-      // Sending a Read Receipt for the received message
-      const receipt = Receipt.create({
-        conversationId: wireMessage.conversationId,
-        receiptType: ReceiptType.READ,
-        messageIds: [wireMessage.id]
-      })
-
-      await this.manager.sendMessage(receipt)
-
-      // Set an emoji on the received text message
-      const reaction = Reaction.create({
-        conversationId: wireMessage.conversationId,
-        messageId: wireMessage.id,
-        emojiSet: new Set<string>(["🧩"])
-      })
-
-      await this.manager.sendMessage(reaction)
+      await this.processSimpleTextMessage(wireMessage);
     }
   }
 
@@ -153,13 +128,13 @@ class SampleEventsHandler extends WireEventsHandler {
 
     await this.manager.sendMessage(receipt)
 
-    // Sending a Text message for the received message
-    const textMessage = TextMessage.create({
-      conversationId: wireMessage.conversationId,
+    // Sending a reply message for the received location type message
+    const replyMessage = TextMessage.createReply({
+      originalMessage: wireMessage,
       text: locationDetails
     })
 
-    await this.manager.sendMessage(textMessage)
+    await this.manager.sendMessage(replyMessage)
   }
 
   public override async onConversationDeleted(conversationId: QualifiedId): Promise<void> {
@@ -199,6 +174,7 @@ class SampleEventsHandler extends WireEventsHandler {
     console.log(`[SampleEventsHandler] Received asset: ${wireMessage.name}`)
     if (!wireMessage.remoteData) return
 
+    // Download the asset
     const asset = await this.manager.downloadAsset(wireMessage.remoteData)
     const filename = wireMessage.name ? wireMessage.name : `unknown-${crypto.randomUUID()}`
     const dir = 'build/downloaded_assets/'
@@ -207,13 +183,20 @@ class SampleEventsHandler extends WireEventsHandler {
     }
     const filePath = dir + filename;
     fs.writeFile(filePath, asset, (err) => {
-      if (err) {
-        console.log("There was an error writing the image")
-      } else {
-        console.log(`Downloaded asset with size: ${asset.length} bytes, saved to: ${filePath}`)
+        if (err) {
+          console.log("There was an error writing the image")
+        } else {
+          console.log(`Downloaded asset with size: ${asset.length} bytes, saved to: ${filePath}`)
+        }
       }
-    }
     )
+
+    // Reply the asset message
+    const replyMessage = TextMessage.createReply({
+      originalMessage: wireMessage,
+      text: `😍Very nice!`,
+    })
+    await this.manager.sendMessage(replyMessage)
   }
 
   private readonly RESOURCES_PATH = 'resources'
@@ -304,6 +287,35 @@ class SampleEventsHandler extends WireEventsHandler {
         }
       )
     });
+  }
+
+  private async processSimpleTextMessage(wireMessage: TextMessage) {
+    const replyMessage = TextMessage.createReply({
+      originalMessage: wireMessage,
+      text: `${wireMessage.text} -- Sent from the TS Sample SDK`,
+      linkPreviews: wireMessage.linkPreviews,
+      mentions: wireMessage.mentions
+    })
+
+    await this.manager.sendMessage(replyMessage)
+
+    // Sending a Read Receipt for the received message
+    const receipt = Receipt.create({
+      conversationId: wireMessage.conversationId,
+      receiptType: ReceiptType.READ,
+      messageIds: [wireMessage.id]
+    })
+
+    await this.manager.sendMessage(receipt)
+
+    // Add emojis on the received text message
+    const reaction = Reaction.create({
+      conversationId: wireMessage.conversationId,
+      messageId: wireMessage.id,
+      emojiSet: new Set<string>(["🧩", "T", "S", "🚀"])
+    })
+
+    await this.manager.sendMessage(reaction)
   }
 
   // - - -  RESERVED TEST COMMANDS - - -
@@ -610,7 +622,7 @@ class SampleEventsHandler extends WireEventsHandler {
           text: `Search results for "${query}" on ${domain} (${users.length}):\n${userList}`
         }))
       },
-      'test-edit-text': async(conversationId) => {
+      'test-edit-text': async (conversationId) => {
         this.appLogger?.info(`[Sample App] Sending a Text Edit message`)
         const message = TextMessage.create({
           conversationId: conversationId,
