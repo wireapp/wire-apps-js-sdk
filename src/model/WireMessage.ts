@@ -145,10 +145,9 @@ export interface TextMessage extends WireMessageBase, Item, Ephemeral, Replyable
   expiresAfterMillis?: number | null
 }
 
-// TODO: Check this type and the isreplyable method.. maybe a better way..
-type ReplyableMessage = TextMessage | AssetMessage | Location
+type ReplyableMessageType = TextMessage | AssetMessage | Location
 
-function isReplyable(message: WireMessage): message is ReplyableMessage {
+function isReplyable(message: WireMessage): message is ReplyableMessageType {
   return message.type === 'text' || message.type === 'asset' || message.type === 'location'
 }
 
@@ -191,7 +190,7 @@ export const TextMessage = {
     }
   ): TextMessage {
     if (!isReplyable(params.originalMessage)) {
-      throw new Error(`Unsupported replied WireMessage: ${params.originalMessage.type}`)
+      throw new Error(`Cannot reply to unreplyable WireMessage type: ${params.originalMessage.type}`)
     }
 
     if (params.originalMessage.expiresAfterMillis) {
@@ -206,7 +205,6 @@ export const TextMessage = {
       text: params.text,
       mentions: params.mentions ?? [],
       quotedMessageId: params.originalMessage.id,
-      // TODO:: check here
       quotedMessageSha256: MessageContentEncoder.encodeMessageContent(params.originalMessage)?.sha256Digest ?? null,
       linkPreviews: params.linkPreviews ?? [],
       timestamp: params.timestamp ?? new Date(),

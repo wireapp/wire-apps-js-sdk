@@ -132,7 +132,7 @@ describe('WireMessage', () => {
 
       expect(() =>
         TextMessage.createReply({text: 'a reply', originalMessage: original})
-      ).toThrow(/Unsupported replied WireMessage/)
+      ).toThrow(/Cannot reply to unreplyable WireMessage type/)
     })
 
     it('should throw when replying to an Unknown message', () => {
@@ -140,7 +140,7 @@ describe('WireMessage', () => {
 
       expect(() =>
         TextMessage.createReply({text: 'a reply', originalMessage: original})
-      ).toThrow(/Unsupported replied WireMessage/)
+      ).toThrow(/Cannot reply to unreplyable WireMessage type/)
     })
 
     it('should throw when replying to an Ignored message', () => {
@@ -148,7 +148,7 @@ describe('WireMessage', () => {
 
       expect(() =>
         TextMessage.createReply({text: 'a reply', originalMessage: original})
-      ).toThrow(/Unsupported replied WireMessage/)
+      ).toThrow(/Cannot reply to unreplyable WireMessage type/)
     })
 
     it('should throw when the original message is ephemeral (expiring)', () => {
