@@ -32,6 +32,9 @@ jobs:
       - name: Tests with Coverage
         run: npm run test:coverage -- --no-cache
 
+      - name: Packed Install Smoke Test
+        run: npm run test:pack
+
       - name: Report Coverage
         if: always()
         uses: davelosert/vitest-coverage-report-action@v2.12.1

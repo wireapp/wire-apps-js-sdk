@@ -40,6 +40,7 @@
     "prepack": "npm run build",
     "sample": "npm run -w sample dev",
     "test": "npm run test:typecheck",
+    "test:pack": "node scripts/verify-packed-install.js",
     "test:typecheck": "vitest run --typecheck --typecheck.tsconfig tsconfig.test.json",
     "test:coverage": "vitest run --coverage --typecheck --typecheck.tsconfig tsconfig.test.json",
     "clean": "rm -rf ./build ./sample/build ./sample/storage ./src/generated",
