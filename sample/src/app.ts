@@ -128,13 +128,13 @@ class SampleEventsHandler extends WireEventsHandler {
 
     await this.manager.sendMessage(receipt)
 
-    // Sending a Text message for the received message
-    const textMessage = TextMessage.create({
-      conversationId: wireMessage.conversationId,
+    // Sending a reply message for the received location type message
+    const replyMessage = TextMessage.createReply({
+      originalMessage: wireMessage,
       text: locationDetails
     })
 
-    await this.manager.sendMessage(textMessage)
+    await this.manager.sendMessage(replyMessage)
   }
 
   public override async onConversationDeleted(conversationId: QualifiedId): Promise<void> {
