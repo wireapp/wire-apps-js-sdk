@@ -17,19 +17,18 @@
 import {HashUtils} from "../../utils/HashUtils.js";
 import {concatToBuffer} from "../../utils/BufferUtils.js";
 import type {WireMessage} from "../../model/WireMessage.js";
+import {LoggerFactory} from "../../utils/logger/LoggerFactory.js";
 
 const MILLIS_IN_SEC = 1000;
 const COORDINATES_ROUNDING = 1000;
 const LONG_SIZE_BYTES = 8;
 
+const logger = LoggerFactory.getLogger('MessageContentEncoder');
+
 export class EncodedMessageContent {
-  readonly byteArray: Buffer;
-  readonly asHexString: string;
   readonly sha256Digest: Buffer;
 
   constructor(byteArray: Buffer) {
-    this.byteArray = byteArray;
-    this.asHexString = toInternalHexString(byteArray);
     this.sha256Digest = HashUtils.calculateSha256Hash(byteArray);
   }
 }
@@ -52,13 +51,6 @@ function toByteArray(value: number): Buffer {
   const result = Buffer.alloc(LONG_SIZE_BYTES);
   result.writeBigInt64BE(BigInt(Math.trunc(value)));
   return result;
-}
-
-/**
- * Converts a byte array into a lowercase hex string.
- */
-function toInternalHexString(value: Uint8Array): string {
-  return Buffer.from(value).toString('hex');
 }
 
 function encodeMessageTimeStampInMillis(messageTimeStampInMillis: number): Buffer {
@@ -122,7 +114,7 @@ export const MessageContentEncoder = {
         return encodeLocationCoordinates(message.latitude, message.longitude, new Date(message.timestamp).getTime());
 
       default:
-        console.warn('Attempting to encode message with unsupported content type');
+        logger.warn('Attempting to encode message with unsupported content type');
         return null;
     }
   }
