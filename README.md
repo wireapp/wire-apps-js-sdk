@@ -38,7 +38,13 @@ messages to it.
 
 ## How to use it
 
-To be done
+Install the SDK in a Node application:
+
+```shell
+npm install @wireapp/wire-apps-js-sdk
+```
+
+Create an app-specific `WireEventsHandler`, then initialize the SDK with the Wire application credentials and cryptography storage key provided by your app configuration.
 
 ## Requirements
 
@@ -64,7 +70,17 @@ The SQLite schema is initialized by SDK startup through migrations shipped with 
 
 ## Import with
 
-To be done
+The SDK is published as an ESM package. Import it with standard `import` syntax:
+
+```ts
+import {
+  WireAppSdk,
+  WireEventsHandler,
+  TextMessage
+} from '@wireapp/wire-apps-js-sdk'
+```
+
+CommonJS `require()` is not the supported integration path for this alpha release.
 
 ## Environment Variables
 
@@ -79,18 +95,47 @@ WIRE_SDK_API_HOST=https://your-api.host
 
 ## Running the sample App
 
-```shell
-// If it's the first time running the project
-npm run build:setup
+For a clean local run, install dependencies after cleaning the repository:
 
-// Then
+```shell
+npm run clean:all
+npm install
+```
+
+Then build the SDK and start the sample app:
+
+```shell
+npm run build
 npm run sample
 ```
 
+The `sample` script builds the sample workspace and starts it. It expects the environment variables listed above to be available from the repository `.env` file.
+
 ## Troubleshooting
 
-To be done
+If the SDK fails to start because a native module cannot be loaded, check that Node was installed for the same CPU architecture as the native dependencies. On Apple Silicon, mixing an x64 Node binary with arm64 native libraries, or the reverse, can cause `dlopen` architecture errors. Reinstalling dependencies with the intended Node binary usually fixes this.
+
+If database migrations fail at startup, verify that the package was built before running and that `build/db/migrations/**` exists. Published npm installs include these files, but local development builds need `npm run build` to copy them into `build`.
+
+If environment variables are missing, confirm that `.env` exists at the repository root when running the bundled sample app. The sample validates `WIRE_SDK_USER_ID`, `WIRE_SDK_API_TOKEN`, `WIRE_SDK_USER_DOMAIN`, and `WIRE_SDK_API_HOST` on startup.
 
 ### Testing the SDK
 
-To be done
+Run the SDK typecheck and test suite with:
+
+```shell
+npm run test:typecheck
+```
+
+To build the SDK and run the sample app:
+
+```shell
+npm run build
+npm run sample
+```
+
+Before publishing, verify the package artifact with:
+
+```shell
+npm pack --dry-run
+```

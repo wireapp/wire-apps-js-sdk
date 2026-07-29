@@ -36,15 +36,14 @@
     "db:migration": "npx drizzle-kit generate",
     "migrations:copy": "node scripts/copy-migrations.js",
     "proto:generate": "npm run proto:mkdir && npm run proto:package && npm run proto:js && npm run proto:ts",
-    "build:setup": "npm install && npm run proto:generate",
     "build": "npm run proto:generate && tsc -p tsconfig.json && npm run proto:copy && npm run migrations:copy",
     "prepack": "npm run build",
-    "build:sample": "npm run build && npm run -w sample build",
-    "sample": "npm run build:sample && npm run -w sample start",
+    "sample": "npm run -w sample dev",
     "test": "npm run test:typecheck",
     "test:typecheck": "vitest run --typecheck --typecheck.tsconfig tsconfig.test.json",
     "test:coverage": "vitest run --coverage --typecheck --typecheck.tsconfig tsconfig.test.json",
-    "clean": "rm -rf ./build ./node_modules ./sample/build ./sample/storage ./src/generated",
+    "clean": "rm -rf ./build ./sample/build ./sample/storage ./src/generated",
+    "clean:all": "npm run clean && rm -rf ./node_modules",
     "lint": "eslint src --ext .ts"
   },
   "files": [
