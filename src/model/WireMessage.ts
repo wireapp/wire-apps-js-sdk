@@ -43,6 +43,8 @@ export const WireMessageType = {
   REACTION: 'reaction'
 } as const
 
+export type WireMessageType = typeof WireMessageType[keyof typeof WireMessageType]
+
 /**
  * Interface for message types to be extended from that can be used as Ephemeral(self-deleting) messages
  */
