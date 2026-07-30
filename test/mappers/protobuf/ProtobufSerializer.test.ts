@@ -121,7 +121,7 @@ describe('Protobuf serialization', () => {
     expect(result.content).toBe('ephemeral')
     expect(result.text).toBeNull()
     expect(result.ephemeral?.expireAfterMillis.toString()).toBe('5000')
-    expect(result.ephemeral?.content).toBe(WireMessageType.TEXT)
+    expect(result.ephemeral?.content).toBe('text')
     expect(result.ephemeral?.text?.content).toBe('Temporary hello')
   })
 
@@ -418,7 +418,7 @@ describe('Protobuf serialization', () => {
 
     expect(result.content).toBe('edited')
     expect(result.messageId).toBe('new-message-id')
-    expect(result.edited?.content).toBe(WireMessageType.TEXT)
+    expect(result.edited?.content).toBe('text')
     expect(result.edited?.text?.content).toBe(`Hello @Wire see ${wireBlogUrl}`)
 
     const resultMention = result.edited?.text?.mentions?.[0]
@@ -464,7 +464,7 @@ describe('Protobuf serialization', () => {
     const compositeItems = result.edited?.composite?.items
     const firstItem = compositeItems?.at(0)
     expect(firstItem).toBeDefined()
-    expect(firstItem!.content).toBe(WireMessageType.TEXT)
+    expect(firstItem!.content).toBe('text')
     expect(firstItem!.text?.content).toBe('hello @Wire')
 
     const firstItemMention = firstItem?.text?.mentions?.at(0)
