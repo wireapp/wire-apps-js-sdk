@@ -266,14 +266,14 @@ function packAssetMessage(
 function packItemList(itemsList: Item[]): ProtobufComposite.Item[] {
   return itemsList.flatMap((item) => {
     switch ((item as TextMessage | CompositeButton).type) {
-      case 'composite_button': {
+      case WireMessageType.COMPOSITE_BUTTON: {
         const button = item as CompositeButton
         return [Composite.Item.create({
           content: 'button',
           button: {id: button.id, text: button.text}
         })]
       }
-      case 'text': {
+      case WireMessageType.TEXT: {
         return [Composite.Item.create({
           content: 'text',
           text: packText(item as TextMessage)
