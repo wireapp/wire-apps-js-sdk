@@ -19,6 +19,7 @@ import rootMessage from '../../../src/generated/messages.js'
 import { ProtobufDeserializer } from '../../../src/mappers/protobuf/ProtobufDeserializer.js'
 import { QualifiedId } from '../../../src/model/QualifiedId.js'
 import { CompositeButton, TextMessage } from "../../../src/index.js"
+import {WireMessageType} from "../../../src/model/WireMessage.js";
 
 const { GenericMessage, Confirmation } = rootMessage
 
@@ -48,8 +49,8 @@ describe('Protobuf deserialization', () => {
 
     const result = toWireMessage(genericMessage)
 
-    expect(result.type).toBe('text')
-    expect(result.type === 'text' ? result.mentions : []).toStrictEqual([{
+    expect(result.type).toBe(WireMessageType.TEXT)
+    expect(result.type === WireMessageType.TEXT ? result.mentions : []).toStrictEqual([{
       userId: new QualifiedId('user-id', 'wire.com'),
       offset: 6,
       length: 5
@@ -66,8 +67,8 @@ describe('Protobuf deserialization', () => {
 
     const result = toWireMessage(genericMessage)
 
-    expect(result.type).toBe('text')
-    expect(result.type === 'text' ? result.mentions : null).toStrictEqual([])
+    expect(result.type).toBe(WireMessageType.TEXT)
+    expect(result.type === WireMessageType.TEXT ? result.mentions : null).toStrictEqual([])
   })
 
   it('preserves text message ids', () => {
@@ -80,8 +81,8 @@ describe('Protobuf deserialization', () => {
 
     const result = toWireMessage(genericMessage)
 
-    expect(result.type).toBe('text')
-    expect(result.type === 'text' ? result.id : null).toBe('message-id')
+    expect(result.type).toBe(WireMessageType.TEXT)
+    expect(result.type === WireMessageType.TEXT ? result.id : null).toBe('message-id')
   })
 
   it('preserves received text message metadata', () => {
@@ -94,9 +95,9 @@ describe('Protobuf deserialization', () => {
 
     const result = toWireMessage(genericMessage)
 
-    expect(result.type).toBe('text')
-    expect(result.type === 'text' ? result.sender : null).toStrictEqual(senderId)
-    expect(result.type === 'text' ? result.timestamp : null).toStrictEqual(timestamp)
+    expect(result.type).toBe(WireMessageType.TEXT)
+    expect(result.type === WireMessageType.TEXT ? result.sender : null).toStrictEqual(senderId)
+    expect(result.type === WireMessageType.TEXT ? result.timestamp : null).toStrictEqual(timestamp)
   })
 
   it('deserializes ephemeral text messages as expiring text messages', () => {
@@ -120,13 +121,13 @@ describe('Protobuf deserialization', () => {
 
     const result = toWireMessage(genericMessage)
 
-    expect(result.type).toBe('text')
-    expect(result.type === 'text' ? result.id : null).toBe('message-id')
-    expect(result.type === 'text' ? result.text : null).toBe('Temporary hello')
-    expect(result.type === 'text' ? result.expiresAfterMillis : null).toBe(5000)
-    expect(result.type === 'text' ? result.sender : null).toStrictEqual(senderId)
-    expect(result.type === 'text' ? result.timestamp : null).toStrictEqual(timestamp)
-    expect(result.type === 'text' ? result.mentions : []).toStrictEqual([{
+    expect(result.type).toBe(WireMessageType.TEXT)
+    expect(result.type === WireMessageType.TEXT ? result.id : null).toBe('message-id')
+    expect(result.type === WireMessageType.TEXT ? result.text : null).toBe('Temporary hello')
+    expect(result.type === WireMessageType.TEXT ? result.expiresAfterMillis : null).toBe(5000)
+    expect(result.type === WireMessageType.TEXT ? result.sender : null).toStrictEqual(senderId)
+    expect(result.type === WireMessageType.TEXT ? result.timestamp : null).toStrictEqual(timestamp)
+    expect(result.type === WireMessageType.TEXT ? result.mentions : []).toStrictEqual([{
       userId: new QualifiedId('user-id', 'wire.com'),
       offset: 10,
       length: 5
@@ -157,19 +158,19 @@ describe('Protobuf deserialization', () => {
 
     const result = toWireMessage(genericMessage)
 
-    expect(result.type).toBe('asset')
-    expect(result.type === 'asset' ? result.id : null).toBe('message-id')
-    expect(result.type === 'asset' ? result.expiresAfterMillis : null).toBe(5000)
-    expect(result.type === 'asset' ? result.mimeType : null).toBe('image/png')
-    expect(result.type === 'asset' ? result.name : null).toBe('image.png')
-    expect(result.type === 'asset' ? result.sizeInBytes.toString() : null).toBe('123')
-    expect(result.type === 'asset' ? result.remoteData : null).toMatchObject({
+    expect(result.type).toBe(WireMessageType.ASSET)
+    expect(result.type === WireMessageType.ASSET ? result.id : null).toBe('message-id')
+    expect(result.type === WireMessageType.ASSET ? result.expiresAfterMillis : null).toBe(5000)
+    expect(result.type === WireMessageType.ASSET ? result.mimeType : null).toBe('image/png')
+    expect(result.type === WireMessageType.ASSET ? result.name : null).toBe('image.png')
+    expect(result.type === WireMessageType.ASSET ? result.sizeInBytes.toString() : null).toBe('123')
+    expect(result.type === WireMessageType.ASSET ? result.remoteData : null).toMatchObject({
       assetId: 'asset-id',
       assetToken: 'asset-token',
       assetDomain: 'assets.wire.com'
     })
-    expect(result.type === 'asset' ? result.sender : null).toStrictEqual(senderId)
-    expect(result.type === 'asset' ? result.timestamp : null).toStrictEqual(timestamp)
+    expect(result.type === WireMessageType.ASSET ? result.sender : null).toStrictEqual(senderId)
+    expect(result.type === WireMessageType.ASSET ? result.timestamp : null).toStrictEqual(timestamp)
   })
 
   it('deserializes knocks as pings', () => {
@@ -182,10 +183,10 @@ describe('Protobuf deserialization', () => {
 
     const result = toWireMessage(genericMessage)
 
-    expect(result.type).toBe('ping')
-    expect(result.type === 'ping' ? result.id : null).toBe('message-id')
-    expect(result.type === 'ping' ? result.conversationId : null).toStrictEqual(conversationId)
-    expect(result.type === 'ping' ? result.expiresAfterMillis : undefined).toBeNull()
+    expect(result.type).toBe(WireMessageType.PING)
+    expect(result.type === WireMessageType.PING ? result.id : null).toBe('message-id')
+    expect(result.type === WireMessageType.PING ? result.conversationId : null).toStrictEqual(conversationId)
+    expect(result.type === WireMessageType.PING ? result.expiresAfterMillis : undefined).toBeNull()
   })
 
   it('deserializes ephemeral knocks as expiring pings', () => {
@@ -201,9 +202,9 @@ describe('Protobuf deserialization', () => {
 
     const result = toWireMessage(genericMessage)
 
-    expect(result.type).toBe('ping')
-    expect(result.type === 'ping' ? result.id : null).toBe('message-id')
-    expect(result.type === 'ping' ? result.expiresAfterMillis : null).toBe(1000)
+    expect(result.type).toBe(WireMessageType.PING)
+    expect(result.type === WireMessageType.PING ? result.id : null).toBe('message-id')
+    expect(result.type === WireMessageType.PING ? result.expiresAfterMillis : null).toBe(1000)
   })
 
   it('deserializes locations', () => {
@@ -219,15 +220,15 @@ describe('Protobuf deserialization', () => {
 
     const result = toWireMessage(genericMessage)
 
-    expect(result.type).toBe('location')
-    expect(result.type === 'location' ? result.id : null).toBe('message-id')
-    expect(result.type === 'location' ? result.conversationId : null).toStrictEqual(conversationId)
-    expect(result.type === 'location' ? result.latitude : null).toBeCloseTo(52.520008)
-    expect(result.type === 'location' ? result.longitude : null).toBeCloseTo(13.404954)
-    expect(result.type === 'location' ? result.name : null).toBe('Berlin')
-    expect(result.type === 'location' ? result.zoom : null).toBe(12)
-    expect(result.type === 'location' ? result.sender : null).toStrictEqual(senderId)
-    expect(result.type === 'location' ? result.timestamp : null).toStrictEqual(timestamp)
+    expect(result.type).toBe(WireMessageType.LOCATION)
+    expect(result.type === WireMessageType.LOCATION ? result.id : null).toBe('message-id')
+    expect(result.type === WireMessageType.LOCATION ? result.conversationId : null).toStrictEqual(conversationId)
+    expect(result.type === WireMessageType.LOCATION ? result.latitude : null).toBeCloseTo(52.520008)
+    expect(result.type === WireMessageType.LOCATION ? result.longitude : null).toBeCloseTo(13.404954)
+    expect(result.type === WireMessageType.LOCATION ? result.name : null).toBe('Berlin')
+    expect(result.type === WireMessageType.LOCATION ? result.zoom : null).toBe(12)
+    expect(result.type === WireMessageType.LOCATION ? result.sender : null).toStrictEqual(senderId)
+    expect(result.type === WireMessageType.LOCATION ? result.timestamp : null).toStrictEqual(timestamp)
   })
 
   it('preserves omitted optional location fields as null', () => {
@@ -241,9 +242,9 @@ describe('Protobuf deserialization', () => {
 
     const result = toWireMessage(genericMessage)
 
-    expect(result.type).toBe('location')
-    expect(result.type === 'location' ? result.name : undefined).toBeNull()
-    expect(result.type === 'location' ? result.zoom : undefined).toBeNull()
+    expect(result.type).toBe(WireMessageType.LOCATION)
+    expect(result.type === WireMessageType.LOCATION ? result.name : undefined).toBeNull()
+    expect(result.type === WireMessageType.LOCATION ? result.zoom : undefined).toBeNull()
   })
 
   it('preserves explicit location zoom 0', () => {
@@ -258,8 +259,8 @@ describe('Protobuf deserialization', () => {
 
     const result = toWireMessage(genericMessage)
 
-    expect(result.type).toBe('location')
-    expect(result.type === 'location' ? result.zoom : null).toBe(0)
+    expect(result.type).toBe(WireMessageType.LOCATION)
+    expect(result.type === WireMessageType.LOCATION ? result.zoom : null).toBe(0)
   })
 
   it('deserializes ephemeral locations as expiring locations', () => {
@@ -278,15 +279,15 @@ describe('Protobuf deserialization', () => {
 
     const result = toWireMessage(genericMessage)
 
-    expect(result.type).toBe('location')
-    expect(result.type === 'location' ? result.id : null).toBe('message-id')
-    expect(result.type === 'location' ? result.expiresAfterMillis : null).toBe(5000)
-    expect(result.type === 'location' ? result.latitude : null).toBeCloseTo(52.520008)
-    expect(result.type === 'location' ? result.longitude : null).toBeCloseTo(13.404954)
-    expect(result.type === 'location' ? result.name : null).toBe('Berlin')
-    expect(result.type === 'location' ? result.zoom : null).toBe(12)
-    expect(result.type === 'location' ? result.sender : null).toStrictEqual(senderId)
-    expect(result.type === 'location' ? result.timestamp : null).toStrictEqual(timestamp)
+    expect(result.type).toBe(WireMessageType.LOCATION)
+    expect(result.type === WireMessageType.LOCATION ? result.id : null).toBe('message-id')
+    expect(result.type === WireMessageType.LOCATION ? result.expiresAfterMillis : null).toBe(5000)
+    expect(result.type === WireMessageType.LOCATION ? result.latitude : null).toBeCloseTo(52.520008)
+    expect(result.type === WireMessageType.LOCATION ? result.longitude : null).toBeCloseTo(13.404954)
+    expect(result.type === WireMessageType.LOCATION ? result.name : null).toBe('Berlin')
+    expect(result.type === WireMessageType.LOCATION ? result.zoom : null).toBe(12)
+    expect(result.type === WireMessageType.LOCATION ? result.sender : null).toStrictEqual(senderId)
+    expect(result.type === WireMessageType.LOCATION ? result.timestamp : null).toStrictEqual(timestamp)
   })
 
   it('deserializes deleted messages', () => {
@@ -299,11 +300,11 @@ describe('Protobuf deserialization', () => {
 
     const result = toWireMessage(genericMessage)
 
-    expect(result.type).toBe('deleted')
-    expect(result.type === 'deleted' ? result.id : null).toBe('message-id')
-    expect(result.type === 'deleted' ? result.conversationId : null).toStrictEqual(conversationId)
-    expect(result.type === 'deleted' ? result.messageId : null).toBe('deleted-message-id')
-    expect(result.type === 'deleted' ? result.sender : null).toStrictEqual(senderId)
+    expect(result.type).toBe(WireMessageType.DELETED)
+    expect(result.type === WireMessageType.DELETED ? result.id : null).toBe('message-id')
+    expect(result.type === WireMessageType.DELETED ? result.conversationId : null).toStrictEqual(conversationId)
+    expect(result.type === WireMessageType.DELETED ? result.messageId : null).toBe('deleted-message-id')
+    expect(result.type === WireMessageType.DELETED ? result.sender : null).toStrictEqual(senderId)
   })
 
   it('deserializes delivered receipts', () => {
@@ -318,16 +319,16 @@ describe('Protobuf deserialization', () => {
 
     const result = toWireMessage(genericMessage)
 
-    expect(result.type).toBe('receipt')
-    expect(result.type === 'receipt' ? result.id : null).toBe('message-id')
-    expect(result.type === 'receipt' ? result.conversationId : null).toStrictEqual(conversationId)
-    expect(result.type === 'receipt' ? result.receiptType : null).toBe('DELIVERED')
-    expect(result.type === 'receipt' ? result.messageIds : []).toStrictEqual([
+    expect(result.type).toBe(WireMessageType.RECEIPT)
+    expect(result.type === WireMessageType.RECEIPT ? result.id : null).toBe('message-id')
+    expect(result.type === WireMessageType.RECEIPT ? result.conversationId : null).toStrictEqual(conversationId)
+    expect(result.type === WireMessageType.RECEIPT ? result.receiptType : null).toBe('DELIVERED')
+    expect(result.type === WireMessageType.RECEIPT ? result.messageIds : []).toStrictEqual([
       'first-message-id',
       'second-message-id',
       'third-message-id'
     ])
-    expect(result.type === 'receipt' ? result.sender : null).toStrictEqual(senderId)
+    expect(result.type === WireMessageType.RECEIPT ? result.sender : null).toStrictEqual(senderId)
   })
 
   it('deserializes read receipts', () => {
@@ -341,9 +342,9 @@ describe('Protobuf deserialization', () => {
 
     const result = toWireMessage(genericMessage)
 
-    expect(result.type).toBe('receipt')
-    expect(result.type === 'receipt' ? result.receiptType : null).toBe('READ')
-    expect(result.type === 'receipt' ? result.messageIds : []).toStrictEqual(['read-message-id'])
+    expect(result.type).toBe(WireMessageType.RECEIPT)
+    expect(result.type === WireMessageType.RECEIPT ? result.receiptType : null).toBe('READ')
+    expect(result.type === WireMessageType.RECEIPT ? result.messageIds : []).toStrictEqual(['read-message-id'])
   })
 
   it('ignores unsupported receipt types', () => {
@@ -357,7 +358,7 @@ describe('Protobuf deserialization', () => {
 
     const result = toWireMessage(genericMessage)
 
-    expect(result.type).toBe('ignored')
+    expect(result.type).toBe(WireMessageType.IGNORED)
   })
 
   it('deserializes text edited message', () => {
@@ -396,8 +397,8 @@ describe('Protobuf deserialization', () => {
 
     const result = toWireMessage(genericMessage)
 
-    expect(result.type).toBe('text-edited')
-    if (result.type == 'text-edited') {
+    expect(result.type).toBe(WireMessageType.TEXT_EDITED)
+    if (result.type == WireMessageType.TEXT_EDITED) {
       expect(result.id).toBe('edited-message-id')
       expect(result.text).toBe(`Hello @Wire see ${wireBlogUrl}`)
       const resultMention = result.mentions?.at(0)
@@ -445,14 +446,14 @@ describe('Protobuf deserialization', () => {
 
     const result = toWireMessage(genericMessage)
 
-    expect(result.type).toBe('composite')
-    if (result.type == 'composite') {
+    expect(result.type).toBe(WireMessageType.COMPOSITE)
+    if (result.type == WireMessageType.COMPOSITE) {
       expect(result.id).toBe('edited-message-id')
 
       const firstItem = result.items.at(0) as TextMessage | null | undefined
       expect(firstItem).toBeDefined()
       if (firstItem) {
-        expect(firstItem.type).toBe('text')
+        expect(firstItem.type).toBe(WireMessageType.TEXT)
         expect(firstItem.text).toBe('hello @Wire')
         const resultMention = firstItem.mentions?.at(0)
         expect(resultMention).toBeDefined()
@@ -465,7 +466,7 @@ describe('Protobuf deserialization', () => {
       const secondItem = result.items.at(1) as CompositeButton | null | undefined
       expect(secondItem).toBeDefined()
       if (secondItem) {
-        expect(secondItem.type).toBe('composite_button')
+        expect(secondItem.type).toBe(WireMessageType.COMPOSITE_BUTTON)
         expect(secondItem.id).toBe('id')
         expect(secondItem.text).toBe('text')
       }
@@ -511,15 +512,15 @@ describe('Protobuf deserialization', () => {
 
     const result = toWireMessage(genericMessage)
 
-    expect(result.type).toBe('composite-edited')
-    if (result.type == 'composite-edited') {
+    expect(result.type).toBe(WireMessageType.COMPOSITE_EDITED)
+    if (result.type == WireMessageType.COMPOSITE_EDITED) {
       expect(result.id).toBe('edited-message-id')
       expect(result.replacingMessageId).toBe('replacing-message-id')
 
       const firstItem = result.items.at(0) as TextMessage | null | undefined
       expect(firstItem).toBeDefined()
       if (firstItem) {
-        expect(firstItem.type).toBe('text')
+        expect(firstItem.type).toBe(WireMessageType.TEXT)
         expect(firstItem.text).toBe('hello @Wire')
         const resultMention = firstItem.mentions?.at(0)
         expect(resultMention).toBeDefined()
@@ -532,7 +533,7 @@ describe('Protobuf deserialization', () => {
       const secondItem = result.items.at(1) as CompositeButton | null | undefined
       expect(secondItem).toBeDefined()
       if (secondItem) {
-        expect(secondItem.type).toBe('composite_button')
+        expect(secondItem.type).toBe(WireMessageType.COMPOSITE_BUTTON)
         expect(secondItem.id).toBe('id')
         expect(secondItem.text).toBe('text')
       }
