@@ -25,6 +25,24 @@ const appQualifiedId = new QualifiedId(appUserId, appUserDomain)
 
 export type Item = object
 
+export const WireMessageType = {
+  UNKNOWN: 'unknown',
+  IGNORED: 'ignored',
+  TEXT: 'text',
+  TEXT_EDITED: 'text-edited',
+  ASSET: 'asset',
+  COMPOSITE_BUTTON: 'composite_button',
+  COMPOSITE_BUTTON_ACTION: 'composite_button_action',
+  COMPOSITE_BUTTON_ACTION_CONFIRMATION: 'composite_button_action_confirmation',
+  COMPOSITE: 'composite',
+  COMPOSITE_EDITED: 'composite-edited',
+  PING: 'ping',
+  LOCATION: 'location',
+  DELETED: 'deleted',
+  RECEIPT: 'receipt',
+  REACTION: 'reaction'
+} as const
+
 /**
  * Interface for message types to be extended from that can be used as Ephemeral(self-deleting) messages
  */
@@ -112,7 +130,7 @@ export class Unknown implements WireMessageBase {
     throw new Error("Unknown message, no timestamp")
   }
 
-  readonly type = "unknown" as const
+  readonly type = WireMessageType.UNKNOWN
 }
 
 export class Ignored implements WireMessageBase {
@@ -132,11 +150,11 @@ export class Ignored implements WireMessageBase {
     throw new Error("Ignored message, no timestamp")
   }
 
-  readonly type = "ignored" as const
+  readonly type = WireMessageType.IGNORED
 }
 
 export interface TextMessage extends WireMessageBase, Item, Ephemeral, Replyable {
-  type: 'text'
+  type: typeof WireMessageType.TEXT
   text: string
   quotedMessageId?: string | null
   quotedMessageSha256?: Uint8Array | null
@@ -148,7 +166,9 @@ export interface TextMessage extends WireMessageBase, Item, Ephemeral, Replyable
 type ReplyableMessageType = TextMessage | AssetMessage | Location
 
 function isReplyable(message: WireMessage): message is ReplyableMessageType {
-  return message.type === 'text' || message.type === 'asset' || message.type === 'location'
+  return message.type === WireMessageType.TEXT
+    || message.type === WireMessageType.ASSET
+    || message.type === WireMessageType.LOCATION
 }
 
 export const TextMessage = {
@@ -165,7 +185,7 @@ export const TextMessage = {
     }
   ): TextMessage {
     return {
-      type: 'text',
+      type: WireMessageType.TEXT,
       id: params.messageId ?? crypto.randomUUID(),
       conversationId: params.conversationId,
       sender: params.senderId ?? appQualifiedId,
@@ -198,7 +218,7 @@ export const TextMessage = {
     }
 
     return {
-      type: 'text',
+      type: WireMessageType.TEXT,
       id: params.messageId ?? crypto.randomUUID(),
       conversationId: params.originalMessage.conversationId,
       sender: params.senderId ?? appQualifiedId,
@@ -214,7 +234,7 @@ export const TextMessage = {
 }
 
 export interface TextEditedMessage extends WireMessageBase, Editable {
-  type: 'text-edited'
+  type: typeof WireMessageType.TEXT_EDITED
   text: string
   mentions?: Mention[]
   linkPreviews?: LinkPreview[]
@@ -233,7 +253,7 @@ export const TextEditedMessage = {
     }
   ): TextEditedMessage {
     return {
-      type: 'text-edited',
+      type: WireMessageType.TEXT_EDITED,
       id: params.messageId ?? crypto.randomUUID(),
       conversationId: params.conversationId,
       sender: params.senderId ?? appQualifiedId,
@@ -246,7 +266,7 @@ export const TextEditedMessage = {
 }
 
 export interface AssetMessage extends WireMessageBase, Ephemeral, Replyable {
-  type: 'asset'
+  type: typeof WireMessageType.ASSET
   sizeInBytes: number | Long
   name?: string | null
   mimeType: string
@@ -270,7 +290,7 @@ export const AssetMessage = {
     }
   ): AssetMessage {
     return {
-      type: 'asset',
+      type: WireMessageType.ASSET,
       id: params.messageId ?? crypto.randomUUID(),
       conversationId: params.conversationId,
       sender: params.senderId ?? appQualifiedId,
@@ -316,7 +336,7 @@ export interface AssetRemoteData {
 }
 
 export interface CompositeButton extends Item {
-  type: 'composite_button'
+  type: typeof WireMessageType.COMPOSITE_BUTTON
   id: string
   text: string
 }
@@ -329,7 +349,7 @@ export const CompositeButton = {
     }
   ): CompositeButton {
     return {
-      type: 'composite_button',
+      type: WireMessageType.COMPOSITE_BUTTON,
       id: params.id ?? crypto.randomUUID(),
       text: params.text
     }
@@ -337,7 +357,7 @@ export const CompositeButton = {
 }
 
 export interface CompositeButtonAction extends WireMessageBase {
-  type: "composite_button_action"
+  type: typeof WireMessageType.COMPOSITE_BUTTON_ACTION
   referenceMessageId: string
   buttonId: string
 }
@@ -353,7 +373,7 @@ export const CompositeButtonAction = {
     }
   ): CompositeButtonAction {
     return {
-      type: 'composite_button_action',
+      type: WireMessageType.COMPOSITE_BUTTON_ACTION,
       id: params.messageId,
       conversationId: params.conversationId,
       buttonId: params.buttonId,
@@ -364,7 +384,7 @@ export const CompositeButtonAction = {
 }
 
 export interface CompositeButtonActionConfirmation extends WireMessageBase {
-  type: "composite_button_action_confirmation"
+  type: typeof WireMessageType.COMPOSITE_BUTTON_ACTION_CONFIRMATION
   referenceMessageId: string
   buttonId: string | null
 }
@@ -380,7 +400,7 @@ export const CompositeButtonActionConfirmation = {
     }
   ): CompositeButtonActionConfirmation {
     return {
-      type: 'composite_button_action_confirmation',
+      type: WireMessageType.COMPOSITE_BUTTON_ACTION_CONFIRMATION,
       id: params.messageId,
       conversationId: params.conversationId,
       buttonId: params.buttonId,
@@ -391,7 +411,7 @@ export const CompositeButtonActionConfirmation = {
 }
 
 export interface CompositeMessage extends WireMessageBase {
-  type: "composite"
+  type: typeof WireMessageType.COMPOSITE
   items: Item[]
 }
 
@@ -413,7 +433,7 @@ export const CompositeMessage = {
       : null
 
     return {
-      type: "composite",
+      type: WireMessageType.COMPOSITE,
       id: params.messageId ?? crypto.randomUUID(),
       conversationId: params.conversationId,
       items: [...(textItem ? [textItem] : []), ...params.itemList],
@@ -423,7 +443,7 @@ export const CompositeMessage = {
 }
 
 export interface CompositeEditedMessage extends WireMessageBase, Editable {
-  type: 'composite-edited'
+  type: typeof WireMessageType.COMPOSITE_EDITED
   items: Item[]
 }
 
@@ -438,7 +458,7 @@ export const CompositeEditedMessage = {
     }
   ): CompositeEditedMessage {
     return {
-      type: 'composite-edited',
+      type: WireMessageType.COMPOSITE_EDITED,
       id: params.messageId ?? crypto.randomUUID(),
       conversationId: params.conversationId,
       items: params.itemList,
@@ -449,7 +469,7 @@ export const CompositeEditedMessage = {
 }
 
 export interface Ping extends WireMessageBase, Ephemeral {
-  type: 'ping'
+  type: typeof WireMessageType.PING
 }
 
 export const Ping = {
@@ -462,7 +482,7 @@ export const Ping = {
     }
   ): Ping {
     return {
-      type: 'ping',
+      type: WireMessageType.PING,
       id: params.messageId ?? crypto.randomUUID(),
       conversationId: params.conversationId,
       ...(params.senderId && { sender: params.senderId }),
@@ -472,7 +492,7 @@ export const Ping = {
 }
 
 export interface Location extends WireMessageBase, Ephemeral, Replyable {
-  type: 'location'
+  type: typeof WireMessageType.LOCATION
   latitude: number
   longitude: number
   name: string | null
@@ -494,7 +514,7 @@ export const Location = {
     }
   ): Location {
     return {
-      type: 'location',
+      type: WireMessageType.LOCATION,
       id: params.messageId ?? crypto.randomUUID(),
       conversationId: params.conversationId,
       latitude: params.latitude,
@@ -509,7 +529,7 @@ export const Location = {
 }
 
 export interface DeletedMessage extends WireMessageBase {
-  type: 'deleted'
+  type: typeof WireMessageType.DELETED
   messageId: string
 }
 
@@ -523,7 +543,7 @@ export const DeletedMessage = {
     }
   ): DeletedMessage {
     return {
-      type: 'deleted',
+      type: WireMessageType.DELETED,
       id: params.id ?? crypto.randomUUID(),
       conversationId: params.conversationId,
       messageId: params.messageId,
@@ -540,7 +560,7 @@ export const ReceiptType = {
 export type ReceiptType = typeof ReceiptType[keyof typeof ReceiptType];
 
 export interface Receipt extends WireMessageBase {
-  type: 'receipt'
+  type: typeof WireMessageType.RECEIPT
   receiptType: ReceiptType
   messageIds: string[]
 }
@@ -556,7 +576,7 @@ export const Receipt = {
     }
   ): Receipt {
     return {
-      type: 'receipt',
+      type: WireMessageType.RECEIPT,
       id: params.id ?? crypto.randomUUID(),
       conversationId: params.conversationId,
       receiptType: params.receiptType,
@@ -567,7 +587,7 @@ export const Receipt = {
 }
 
 export interface Reaction extends WireMessageBase {
-  type: 'reaction'
+  type: typeof WireMessageType.REACTION
   messageId: string
   emojiSet: Set<string>
 }
@@ -583,7 +603,7 @@ export const Reaction = {
     }
   ): Reaction {
     return {
-      type: 'reaction',
+      type: WireMessageType.REACTION,
       id: params.id ?? crypto.randomUUID(),
       conversationId: params.conversationId,
       messageId: params.messageId,

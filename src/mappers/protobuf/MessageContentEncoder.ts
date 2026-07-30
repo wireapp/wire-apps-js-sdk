@@ -16,7 +16,7 @@
 
 import {HashUtils} from "../../utils/HashUtils.js";
 import {concatToBuffer} from "../../utils/BufferUtils.js";
-import type {WireMessage} from "../../model/WireMessage.js";
+import {type WireMessage, WireMessageType} from "../../model/WireMessage.js";
 import {LoggerFactory} from "../../utils/logger/LoggerFactory.js";
 
 const MILLIS_IN_SEC = 1000;
@@ -102,15 +102,15 @@ function encodeLocationCoordinates(
 export const MessageContentEncoder = {
   encodeMessageContent(message: WireMessage): EncodedMessageContent | null {
     switch (message.type) {
-      case 'asset':
+      case WireMessageType.ASSET:
         return message.remoteData?.assetId
           ? encodeMessageAsset(new Date(message.timestamp).getTime(), message.remoteData.assetId)
           : null;
 
-      case 'text':
+      case WireMessageType.TEXT:
         return encodeMessageTextBody(new Date(message.timestamp).getTime(), message.text);
 
-      case 'location':
+      case WireMessageType.LOCATION:
         return encodeLocationCoordinates(message.latitude, message.longitude, new Date(message.timestamp).getTime());
 
       default:

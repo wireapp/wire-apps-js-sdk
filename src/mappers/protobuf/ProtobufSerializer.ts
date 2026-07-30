@@ -14,16 +14,38 @@
 * along with this program. If not, see http://www.gnu.org/licenses/.
 */
 
-import rootMessage from "../../generated/messages.js";
 import type {
+  Asset,
   Composite as ProtobufComposite,
-  IText,
-  IGenericMessage,
   IAsset,
   IButtonAction,
-  Asset,
-  IButtonActionConfirmation
+  IButtonActionConfirmation,
+  IGenericMessage,
+  IText
 } from "../../generated/messages.js";
+import rootMessage from "../../generated/messages.js";
+import {
+  AssetMessage,
+  CompositeButton,
+  CompositeButtonAction,
+  CompositeButtonActionConfirmation,
+  CompositeEditedMessage,
+  CompositeMessage,
+  type DeletedMessage,
+  type Item,
+  type Location,
+  type Ping,
+  type Reaction,
+  type Receipt,
+  ReceiptType,
+  TextEditedMessage,
+  TextMessage,
+  type WireMessage,
+  WireMessageType
+} from '../../model/WireMessage.js';
+import {MessageLinkPreviewMapper} from "./MessageLinkPreviewMapper.js";
+import {MessageMentionMapper} from "./MessageMentionMapper.js";
+
 const {
   GenericMessage,
   Composite,
@@ -35,28 +57,6 @@ const {
   MessageEdit,
   Reaction: ProtobufReaction
 } = rootMessage;
-import type {
-  WireMessage,
-  Item,
-  Ping,
-  Location,
-  DeletedMessage,
-  Receipt,
-  Reaction
-} from '../../model/WireMessage.js';
-import {
-  TextMessage,
-  TextEditedMessage,
-  AssetMessage,
-  CompositeButton,
-  CompositeButtonAction,
-  CompositeButtonActionConfirmation,
-  CompositeMessage,
-  CompositeEditedMessage,
-  ReceiptType
-} from '../../model/WireMessage.js';
-import {MessageLinkPreviewMapper} from "./MessageLinkPreviewMapper.js";
-import {MessageMentionMapper} from "./MessageMentionMapper.js";
 
 /**
  * Utility object responsible for serializing WireMessage to GenericMessage
@@ -77,55 +77,53 @@ export const ProtobufSerializer = {
     let builtMessage: IGenericMessage;
 
     switch (wireMessage.type) {
-      case 'text':
+      case WireMessageType.TEXT:
         builtMessage = packTextMessage(wireMessage, genericMessage)
         break
 
-      case 'text-edited':
+      case WireMessageType.TEXT_EDITED:
         builtMessage = packTextEditedMessage(wireMessage, genericMessage)
         break
 
-      case 'asset':
+      case WireMessageType.ASSET:
         builtMessage = packAssetMessage(wireMessage, genericMessage)
         break
 
-      case 'composite_button_action':
+      case WireMessageType.COMPOSITE_BUTTON_ACTION:
         builtMessage = packCompositeButtonAction(wireMessage, genericMessage)
         break
 
-      case 'composite_button_action_confirmation':
+      case WireMessageType.COMPOSITE_BUTTON_ACTION_CONFIRMATION:
         builtMessage = packCompositeButtonActionConfirmation(wireMessage, genericMessage)
         break
 
-      case 'composite':
+      case WireMessageType.COMPOSITE:
         builtMessage = packCompositeMessage(wireMessage, genericMessage)
         break
 
-      case 'composite-edited':
+      case WireMessageType.COMPOSITE_EDITED:
         builtMessage = packCompositeEditedMessage(wireMessage, genericMessage)
         break
 
-      case 'ping':
+      case WireMessageType.PING:
         builtMessage = packPing(wireMessage, genericMessage)
         break
 
-      case 'location':
+      case WireMessageType.LOCATION:
         builtMessage = packLocation(wireMessage, genericMessage)
         break
 
-      case 'deleted':
+      case WireMessageType.DELETED:
         builtMessage = packDeletedMessage(wireMessage, genericMessage)
         break
 
-      case 'receipt':
+      case WireMessageType.RECEIPT:
         builtMessage = packReceipt(wireMessage, genericMessage)
         break
 
-      case 'reaction':
+      case WireMessageType.REACTION:
         builtMessage = packReaction(wireMessage, genericMessage)
         break
-
-        // TODO: Add other message types here
 
       default:
         throw new Error(`Unsupported message type: ${(wireMessage as WireMessage).type}`);
@@ -175,7 +173,7 @@ function packText(
   if (wireMessage.quotedMessageId) {
     textContent.quote = {
       quotedMessageId: wireMessage.quotedMessageId!,
-      ...(wireMessage.quotedMessageSha256 !== undefined ? { quotedMessageSha256: wireMessage.quotedMessageSha256 } : {})
+      ...(wireMessage.quotedMessageSha256 !== undefined ? {quotedMessageSha256: wireMessage.quotedMessageSha256} : {})
     };
   }
 
@@ -272,7 +270,7 @@ function packItemList(itemsList: Item[]): ProtobufComposite.Item[] {
         const button = item as CompositeButton
         return [Composite.Item.create({
           content: 'button',
-          button: { id: button.id, text: button.text }
+          button: {id: button.id, text: button.text}
         })]
       }
       case 'text': {
@@ -348,7 +346,7 @@ function packPing(
   wireMessage: Ping,
   genericMessage: Partial<IGenericMessage>
 ): IGenericMessage {
-  const knock = Knock.create({ hotKnock: false })
+  const knock = Knock.create({hotKnock: false})
   return {
     ...genericMessage,
     ...(wireMessage.expiresAfterMillis

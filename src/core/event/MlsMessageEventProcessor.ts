@@ -27,6 +27,7 @@ import {isMlsException} from "../../model/exception/MlsException.js";
 import {LoggerFactory} from "../../utils/logger/LoggerFactory.js";
 import {MlsFallbackStrategy} from "../../service/MlsFallbackStrategy.js";
 import {QualifiedId} from "../../model/QualifiedId.js";
+import {WireMessageType} from "../../model/WireMessage.js";
 
 @injectable({token: EVENT_PROCESSOR})
 export class MlsMessageEventProcessor implements EventProcessor<NewMLSMessageDTO> {
@@ -79,43 +80,43 @@ export class MlsMessageEventProcessor implements EventProcessor<NewMLSMessageDTO
     )
 
     switch (wireMessage.type) {
-      case 'text':
+      case WireMessageType.TEXT:
         await this.wireEventsHandler.onTextMessageReceived(wireMessage)
         break
-      case 'text-edited':
+      case WireMessageType.TEXT_EDITED:
         await this.wireEventsHandler.onTextEditedMessageReceived(wireMessage)
         break
-      case 'asset':
+      case WireMessageType.ASSET:
         await this.wireEventsHandler.onAssetMessageReceived(wireMessage)
         break
-      case 'composite_button_action':
+      case WireMessageType.COMPOSITE_BUTTON_ACTION:
         await this.wireEventsHandler.onButtonClicked(wireMessage)
         break
-      case 'composite_button_action_confirmation':
+      case WireMessageType.COMPOSITE_BUTTON_ACTION_CONFIRMATION:
         this.logger.debug('ButtonActionConfirmation event received.')
         break
-      case 'composite':
+      case WireMessageType.COMPOSITE:
         this.logger.debug('Composite event received.')
         break
-      case 'composite-edited':
+      case WireMessageType.COMPOSITE_EDITED:
         this.logger.debug('CompositeEdited event received.')
         break
-      case 'ping':
+      case WireMessageType.PING:
         await this.wireEventsHandler.onPingReceived(wireMessage)
         break
-      case 'location':
+      case WireMessageType.LOCATION:
         await this.wireEventsHandler.onLocationReceived(wireMessage)
         break
-      case 'deleted':
+      case WireMessageType.DELETED:
         await this.wireEventsHandler.onMessageDeleted(wireMessage)
         break
-      case 'receipt':
+      case WireMessageType.RECEIPT:
         await this.wireEventsHandler.onMessageDelivered(wireMessage)
         break
-      case 'reaction':
+      case WireMessageType.REACTION:
         await this.wireEventsHandler.onMessageReactionReceived(wireMessage)
         break
-      case 'unknown':
+      case WireMessageType.UNKNOWN:
       default:
         this.logger.info("Unknown event received.")
     }
