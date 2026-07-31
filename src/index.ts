@@ -48,6 +48,7 @@ export {
   DeletedMessage,
   Receipt,
   ReceiptType,
+  WireMessageType,
   Reaction,
   Ignored,
   Unknown,

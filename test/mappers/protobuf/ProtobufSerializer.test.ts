@@ -31,7 +31,7 @@ import {
   Receipt,
   ReceiptType,
   TextEditedMessage,
-  TextMessage
+  TextMessage, WireMessageType
 } from '../../../src/model/WireMessage.js'
 
 const { GenericMessage, Confirmation } = rootMessage
@@ -177,8 +177,8 @@ describe('Protobuf serialization', () => {
       timestamp
     )
 
-    expect(result.type).toBe('text')
-    expect(result.type === 'text' ? result.linkPreviews : []).toStrictEqual([{
+    expect(result.type).toBe(WireMessageType.TEXT)
+    expect(result.type === WireMessageType.TEXT ? result.linkPreviews : []).toStrictEqual([{
       url: wireBlogUrl,
       urlOffset: 5,
       permanentUrl: wireBlogUrl,
@@ -204,8 +204,8 @@ describe('Protobuf serialization', () => {
       timestamp
     )
 
-    expect(result.type).toBe('text')
-    expect(result.type === 'text' ? result.linkPreviews : null).toStrictEqual([])
+    expect(result.type).toBe(WireMessageType.TEXT)
+    expect(result.type === WireMessageType.TEXT ? result.linkPreviews : null).toStrictEqual([])
   })
 
   it('serializes composite button action confirmations', () => {
@@ -501,10 +501,10 @@ describe('Protobuf serialization', () => {
       timestamp
     )
 
-    expect(result.type).toBe('composite_button_action_confirmation')
-    expect(result.type === 'composite_button_action_confirmation' ? result.id : null).toBe('message-id')
-    expect(result.type === 'composite_button_action_confirmation' ? result.referenceMessageId : null).toBe('reference-message-id')
-    expect(result.type === 'composite_button_action_confirmation' ? result.buttonId : null).toBe('button-id')
+    expect(result.type).toBe(WireMessageType.COMPOSITE_BUTTON_ACTION_CONFIRMATION)
+    expect(result.type === WireMessageType.COMPOSITE_BUTTON_ACTION_CONFIRMATION ? result.id : null).toBe('message-id')
+    expect(result.type === WireMessageType.COMPOSITE_BUTTON_ACTION_CONFIRMATION ? result.referenceMessageId : null).toBe('reference-message-id')
+    expect(result.type === WireMessageType.COMPOSITE_BUTTON_ACTION_CONFIRMATION ? result.buttonId : null).toBe('button-id')
   })
 
   it('deserializes composite button action confirmations without a button id', () => {
@@ -522,9 +522,9 @@ describe('Protobuf serialization', () => {
       timestamp
     )
 
-    expect(result.type).toBe('composite_button_action_confirmation')
-    expect(result.type === 'composite_button_action_confirmation' ? result.referenceMessageId : null).toBe('reference-message-id')
-    expect(result.type === 'composite_button_action_confirmation' ? result.buttonId : undefined).toBeNull()
+    expect(result.type).toBe(WireMessageType.COMPOSITE_BUTTON_ACTION_CONFIRMATION)
+    expect(result.type === WireMessageType.COMPOSITE_BUTTON_ACTION_CONFIRMATION ? result.referenceMessageId : null).toBe('reference-message-id')
+    expect(result.type === WireMessageType.COMPOSITE_BUTTON_ACTION_CONFIRMATION ? result.buttonId : undefined).toBeNull()
   })
 
   it('deserializes reactions', () => {
@@ -543,9 +543,9 @@ describe('Protobuf serialization', () => {
       timestamp
     )
 
-    expect(result.type).toBe('reaction')
-    expect(result.type === 'reaction' ? result.id : null).toBe('reaction-message-id')
-    expect(result.type === 'reaction' ? result.messageId : null).toBe('target-message-id')
-    expect(result.type === 'reaction' ? [...result.emojiSet] : []).toStrictEqual(['🧩'])
+    expect(result.type).toBe(WireMessageType.REACTION)
+    expect(result.type === WireMessageType.REACTION ? result.id : null).toBe('reaction-message-id')
+    expect(result.type === WireMessageType.REACTION ? result.messageId : null).toBe('target-message-id')
+    expect(result.type === WireMessageType.REACTION ? [...result.emojiSet] : []).toStrictEqual(['🧩'])
   })
 })
