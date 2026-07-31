@@ -17,23 +17,23 @@
 import fs from 'fs'
 import path from 'node:path'
 import {
-  ConversationRole,
-  obfuscateId,
-  QualifiedId,
-  TextMessage,
-  TextEditedMessage,
-  CompositeButton,
-  CompositeMessage,
-  CompositeEditedMessage,
-  Ping,
-  Location,
-  DeletedMessage,
   type Audio,
+  CompositeButton,
+  CompositeEditedMessage,
+  CompositeMessage,
+  ConversationRole,
+  DeletedMessage,
   type Image,
+  Location,
+  obfuscateId,
+  Ping,
+  QualifiedId,
+  TextEditedMessage,
+  TextMessage,
   type Video,
-  WireUser,
-  WireEventsHandler
-} from 'wire-apps-js-sdk'
+  WireEventsHandler,
+  WireUser
+} from '@wireapp/wire-apps-js-sdk'
 import {PinoLogger} from './PinoLogger.js'
 
 type Manager = WireEventsHandler['manager']
@@ -90,23 +90,17 @@ export class TestCommandHandler {
       'get-conversation-members': async (conversationId, command) => {
         await this.processGetConversationMembers(conversationId, command)
       },
-      'test-composite-message': async (conversationId) => {
-        await this.processTestCompositeMessage(conversationId)
+      'create-group-conversation': async (conversationId, command) => {
+        await this.processCreateGroupConversation(command ?? "")
+      },
+      'create-channel-conversation': async (conversationId, command) => {
+        await this.processCreateChannelConversation(command ?? "")
+      },
+      'create-onetoone-conversation': async (conversationId, command) => {
+        await this.processCreateOneToOneConversation(command ?? "")
       },
       'test-deleted-message': async (conversationId) => {
         await this.processTestDeletedMessage(conversationId)
-      },
-      'test-ephemeral-text': async (conversationId) => {
-        await this.processTestEphemeralText(conversationId)
-      },
-      'test-ephemeral-image': async (conversationId) => {
-        await this.processTestEphemeralImage(conversationId)
-      },
-      'test-ephemeral-location': async (conversationId) => {
-        await this.processTestEphemeralLocation(conversationId)
-      },
-      'test-ephemeral-ping': async (conversationId) => {
-        await this.processTestEphemeralPing(conversationId)
       },
       'search-user': async (conversationId, command) => {
         await this.processSearchUser(conversationId, command)
@@ -117,25 +111,36 @@ export class TestCommandHandler {
       'test-edit-composite': async (conversationId) => {
         await this.processTestEditComposite(conversationId)
       },
-      'create-group-conversation': async (conversationId, command) => {
-        await this.processCreateGroupConversation(command ?? "")
+      'send-asset-image': async (conversationId) => {
+        this.sendAssetImage(conversationId)
       },
-      'create-channel-conversation': async (conversationId, command) => {
-        await this.processCreateChannelConversation(command ?? "")
+      'send-asset-audio': async (conversationId) => {
+        this.sendAssetAudio(conversationId)
       },
-      'create-onetoone-conversation': async (conversationId, command) => {
-        await this.processCreateOneToOneConversation(command ?? "")
+      'send-asset-video': async (conversationId) => {
+        this.sendAssetVideo(conversationId)
       },
-      'asset-image': async (conversationId) => {
-        this.processAssetImage(conversationId)
+      'send-ephemeral-text': async (conversationId) => {
+        await this.sendEphemeralText(conversationId)
       },
-      'asset-audio': async (conversationId) => {
-        this.processAssetAudio(conversationId)
+      'send-ephemeral-image': async (conversationId) => {
+        await this.sendEphemeralImage(conversationId)
       },
-      'asset-video': async (conversationId) => {
-        this.processAssetVideo(conversationId)
+      'send-ephemeral-location': async (conversationId) => {
+        await this.sendEphemeralLocation(conversationId)
+      },
+      'send-ephemeral-ping': async (conversationId) => {
+        await this.sendEphemeralPing(conversationId)
+      },
+      'send-composite-message': async (conversationId) => {
+        await this.sendCompositeMessage(conversationId)
+      },
+      'send-location-message': async (conversationId) => {
+        await this.sendLocationMessage(conversationId)
+      },
+      'send-ephemeral-location-message': async (conversationId) => {
+        await this.sendEphemeralLocationMessage(conversationId)
       }
-      // More reserved test commands will be added here
     }
   }
 
@@ -327,7 +332,7 @@ export class TestCommandHandler {
     }))
   }
 
-  private async processTestCompositeMessage(conversationId: QualifiedId): Promise<void> {
+  private async sendCompositeMessage(conversationId: QualifiedId): Promise<void> {
     const msg = CompositeMessage.create({
       conversationId: conversationId,
       text: "Composite Title",
@@ -339,6 +344,31 @@ export class TestCommandHandler {
           text: "Button-002"
         })
       ]
+    })
+
+    await this.manager.sendMessage(msg)
+  }
+
+  private async sendLocationMessage(conversationId: QualifiedId): Promise<void> {
+    const msg = Location.create({
+      conversationId: conversationId,
+      latitude: 52.52527,
+      longitude: 13.36923,
+      name: "Berlin Hauptbahnhof, 10557 Berlin",
+      zoom: 50
+    })
+
+    await this.manager.sendMessage(msg)
+  }
+
+  private async sendEphemeralLocationMessage(conversationId: QualifiedId): Promise<void> {
+    const msg = Location.create({
+      conversationId: conversationId,
+      latitude: 52.51615,
+      longitude: 13.37827,
+      name: "Pariser Platz, 10117 Berlin",
+      zoom: 50,
+      expiresAfterMillis: 5000
     })
 
     await this.manager.sendMessage(msg)
@@ -364,7 +394,7 @@ export class TestCommandHandler {
     await this.manager.sendMessage(deleted)
   }
 
-  private async processTestEphemeralText(conversationId: QualifiedId): Promise<void> {
+  private async sendEphemeralText(conversationId: QualifiedId): Promise<void> {
     this.appLogger?.info(`[Sample App] Sending an Ephemeral Text message`)
 
     const message = TextMessage.create({
@@ -376,7 +406,7 @@ export class TestCommandHandler {
     await this.manager.sendMessage(message)
   }
 
-  private async processTestEphemeralImage(conversationId: QualifiedId): Promise<void> {
+  private async sendEphemeralImage(conversationId: QualifiedId): Promise<void> {
     this.appLogger?.info(`[Sample App] Sending an Ephemeral Asset message`)
     const filename = 'banana-icon.png'
     const filePath = path.join(this.RESOURCES_PATH, filename)
@@ -404,7 +434,7 @@ export class TestCommandHandler {
     });
   }
 
-  private async processTestEphemeralLocation(conversationId: QualifiedId): Promise<void> {
+  private async sendEphemeralLocation(conversationId: QualifiedId): Promise<void> {
     this.appLogger?.info(`[Sample App] Sending an Ephemeral Location message`)
 
     const message = Location.create({
@@ -419,7 +449,7 @@ export class TestCommandHandler {
     await this.manager.sendMessage(message)
   }
 
-  private async processTestEphemeralPing(conversationId: QualifiedId): Promise<void> {
+  private async sendEphemeralPing(conversationId: QualifiedId): Promise<void> {
     this.appLogger?.info(`[Sample App] Sending an Ephemeral Ping message`)
 
     const message = Ping.create({
@@ -570,7 +600,7 @@ export class TestCommandHandler {
     await this.manager.createOneToOneConversation(new QualifiedId(userId, domain));
   }
 
-  private processAssetImage(conversationId: QualifiedId) {
+  private sendAssetImage(conversationId: QualifiedId) {
     const filename = 'banana-icon.png'
     const filePath = path.join(this.RESOURCES_PATH, filename)
     fs.readFile(filePath, (err, data) => {
@@ -596,7 +626,7 @@ export class TestCommandHandler {
     });
   }
 
-  private processAssetAudio(conversationId: QualifiedId) {
+  private sendAssetAudio(conversationId: QualifiedId) {
     const filename = 'sample_audio_6s.mp3'
     const filePath = path.join(this.RESOURCES_PATH, filename)
     fs.readFile(filePath, (err, data) => {
@@ -631,7 +661,7 @@ export class TestCommandHandler {
     }
   }
 
-  private processAssetVideo(conversationId: QualifiedId) {
+  private sendAssetVideo(conversationId: QualifiedId) {
     const filename = 'sample_video_5s.mp4'
     const filePath = path.join(this.RESOURCES_PATH, filename)
     fs.readFile(filePath, (err, data) => {
