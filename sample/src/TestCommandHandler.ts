@@ -1,18 +1,18 @@
 /*
-* Wire
-* Copyright (C) 2026 Wire Swiss GmbH
-*
-* This program is free software: you can redistribute it and/or modify
-* it under the terms of the GNU General Public License as published by
-* the Free Software Foundation, either version 3 of the License, or
-* (at your option) any later version.
-* This program is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-* GNU General Public License for more details.
-* You should have received a copy of the GNU General Public License
-* along with this program. If not, see http://www.gnu.org/licenses/.
-*/
+ * Wire
+ * Copyright (C) 2026 Wire Swiss GmbH
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see http://www.gnu.org/licenses/.
+ */
 
 import fs from 'fs'
 import path from 'node:path'
@@ -161,7 +161,9 @@ export class TestCommandHandler {
     parts?.shift() // remove the command name itself
 
     if (!parts || parts.length === 0 || parts.length % 2 !== 0) {
-      this.appLogger?.info(`[Sample App] Invalid command format. Expected: add-members-to-conversation [USER_ID] [DOMAIN] [USER_ID] [DOMAIN] ...`)
+      this.appLogger?.info(
+        `[Sample App] Invalid command format. Expected: add-members-to-conversation [USER_ID] [DOMAIN] [USER_ID] [DOMAIN] ...`
+      )
       return
     }
 
@@ -203,7 +205,9 @@ export class TestCommandHandler {
       text: feedbackMessage
     }))
 
-    this.appLogger?.info(`[Sample App] Addition completed: ${result.membersAdded.length} added, ${result.membersFailedToAdd.length} failed`)
+    this.appLogger?.info(
+      `[Sample App] Addition completed: ${result.membersAdded.length} added, ${result.membersFailedToAdd.length} failed`
+    )
   }
 
   private async processRemoveMembersFromConversation(conversationId: QualifiedId, command?: string): Promise<void> {
@@ -213,7 +217,9 @@ export class TestCommandHandler {
     parts?.shift() // remove the command name itself
 
     if (!parts || parts.length === 0 || parts.length % 2 !== 0) {
-      this.appLogger?.info(`[Sample App] Invalid command format. Expected: remove-members-from-conversation [USER_ID] [DOMAIN] [USER_ID] [DOMAIN] ...`)
+      this.appLogger?.info(
+        `[Sample App] Invalid command format. Expected: remove-members-from-conversation [USER_ID] [DOMAIN] [USER_ID] [DOMAIN] ...`
+      )
       return
     }
 
@@ -245,7 +251,9 @@ export class TestCommandHandler {
       text: feedbackMessage
     }))
 
-    this.appLogger?.info(`[Sample App] Removal completed: ${result.membersRemoved.length} removed`)
+    this.appLogger?.info(
+      `[Sample App] Removal completed: ${result.membersRemoved.length} removed`
+    )
   }
 
   private async processUpdateMemberRole(conversationId: QualifiedId, command?: string): Promise<void> {
@@ -257,7 +265,9 @@ export class TestCommandHandler {
     const newRole = parts?.[3] as ConversationRole
 
     if (!memberId || !memberDomain || !newRole) {
-      this.appLogger?.info(`[Sample App] Invalid command format. Expected: update-member-role [USER_ID] [DOMAIN] [ROLE]`)
+      this.appLogger?.info(
+        `[Sample App] Invalid command format. Expected: update-member-role [USER_ID] [DOMAIN] [ROLE]`
+      )
       return
     }
 
@@ -273,7 +283,9 @@ export class TestCommandHandler {
     const userDomain = parts?.[2]
 
     if (!userId || !userDomain) {
-      this.appLogger?.info(`[Sample App] Invalid command format. Expected: get-user-data [USER_ID] [DOMAIN]`)
+      this.appLogger?.info(
+        `[Sample App] Invalid command format. Expected: get-user-data [USER_ID] [DOMAIN]`
+      )
       return
     }
 
@@ -319,7 +331,10 @@ export class TestCommandHandler {
       return
     }
 
-    const targetQualifiedId: QualifiedId = new QualifiedId(targetConversationId, targetConversationDomain)
+    const targetQualifiedId: QualifiedId = new QualifiedId(
+      targetConversationId,
+      targetConversationDomain
+    )
     const members = await this.manager.getMembersInConversation(targetQualifiedId)
 
     const memberList = members
@@ -330,6 +345,325 @@ export class TestCommandHandler {
       conversationId: conversationId,
       text: `Members in conversation ${obfuscateId(targetQualifiedId.id)}@${targetQualifiedId.domain} (${members.length}):\n${memberList}`
     }))
+  }
+
+  private async processCreateGroupConversation(command: string): Promise<void> {
+    const args = command.trim().split(/\s+/)
+    const name = args[1]
+    const userArgs = args.slice(2)
+
+    if (!name || userArgs.length === 0 || userArgs.length % 2 !== 0) {
+      this.appLogger?.info(
+        `[Sample App] Invalid command format. Expected: create-group-conversation [NAME] [USER_ID] [DOMAIN]...`
+      )
+      return
+    }
+
+    const participants: QualifiedId[] = []
+
+    for (let i = 0; i < userArgs.length; i += 2) {
+      const userId = userArgs[i]
+      const domain = userArgs[i + 1]
+      participants.push(new QualifiedId(userId, domain))
+    }
+
+    await this.manager.createGroupConversation(name, participants)
+  }
+
+  private async processCreateChannelConversation(command: string): Promise<void> {
+    const args = command.trim().split(/\s+/)
+    const name = args[1]
+    const userArgs = args.slice(2)
+
+    if (!name || userArgs.length === 0 || userArgs.length % 2 !== 0) {
+      this.appLogger?.info(
+        `[Sample App] Invalid command format. Expected: create-channel-conversation [NAME] [USER_ID] [DOMAIN]...`
+      )
+      return
+    }
+
+    const participants: QualifiedId[] = []
+
+    for (let i = 0; i < userArgs.length; i += 2) {
+      const userId = userArgs[i]
+      const domain = userArgs[i + 1]
+      participants.push(new QualifiedId(userId, domain))
+    }
+
+    await this.manager.createChannelConversation(name, participants)
+  }
+
+  private async processCreateOneToOneConversation(command: string): Promise<void> {
+    const args = command.trim().split(/\s+/)
+
+    const userId = args[1]
+    const domain = args[2]
+
+    if (!userId || !domain || args.length !== 3) {
+      this.appLogger?.info(
+        "[Sample App] Invalid command format. Expected: create-onetoone-conversation [USER_ID] [DOMAIN]"
+      )
+      return
+    }
+
+    await this.manager.createOneToOneConversation(new QualifiedId(userId, domain))
+  }
+
+  private async processTestDeletedMessage(conversationId: QualifiedId): Promise<void> {
+    this.appLogger?.info(
+      `[Sample App] Sending a text message and then deleting it after 3 seconds`
+    )
+
+    const message = TextMessage.create({
+      conversationId: conversationId,
+      text: "This message will be deleted in 3 seconds"
+    })
+
+    await this.manager.sendMessage(message)
+
+    await new Promise(resolve => setTimeout(resolve, 3000))
+
+    const deleted = DeletedMessage.create({
+      conversationId: conversationId,
+      messageId: message.id
+    })
+
+    await this.manager.sendMessage(deleted)
+  }
+
+  private async processSearchUser(conversationId: QualifiedId, command?: string): Promise<void> {
+    this.appLogger?.info(`[Sample App] Executing handler for: search-user`)
+
+    const parts = command?.trim().split(' ')
+    const query = parts?.[1]
+    const domain = parts?.[2]
+    const numberOfResults = parts?.[3] ? parseInt(parts[3], 10) : undefined
+
+    if (!query || !domain) {
+      this.appLogger?.info(
+        `[Sample App] Invalid command format. Expected: search-user [QUERY] [DOMAIN] [NUMBER_OF_RESULTS?]`
+      )
+      return
+    }
+
+    const users: WireUser[] = await this.manager.searchUsers(
+      query,
+      domain,
+      numberOfResults
+    )
+
+    const userList = users.length > 0
+      ? users
+        .map(u => `- ${u.name} | Handle: ${u.handle ?? 'N/A'} | Team: ${u.teamId?.value ?? 'N/A'}`)
+        .join('\n')
+      : 'No users found.'
+
+    await this.manager.sendMessage(TextMessage.create({
+      conversationId: conversationId,
+      text: `Search results for "${query}" on ${domain} (${users.length}):\n${userList}`
+    }))
+  }
+
+  private async processTestEditText(conversationId: QualifiedId): Promise<void> {
+    this.appLogger?.info(`[Sample App] Sending a Text Edit message`)
+
+    const message = TextMessage.create({
+      conversationId: conversationId,
+      text: "This message will be edited in 3 seconds"
+    })
+
+    await this.manager.sendMessage(message)
+
+    await new Promise(resolve => setTimeout(resolve, 3000))
+
+    const messageEdit = TextEditedMessage.create({
+      conversationId: conversationId,
+      replacingMessageId: message.id,
+      text: "This message got edited"
+    })
+
+    await this.manager.sendMessage(messageEdit)
+  }
+
+  private async processTestEditComposite(conversationId: QualifiedId): Promise<void> {
+    const mutableItemList = [
+      TextMessage.create({
+        conversationId: conversationId,
+        text: "Text item that will be removed in 9 seconds"
+      }),
+      CompositeButton.create({
+        text: "Button item that will be removed in 6 seconds"
+      }),
+      CompositeButton.create({
+        text: "Button item that will be removed in 3 seconds"
+      })
+    ]
+
+    let latestMessageID = await this.manager.sendMessage(
+      CompositeMessage.create({
+        conversationId: conversationId,
+        itemList: mutableItemList
+      })
+    )
+
+    while (mutableItemList.length != 0) {
+      await new Promise(resolve => setTimeout(resolve, 3000))
+      mutableItemList.pop()
+
+      const compositeEdit = CompositeEditedMessage.create({
+        conversationId: conversationId,
+        itemList: mutableItemList,
+        replacingMessageId: latestMessageID
+      })
+
+      latestMessageID = await this.manager.sendMessage(compositeEdit)
+    }
+  }
+
+  private sendAssetImage(conversationId: QualifiedId) {
+    const filename = 'banana-icon.png'
+    const filePath = path.join(this.RESOURCES_PATH, filename)
+
+    fs.readFile(filePath, (err, data) => {
+      if (err) {
+        throw err
+      }
+
+      const metadata: Image = {
+        type: 'image',
+        width: 240,
+        height: 240
+      }
+
+      this.manager.sendAsset(
+        conversationId,
+        {
+          data: data,
+          name: filename,
+          mimeType: "image/png",
+          metadata: metadata
+        }
+      )
+    })
+  }
+
+  private sendAssetAudio(conversationId: QualifiedId) {
+    const filename = 'sample_audio_6s.mp3'
+    const filePath = path.join(this.RESOURCES_PATH, filename)
+
+    fs.readFile(filePath, (err, data) => {
+      if (err) {
+        throw err
+      }
+
+      const metadata: Audio = this.getSampleAudioMetadata()
+
+      this.manager.sendAsset(
+        conversationId,
+        {
+          data: data,
+          name: filename,
+          mimeType: "audio/mp3",
+          metadata: metadata
+        }
+      )
+    })
+  }
+
+  private sendAssetVideo(conversationId: QualifiedId) {
+    const filename = 'sample_video_5s.mp4'
+    const filePath = path.join(this.RESOURCES_PATH, filename)
+
+    fs.readFile(filePath, (err, data) => {
+      if (err) {
+        throw err
+      }
+
+      const metadata: Video = {
+        type: 'video',
+        width: 1920,
+        height: 1080,
+        durationMs: 5000
+      }
+
+      this.manager.sendAsset(
+        conversationId,
+        {
+          data: data,
+          name: filename,
+          mimeType: "video/mp4",
+          metadata: metadata
+        }
+      )
+    })
+  }
+
+  private async sendEphemeralText(conversationId: QualifiedId): Promise<void> {
+    this.appLogger?.info(`[Sample App] Sending an Ephemeral Text message`)
+
+    const message = TextMessage.create({
+      conversationId: conversationId,
+      text: "This is an Ephemeral Text message",
+      expiresAfterMillis: 10000
+    })
+
+    await this.manager.sendMessage(message)
+  }
+
+  private async sendEphemeralImage(conversationId: QualifiedId): Promise<void> {
+    this.appLogger?.info(`[Sample App] Sending an Ephemeral Asset message`)
+
+    const filename = 'banana-icon.png'
+    const filePath = path.join(this.RESOURCES_PATH, filename)
+
+    fs.readFile(filePath, (err, data) => {
+      if (err) {
+        throw err
+      }
+
+      const metadata: Image = {
+        type: 'image',
+        width: 240,
+        height: 240
+      }
+
+      this.manager.sendAsset(
+        conversationId,
+        {
+          data: data,
+          name: filename,
+          mimeType: "image/png",
+          metadata: metadata
+        },
+        10000
+      )
+    })
+  }
+
+  private async sendEphemeralLocation(conversationId: QualifiedId): Promise<void> {
+    this.appLogger?.info(`[Sample App] Sending an Ephemeral Location message`)
+
+    const message = Location.create({
+      conversationId: conversationId,
+      latitude: 52.5251,
+      longitude: 13.3694,
+      name: "Berlin Hauptbahnhof, Hauptbahnhof, Europaplatz 1, 10557 Berlin",
+      zoom: 11,
+      expiresAfterMillis: 10000
+    })
+
+    await this.manager.sendMessage(message)
+  }
+
+  private async sendEphemeralPing(conversationId: QualifiedId): Promise<void> {
+    this.appLogger?.info(`[Sample App] Sending an Ephemeral Ping message`)
+
+    const message = Ping.create({
+      conversationId: conversationId,
+      expiresAfterMillis: 10000
+    })
+
+    await this.manager.sendMessage(message)
   }
 
   private async sendCompositeMessage(conversationId: QualifiedId): Promise<void> {
@@ -374,280 +708,6 @@ export class TestCommandHandler {
     await this.manager.sendMessage(msg)
   }
 
-  private async processTestDeletedMessage(conversationId: QualifiedId): Promise<void> {
-    this.appLogger?.info(`[Sample App] Sending a text message and then deleting it after 3 seconds`)
-
-    const message = TextMessage.create({
-      conversationId: conversationId,
-      text: "This message will be deleted in 3 seconds"
-    })
-
-    await this.manager.sendMessage(message)
-
-    await new Promise(resolve => setTimeout(resolve, 3000))
-
-    const deleted = DeletedMessage.create({
-      conversationId: conversationId,
-      messageId: message.id
-    })
-
-    await this.manager.sendMessage(deleted)
-  }
-
-  private async sendEphemeralText(conversationId: QualifiedId): Promise<void> {
-    this.appLogger?.info(`[Sample App] Sending an Ephemeral Text message`)
-
-    const message = TextMessage.create({
-      conversationId: conversationId,
-      text: "This is an Ephemeral Text message",
-      expiresAfterMillis: 10000
-    })
-
-    await this.manager.sendMessage(message)
-  }
-
-  private async sendEphemeralImage(conversationId: QualifiedId): Promise<void> {
-    this.appLogger?.info(`[Sample App] Sending an Ephemeral Asset message`)
-    const filename = 'banana-icon.png'
-    const filePath = path.join(this.RESOURCES_PATH, filename)
-    fs.readFile(filePath, (err, data) => {
-      if (err) {
-        throw err;
-      }
-
-      const metadata: Image = {
-        type: 'image',
-        width: 240,
-        height: 240
-      }
-
-      this.manager.sendAsset(
-        conversationId,
-        {
-          data: data,
-          name: filename,
-          mimeType: "image/png",
-          metadata: metadata
-        },
-        10000
-      )
-    });
-  }
-
-  private async sendEphemeralLocation(conversationId: QualifiedId): Promise<void> {
-    this.appLogger?.info(`[Sample App] Sending an Ephemeral Location message`)
-
-    const message = Location.create({
-      conversationId: conversationId,
-      latitude: 52.5251,
-      longitude: 13.3694,
-      name: "Berlin Hauptbahnhof, Hauptbahnhof, Europaplatz 1, 10557 Berlin",
-      zoom: 11,
-      expiresAfterMillis: 10000
-    })
-
-    await this.manager.sendMessage(message)
-  }
-
-  private async sendEphemeralPing(conversationId: QualifiedId): Promise<void> {
-    this.appLogger?.info(`[Sample App] Sending an Ephemeral Ping message`)
-
-    const message = Ping.create({
-      conversationId: conversationId,
-      expiresAfterMillis: 10000
-    })
-
-    await this.manager.sendMessage(message)
-  }
-
-  private async processSearchUser(conversationId: QualifiedId, command?: string): Promise<void> {
-    this.appLogger?.info(`[Sample App] Executing handler for: search-user`)
-
-    const parts = command?.trim().split(' ')
-    const query = parts?.[1]
-    const domain = parts?.[2]
-    const numberOfResults = parts?.[3] ? parseInt(parts[3], 10) : undefined
-
-    if (!query || !domain) {
-      this.appLogger?.info(`[Sample App] Invalid command format. Expected: search-user [QUERY] [DOMAIN] [NUMBER_OF_RESULTS?]`)
-      return
-    }
-
-    const users: WireUser[] = await this.manager.searchUsers(query, domain, numberOfResults)
-
-    const userList = users.length > 0
-      ? users.map(u => `- ${u.name} | Handle: ${u.handle ?? 'N/A'} | Team: ${u.teamId?.value ?? 'N/A'}`).join('\n')
-      : 'No users found.'
-
-    await this.manager.sendMessage(TextMessage.create({
-      conversationId: conversationId,
-      text: `Search results for "${query}" on ${domain} (${users.length}):\n${userList}`
-    }))
-  }
-
-  private async processTestEditText(conversationId: QualifiedId): Promise<void> {
-    this.appLogger?.info(`[Sample App] Sending a Text Edit message`)
-    const message = TextMessage.create({
-      conversationId: conversationId,
-      text: "This message will be edited in 3 seconds"
-    })
-
-    await this.manager.sendMessage(message)
-
-    await new Promise(resolve => setTimeout(resolve, 3000))
-
-    const messageEdit = TextEditedMessage.create({
-      conversationId: conversationId,
-      replacingMessageId: message.id,
-      text: "This message got edited"
-    })
-
-    await this.manager.sendMessage(messageEdit)
-  }
-
-  private async processTestEditComposite(conversationId: QualifiedId): Promise<void> {
-    const mutableItemList = [
-      TextMessage.create({
-        conversationId: conversationId,
-        text: "Text item that will be removed in 9 seconds"
-      }),
-      CompositeButton.create({
-        text: "Button item that will be removed in 6 seconds"
-      }),
-      CompositeButton.create({
-        text: "Button item that will be removed in 3 seconds"
-      })
-    ]
-
-    let latestMessageID = await this.manager.sendMessage(
-      CompositeMessage.create({
-        conversationId: conversationId,
-        itemList: mutableItemList
-      })
-    )
-
-    while (mutableItemList.length != 0) {
-      await new Promise(resolve => setTimeout(resolve, 3000))
-      mutableItemList.pop()
-      const compositeEdit = CompositeEditedMessage.create({
-        conversationId: conversationId,
-        itemList: mutableItemList,
-        replacingMessageId: latestMessageID
-      })
-      latestMessageID = await this.manager.sendMessage(compositeEdit)
-    }
-  }
-
-  private async processCreateGroupConversation(command: string): Promise<void> {
-    const args = command.trim().split(/\s+/);
-    const name = args[1];
-    const userArgs = args.slice(2);
-
-    if (!name || userArgs.length === 0 || userArgs.length % 2 !== 0) {
-      this.appLogger?.info(
-        `[Sample App] Invalid command format. Expected: create-group-conversation [NAME] [USER_ID] [DOMAIN]...`
-      );
-      return;
-    }
-
-    const participants: QualifiedId[] = [];
-
-    for (let i = 0; i < userArgs.length; i += 2) {
-      const userId = userArgs[i];
-      const domain = userArgs[i + 1];
-      participants.push(new QualifiedId(userId, domain));
-    }
-
-    await this.manager.createGroupConversation(name, participants);
-  }
-
-  private async processCreateChannelConversation(command: string): Promise<void> {
-    const args = command.trim().split(/\s+/);
-    const name = args[1];
-    const userArgs = args.slice(2);
-
-    if (!name || userArgs.length === 0 || userArgs.length % 2 !== 0) {
-      this.appLogger?.info(
-        `[Sample App] Invalid command format. Expected: create-channel-conversation [NAME] [USER_ID] [DOMAIN]...`
-      );
-      return;
-    }
-
-    const participants: QualifiedId[] = [];
-
-    for (let i = 0; i < userArgs.length; i += 2) {
-      const userId = userArgs[i];
-      const domain = userArgs[i + 1];
-      participants.push(new QualifiedId(userId, domain));
-    }
-
-    await this.manager.createChannelConversation(name, participants);
-  }
-
-  private async processCreateOneToOneConversation(command: string): Promise<void> {
-    const args = command.trim().split(/\s+/);
-
-    const userId = args[1];
-    const domain = args[2];
-
-    if (!userId || !domain || args.length !== 3) {
-      this.appLogger?.info(
-        "[Sample App] Invalid command format. Expected: create-onetoone-conversation [USER_ID] [DOMAIN]"
-      );
-      return;
-    }
-
-    await this.manager.createOneToOneConversation(new QualifiedId(userId, domain));
-  }
-
-  private sendAssetImage(conversationId: QualifiedId) {
-    const filename = 'banana-icon.png'
-    const filePath = path.join(this.RESOURCES_PATH, filename)
-    fs.readFile(filePath, (err, data) => {
-      if (err) {
-        throw err;
-      }
-
-      const metadata: Image = {
-        type: 'image',
-        width: 240,
-        height: 240
-      }
-
-      this.manager.sendAsset(
-        conversationId,
-        {
-          data: data,
-          name: filename,
-          mimeType: "image/png",
-          metadata: metadata
-        }
-      )
-    });
-  }
-
-  private sendAssetAudio(conversationId: QualifiedId) {
-    const filename = 'sample_audio_6s.mp3'
-    const filePath = path.join(this.RESOURCES_PATH, filename)
-    fs.readFile(filePath, (err, data) => {
-      if (err) {
-        throw err;
-      }
-
-      const metadata: Audio = this.getSampleAudioMetadata()
-
-      this.manager.sendAsset(
-        conversationId,
-        {
-          data: data,
-          name: filename,
-          mimeType: "audio/mp3",
-          metadata: metadata
-        }
-      )
-    });
-  }
-
   private getSampleAudioMetadata(): Audio {
     const base64Loudness = "/////////////////////////////////////8u+iP///8TCo///////l//////7" +
       "q3x6cXWAhIGOfn6KjouUi4SQlZGdkIeSm5OenoWFioqJnYZ/hIqOlJOIjZOanJSNkp2jqf///////" +
@@ -659,32 +719,5 @@ export class TestCommandHandler {
       durationMs: 6000,
       normalizedLoudness: Buffer.from(base64Loudness, 'base64')
     }
-  }
-
-  private sendAssetVideo(conversationId: QualifiedId) {
-    const filename = 'sample_video_5s.mp4'
-    const filePath = path.join(this.RESOURCES_PATH, filename)
-    fs.readFile(filePath, (err, data) => {
-      if (err) {
-        throw err;
-      }
-
-      const metadata: Video = {
-        type: 'video',
-        width: 1920,
-        height: 1080,
-        durationMs: 5000
-      }
-
-      this.manager.sendAsset(
-        conversationId,
-        {
-          data: data,
-          name: filename,
-          mimeType: "video/mp4",
-          metadata: metadata
-        }
-      )
-    });
   }
 }
