@@ -62,7 +62,15 @@ export const ProtobufDeserializer = {
     senderId: QualifiedId,
     timestamp: Date
   ): WireMessage => {
-    const genericMessage = GenericMessage.decode(message)
+    let genericMessage: IGenericMessage
+    try {
+      genericMessage = GenericMessage.decode(message)
+    } catch (error) {
+      if (error instanceof Error && error.name === "ProtocolError") {
+        return new Ignored()
+      }
+      throw error
+    }
 
     if (genericMessage.text) {
       return unpackTextMessage(genericMessage, qualifiedConversation, senderId, timestamp)

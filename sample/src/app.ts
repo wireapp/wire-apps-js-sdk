@@ -43,7 +43,7 @@ import {
   Receipt,
   ReceiptType,
   Reaction
-} from 'wire-apps-js-sdk'
+} from '@wireapp/wire-apps-js-sdk'
 import fs from 'fs'
 import path from 'node:path'
 

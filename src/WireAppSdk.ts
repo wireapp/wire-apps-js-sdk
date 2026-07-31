@@ -48,9 +48,9 @@ export class WireAppSdk {
   private isShuttingDown = false
 
   private isWebSocketRunning: boolean = false
-  private webSocketClient!: WebSocketClient
-  private conversationService!: ConversationService
-  private appProperties!: AppProperties
+  private webSocketClient?: WebSocketClient
+  private conversationService?: ConversationService
+  private appProperties?: AppProperties
 
   private wireEventsHandler: WireEventsHandler
   private logger: Logger
@@ -110,7 +110,7 @@ export class WireAppSdk {
     this.configureDependencies()
     // Save cookie from constructor parameter only at first application start.
     // Once BE provides new token, the one stored in `apiToken` will be obsolete.
-    this.appProperties.saveBackendCookieIfMissing(this.apiToken)
+    this.appProperties!.saveBackendCookieIfMissing(this.apiToken)
 
     await this.initCryptoClient()
   }
@@ -149,6 +149,10 @@ export class WireAppSdk {
     }
     this.isWebSocketRunning = true
 
+    if (!this.webSocketClient || !this.conversationService) {
+      throw new Error("Wire Apps SDK dependencies are not initialized.")
+    }
+
     this.webSocketClient.connect().finally(() => {
       this.isWebSocketRunning = false
     })
@@ -163,7 +167,7 @@ export class WireAppSdk {
     this.logger.info("Wire Apps SDK shutting down.")
     this.isWebSocketRunning = false
 
-    this.webSocketClient.close()
+    this.webSocketClient?.close()
   }
 
   async close() {
@@ -171,8 +175,12 @@ export class WireAppSdk {
     this.stopListening()
 
     this.logger.debug("Closing Database connections.")
-    const databaseService = container.resolve(DatabaseService)
-    databaseService.close()
+    try {
+      const databaseService = container.resolve(DatabaseService)
+      databaseService.close()
+    } catch (exception) {
+      this.logger.debug("Database service was not initialized or could not be closed.", exception)
+    }
 
     // Clear container to prevent memory leaks
     container.clearInstances()

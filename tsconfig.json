@@ -8,9 +8,9 @@
     // See also https://aka.ms/tsconfig/module
     "module": "nodenext",
     "moduleResolution": "nodenext",
-    "target": "esnext",
+    "target": "es2023",
     "lib": [
-      "esnext",
+      "es2023",
       "dom"
     ],
     "types": [

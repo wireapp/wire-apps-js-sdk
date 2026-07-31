@@ -1,8 +1,29 @@
 {
-  "name": "wire-apps-js-sdk",
-  "version": "0.0.1",
+  "name": "@wireapp/wire-apps-js-sdk",
+  "version": "0.0.1-alpha",
+  "description": "SDK for Wire third-party applications written in Typescript.",
+  "license": "GPL-3.0",
+  "keywords": [
+    "wire",
+    "wireapp",
+    "sdk",
+    "apps",
+    "typescript",
+    "javascript",
+    "messaging",
+    "mls"
+  ],
   "main": "build/index.js",
+  "module": "build/index.js",
   "types": "build/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./build/index.d.ts",
+      "import": "./build/index.js",
+      "default": "./build/index.js"
+    },
+    "./package.json": "./package.json"
+  },
   "workspaces": [
     "sample"
   ],
@@ -15,18 +36,23 @@
     "db:migration": "npx drizzle-kit generate",
     "migrations:copy": "node scripts/copy-migrations.js",
     "proto:generate": "npm run proto:mkdir && npm run proto:package && npm run proto:js && npm run proto:ts",
-    "build:setup": "npm install && npm run proto:generate",
-    "build": "tsc -p tsconfig.json && npm run proto:copy && npm run migrations:copy",
-    "build:sample": "npm run build && npm run -w sample build",
-    "sample": "npm run build:sample && npm run -w sample start",
+    "build": "npm run proto:generate && tsc -p tsconfig.json && npm run proto:copy && npm run migrations:copy",
+    "prepack": "npm run build",
+    "sample": "npm run -w sample dev",
     "test": "npm run test:typecheck",
+    "test:pack": "node scripts/verify-packed-install.js",
     "test:typecheck": "vitest run --typecheck --typecheck.tsconfig tsconfig.test.json",
     "test:coverage": "vitest run --coverage --typecheck --typecheck.tsconfig tsconfig.test.json",
-    "clean": "rm -rf ./build ./node_modules ./sample/build ./sample/storage ./src/generated",
+    "clean": "rm -rf ./build ./sample/build ./sample/storage ./src/generated",
+    "clean:all": "npm run clean && rm -rf ./node_modules",
     "lint": "eslint src --ext .ts"
   },
   "files": [
-    "build/**/*"
+    "build/**/*",
+    "src/**/*.ts",
+    "!src/generated/**/*",
+    "src/proto/**/*.proto",
+    "src/db/migrations/**/*"
   ],
   "type": "module",
   "engines": {
@@ -34,24 +60,25 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/wireapp/wire-apps-js-sdk"
+    "url": "git+https://github.com/wireapp/wire-apps-js-sdk.git"
   },
+  "homepage": "https://github.com/wireapp/wire-apps-js-sdk#readme",
   "bugs": {
     "url": "https://github.com/wireapp/wire-apps-js-sdk/issues"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.2",
     "@types/better-sqlite3": "^7.6.13",
-    "@types/express": "^5.0.6",
-    "@types/node": "^26.1.1",
+    "@types/node": "^22.20.1",
     "@types/ws": "^8.18.1",
     "@vitest/coverage-v8": "^4.1.9",
     "cpy-cli": "^7.0.0",
+    "dotenv": "^17.4.2",
     "drizzle-kit": "^0.31.9",
     "eslint": "^10.7.0",
     "globals": "^17.7.0",
     "msw": "^2.14.6",
-    "protobufjs-cli": "^2.5.5",
+    "protobufjs-cli": "^2.6.1",
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.62.1",
     "vitest": "^4.1.10"
@@ -63,7 +90,8 @@
     "bazinga64": "^6.5.13",
     "better-sqlite3": "^12.11.1",
     "drizzle-orm": "^0.45.1",
-    "protobufjs": "^8.6.4",
+    "long": "^5.3.2",
+    "protobufjs": "^8.7.1",
     "reflect-metadata": "^0.2.2",
     "tsyringe": "^4.10.0",
     "ws": "^8.21.0"

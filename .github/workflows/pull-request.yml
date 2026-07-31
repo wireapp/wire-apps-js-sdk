@@ -23,17 +23,17 @@ jobs:
       - name: Lint
         run: npm run lint
 
-      - name: Typescript Build Setup
-        run: npm run build:setup
-
       - name: TypeScript Build
         run: npm run build
 
       - name: Build Sample
-        run: npm run build:sample
+        run: npm run -w sample build
 
       - name: Tests with Coverage
         run: npm run test:coverage -- --no-cache
+
+      - name: Packed Install Smoke Test
+        run: npm run test:pack
 
       - name: Report Coverage
         if: always()
