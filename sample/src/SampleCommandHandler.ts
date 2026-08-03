@@ -38,7 +38,7 @@ import {PinoLogger} from './PinoLogger.js'
 
 type Manager = WireEventsHandler['manager']
 
-export class TestCommandHandler {
+export class SampleCommandHandler {
   private readonly RESOURCES_PATH = 'resources'
 
   constructor(
@@ -47,7 +47,7 @@ export class TestCommandHandler {
   ) {
   }
 
-  public isTestCommand(message?: string): boolean {
+  public isSampleCommand(message?: string): boolean {
     if (!message) return false
     const cmd = message.trim().split(' ')[0]
     return Object.prototype.hasOwnProperty.call(this.getHandlers(), cmd)
@@ -59,7 +59,7 @@ export class TestCommandHandler {
     const handler = this.getHandlers()[cmd]
     if (!handler) return false
 
-    this.appLogger?.info(`[Sample App] Processing reserved test command: ${cmd}`)
+    this.appLogger?.info(`[Sample App] Processing reserved sample command: ${cmd}`)
     await handler(conversationId, command)
     return true
   }

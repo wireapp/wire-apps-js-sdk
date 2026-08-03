@@ -36,7 +36,7 @@ import {
   WireEventsHandler
 } from '@wireapp/wire-apps-js-sdk'
 import fs from 'fs'
-import {TestCommandHandler} from "./TestCommandHandler.js";
+import {SampleCommandHandler} from "./SampleCommandHandler.js";
 import path from 'node:path'
 
 dotenv.config({path: '../.env'})
@@ -64,19 +64,19 @@ if (!apiHost) {
 
 class SampleEventsHandler extends WireEventsHandler {
   public appLogger?: PinoLogger
-  private _testCommandHandler?: TestCommandHandler
+  private _sampleCommandHandler?: SampleCommandHandler
 
-  private get testCommandHandler(): TestCommandHandler {
-    if (!this._testCommandHandler) {
-      this._testCommandHandler = new TestCommandHandler(this.manager, this.appLogger)
+  private get sampleCommandHandler(): SampleCommandHandler {
+    if (!this._sampleCommandHandler) {
+      this._sampleCommandHandler = new SampleCommandHandler(this.manager, this.appLogger)
     }
-    return this._testCommandHandler
+    return this._sampleCommandHandler
   }
 
   public override async onTextMessageReceived(wireMessage: TextMessage): Promise<void> {
     this.appLogger?.info(`[Sample App] Received message: ${wireMessage.text}`)
-    if (this.testCommandHandler.isTestCommand(wireMessage.text)) {
-      await this.testCommandHandler.process(wireMessage.text, wireMessage.conversationId)
+    if (this.sampleCommandHandler.isSampleCommand(wireMessage.text)) {
+      await this.sampleCommandHandler.process(wireMessage.text, wireMessage.conversationId)
     } else {
       await this.processSimpleTextMessage(wireMessage);
     }
