@@ -5,7 +5,21 @@ The workflow does not use an `NPM_TOKEN`; npm authenticates the publish through 
 
 ## Prerequisites
 
-Configure the trusted publisher on npmjs.com for `@wireapp/wire-apps-js-sdk`:
+Trusted publishing can only be configured after the package exists on npm.
+For the first publish, create the package with normal npm authentication.
+
+## First Publish
+
+From a maintainer account with publish rights to the `@wireapp` scope:
+
+```shell
+npm login
+npm run release:check
+npm publish --access public --tag latest
+```
+
+After the package exists on npm, configure the trusted publisher on npmjs.com for
+`@wireapp/wire-apps-js-sdk`:
 
 - Publisher: GitHub Actions
 - Organization or user: `wireapp`
@@ -29,12 +43,15 @@ the packed install smoke test, and a dry-run npm pack.
 
 ## Publish
 
+After the first publish and trusted publisher setup, future releases are published
+through GitHub Releases.
+
 1. Verify `package.json` has the intended version.
 2. Create a GitHub Release for the version tag.
 3. Publish the GitHub Release.
 
 Publishing the GitHub Release triggers `.github/workflows/publish.yml`.
-The workflow publishes the package to npm with public access and the `latest` dist-tag.
+The workflow publishes the package to npm with provenance, public access, and the `latest` dist-tag.
 
 ## After the First Trusted Publish
 
