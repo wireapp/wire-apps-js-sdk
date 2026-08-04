@@ -38,6 +38,7 @@
     "proto:generate": "npm run proto:mkdir && npm run proto:package && npm run proto:js && npm run proto:ts",
     "build": "npm run proto:generate && tsc -p tsconfig.json && npm run proto:copy && npm run migrations:copy",
     "prepack": "npm run build",
+    "release:check": "npm run lint && npm run build && npm run -w sample build && npm run test:coverage -- --no-cache && npm run test:pack && npm pack --dry-run --cache /tmp/wire-sdk-release-npm-cache",
     "sample": "npm run -w sample dev",
     "test": "npm run test:typecheck",
     "test:pack": "node scripts/verify-packed-install.js",
@@ -61,6 +62,11 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/wireapp/wire-apps-js-sdk.git"
+  },
+  "publishConfig": {
+    "access": "public",
+    "tag": "latest",
+    "registry": "https://registry.npmjs.org/"
   },
   "homepage": "https://github.com/wireapp/wire-apps-js-sdk#readme",
   "bugs": {
