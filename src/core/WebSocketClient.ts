@@ -23,6 +23,7 @@ import {LoggerFactory} from "../utils/logger/LoggerFactory.js";
 import type {EventResponse} from "../api/response/EventResponse.js";
 import {NotificationsService} from "../service/NotificationsService.js";
 import {AppProperties} from "../service/AppProperties.js";
+import type {BackendConnectionListener} from "./BackendConnectionListener.js";
 
 const getWebSocketImpl = (): typeof WebSocket => (globalThis.WebSocket ?? NodeWebSocket) as typeof WebSocket;
 
@@ -40,6 +41,7 @@ export class WebSocketClient {
   private _connecting = false
   private _stopped = false
   private _reconnectAttempts = 0
+  private backendConnectionListener?: BackendConnectionListener
 
   private static readonly MAX_RECONNECT_ATTEMPTS = 10
   private static readonly BASE_RECONNECT_DELAY_MS = 1_000
@@ -52,6 +54,10 @@ export class WebSocketClient {
     private appProperties: AppProperties,
     private eventRouter: EventRouter
   ) {}
+
+  setBackendConnectionListener(listener: BackendConnectionListener): void {
+    this.backendConnectionListener = listener
+  }
 
   async connect(): Promise<void> {
     if (this._connecting) {
@@ -123,6 +129,16 @@ export class WebSocketClient {
         resolve()
       }
 
+      // Triggers backend connection observer's onDisconnected method only if it was connected before and now disconnected
+      let hadConnected = false
+      let disconnectNotified = false
+      const notifyDisconnected = () => {
+        if (hadConnected && !disconnectNotified) {
+          disconnectNotified = true
+          this.backendConnectionListener?.onDisconnected()
+        }
+      }
+
       const messageBuffer: MessageEvent[] = []
       let isSyncing = true
 
@@ -154,6 +170,9 @@ export class WebSocketClient {
         this._reconnectAttempts = 0
         this.logger.info("Websocket Connected")
 
+        hadConnected = true
+        this.backendConnectionListener?.onConnected()
+
         try {
           await this.syncMissedNotifications();
         } catch (error) {
@@ -179,11 +198,13 @@ export class WebSocketClient {
 
       webSocket.onerror = (error) => {
         this.logger.error("Websocket Error:", error)
+        notifyDisconnected()
         settle()
       }
 
       webSocket.onclose = () => {
         this.logger.warn("WebSocket Closed")
+        notifyDisconnected()
         settle()
       }
     })

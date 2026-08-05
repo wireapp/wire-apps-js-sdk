@@ -36,6 +36,7 @@ import {ConsoleLogger} from "./utils/logger/ConsoleLogger.js";
 import {ConversationService} from "./api/ConversationService.js";
 import {AppProperties} from "./service/AppProperties.js";
 import {CRYPTOGRAPHY_STORAGE_PATH, STORAGE_PATH} from "./utils/StoragePaths.js";
+import type {BackendConnectionListener} from "./core/BackendConnectionListener.js";
 
 export class WireAppSdk {
   private readonly CRYPTOGRAPHY_STORAGE_KEY_BYTES = 32
@@ -53,6 +54,7 @@ export class WireAppSdk {
   private appProperties?: AppProperties
 
   private wireEventsHandler: WireEventsHandler
+  private backendConnectionListener?: BackendConnectionListener
   private logger: Logger
 
   private constructor(
@@ -69,7 +71,7 @@ export class WireAppSdk {
         `cryptographyStorageKey must be exactly ${this.CRYPTOGRAPHY_STORAGE_KEY_BYTES} bytes long`
       );
     }
-    
+
 
     this.userId = userId
     this.apiToken = apiToken
@@ -132,6 +134,10 @@ export class WireAppSdk {
     this.webSocketClient = container.resolve(WebSocketClient)
     this.conversationService = container.resolve(ConversationService)
     this.appProperties = container.resolve(AppProperties)
+
+    if (this.backendConnectionListener) {
+      this.webSocketClient.setBackendConnectionListener(this.backendConnectionListener)
+    }
   }
 
   private async initCryptoClient() {
@@ -184,6 +190,15 @@ export class WireAppSdk {
 
     // Clear container to prevent memory leaks
     container.clearInstances()
+  }
+
+  /**
+   * Registers a listener to be notified when the connection to the Wire backend
+   * is established or lost.
+   */
+  setBackendConnectionListener(listener: BackendConnectionListener): void {
+    this.backendConnectionListener = listener
+    this.webSocketClient?.setBackendConnectionListener(listener)
   }
 
   private registerExitHandlers(): void {
