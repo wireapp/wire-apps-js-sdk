@@ -132,10 +132,10 @@ export class WebSocketClient {
       // Triggers backend connection observer's onDisconnected method only if it was connected before and now disconnected
       let hadConnected = false
       let disconnectNotified = false
-      const notifyDisconnected = () => {
+      const handleDisconnect = () => {
         if (hadConnected && !disconnectNotified) {
           disconnectNotified = true
-          this.backendConnectionListener?.onDisconnected()
+          this.notifyListenerOnDisconnected()
         }
       }
 
@@ -171,7 +171,7 @@ export class WebSocketClient {
         this.logger.info("Websocket Connected")
 
         hadConnected = true
-        this.backendConnectionListener?.onConnected()
+        this.notifyListenerOnConnected()
 
         try {
           await this.syncMissedNotifications();
@@ -198,16 +198,32 @@ export class WebSocketClient {
 
       webSocket.onerror = (error) => {
         this.logger.error("Websocket Error:", error)
-        notifyDisconnected()
+        handleDisconnect()
         settle()
       }
 
       webSocket.onclose = () => {
         this.logger.warn("WebSocket Closed")
-        notifyDisconnected()
+        handleDisconnect()
         settle()
       }
     })
+  }
+
+  private notifyListenerOnConnected(): void {
+    try {
+      this.backendConnectionListener?.onConnected()
+    } catch (error) {
+      this.logger.error("BackendConnectionListener.onConnected threw an error:", error)
+    }
+  }
+
+  private notifyListenerOnDisconnected(): void {
+    try {
+      this.backendConnectionListener?.onDisconnected()
+    } catch (error) {
+      this.logger.error("BackendConnectionListener.onDisconnected threw an error:", error)
+    }
   }
 
   private async handleEvent(data: Buffer) {

@@ -583,5 +583,59 @@ describe('WebSocketClient', () => {
       await stopClient(client, connectPromise)
       // No assertion needed. Just confirming no error is thrown
     })
+
+    it('should continue connection loop and settle even if onDisconnected throws', async () => {
+      vi.useFakeTimers()
+
+      const throwingListener = {
+        onConnected: vi.fn(),
+        onDisconnected: vi.fn().mockImplementation(() => {
+          throw new Error('User onDisconnected error')
+        }),
+      }
+
+      const client = makeClient()
+      client.setBackendConnectionListener(throwingListener)
+      const connectPromise = client.connect()
+
+      await flushPromises()
+      await mockWebSocket.onopen!()
+
+      // Disconnect triggers onDisconnected which throws internally
+      mockWebSocket.onclose!()
+
+      // Ensure backoff timer still advances and reconnects without hanging
+      await vi.advanceTimersByTimeAsync(1100)
+      await flushPromises()
+
+      // Open second socket to confirm connect loop did not break
+      await mockWebSocket.onopen!()
+
+      await stopClient(client, connectPromise)
+
+      expect(throwingListener.onDisconnected).toHaveBeenCalled()
+    })
+
+    it('should continue notification sync even if onConnected throws', async () => {
+      const throwingListener = {
+        onConnected: vi.fn().mockImplementation(() => {
+          throw new Error('User onConnected error')
+        }),
+        onDisconnected: vi.fn(),
+      }
+
+      const client = makeClient()
+      client.setBackendConnectionListener(throwingListener)
+      const connectPromise = client.connect()
+
+      await flushPromises()
+
+      // onopen calls onConnected (which throws), but should proceed with sync
+      await mockWebSocket.onopen!()
+
+      expect(mockNotificationsService.getPaginatedNotifications).toHaveBeenCalled()
+
+      await stopClient(client, connectPromise)
+    })
   })
 })
