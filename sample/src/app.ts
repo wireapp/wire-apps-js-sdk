@@ -243,5 +243,3 @@ const backendConnectionListener: BackendConnectionListener = {
 
 sdk.setBackendConnectionListener(backendConnectionListener)
 sdk.startListening()
-
-sdk.startListening()
