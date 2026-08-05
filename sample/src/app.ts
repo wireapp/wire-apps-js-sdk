@@ -21,6 +21,7 @@ import dotenv from 'dotenv';
 import {PinoLogger} from './PinoLogger.js'
 import {
   AssetMessage,
+  type BackendConnectionListener,
   type Conversation,
   type ConversationMember,
   Location,
@@ -37,7 +38,6 @@ import {
 } from '@wireapp/wire-apps-js-sdk'
 import fs from 'fs'
 import {SampleCommandHandler} from "./SampleCommandHandler.js";
-import path from 'node:path'
 
 dotenv.config({path: '../.env'})
 
@@ -236,4 +236,10 @@ const sdk = await WireAppSdk.create(
   sampleEventsHandler.appLogger
 )
 
+const backendConnectionListener: BackendConnectionListener = {
+  onConnected: () => sampleEventsHandler.appLogger?.info('[Sample App] Connected to Wire backend 😍'),
+  onDisconnected: () => sampleEventsHandler.appLogger?.info('[Sample App] Disconnected from Wire backend 😭'),
+}
+
+sdk.setBackendConnectionListener(backendConnectionListener)
 sdk.startListening()

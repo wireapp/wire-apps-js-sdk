@@ -482,4 +482,160 @@ describe('WebSocketClient', () => {
       await stopClient(client, connectPromise)
     })
   })
+
+  describe('BackendConnectionListener', () => {
+    it('should call onConnected when websocket opens', async () => {
+      const listener = { onConnected: vi.fn(), onDisconnected: vi.fn() }
+
+      const client = makeClient()
+      client.setBackendConnectionListener(listener)
+      const connectPromise = client.connect()
+
+      await flushPromises()
+      await mockWebSocket.onopen!()
+      await stopClient(client, connectPromise)
+
+      expect(listener.onConnected).toHaveBeenCalledTimes(1)
+    })
+
+    it('should call onDisconnected when websocket closes after being connected', async () => {
+      const listener = { onConnected: vi.fn(), onDisconnected: vi.fn() }
+
+      const client = makeClient()
+      client.setBackendConnectionListener(listener)
+      const connectPromise = client.connect()
+
+      await flushPromises()
+      await mockWebSocket.onopen!()
+      await stopClient(client, connectPromise)
+
+      expect(listener.onDisconnected).toHaveBeenCalledTimes(1)
+    })
+
+    it('should not call onDisconnected if connection was never established', async () => {
+      const listener = { onConnected: vi.fn(), onDisconnected: vi.fn() }
+
+      const client = makeClient()
+      client.setBackendConnectionListener(listener)
+      const connectPromise = client.connect()
+
+      await flushPromises()
+      // Close without opening — simulates a failed initial connect
+      mockWebSocket.onclose!()
+      await stopClient(client, connectPromise)
+
+      expect(listener.onConnected).not.toHaveBeenCalled()
+      expect(listener.onDisconnected).not.toHaveBeenCalled()
+    })
+
+    it('should call onDisconnected only once on onerror followed by onclose', async () => {
+      const listener = { onConnected: vi.fn(), onDisconnected: vi.fn() }
+
+      const client = makeClient()
+      client.setBackendConnectionListener(listener)
+      const connectPromise = client.connect()
+
+      await flushPromises()
+      await mockWebSocket.onopen!()
+
+      // Standard WebSocket protocol: onerror is always followed by onclose
+      mockWebSocket.onerror!(new Event('error'))
+      mockWebSocket.onclose!()
+
+      await stopClient(client, connectPromise)
+
+      expect(listener.onDisconnected).toHaveBeenCalledTimes(1)
+    })
+
+    it('should call onConnected and onDisconnected on each reconnect cycle', async () => {
+      vi.useFakeTimers()
+
+      const listener = { onConnected: vi.fn(), onDisconnected: vi.fn() }
+
+      const client = makeClient()
+      client.setBackendConnectionListener(listener)
+      const connectPromise = client.connect()
+
+      await flushPromises()
+      await mockWebSocket.onopen!()
+
+      // First unexpected disconnect
+      mockWebSocket.onclose!()
+      await vi.advanceTimersByTimeAsync(1100)
+      await flushPromises()
+
+      // Second connection opens
+      await mockWebSocket.onopen!()
+
+      await stopClient(client, connectPromise)
+
+      expect(listener.onConnected).toHaveBeenCalledTimes(2)
+      expect(listener.onDisconnected).toHaveBeenCalledTimes(2)
+    })
+
+    it('should not call listener methods if no listener is set', async () => {
+      // Verifies the optional chaining on backendConnectionListener doesn't throw
+      const client = makeClient()
+      const connectPromise = client.connect()
+
+      await flushPromises()
+      await mockWebSocket.onopen!()
+      await stopClient(client, connectPromise)
+      // No assertion needed. Just confirming no error is thrown
+    })
+
+    it('should continue connection loop and settle even if onDisconnected throws', async () => {
+      vi.useFakeTimers()
+
+      const throwingListener = {
+        onConnected: vi.fn(),
+        onDisconnected: vi.fn().mockImplementation(() => {
+          throw new Error('User onDisconnected error')
+        }),
+      }
+
+      const client = makeClient()
+      client.setBackendConnectionListener(throwingListener)
+      const connectPromise = client.connect()
+
+      await flushPromises()
+      await mockWebSocket.onopen!()
+
+      // Disconnect triggers onDisconnected which throws internally
+      mockWebSocket.onclose!()
+
+      // Ensure backoff timer still advances and reconnects without hanging
+      await vi.advanceTimersByTimeAsync(1100)
+      await flushPromises()
+
+      // Open second socket to confirm connect loop did not break
+      await mockWebSocket.onopen!()
+
+      await stopClient(client, connectPromise)
+
+      expect(throwingListener.onDisconnected).toHaveBeenCalled()
+    })
+
+    it('should continue notification sync even if onConnected throws', async () => {
+      const throwingListener = {
+        onConnected: vi.fn().mockImplementation(() => {
+          throw new Error('User onConnected error')
+        }),
+        onDisconnected: vi.fn(),
+      }
+
+      const client = makeClient()
+      client.setBackendConnectionListener(throwingListener)
+      const connectPromise = client.connect()
+
+      await flushPromises()
+
+      // onopen calls onConnected (which throws), but should proceed with sync
+      await mockWebSocket.onopen!()
+
+      expect(mockNotificationsService.getPaginatedNotifications).toHaveBeenCalled()
+
+      await stopClient(client, connectPromise)
+    })
+  })
 })
