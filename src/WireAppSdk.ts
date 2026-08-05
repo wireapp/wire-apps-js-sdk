@@ -54,7 +54,6 @@ export class WireAppSdk {
   private appProperties?: AppProperties
 
   private wireEventsHandler: WireEventsHandler
-  private backendConnectionListener?: BackendConnectionListener
   private logger: Logger
 
   private constructor(
@@ -134,10 +133,6 @@ export class WireAppSdk {
     this.webSocketClient = container.resolve(WebSocketClient)
     this.conversationService = container.resolve(ConversationService)
     this.appProperties = container.resolve(AppProperties)
-
-    if (this.backendConnectionListener) {
-      this.webSocketClient.setBackendConnectionListener(this.backendConnectionListener)
-    }
   }
 
   private async initCryptoClient() {
@@ -197,7 +192,6 @@ export class WireAppSdk {
    * is established or lost.
    */
   setBackendConnectionListener(listener: BackendConnectionListener): void {
-    this.backendConnectionListener = listener
     this.webSocketClient?.setBackendConnectionListener(listener)
   }
 
