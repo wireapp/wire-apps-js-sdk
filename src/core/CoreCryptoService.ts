@@ -115,7 +115,7 @@ export class CoreCryptoService {
       try {
         registeredDeviceId = await this.clientsService.registerClient(proteusPreKeys, proteusLastPreKey)
       } catch (exception) {
-        throw new CryptographicSystemError(`Error when registering client: ${(exception as Error).message}`)
+        throw new CryptographicSystemError("Error when registering client", exception as Error)
       }
 
       this.appProperties.setDeviceId(registeredDeviceId)

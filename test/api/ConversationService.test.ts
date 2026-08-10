@@ -1339,7 +1339,7 @@ describe('ConversationService', () => {
 
       await expect(
         conversationService.addMembersToConversation(CONVERSATION_ID, [USER_ID])
-      ).rejects.toThrow('Unable to add members to MLS conversation: MLS error')
+      ).rejects.toThrow('Unable to add members to MLS conversation')
 
       expect(mockConversationMemberRepository.saveMany).not.toHaveBeenCalled()
     })

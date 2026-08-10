@@ -374,7 +374,7 @@ export class ConversationService {
         members
       )
     } catch (error) {
-      throw new UnknownError(`Unable to add members to MLS conversation: ${(error as Error).message}`)
+      throw new UnknownError("Unable to add members to MLS conversation.", error as Error)
     }
 
     const membersToSave: ConversationMemberEntity[] = result.membersAdded.map((userId) => ({
@@ -428,7 +428,7 @@ export class ConversationService {
       this.logger.info(`Removal of members from the conversation is completed. Removed: ${membersRemoved.length}. conversationId: ${conversationId}`)
       return {membersRemoved}
     } catch (error) {
-      this.logger.error(`Failed to remove clients from MLS conversation: ${(error as Error).message}`)
+      this.logger.error("Failed to remove clients from MLS conversation.", error as Error)
       return {membersRemoved: []}
     }
   }

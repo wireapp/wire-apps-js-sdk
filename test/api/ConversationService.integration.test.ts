@@ -374,7 +374,7 @@ describe('ConversationService Integration', () => {
 
       await expect(
         conversationService.addMembersToConversation(CONVERSATION_ID, [USER_3_ID])
-      ).rejects.toThrow('Unable to add members to MLS conversation: MLS error')
+      ).rejects.toThrow('Unable to add members to MLS conversation')
 
       const members = conversationService.getMembersByConversationId(CONVERSATION_ID)
       const memberIds = members.map(member => member.userId.id)

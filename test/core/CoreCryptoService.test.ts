@@ -303,7 +303,7 @@ describe('CoreCryptoService', () => {
 
         // when / then
         await expect(service.initOrRegisterClient()).rejects.toThrow(
-          'Error when registering client: network down'
+          'Error when registering client'
         )
 
         expect(mockAppProperties.setDeviceId).not.toHaveBeenCalled()
