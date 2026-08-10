@@ -45,6 +45,7 @@ import {
 } from '../../model/WireMessage.js';
 import {MessageLinkPreviewMapper} from "./MessageLinkPreviewMapper.js";
 import {MessageMentionMapper} from "./MessageMentionMapper.js";
+import {CryptographicSystemError} from "../../exception/WireException.js";
 
 const {
   GenericMessage,
@@ -126,7 +127,7 @@ export const ProtobufSerializer = {
         break
 
       default:
-        throw new Error(`Unsupported message type: ${(wireMessage as WireMessage).type}`);
+        throw new CryptographicSystemError(`Unsupported message type: ${(wireMessage as WireMessage).type}`);
     }
 
     const message = GenericMessage.create(builtMessage);
@@ -417,7 +418,7 @@ function packReceipt(
   const [firstMessageId, ...moreMessageIds] = wireMessage.messageIds;
 
   if (!firstMessageId) {
-    throw new Error("First messageId for Receipt message type is null") // TODO: Change to WireException once implemented
+    throw new CryptographicSystemError("First messageId for Receipt message type is null")
   }
 
   return {

@@ -40,6 +40,7 @@ import {LoggerFactory} from "../utils/logger/LoggerFactory.js";
 import {obfuscateId} from "../utils/ObfuscateUtil.js";
 import {join} from "node:path";
 import {CRYPTOGRAPHY_STORAGE_PATH} from "../utils/StoragePaths.js";
+import {CryptographicSystemError} from "../exception/WireException.js";
 
 // TODO: Baris: If we can find a way to make this class only reachable from CoreCryptoService, that will be awesome.
 
@@ -163,12 +164,10 @@ export class CoreCryptoClient {
 
       case CipherSuite.Mls256Dhkemx448Aes256gcmSha512Ed448:
       case CipherSuite.Mls256Dhkemx448Chacha20poly1305Sha512Ed448:
-        // TODO: Map to WireException
-        throw new Error("Unsupported ciphersuite")
+        throw new CryptographicSystemError(`Unsupported ciphersuite`)
 
       default:
-        // TODO: Map to WireException
-        throw new Error("Unknown ciphersuite");
+        throw new CryptographicSystemError(`Unknown ciphersuite`);
     }
   }
 

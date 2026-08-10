@@ -15,11 +15,11 @@
 */
 
 import {WIRE_API_HOST} from "../utils/DependencyInjectionTokens.js"
-import type {WireApiError} from "../model/exception/WireApiError.js"
+import type {WireApiError} from "../exception/WireApiError.js"
 import {inject, singleton} from "tsyringe"
 import {LoggerFactory} from "../utils/logger/LoggerFactory.js";
 import {AppProperties} from "../service/AppProperties.js";
-import {WireApiException} from "../model/exception/WireApiException.js";
+import {WireApiException} from "../exception/WireApiException.js";
 import type {AccessResponse} from "../api/response/AccessResponse.js";
 import {HTTP_RETRY_POLICY} from "./HttpRetryPolicy.js";
 import {
@@ -30,6 +30,7 @@ import {
   RetryableNetworkError,
   waitForHttpRetry
 } from "./HttpRetryHelper.js";
+import {AuthenticationError, UnknownError} from "../exception/WireException.js";
 
 @singleton()
 export class HttpClient {
@@ -60,8 +61,7 @@ export class HttpClient {
   getCachedAccessToken(): string {
     if (!this.cachedAccessToken) {
       this.logger.error("No cached access token found.")
-      // TODO: Map to WireException
-      throw new Error("No cached access token found.")
+      throw new AuthenticationError("No cached access token found.")
     }
     return this.cachedAccessToken!
   }
@@ -103,8 +103,7 @@ export class HttpClient {
       if (exception instanceof WireApiException && exception.isCredentialsInvalid()) {
         this.appProperties.deleteBackendCookie()
 
-        // TODO: Map to WireException
-        throw new Error("Current cookie/api-token is expired. Get a new apiToken and restart the App")
+        throw new AuthenticationError("Current cookie/api-token is expired. Get a new apiToken and restart the App")
       }
       throw exception
     }
@@ -199,8 +198,8 @@ export class HttpClient {
         throw new WireApiException(standardError)
       }
 
-      // TODO: Map to WireException
-      throw new Error(`HTTP ${response.status} for ${path}: ${response.statusText}`)
+      throw new UnknownError(`HTTP ${response.status} for ${path}: ${response.statusText}`)
+      //TODO: Maybe more clear error type?
     }
 
     const contentType = response.headers.get("content-type")
@@ -245,7 +244,8 @@ export class HttpClient {
       }
     }
 
-    throw new Error(`HTTP request failed for ${path}`)
+    throw new UnknownError(`HTTP request failed for ${path}`)
+    //TODO: Maybe more clear error type?
   }
 
   async getRequest<T>(

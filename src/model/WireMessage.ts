@@ -18,6 +18,7 @@ import { QualifiedId } from "./QualifiedId.js";
 import { MessageEncryptionAlgorithm } from "./protobuf/MessageEncryptionAlgorithm.js";
 import Long from "long";
 import {MessageContentEncoder} from "../mappers/protobuf/MessageContentEncoder.js";
+import {InvalidParameterError} from "../exception/WireException.js";
 
 const appUserId = process.env['WIRE_SDK_USER_ID']!
 const appUserDomain = process.env['WIRE_SDK_USER_DOMAIN']!
@@ -117,19 +118,19 @@ export interface WireMessageBase {
 
 export class Unknown implements WireMessageBase {
   get id(): string {
-    throw new Error("Unknown message, no ID")
+    throw new InvalidParameterError("Unknown message, no ID")
   }
 
   get conversationId(): QualifiedId {
-    throw new Error("Unknown message, no conversation")
+    throw new InvalidParameterError("Unknown message, no conversation")
   }
 
   get sender(): QualifiedId {
-    throw new Error("Unknown message, no sender")
+    throw new InvalidParameterError("Unknown message, no sender")
   }
 
   get timestamp(): Date {
-    throw new Error("Unknown message, no timestamp")
+    throw new InvalidParameterError("Unknown message, no timestamp")
   }
 
   readonly type = WireMessageType.UNKNOWN
@@ -137,19 +138,19 @@ export class Unknown implements WireMessageBase {
 
 export class Ignored implements WireMessageBase {
   get id(): string {
-    throw new Error("Ignored message, no ID")
+    throw new InvalidParameterError("Ignored message, no ID")
   }
 
   get conversationId(): QualifiedId {
-    throw new Error("Ignored message, no conversation")
+    throw new InvalidParameterError("Ignored message, no conversation")
   }
 
   get sender(): QualifiedId {
-    throw new Error("Ignored message, no sender")
+    throw new InvalidParameterError("Ignored message, no sender")
   }
 
   get timestamp(): Date {
-    throw new Error("Ignored message, no timestamp")
+    throw new InvalidParameterError("Ignored message, no timestamp")
   }
 
   readonly type = WireMessageType.IGNORED
@@ -212,11 +213,11 @@ export const TextMessage = {
     }
   ): TextMessage {
     if (!isReplyable(params.originalMessage)) {
-      throw new Error(`Cannot reply to unreplyable WireMessage type: ${params.originalMessage.type}`)
+      throw new InvalidParameterError(`Cannot reply to unreplyable WireMessage type: ${params.originalMessage.type}`)
     }
 
     if (params.originalMessage.expiresAfterMillis) {
-      throw new Error(`Cannot reply to an expiring message: ${params.originalMessage.type}`)
+      throw new InvalidParameterError(`Cannot reply to an expiring message: ${params.originalMessage.type}`)
     }
 
     return {
