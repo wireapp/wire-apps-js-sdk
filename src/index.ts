@@ -66,3 +66,4 @@ export type { RemoveMembersFromConversationResult } from "./api/model/RemoveMemb
 export { QualifiedId } from "./model/QualifiedId.js";
 export { WireUser } from "./model/WireUser.js";
 export { obfuscateId } from "./utils/ObfuscateUtil.js"
+export {WireException} from "./exception/WireException.js"
