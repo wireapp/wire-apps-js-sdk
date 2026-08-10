@@ -15,11 +15,11 @@
 */
 
 import {WIRE_API_HOST} from "../utils/DependencyInjectionTokens.js"
-import type {WireApiError} from "../model/exception/WireApiError.js"
+import type {WireApiError} from "../exception/WireApiError.js"
 import {inject, singleton} from "tsyringe"
 import {LoggerFactory} from "../utils/logger/LoggerFactory.js";
 import {AppProperties} from "../service/AppProperties.js";
-import {WireApiException} from "../model/exception/WireApiException.js";
+import {WireApiException} from "../exception/WireApiException.js";
 import type {AccessResponse} from "../api/response/AccessResponse.js";
 import {HTTP_RETRY_POLICY} from "./HttpRetryPolicy.js";
 import {
