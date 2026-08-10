@@ -48,7 +48,7 @@ export class ForbiddenError extends WireException {
 /** A required parameter/argument was not provided. */
 export class MissingParameterError extends WireException {
   constructor(message?: string, cause?: Error) {
-    super(message ?? cause?.message, cause);
+    super(message, cause);
   }
 }
 
@@ -70,27 +70,27 @@ export class InvalidParameterError extends WireException {
 /** The caller's credentials are missing or invalid. */
 export class AuthenticationError extends WireException {
   constructor(message?: string, cause?: Error) {
-    super(message ?? cause?.message, cause);
+    super(message, cause);
   }
 }
 
 /** Any error originating from the cryptography layer (MLS/Proteus/core-crypto). */
 export class CryptographicSystemError extends WireException {
   constructor(message?: string, cause?: Error) {
-    super(message ?? cause?.message, cause);
+    super(message, cause);
   }
 }
 
 /** Any error originating from the database layer. */
 export class DatabaseError extends WireException {
   constructor(message?: string, cause?: Error) {
-    super(message ?? cause?.message, cause);
+    super(message, cause);
   }
 }
 
 /** Catch-all for errors that don't fit any of the above. */
 export class UnknownError extends WireException {
   constructor(message?: string, cause?: Error) {
-    super(message ?? cause?.message, cause);
+    super(message, cause);
   }
 }
