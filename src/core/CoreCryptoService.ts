@@ -34,6 +34,11 @@ import {AppProperties} from "../service/AppProperties.js";
 import type {AddMembersToConversationResult} from "../api/model/AddMembersToConversationResult.js";
 import {obfuscateClientId, obfuscateId} from "../utils/ObfuscateUtil.js";
 import {type MlsPublicKeysResponse} from "../api/response/MlsPublicKeysResponse.js";
+import {
+  CryptographicSystemError,
+  InvalidParameterError,
+  MissingParameterError,
+} from "../exception/WireException.js";
 
 /**
  * Service that handles initialization of CoreCrypto and provides a high-level API for:
@@ -84,7 +89,7 @@ export class CoreCryptoService {
    */
   async initOrRegisterClient() {
     if (!this.coreCryptoClient) {
-      throw new Error("CoreCryptoClient is not initialized.")
+      throw new CryptographicSystemError("CoreCryptoClient is not initialized.")
     }
 
     if (this.appProperties.hasDeviceId()) {
@@ -110,7 +115,7 @@ export class CoreCryptoService {
       try {
         registeredDeviceId = await this.clientsService.registerClient(proteusPreKeys, proteusLastPreKey)
       } catch (exception) {
-        throw new Error(`Error when registering client: ${(exception as Error).message}`);
+        throw new CryptographicSystemError(`Error when registering client: ${(exception as Error).message}`)
       }
 
       this.appProperties.setDeviceId(registeredDeviceId)
@@ -222,7 +227,7 @@ export class CoreCryptoService {
   async addClientsToMlsConversation(mlsGroupId: string, members: QualifiedId[]): Promise<AddMembersToConversationResult> {
     this.logger.debug(`Adding ${members.length} clients to MLS group id: ${obfuscateId(mlsGroupId)}`)
     if (members.length === 0) {
-      throw new Error("List of members cannot be empty.") // TODO: Use custom exceptions (WireException.InvalidParameter)
+      throw new InvalidParameterError("List of members cannot be empty.")
     }
 
     const claimedKeyPackagesResult = await this.mlsService.claimKeyPackages(
@@ -254,13 +259,13 @@ export class CoreCryptoService {
     mlsPublicKeysResponse?: MlsPublicKeysResponse // Exists only for 1-1 conversations
   ): Promise<void> {
     if (!mlsGroupId) {
-      throw new Error("Missing mlsGroupId.") //TODO: Use custom exceptions
+      throw new MissingParameterError("mlsGroupId is required to establish an MLS conversation.")
     }
 
     const cipherSuite = CoreCryptoClient.getMlsCiphersuiteName(this.defaultCiphersuiteCode!)
     const removalKey = await this.mlsService.getRemovalKey(cipherSuite, mlsPublicKeysResponse);
     if (removalKey == null) {
-      throw Error("No Public Keys found, skipping creating a conversation.") // TODO: Map to WireException
+      throw new MissingParameterError(`No Public Keys found, skipping creating a conversation. mlsGroupId: ${obfuscateId(mlsGroupId)}`)
     }
 
     try {
@@ -268,7 +273,7 @@ export class CoreCryptoService {
       await this.coreCryptoClient!.createConversation(mlsGroupId, removalKey)
     } catch (exception) {
       if (CoreCryptoError.Mls.instanceOf(exception) && MlsError.ConversationAlreadyExists.instanceOf(exception.inner.mlsError)) {
-        throw Error("Conversation already exists.")
+        throw new CryptographicSystemError(`Conversation already exists. mlsGroupId: ${obfuscateId(mlsGroupId)}`)
       }
       this.logger.error(`Failed to create MLS conversation. mlsGroupId: ${obfuscateId(mlsGroupId)}`, exception)
     }

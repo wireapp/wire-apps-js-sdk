@@ -566,7 +566,7 @@ describe('CoreCryptoService', () => {
 
     it('should throw when mlsGroupId is missing', async () => {
       // when / then
-      await expect(service.establishMlsConversation('')).rejects.toThrow('Missing mlsGroupId.')
+      await expect(service.establishMlsConversation('')).rejects.toThrow('mlsGroupId is required to establish an MLS conversation.')
       expect(mockMlsService.getRemovalKey).not.toHaveBeenCalled()
     })
 

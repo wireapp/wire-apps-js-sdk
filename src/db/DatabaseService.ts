@@ -54,12 +54,13 @@ export class DatabaseService {
         migrationsFolder
       })
     } catch (exception) {
+      //TODO: This error seems good. Do we need a separate custom error in WireException class?
       throw new Error(
         `Failed to run Wire Apps SDK database migrations from "${migrationsFolder}". ` +
           `Make sure the database migration files are included next to the built ` +
           `DatabaseService.js file, for example in "build/db/migrations".`,
         { cause: exception }
-      ) 
+      )
     }
   }
 

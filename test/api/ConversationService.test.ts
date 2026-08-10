@@ -1404,7 +1404,7 @@ describe('ConversationService', () => {
           USER_ID,
           ConversationRole.MEMBER
         )
-      ).rejects.toThrow('User is not in the conversation.')
+      ).rejects.toThrow('App user is not in the conversation.')
 
       expect((mockConversationsApiClient as any).updateConversationMemberRole).not.toHaveBeenCalled()
       expect((mockConversationMemberRepository as any).save).not.toHaveBeenCalled()
