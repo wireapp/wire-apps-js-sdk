@@ -22,6 +22,7 @@ import {migrate} from "drizzle-orm/better-sqlite3/migrator";
 import {DATABASE_PATH} from "../utils/StoragePaths.js";
 import {dirname, join} from "node:path";
 import {fileURLToPath} from "node:url";
+import {DatabaseError} from "../exception/WireException.js";
 
 @singleton()
 export class DatabaseService {
@@ -55,11 +56,11 @@ export class DatabaseService {
       })
     } catch (exception) {
       //TODO: This error seems good. Do we need a separate custom error in WireException class?
-      throw new Error(
+      throw new DatabaseError(
         `Failed to run Wire Apps SDK database migrations from "${migrationsFolder}". ` +
           `Make sure the database migration files are included next to the built ` +
           `DatabaseService.js file, for example in "build/db/migrations".`,
-        { cause: exception }
+          exception as Error
       )
     }
   }

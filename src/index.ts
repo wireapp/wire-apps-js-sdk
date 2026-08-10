@@ -72,7 +72,7 @@ export {
   MissingParameterError,
   InvalidParameterError,
   CryptographicSystemError,
+  AuthenticationError,
+  DatabaseError,
   UnknownError,
-  ClientError,
-  ServerError,
 } from "./exception/WireException.js"

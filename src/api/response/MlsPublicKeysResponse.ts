@@ -17,7 +17,7 @@
 import {CipherSuite} from "@wireapp/core-crypto/native";
 import type {MlsPublicKeys} from "../../model/MlsPublicKeys.js";
 import {Decoder} from "bazinga64";
-import {InvalidParameterError} from "../../exception/WireException.js";
+import {CryptographicSystemError} from "../../exception/WireException.js";
 
 export interface MlsPublicKeysResponse {
   removal: MlsPublicKeys
@@ -49,7 +49,7 @@ export function getRemovalKeyFromPublicKeysResponse(
 
     case CipherSuite.Mls256Dhkemx448Aes256gcmSha512Ed448:
     case CipherSuite.Mls256Dhkemx448Chacha20poly1305Sha512Ed448:
-      throw new InvalidParameterError(`Unsupported ciphersuite: ${CipherSuite[cipherSuite]}`);
+      throw new CryptographicSystemError(`Unsupported ciphersuite: ${CipherSuite[cipherSuite]}`);
 
     default:
       key = null

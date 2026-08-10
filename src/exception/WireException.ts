@@ -67,6 +67,13 @@ export class InvalidParameterError extends WireException {
   }
 }
 
+/** The caller's credentials are missing or invalid. */
+export class AuthenticationError extends WireException {
+  constructor(message?: string, cause?: Error) {
+    super(message ?? cause?.message, cause);
+  }
+}
+
 /** Any error originating from the cryptography layer (MLS/Proteus/core-crypto). */
 export class CryptographicSystemError extends WireException {
   constructor(message?: string, cause?: Error) {
@@ -74,25 +81,15 @@ export class CryptographicSystemError extends WireException {
   }
 }
 
+/** Any error originating from the database layer. */
+export class DatabaseError extends WireException {
+  constructor(message?: string, cause?: Error) {
+    super(message ?? cause?.message, cause);
+  }
+}
+
 /** Catch-all for errors that don't fit any of the above. */
 export class UnknownError extends WireException {
-  constructor(message?: string, cause?: Error) {
-    super(message ?? cause?.message, cause);
-  }
-}
-
-// TODO: Two exception classes below might be used to convert Http errors
-//  to WireExceptions. Currently there is no clear place for these.
-
-/** A 4xx-style error returned by the backend. */
-export class ClientError extends WireException {
-  constructor(message?: string, cause?: Error) {
-    super(message ?? cause?.message, cause);
-  }
-}
-
-/** A 5xx-style error returned by the backend. */
-export class ServerError extends WireException {
   constructor(message?: string, cause?: Error) {
     super(message ?? cause?.message, cause);
   }

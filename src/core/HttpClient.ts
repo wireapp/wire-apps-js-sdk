@@ -30,7 +30,7 @@ import {
   RetryableNetworkError,
   waitForHttpRetry
 } from "./HttpRetryHelper.js";
-import {UnknownError} from "../exception/WireException.js";
+import {AuthenticationError, UnknownError} from "../exception/WireException.js";
 
 @singleton()
 export class HttpClient {
@@ -61,7 +61,7 @@ export class HttpClient {
   getCachedAccessToken(): string {
     if (!this.cachedAccessToken) {
       this.logger.error("No cached access token found.")
-      throw new UnknownError("No cached access token found.")
+      throw new AuthenticationError("No cached access token found.")
     }
     return this.cachedAccessToken!
   }
@@ -103,7 +103,7 @@ export class HttpClient {
       if (exception instanceof WireApiException && exception.isCredentialsInvalid()) {
         this.appProperties.deleteBackendCookie()
 
-        throw new UnknownError("Current cookie/api-token is expired. Get a new apiToken and restart the App")
+        throw new AuthenticationError("Current cookie/api-token is expired. Get a new apiToken and restart the App")
       }
       throw exception
     }
