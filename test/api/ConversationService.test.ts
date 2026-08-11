@@ -1339,7 +1339,7 @@ describe('ConversationService', () => {
 
       await expect(
         conversationService.addMembersToConversation(CONVERSATION_ID, [USER_ID])
-      ).rejects.toThrow('Unable to add members to MLS conversation: MLS error')
+      ).rejects.toThrow('Unable to add members to MLS conversation')
 
       expect(mockConversationMemberRepository.saveMany).not.toHaveBeenCalled()
     })
@@ -1404,7 +1404,7 @@ describe('ConversationService', () => {
           USER_ID,
           ConversationRole.MEMBER
         )
-      ).rejects.toThrow('User is not in the conversation.')
+      ).rejects.toThrow('App user is not in the conversation.')
 
       expect((mockConversationsApiClient as any).updateConversationMemberRole).not.toHaveBeenCalled()
       expect((mockConversationMemberRepository as any).save).not.toHaveBeenCalled()

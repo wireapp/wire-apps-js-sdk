@@ -19,6 +19,7 @@ import {AppPropertiesRepository} from "../db/AppPropertiesRepository.js";
 import {WIRE_CRYPTOGRAPHY_STORAGE_KEY} from "../utils/DependencyInjectionTokens.js";
 import {AESUtils} from "../utils/AESUtils.js";
 import {LoggerFactory} from "../utils/logger/LoggerFactory.js";
+import {InvalidParameterError} from "../exception/WireException.js";
 
 @singleton()
 export class AppProperties {
@@ -92,7 +93,7 @@ export class AppProperties {
   getDeviceId(): string {
     const deviceId = this.appPropertiesRepository.getByKey(this.DEVICE_ID)?.value
     if (!deviceId) {
-      throw new Error("No stored deviceId found")
+      throw new InvalidParameterError("No stored deviceId found")
     }
 
     return deviceId

@@ -48,6 +48,7 @@ import {
 import {GroupConversationType} from "../model/conversation/GroupConversationType.js";
 import type {OneToOneConversationResponse} from "./response/OneToOneConversationResponse.js";
 import {OneToOneConversationsApiClient} from "./OneToOneConversationsApiClient.js";
+import {ForbiddenError, InvalidParameterError, UnknownError} from "../exception/WireException.js";
 
 @singleton()
 export class ConversationService {
@@ -171,7 +172,7 @@ export class ConversationService {
   private async getSelfTeamId(): Promise<TeamId> {
     const selfUser = await this.userService.getUser(new QualifiedId(this.wireUserId, this.wireUserDomain))
     if (!selfUser.teamId) {
-      throw new Error("App user does not belong to a team.")
+      throw new InvalidParameterError("App user does not belong to a team.")
     }
     return selfUser.teamId
   }
@@ -358,7 +359,7 @@ export class ConversationService {
     members: QualifiedId[]
   ): Promise<AddMembersToConversationResult> {
     if (members.length === 0) {
-      throw new Error("List of members cannot be empty.") // TODO: Use custom exceptions (WireException.InvalidParameter)
+      throw new InvalidParameterError(`List of members cannot be empty. conversationId: ${conversationId}`)
     }
 
     const conversation = await this.getConversationById(conversationId)
@@ -373,7 +374,7 @@ export class ConversationService {
         members
       )
     } catch (error) {
-      throw new Error(`Unable to add members to MLS conversation: ${(error as Error).message}`) // TODO: Use custom exceptions
+      throw new UnknownError("Unable to add members to MLS conversation.", error as Error)
     }
 
     const membersToSave: ConversationMemberEntity[] = result.membersAdded.map((userId) => ({
@@ -399,7 +400,7 @@ export class ConversationService {
     this.logger.info(`Attempting to remove ${members.length} member(s) from the conversation. conversationId: ${conversationId}`)
 
     if (members.length === 0) {
-      throw new Error("List of members cannot be empty.") // TODO: Use custom exceptions (WireException.InvalidParameter)
+      throw new InvalidParameterError(`List of members cannot be empty. conversationId: ${conversationId}`)
     }
 
     const conversation = await this.getConversationById(conversationId)
@@ -427,7 +428,7 @@ export class ConversationService {
       this.logger.info(`Removal of members from the conversation is completed. Removed: ${membersRemoved.length}. conversationId: ${conversationId}`)
       return {membersRemoved}
     } catch (error) {
-      this.logger.error(`Failed to remove clients from MLS conversation: ${(error as Error).message}`)
+      this.logger.error("Failed to remove clients from MLS conversation.", error as Error)
       return {membersRemoved: []}
     }
   }
@@ -605,8 +606,9 @@ export class ConversationService {
     const conversation = await this.getConversationById(conversationId)
 
     if (!conversation.teamId) {
-      throw new Error("Conversation teamId must not be null.")
+      throw new InvalidParameterError(`Conversation teamId must not be null. conversationId: ${conversationId}`)
     }
+
     this.requireConversationIsGroupOrChannel(conversationId, conversation.type)
     this.requireAppIsAdminInConversation(conversationId)
 
@@ -620,7 +622,7 @@ export class ConversationService {
   private requireConversationIsGroupOrChannel(conversationId: QualifiedId, conversationType: ConversationType): void {
     if (conversationType !== ConversationType.GROUP) {
       this.logger.warn(`Skipping operation, conversation is not a GROUP or CHANNEL. conversationId: ${conversationId}, conversationType: ${conversationType}`)
-      throw new Error("Conversation type is not GROUP.") //TODO: Use custom exceptions
+      throw new InvalidParameterError(`Conversation type is not GROUP. conversationId: ${conversationId}`)
     }
   }
 
@@ -635,7 +637,7 @@ export class ConversationService {
 
     if (!isAppAdminInConversation) {
       this.logger.warn(`App user is not an admin in the conversation. conversationId: ${obfuscateId(conversationId.id)}, appUserId: ${obfuscateId(this.wireUserId)}`)
-      throw new Error("App user is not an admin in the conversation.") //TODO: Use custom exceptions
+      throw ForbiddenError.appIsNotAdminInConversation()
     }
   }
 
@@ -648,7 +650,7 @@ export class ConversationService {
 
     if (!exists) {
       this.logger.warn(`User is not in the conversation. conversationId: ${conversationId}, userId: ${userId}`)
-      throw new Error("User is not in the conversation.") //TODO: Use custom exceptions
+      throw ForbiddenError.appIsNotInConversation()
     }
   }
 }

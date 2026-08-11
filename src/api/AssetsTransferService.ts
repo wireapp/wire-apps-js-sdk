@@ -23,6 +23,7 @@ import type { AssetUploadData } from "./model/asset/AssetUploadData.js";
 import { obfuscateId } from "../utils/ObfuscateUtil.js";
 import type { AssetUploadResponse } from "./model/asset/AssetUploadResponse.js";
 import type {AssetData} from "../model/Asset.js";
+import {InvalidParameterError} from "../exception/WireException.js";
 
 @singleton()
 export class AssetsTransferService {
@@ -40,8 +41,7 @@ export class AssetsTransferService {
 
     const calculatedSha256 = HashUtils.calculateSha256Hash(encryptedAsset)
     if (!HashUtils.isHashEqual(assetRemoteData.sha256, calculatedSha256)) {
-      // TODO: Map to WireException
-      throw new Error(`The sha256 doesn't match for asset with ID ${obfuscateId(assetRemoteData.assetId)}`)
+      throw new InvalidParameterError(`Asset download failed. Asset checksums do not match. assetId: ${obfuscateId(assetRemoteData.assetId)}`)
     }
 
     return AESUtils.decryptData(encryptedAsset, assetRemoteData.otrKey)
@@ -77,8 +77,7 @@ export class AssetsTransferService {
     assetUploadData: AssetUploadData
   ): Promise<AssetUploadResponse> {
     if (asset.length > this.MAX_DATA_SIZE) {
-      // TODO: Map to WireException
-      throw new Error("AssetData size exceeds the maximum limit of 100MB")
+      throw new InvalidParameterError(`AssetData size exceeds the maximum limit of 100MB. Size: ${asset.length} bytes`)
     }
 
     return await this.assetsApiClient.uploadAsset(
