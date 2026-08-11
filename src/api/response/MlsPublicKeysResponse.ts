@@ -1,7 +1,7 @@
 /*
 * Wire
 * Copyright (C) 2026 Wire Swiss GmbH
-* 
+*
 * This program is free software: you can redistribute it and/or modify
 * it under the terms of the GNU General Public License as published by
 * the Free Software Foundation, either version 3 of the License, or
@@ -17,6 +17,7 @@
 import {CipherSuite} from "@wireapp/core-crypto/native";
 import type {MlsPublicKeys} from "../../model/MlsPublicKeys.js";
 import {Decoder} from "bazinga64";
+import {CryptographicSystemError} from "../../exception/WireException.js";
 
 export interface MlsPublicKeysResponse {
   removal: MlsPublicKeys
@@ -48,7 +49,7 @@ export function getRemovalKeyFromPublicKeysResponse(
 
     case CipherSuite.Mls256Dhkemx448Aes256gcmSha512Ed448:
     case CipherSuite.Mls256Dhkemx448Chacha20poly1305Sha512Ed448:
-      throw new Error("Unsupported ciphersuite")
+      throw new CryptographicSystemError(`Unsupported ciphersuite: ${CipherSuite[cipherSuite]}`);
 
     default:
       key = null

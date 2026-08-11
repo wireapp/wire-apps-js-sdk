@@ -1,7 +1,7 @@
 /*
 * Wire
 * Copyright (C) 2025 Wire Swiss GmbH
-* 
+*
 * This program is free software: you can redistribute it and/or modify
 * it under the terms of the GNU General Public License as published by
 * the Free Software Foundation, either version 3 of the License, or
@@ -17,6 +17,7 @@
 import type { CommitBundle, HistorySecret, MlsTransport, MlsTransportData } from "@wireapp/core-crypto/native";
 import { MlsService } from "../api/MlsService.js";
 import { singleton } from "tsyringe";
+import {UnknownError} from "../exception/WireException.js";
 
 @singleton()
 export class CoreCryptoMlsTransport implements MlsTransport {
@@ -29,9 +30,9 @@ export class CoreCryptoMlsTransport implements MlsTransport {
   }
 
   async prepareForTransport(__: HistorySecret): Promise<MlsTransportData> {
-    throw new Error("Not yet implemented.")
+    throw new UnknownError("This method is not applicable for SDKs.")
   }
-  
+
   /**
    * Returns the CommitBundle data as a single byte array, in a specific order.
    *

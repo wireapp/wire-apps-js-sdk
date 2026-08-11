@@ -37,6 +37,7 @@ import {ConversationService} from "./api/ConversationService.js";
 import {AppProperties} from "./service/AppProperties.js";
 import {CRYPTOGRAPHY_STORAGE_PATH, STORAGE_PATH} from "./utils/StoragePaths.js";
 import type {BackendConnectionListener} from "./core/BackendConnectionListener.js";
+import {InvalidParameterError, UnknownError} from "./exception/WireException.js";
 
 export class WireAppSdk {
   private readonly CRYPTOGRAPHY_STORAGE_KEY_BYTES = 32
@@ -66,7 +67,7 @@ export class WireAppSdk {
     logger?: Logger
   ) {
     if (cryptographyStorageKey.length !== this.CRYPTOGRAPHY_STORAGE_KEY_BYTES) {
-      throw new Error(
+      throw new InvalidParameterError(
         `cryptographyStorageKey must be exactly ${this.CRYPTOGRAPHY_STORAGE_KEY_BYTES} bytes long`
       );
     }
@@ -151,7 +152,7 @@ export class WireAppSdk {
     this.isWebSocketRunning = true
 
     if (!this.webSocketClient || !this.conversationService) {
-      throw new Error("Wire Apps SDK dependencies are not initialized.")
+      throw new UnknownError("Wire Apps SDK dependencies are not initialized.")
     }
 
     this.webSocketClient.connect().finally(() => {

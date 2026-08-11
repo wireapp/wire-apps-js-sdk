@@ -17,6 +17,7 @@
 import {HttpClient} from "../core/HttpClient.js";
 import {singleton} from "tsyringe";
 import type {SearchContactsResponse} from "./response/SearchContactsResponse.js";
+import {InvalidParameterError} from "../exception/WireException.js";
 
 const DEFAULT_RESULT_SIZE = 15;
 const MIN_RESULT_SIZE = 1;
@@ -37,13 +38,13 @@ export class SearchApiClient {
     const size = numberOfResults ?? DEFAULT_RESULT_SIZE;
 
     if (size < MIN_RESULT_SIZE || size > MAX_RESULT_SIZE) {
-      throw new Error(`Number of results value must be between ${MIN_RESULT_SIZE} and ${MAX_RESULT_SIZE}.`);
+      throw new InvalidParameterError(`Number of results value must be between ${MIN_RESULT_SIZE} and ${MAX_RESULT_SIZE}. Value provided: ${size}`);
     }
     if (!query.trim()) {
-      throw new Error("Search query must not be blank.");
+      throw new InvalidParameterError("Search query must not be blank.");
     }
     if (!domain.trim()) {
-      throw new Error("Domain must not be blank.");
+      throw new InvalidParameterError("Domain must not be blank.");
     }
 
     const params = new URLSearchParams({
