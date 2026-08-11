@@ -73,11 +73,7 @@ The SQLite schema is initialized by SDK startup through migrations shipped with 
 The SDK is published as an ESM package. Import it with standard `import` syntax:
 
 ```ts
-import {
-  WireAppSdk,
-  WireEventsHandler,
-  TextMessage
-} from '@wireapp/wire-apps-js-sdk'
+import {WireAppSdk, WireEventsHandler, TextMessage} from '@wireapp/wire-apps-js-sdk'
 ```
 
 CommonJS `require()` is not the supported integration path for this alpha release.

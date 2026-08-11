@@ -1,0 +1,7 @@
+# Ignore commits that only reformat code (e.g. mass Prettier reformatting).
+# Configure git to use this file with:
+#   git config blame.ignoreRevsFile .git-blame-ignore-revs
+# GitHub's web blame view honours this file automatically.
+
+# chore: WPB-22412 mass Prettier reformat
+53e56ea76fbb53c05ac00e68b88b038c3656072e

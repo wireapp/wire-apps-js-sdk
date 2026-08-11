@@ -9,13 +9,8 @@
     "module": "nodenext",
     "moduleResolution": "nodenext",
     "target": "es2023",
-    "lib": [
-      "es2023",
-      "dom"
-    ],
-    "types": [
-      "node"
-    ],
+    "lib": ["es2023", "dom"],
+    "types": ["node"],
     // Allows JS files (for generated protobuf files)
     "allowJs": true,
     // Other Outputs
@@ -44,12 +39,6 @@
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true
   },
-  "include": [
-    "./src/**/*"
-  ],
-  "exclude": [
-    "node_modules",
-    "./build",
-    "./src/sample"
-  ],
+  "include": ["./src/**/*"],
+  "exclude": ["node_modules", "./build", "./src/sample"]
 }

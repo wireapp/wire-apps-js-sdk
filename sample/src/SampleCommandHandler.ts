@@ -44,8 +44,7 @@ export class SampleCommandHandler {
   constructor(
     private readonly manager: Manager,
     private readonly appLogger?: PinoLogger
-  ) {
-  }
+  ) {}
 
   public isSampleCommand(message?: string): boolean {
     if (!message) return false
@@ -91,13 +90,13 @@ export class SampleCommandHandler {
         await this.processGetConversationMembers(conversationId, command)
       },
       'create-group-conversation': async (conversationId, command) => {
-        await this.processCreateGroupConversation(command ?? "")
+        await this.processCreateGroupConversation(command ?? '')
       },
       'create-channel-conversation': async (conversationId, command) => {
-        await this.processCreateChannelConversation(command ?? "")
+        await this.processCreateChannelConversation(command ?? '')
       },
       'create-onetoone-conversation': async (conversationId, command) => {
-        await this.processCreateOneToOneConversation(command ?? "")
+        await this.processCreateOneToOneConversation(command ?? '')
       },
       'test-deleted-message': async (conversationId) => {
         await this.processTestDeletedMessage(conversationId)
@@ -183,27 +182,25 @@ export class SampleCommandHandler {
 
     if (result.membersAdded.length > 0) {
       feedbackMessage += `✅ Successfully added (${result.membersAdded.length}):\n`
-      feedbackMessage += result.membersAdded
-        .map(m => `  • ${obfuscateId(m.id)}@${m.domain}`)
-        .join('\n')
+      feedbackMessage += result.membersAdded.map((m) => `  • ${obfuscateId(m.id)}@${m.domain}`).join('\n')
       feedbackMessage += '\n\n'
     }
 
     if (result.membersFailedToAdd.length > 0) {
       feedbackMessage += `❌ Failed to add (${result.membersFailedToAdd.length}):\n`
-      feedbackMessage += result.membersFailedToAdd
-        .map(m => `  • ${obfuscateId(m.id)}@${m.domain}`)
-        .join('\n')
+      feedbackMessage += result.membersFailedToAdd.map((m) => `  • ${obfuscateId(m.id)}@${m.domain}`).join('\n')
     }
 
     if (result.membersAdded.length === 0 && result.membersFailedToAdd.length === 0) {
       feedbackMessage += '⚠️ No members were processed.'
     }
 
-    await this.manager.sendMessage(TextMessage.create({
-      conversationId: conversationId,
-      text: feedbackMessage
-    }))
+    await this.manager.sendMessage(
+      TextMessage.create({
+        conversationId: conversationId,
+        text: feedbackMessage
+      })
+    )
 
     this.appLogger?.info(
       `[Sample App] Addition completed: ${result.membersAdded.length} added, ${result.membersFailedToAdd.length} failed`
@@ -239,21 +236,19 @@ export class SampleCommandHandler {
 
     if (result.membersRemoved.length > 0) {
       feedbackMessage += `✅ Successfully removed (${result.membersRemoved.length}):\n`
-      feedbackMessage += result.membersRemoved
-        .map(m => `  • ${obfuscateId(m.id)}@${m.domain}`)
-        .join('\n')
+      feedbackMessage += result.membersRemoved.map((m) => `  • ${obfuscateId(m.id)}@${m.domain}`).join('\n')
     } else {
       feedbackMessage += '⚠️ No members were removed.'
     }
 
-    await this.manager.sendMessage(TextMessage.create({
-      conversationId: conversationId,
-      text: feedbackMessage
-    }))
-
-    this.appLogger?.info(
-      `[Sample App] Removal completed: ${result.membersRemoved.length} removed`
+    await this.manager.sendMessage(
+      TextMessage.create({
+        conversationId: conversationId,
+        text: feedbackMessage
+      })
     )
+
+    this.appLogger?.info(`[Sample App] Removal completed: ${result.membersRemoved.length} removed`)
   }
 
   private async processUpdateMemberRole(conversationId: QualifiedId, command?: string): Promise<void> {
@@ -283,38 +278,38 @@ export class SampleCommandHandler {
     const userDomain = parts?.[2]
 
     if (!userId || !userDomain) {
-      this.appLogger?.info(
-        `[Sample App] Invalid command format. Expected: get-user-data [USER_ID] [DOMAIN]`
-      )
+      this.appLogger?.info(`[Sample App] Invalid command format. Expected: get-user-data [USER_ID] [DOMAIN]`)
       return
     }
 
     const userQualifiedId: QualifiedId = new QualifiedId(userId, userDomain)
     const user: WireUser = await this.manager.getUser(userQualifiedId)
 
-    await this.manager.sendMessage(TextMessage.create({
-      conversationId: conversationId,
-      text: `User data for ${obfuscateId(userQualifiedId.id)}@${userQualifiedId.domain}:
+    await this.manager.sendMessage(
+      TextMessage.create({
+        conversationId: conversationId,
+        text: `User data for ${obfuscateId(userQualifiedId.id)}@${userQualifiedId.domain}:
         Name: ${user.name}
         Email: ${user.email ?? 'N/A'}
         Handle: ${user.handle ?? 'N/A'}
         Team: ${user.teamId?.value ?? 'N/A'}
         Deleted: ${user.deleted ?? false}`
-    }))
+      })
+    )
   }
 
   private async processGetConversations(conversationId: QualifiedId): Promise<void> {
     this.appLogger?.info(`[Sample App] Executing handler for: get-conversations`)
 
     const conversations = await this.manager.getAllConversations()
-    const conversationList = conversations
-      .map(c => `- ${c.name ?? 'Unnamed'} (${c.id}@${c.domain})`)
-      .join('\n')
+    const conversationList = conversations.map((c) => `- ${c.name ?? 'Unnamed'} (${c.id}@${c.domain})`).join('\n')
 
-    await this.manager.sendMessage(TextMessage.create({
-      conversationId: conversationId,
-      text: `Conversations (${conversations.length}):\n${conversationList}`
-    }))
+    await this.manager.sendMessage(
+      TextMessage.create({
+        conversationId: conversationId,
+        text: `Conversations (${conversations.length}):\n${conversationList}`
+      })
+    )
   }
 
   private async processGetConversationMembers(conversationId: QualifiedId, command?: string): Promise<void> {
@@ -331,20 +326,17 @@ export class SampleCommandHandler {
       return
     }
 
-    const targetQualifiedId: QualifiedId = new QualifiedId(
-      targetConversationId,
-      targetConversationDomain
-    )
+    const targetQualifiedId: QualifiedId = new QualifiedId(targetConversationId, targetConversationDomain)
     const members = await this.manager.getMembersInConversation(targetQualifiedId)
 
-    const memberList = members
-      .map(m => `- ${obfuscateId(m.userId.id)}@${m.userId.domain} (${m.role})`)
-      .join('\n')
+    const memberList = members.map((m) => `- ${obfuscateId(m.userId.id)}@${m.userId.domain} (${m.role})`).join('\n')
 
-    await this.manager.sendMessage(TextMessage.create({
-      conversationId: conversationId,
-      text: `Members in conversation ${obfuscateId(targetQualifiedId.id)}@${targetQualifiedId.domain} (${members.length}):\n${memberList}`
-    }))
+    await this.manager.sendMessage(
+      TextMessage.create({
+        conversationId: conversationId,
+        text: `Members in conversation ${obfuscateId(targetQualifiedId.id)}@${targetQualifiedId.domain} (${members.length}):\n${memberList}`
+      })
+    )
   }
 
   private async processCreateGroupConversation(command: string): Promise<void> {
@@ -401,7 +393,7 @@ export class SampleCommandHandler {
 
     if (!userId || !domain || args.length !== 3) {
       this.appLogger?.info(
-        "[Sample App] Invalid command format. Expected: create-onetoone-conversation [USER_ID] [DOMAIN]"
+        '[Sample App] Invalid command format. Expected: create-onetoone-conversation [USER_ID] [DOMAIN]'
       )
       return
     }
@@ -410,18 +402,16 @@ export class SampleCommandHandler {
   }
 
   private async processTestDeletedMessage(conversationId: QualifiedId): Promise<void> {
-    this.appLogger?.info(
-      `[Sample App] Sending a text message and then deleting it after 3 seconds`
-    )
+    this.appLogger?.info(`[Sample App] Sending a text message and then deleting it after 3 seconds`)
 
     const message = TextMessage.create({
       conversationId: conversationId,
-      text: "This message will be deleted in 3 seconds"
+      text: 'This message will be deleted in 3 seconds'
     })
 
     await this.manager.sendMessage(message)
 
-    await new Promise(resolve => setTimeout(resolve, 3000))
+    await new Promise((resolve) => setTimeout(resolve, 3000))
 
     const deleted = DeletedMessage.create({
       conversationId: conversationId,
@@ -446,22 +436,19 @@ export class SampleCommandHandler {
       return
     }
 
-    const users: WireUser[] = await this.manager.searchUsers(
-      query,
-      domain,
-      numberOfResults
+    const users: WireUser[] = await this.manager.searchUsers(query, domain, numberOfResults)
+
+    const userList =
+      users.length > 0
+        ? users.map((u) => `- ${u.name} | Handle: ${u.handle ?? 'N/A'} | Team: ${u.teamId?.value ?? 'N/A'}`).join('\n')
+        : 'No users found.'
+
+    await this.manager.sendMessage(
+      TextMessage.create({
+        conversationId: conversationId,
+        text: `Search results for "${query}" on ${domain} (${users.length}):\n${userList}`
+      })
     )
-
-    const userList = users.length > 0
-      ? users
-        .map(u => `- ${u.name} | Handle: ${u.handle ?? 'N/A'} | Team: ${u.teamId?.value ?? 'N/A'}`)
-        .join('\n')
-      : 'No users found.'
-
-    await this.manager.sendMessage(TextMessage.create({
-      conversationId: conversationId,
-      text: `Search results for "${query}" on ${domain} (${users.length}):\n${userList}`
-    }))
   }
 
   private async processTestEditText(conversationId: QualifiedId): Promise<void> {
@@ -469,17 +456,17 @@ export class SampleCommandHandler {
 
     const message = TextMessage.create({
       conversationId: conversationId,
-      text: "This message will be edited in 3 seconds"
+      text: 'This message will be edited in 3 seconds'
     })
 
     await this.manager.sendMessage(message)
 
-    await new Promise(resolve => setTimeout(resolve, 3000))
+    await new Promise((resolve) => setTimeout(resolve, 3000))
 
     const messageEdit = TextEditedMessage.create({
       conversationId: conversationId,
       replacingMessageId: message.id,
-      text: "This message got edited"
+      text: 'This message got edited'
     })
 
     await this.manager.sendMessage(messageEdit)
@@ -489,13 +476,13 @@ export class SampleCommandHandler {
     const mutableItemList = [
       TextMessage.create({
         conversationId: conversationId,
-        text: "Text item that will be removed in 9 seconds"
+        text: 'Text item that will be removed in 9 seconds'
       }),
       CompositeButton.create({
-        text: "Button item that will be removed in 6 seconds"
+        text: 'Button item that will be removed in 6 seconds'
       }),
       CompositeButton.create({
-        text: "Button item that will be removed in 3 seconds"
+        text: 'Button item that will be removed in 3 seconds'
       })
     ]
 
@@ -507,7 +494,7 @@ export class SampleCommandHandler {
     )
 
     while (mutableItemList.length != 0) {
-      await new Promise(resolve => setTimeout(resolve, 3000))
+      await new Promise((resolve) => setTimeout(resolve, 3000))
       mutableItemList.pop()
 
       const compositeEdit = CompositeEditedMessage.create({
@@ -535,15 +522,12 @@ export class SampleCommandHandler {
         height: 240
       }
 
-      this.manager.sendAsset(
-        conversationId,
-        {
-          data: data,
-          name: filename,
-          mimeType: "image/png",
-          metadata: metadata
-        }
-      )
+      this.manager.sendAsset(conversationId, {
+        data: data,
+        name: filename,
+        mimeType: 'image/png',
+        metadata: metadata
+      })
     })
   }
 
@@ -558,15 +542,12 @@ export class SampleCommandHandler {
 
       const metadata: Audio = this.getSampleAudioMetadata()
 
-      this.manager.sendAsset(
-        conversationId,
-        {
-          data: data,
-          name: filename,
-          mimeType: "audio/mp3",
-          metadata: metadata
-        }
-      )
+      this.manager.sendAsset(conversationId, {
+        data: data,
+        name: filename,
+        mimeType: 'audio/mp3',
+        metadata: metadata
+      })
     })
   }
 
@@ -586,15 +567,12 @@ export class SampleCommandHandler {
         durationMs: 5000
       }
 
-      this.manager.sendAsset(
-        conversationId,
-        {
-          data: data,
-          name: filename,
-          mimeType: "video/mp4",
-          metadata: metadata
-        }
-      )
+      this.manager.sendAsset(conversationId, {
+        data: data,
+        name: filename,
+        mimeType: 'video/mp4',
+        metadata: metadata
+      })
     })
   }
 
@@ -603,7 +581,7 @@ export class SampleCommandHandler {
 
     const message = TextMessage.create({
       conversationId: conversationId,
-      text: "This is an Ephemeral Text message",
+      text: 'This is an Ephemeral Text message',
       expiresAfterMillis: 10000
     })
 
@@ -632,7 +610,7 @@ export class SampleCommandHandler {
         {
           data: data,
           name: filename,
-          mimeType: "image/png",
+          mimeType: 'image/png',
           metadata: metadata
         },
         10000
@@ -647,7 +625,7 @@ export class SampleCommandHandler {
       conversationId: conversationId,
       latitude: 52.5251,
       longitude: 13.3694,
-      name: "Berlin Hauptbahnhof, Hauptbahnhof, Europaplatz 1, 10557 Berlin",
+      name: 'Berlin Hauptbahnhof, Hauptbahnhof, Europaplatz 1, 10557 Berlin',
       zoom: 11,
       expiresAfterMillis: 10000
     })
@@ -669,13 +647,13 @@ export class SampleCommandHandler {
   private async sendCompositeMessage(conversationId: QualifiedId): Promise<void> {
     const msg = CompositeMessage.create({
       conversationId: conversationId,
-      text: "Composite Title",
+      text: 'Composite Title',
       itemList: [
         CompositeButton.create({
-          text: "Button-001"
+          text: 'Button-001'
         }),
         CompositeButton.create({
-          text: "Button-002"
+          text: 'Button-002'
         })
       ]
     })
@@ -688,7 +666,7 @@ export class SampleCommandHandler {
       conversationId: conversationId,
       latitude: 52.52527,
       longitude: 13.36923,
-      name: "Berlin Hauptbahnhof, 10557 Berlin",
+      name: 'Berlin Hauptbahnhof, 10557 Berlin',
       zoom: 50
     })
 
@@ -700,7 +678,7 @@ export class SampleCommandHandler {
       conversationId: conversationId,
       latitude: 52.51615,
       longitude: 13.37827,
-      name: "Pariser Platz, 10117 Berlin",
+      name: 'Pariser Platz, 10117 Berlin',
       zoom: 50,
       expiresAfterMillis: 5000
     })
@@ -709,10 +687,11 @@ export class SampleCommandHandler {
   }
 
   private getSampleAudioMetadata(): Audio {
-    const base64Loudness = "/////////////////////////////////////8u+iP///8TCo///////l//////7" +
-      "q3x6cXWAhIGOfn6KjouUi4SQlZGdkIeSm5OenoWFioqJnYZ/hIqOlJOIjZOanJSNkp2jqf///////" +
-      "///////////////////////////////i3v///+ytIf/////1rfp/////8CWiHuDhYubk4SKi5GgnZ" +
-      "COjJOlmpiQjJKmop6Jio2Pjp+MiYqKjpuQhIOFi5KUfoKKkJX/"
+    const base64Loudness =
+      '/////////////////////////////////////8u+iP///8TCo///////l//////7' +
+      'q3x6cXWAhIGOfn6KjouUi4SQlZGdkIeSm5OenoWFioqJnYZ/hIqOlJOIjZOanJSNkp2jqf///////' +
+      '///////////////////////////////i3v///+ytIf/////1rfp/////8CWiHuDhYubk4SKi5GgnZ' +
+      'COjJOlmpiQjJKmop6Jio2Pjp+MiYqKjpuQhIOFi5KUfoKKkJX/'
 
     return {
       type: 'audio',

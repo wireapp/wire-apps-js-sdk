@@ -48,15 +48,15 @@
     "clean:all": "npm run clean && rm -rf ./node_modules",
     "lint": "eslint src test drizzle.config.ts vitest.config.ts",
     "lint:fix": "eslint src test drizzle.config.ts vitest.config.ts --fix",
-    "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\" \"*.ts\"",
-    "format:check": "prettier --check \"src/**/*.ts\" \"test/**/*.ts\" \"*.ts\"",
-    "prepare": "husky"
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "prepare": "husky || true"
   },
   "lint-staged": {
-    "*.ts": [
-      "prettier --write",
-      "eslint --fix"
-    ]
+    "*.ts": "prettier --write",
+    "{src,test,scripts}/**/*.ts": "eslint --fix",
+    "drizzle.config.ts": "eslint --fix",
+    "vitest.config.ts": "eslint --fix"
   },
   "files": [
     "build/**/*",
