@@ -1,11 +1,13 @@
 import js from "@eslint/js";
 import globals from "globals";
 import tseslint from "typescript-eslint";
+import prettier from "eslint-config-prettier";
 
 export default [
   ...tseslint.configs.recommended,
   js.configs.recommended,
-  
+  prettier,
+
   {
     ignores: [
       "build/**",
@@ -19,7 +21,7 @@ export default [
     languageOptions: {
       parser: tseslint.parser,
       parserOptions: {
-        project: "./tsconfig.json",
+        project: ["./tsconfig.json", "./tsconfig.test.json"],
         tsconfigRootDir: import.meta.dirname,
         sourceType: "module"
       },
@@ -32,7 +34,7 @@ export default [
       reportUnusedDisableDirectives: true
     },
     rules: {
-      "indent": ["error", 2, { "SwitchCase": 1 }],
+      // Formatting is handled by Prettier — do not add formatting rules here.
 
       "no-unused-vars": "off",
       "@typescript-eslint/no-unused-vars": [
@@ -70,7 +72,8 @@ export default [
     files: ["**/*.test.ts", "**/*.test.tsx", "**/test/**/*", "**/mocks/**/*"],
     rules: {
       "no-magic-numbers": "off",
-      "id-length": "off"
+      "id-length": "off",
+      "@typescript-eslint/no-explicit-any": "off"
     }
   }
 ]
