@@ -1,6 +1,6 @@
 import {beforeEach, describe, expect, it, vi} from 'vitest'
 import {TeamId} from '../../src/model/TeamId.js'
-import {TeamsApiClient} from "../../src/api/TeamsApiClient.js";
+import {TeamsApiClient} from '../../src/api/TeamsApiClient.js'
 
 describe('TeamsApiClient (deleteConversation)', () => {
   let mockHttpClient: any
@@ -14,8 +14,7 @@ describe('TeamsApiClient (deleteConversation)', () => {
     client = new TeamsApiClient(mockHttpClient)
 
     // Suppress console.info for cleaner test output (many clients log)
-    vi.spyOn(console, 'info').mockImplementation(() => {
-    })
+    vi.spyOn(console, 'info').mockImplementation(() => {})
   })
 
   it('should call httpClient.deleteRequest with the correct path', async () => {

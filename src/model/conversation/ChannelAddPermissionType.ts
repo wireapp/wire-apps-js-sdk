@@ -16,8 +16,7 @@
 
 export enum ChannelAddPermissionType {
   /** Only Admins of the Channel (or Team) can join and add others */
-  ADMINS = "admins",
+  ADMINS = 'admins',
   /** Everyone can join and add others */
-  EVERYONE = "everyone"
+  EVERYONE = 'everyone'
 }
-

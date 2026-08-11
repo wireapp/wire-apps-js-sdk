@@ -14,31 +14,30 @@
  * along with this program. If not, see http://www.gnu.org/licenses/.
  */
 
-import {injectable} from "tsyringe";
-import type {EventProcessor} from "./EventProcessor.js";
-import type {MemberUpdateDTO} from "../../model/EventContentDTO.js";
-import {ConversationService} from "../../api/ConversationService.js";
-import {LoggerFactory} from "../../utils/logger/LoggerFactory.js";
-import {QualifiedId} from "../../model/QualifiedId.js";
-import {EVENT_PROCESSOR} from "../../utils/DependencyInjectionTokens.js";
+import {injectable} from 'tsyringe'
+import type {EventProcessor} from './EventProcessor.js'
+import type {MemberUpdateDTO} from '../../model/EventContentDTO.js'
+import {ConversationService} from '../../api/ConversationService.js'
+import {LoggerFactory} from '../../utils/logger/LoggerFactory.js'
+import {QualifiedId} from '../../model/QualifiedId.js'
+import {EVENT_PROCESSOR} from '../../utils/DependencyInjectionTokens.js'
 
 @injectable({token: EVENT_PROCESSOR})
 export class MemberUpdateEventProcessor implements EventProcessor<MemberUpdateDTO> {
-  private logger = LoggerFactory.getLogger(this.constructor.name);
+  private logger = LoggerFactory.getLogger(this.constructor.name)
 
-  readonly eventType = "conversation.member-update" as const;
+  readonly eventType = 'conversation.member-update' as const
 
-  constructor(private conversationService: ConversationService) {
-  }
+  constructor(private conversationService: ConversationService) {}
 
   async process(event: MemberUpdateDTO): Promise<void> {
-    const conversationId = new QualifiedId(event.qualified_conversation.id, event.qualified_conversation.domain);
-    const userId = new QualifiedId(event.data.qualified_target.id, event.data.qualified_target.domain);
+    const conversationId = new QualifiedId(event.qualified_conversation.id, event.qualified_conversation.domain)
+    const userId = new QualifiedId(event.data.qualified_target.id, event.data.qualified_target.domain)
 
-    this.logger.info(`Processing MemberUpdate event for conversationId: ${conversationId}`);
+    this.logger.info(`Processing MemberUpdate event for conversationId: ${conversationId}`)
 
-    await this.conversationService.syncMemberUpdate(userId, conversationId, event.data.conversation_role);
+    await this.conversationService.syncMemberUpdate(userId, conversationId, event.data.conversation_role)
 
-    this.logger.info(`Processed MemberUpdate event for conversationId: ${conversationId}`);
+    this.logger.info(`Processed MemberUpdate event for conversationId: ${conversationId}`)
   }
 }

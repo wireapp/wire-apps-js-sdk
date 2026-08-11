@@ -14,22 +14,22 @@
  * along with this program. If not, see http://www.gnu.org/licenses/.
  */
 
-import {HashUtils} from "../../utils/HashUtils.js";
-import {concatToBuffer} from "../../utils/BufferUtils.js";
-import {type WireMessage, WireMessageType} from "../../model/WireMessage.js";
-import {LoggerFactory} from "../../utils/logger/LoggerFactory.js";
+import {HashUtils} from '../../utils/HashUtils.js'
+import {concatToBuffer} from '../../utils/BufferUtils.js'
+import {type WireMessage, WireMessageType} from '../../model/WireMessage.js'
+import {LoggerFactory} from '../../utils/logger/LoggerFactory.js'
 
-const MILLIS_IN_SEC = 1000;
-const COORDINATES_ROUNDING = 1000;
-const LONG_SIZE_BYTES = 8;
+const MILLIS_IN_SEC = 1000
+const COORDINATES_ROUNDING = 1000
+const LONG_SIZE_BYTES = 8
 
-const logger = LoggerFactory.getLogger('MessageContentEncoder');
+const logger = LoggerFactory.getLogger('MessageContentEncoder')
 
 export class EncodedMessageContent {
-  readonly sha256Digest: Buffer;
+  readonly sha256Digest: Buffer
 
   constructor(byteArray: Buffer) {
-    this.sha256Digest = HashUtils.calculateSha256Hash(byteArray);
+    this.sha256Digest = HashUtils.calculateSha256Hash(byteArray)
   }
 }
 
@@ -37,52 +37,38 @@ export class EncodedMessageContent {
  * Converts a string into a UTF-16BE encoded byte array.
  */
 function toUTF16BEByteArray(value: string): Buffer {
-  const result = Buffer.alloc(value.length * 2);
+  const result = Buffer.alloc(value.length * 2)
   for (let i = 0; i < value.length; i++) {
-    result.writeUInt16BE(value.charCodeAt(i), i * 2);
+    result.writeUInt16BE(value.charCodeAt(i), i * 2)
   }
-  return result;
+  return result
 }
 
 /**
  * Converts an integer (safe up to 2^53) into an 8-byte big-endian byte array.
  */
 function toByteArray(value: number): Buffer {
-  const result = Buffer.alloc(LONG_SIZE_BYTES);
-  result.writeBigInt64BE(BigInt(Math.trunc(value)));
-  return result;
+  const result = Buffer.alloc(LONG_SIZE_BYTES)
+  result.writeBigInt64BE(BigInt(Math.trunc(value)))
+  return result
 }
 
 function encodeMessageTimeStampInMillis(messageTimeStampInMillis: number): Buffer {
-  const messageTimeStampInSec = Math.floor(messageTimeStampInMillis / MILLIS_IN_SEC);
-  return toByteArray(messageTimeStampInSec);
+  const messageTimeStampInSec = Math.floor(messageTimeStampInMillis / MILLIS_IN_SEC)
+  return toByteArray(messageTimeStampInSec)
 }
 
-function wrapIntoResult(
-  messageTimeStampByteArray: Buffer,
-  messageTextBodyUTF16BE: Buffer
-): EncodedMessageContent {
-  const bom = new Uint8Array([0xfe, 0xff]);
-  return new EncodedMessageContent(
-    concatToBuffer(bom, messageTextBodyUTF16BE, messageTimeStampByteArray)
-  );
+function wrapIntoResult(messageTimeStampByteArray: Buffer, messageTextBodyUTF16BE: Buffer): EncodedMessageContent {
+  const bom = new Uint8Array([0xfe, 0xff])
+  return new EncodedMessageContent(concatToBuffer(bom, messageTextBodyUTF16BE, messageTimeStampByteArray))
 }
 
 function encodeMessageAsset(messageTimeStampInMillis: number, assetId: string): EncodedMessageContent {
-  return wrapIntoResult(
-    encodeMessageTimeStampInMillis(messageTimeStampInMillis),
-    toUTF16BEByteArray(assetId)
-  );
+  return wrapIntoResult(encodeMessageTimeStampInMillis(messageTimeStampInMillis), toUTF16BEByteArray(assetId))
 }
 
-function encodeMessageTextBody(
-  messageTimeStampInMillis: number,
-  messageTextBody: string
-): EncodedMessageContent {
-  return wrapIntoResult(
-    encodeMessageTimeStampInMillis(messageTimeStampInMillis),
-    toUTF16BEByteArray(messageTextBody)
-  );
+function encodeMessageTextBody(messageTimeStampInMillis: number, messageTextBody: string): EncodedMessageContent {
+  return wrapIntoResult(encodeMessageTimeStampInMillis(messageTimeStampInMillis), toUTF16BEByteArray(messageTextBody))
 }
 
 function encodeLocationCoordinates(
@@ -90,13 +76,11 @@ function encodeLocationCoordinates(
   longitude: number,
   messageTimeStampInMillis: number
 ): EncodedMessageContent {
-  const latitudeBEBytes = toByteArray(Math.round(latitude * COORDINATES_ROUNDING));
-  const longitudeBEBytes = toByteArray(Math.round(longitude * COORDINATES_ROUNDING));
-  const timestampBytes = encodeMessageTimeStampInMillis(messageTimeStampInMillis);
+  const latitudeBEBytes = toByteArray(Math.round(latitude * COORDINATES_ROUNDING))
+  const longitudeBEBytes = toByteArray(Math.round(longitude * COORDINATES_ROUNDING))
+  const timestampBytes = encodeMessageTimeStampInMillis(messageTimeStampInMillis)
 
-  return new EncodedMessageContent(
-    concatToBuffer(latitudeBEBytes, longitudeBEBytes, timestampBytes)
-  );
+  return new EncodedMessageContent(concatToBuffer(latitudeBEBytes, longitudeBEBytes, timestampBytes))
 }
 
 export const MessageContentEncoder = {
@@ -105,17 +89,17 @@ export const MessageContentEncoder = {
       case WireMessageType.ASSET:
         return message.remoteData?.assetId
           ? encodeMessageAsset(new Date(message.timestamp).getTime(), message.remoteData.assetId)
-          : null;
+          : null
 
       case WireMessageType.TEXT:
-        return encodeMessageTextBody(new Date(message.timestamp).getTime(), message.text);
+        return encodeMessageTextBody(new Date(message.timestamp).getTime(), message.text)
 
       case WireMessageType.LOCATION:
-        return encodeLocationCoordinates(message.latitude, message.longitude, new Date(message.timestamp).getTime());
+        return encodeLocationCoordinates(message.latitude, message.longitude, new Date(message.timestamp).getTime())
 
       default:
-        logger.warn('Attempting to encode message with unsupported content type');
-        return null;
+        logger.warn('Attempting to encode message with unsupported content type')
+        return null
     }
   }
-};
+}

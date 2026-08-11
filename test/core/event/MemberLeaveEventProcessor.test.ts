@@ -34,8 +34,8 @@ const makeEvent = (qualifiedUserIds = [makeUser('user-1')]): MemberLeaveDTO => (
   qualified_from: qualifiedFrom,
   data: {
     qualified_user_ids: qualifiedUserIds,
-    reason: 'left',
-  },
+    reason: 'left'
+  }
 })
 
 let conversationService: ConversationService
@@ -46,11 +46,11 @@ beforeEach(() => {
   vi.clearAllMocks()
 
   conversationService = {
-    syncMembersRemoved: vi.fn().mockResolvedValue(undefined),
+    syncMembersRemoved: vi.fn().mockResolvedValue(undefined)
   } as any
 
   wireEventsHandler = {
-    onUserLeftConversation: vi.fn().mockResolvedValue(undefined),
+    onUserLeftConversation: vi.fn().mockResolvedValue(undefined)
   } as any
 
   processor = new MemberLeaveEventProcessor(conversationService, wireEventsHandler)

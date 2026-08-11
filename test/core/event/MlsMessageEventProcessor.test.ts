@@ -42,14 +42,15 @@ const makeEvent = (): NewMLSMessageDTO => ({
   qualified_from: qualifiedFrom
 })
 
-const makeTextMessage = () => ({type: 'text' as const, text: 'hello'} as any)
-const makeAssetMessage = () => ({type: 'asset' as const, mimeType: 'image/png', sizeInBytes: 1024} as any)
-const makePing = () => ({type: 'ping' as const, id: 'ping-id'} as any)
-const makeLocationMessage = () => ({type: 'location' as const, id: 'location-id'} as any)
-const makeDeletedMessage = () => ({type: 'deleted' as const, id: 'message-id', messageId: 'deleted-message-id'} as any)
-const makeReceipt = () => ({type: 'receipt' as const, id: 'message-id', messageIds: ['delivered-message-id']} as any)
-const makeReaction = () => ({type: 'reaction' as const, id: 'reaction-message-id', messageId: 'target-message-id'} as any)
-const makeUnknownMessage = () => ({type: 'unknown' as const} as any)
+const makeTextMessage = () => ({type: 'text' as const, text: 'hello'}) as any
+const makeAssetMessage = () => ({type: 'asset' as const, mimeType: 'image/png', sizeInBytes: 1024}) as any
+const makePing = () => ({type: 'ping' as const, id: 'ping-id'}) as any
+const makeLocationMessage = () => ({type: 'location' as const, id: 'location-id'}) as any
+const makeDeletedMessage = () => ({type: 'deleted' as const, id: 'message-id', messageId: 'deleted-message-id'}) as any
+const makeReceipt = () => ({type: 'receipt' as const, id: 'message-id', messageIds: ['delivered-message-id']}) as any
+const makeReaction = () =>
+  ({type: 'reaction' as const, id: 'reaction-message-id', messageId: 'target-message-id'}) as any
+const makeUnknownMessage = () => ({type: 'unknown' as const}) as any
 
 let conversationService: ConversationService
 let coreCryptoService: CoreCryptoService
@@ -61,15 +62,15 @@ beforeEach(() => {
   vi.clearAllMocks()
 
   conversationService = {
-    getConversationMLSGroupId: vi.fn().mockResolvedValue(mlsGroupId),
+    getConversationMLSGroupId: vi.fn().mockResolvedValue(mlsGroupId)
   } as any
 
   coreCryptoService = {
-    decryptMls: vi.fn().mockResolvedValue(decryptedMessage),
+    decryptMls: vi.fn().mockResolvedValue(decryptedMessage)
   } as any
 
   mlsFallbackStrategy = {
-    verifyConversationOutOfSync: vi.fn().mockResolvedValue(undefined),
+    verifyConversationOutOfSync: vi.fn().mockResolvedValue(undefined)
   } as any
 
   wireEventsHandler = {
@@ -79,10 +80,15 @@ beforeEach(() => {
     onLocationReceived: vi.fn().mockResolvedValue(undefined),
     onMessageDeleted: vi.fn().mockResolvedValue(undefined),
     onMessageDelivered: vi.fn().mockResolvedValue(undefined),
-    onMessageReactionReceived: vi.fn().mockResolvedValue(undefined),
+    onMessageReactionReceived: vi.fn().mockResolvedValue(undefined)
   } as any
 
-  processor = new MlsMessageEventProcessor(coreCryptoService, conversationService, mlsFallbackStrategy, wireEventsHandler)
+  processor = new MlsMessageEventProcessor(
+    coreCryptoService,
+    conversationService,
+    mlsFallbackStrategy,
+    wireEventsHandler
+  )
 })
 
 describe('MlsMessageEventProcessor', () => {

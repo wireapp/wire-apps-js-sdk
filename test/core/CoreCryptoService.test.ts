@@ -1,18 +1,18 @@
 /*
-* Wire
-* Copyright (C) 2026 Wire Swiss GmbH
-*
-* This program is free software: you can redistribute it and/or modify
-* it under the terms of the GNU General Public License as published by
-* the Free Software Foundation, either version 3 of the License, or
-* (at your option) any later version.
-* This program is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-* GNU General Public License for more details.
-* You should have received a copy of the GNU General Public License
-* along with this program. If not, see http://www.gnu.org/licenses/.
-*/
+ * Wire
+ * Copyright (C) 2026 Wire Swiss GmbH
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see http://www.gnu.org/licenses/.
+ */
 
 import {beforeEach, describe, expect, it, vi} from 'vitest'
 import {CoreCryptoService} from '../../src/core/CoreCryptoService.js'
@@ -35,13 +35,11 @@ vi.mock('../../src/core/CoreCryptoClient.js', () => ({
 
 vi.mock('@wireapp/core-crypto/native', () => {
   class ConversationId {
-    constructor(public bytes: Uint8Array) {
-    }
+    constructor(public bytes: Uint8Array) {}
   }
 
   class GroupInfo {
-    constructor(public bytes: Uint8Array) {
-    }
+    constructor(public bytes: Uint8Array) {}
   }
 
   const CoreCryptoError = {
@@ -302,9 +300,7 @@ describe('CoreCryptoService', () => {
         vi.mocked(mockClientsService.registerClient).mockRejectedValue(new Error('network down'))
 
         // when / then
-        await expect(service.initOrRegisterClient()).rejects.toThrow(
-          'Error when registering client'
-        )
+        await expect(service.initOrRegisterClient()).rejects.toThrow('Error when registering client')
 
         expect(mockAppProperties.setDeviceId).not.toHaveBeenCalled()
         expect(mockCoreCryptoClientInstance.initMlsClient).not.toHaveBeenCalled()
@@ -566,7 +562,9 @@ describe('CoreCryptoService', () => {
 
     it('should throw when mlsGroupId is missing', async () => {
       // when / then
-      await expect(service.establishMlsConversation('')).rejects.toThrow('mlsGroupId is required to establish an MLS conversation.')
+      await expect(service.establishMlsConversation('')).rejects.toThrow(
+        'mlsGroupId is required to establish an MLS conversation.'
+      )
       expect(mockMlsService.getRemovalKey).not.toHaveBeenCalled()
     })
 

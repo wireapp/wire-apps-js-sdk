@@ -17,9 +17,9 @@
 import {beforeEach, describe, expect, it, vi} from 'vitest'
 import {UserService} from '../../src/api/UserService.js'
 import {CryptoProtocol} from '../../src/model/CryptoProtocol.js'
-import {QualifiedId} from "../../src/model/QualifiedId.js";
-import {WireUser} from "../../src/model/WireUser.js";
-import {TeamId} from "../../src/model/TeamId.js";
+import {QualifiedId} from '../../src/model/QualifiedId.js'
+import {WireUser} from '../../src/model/WireUser.js'
+import {TeamId} from '../../src/model/TeamId.js'
 
 describe('UserService', () => {
   let mockUsersApiClient: any
@@ -39,8 +39,7 @@ describe('UserService', () => {
     // Pass both mocked dependencies into the service
     service = new UserService(mockUsersApiClient, mockSearchApiClient)
 
-    vi.spyOn(console, 'info').mockImplementation(() => {
-    })
+    vi.spyOn(console, 'info').mockImplementation(() => {})
   })
 
   const qualifiedId = {id: 'user-1', domain: 'example.com'}
@@ -200,7 +199,6 @@ describe('UserService', () => {
 
       expect(result.size).toBe(0)
     })
-
 
     it('should propagate errors from getClientsByUserIds', async () => {
       vi.mocked(mockUsersApiClient.getClientsByUserIds).mockRejectedValue(new Error('network-failure'))

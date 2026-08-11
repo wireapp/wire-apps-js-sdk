@@ -1,29 +1,29 @@
 /*
-* Wire
-* Copyright (C) 2026 Wire Swiss GmbH
-*
-* This program is free software: you can redistribute it and/or modify
-* it under the terms of the GNU General Public License as published by
-* the Free Software Foundation, either version 3 of the License, or
-* (at your option) any later version.
-* This program is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-* GNU General Public License for more details.
-* You should have received a copy of the GNU General Public License
-* along with this program. If not, see http://www.gnu.org/licenses/.
-*/
+ * Wire
+ * Copyright (C) 2026 Wire Swiss GmbH
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see http://www.gnu.org/licenses/.
+ */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { ConversationsApiClient } from '../../src/api/ConversationsApiClient.js'
-import type { QualifiedId } from '../../src/model/QualifiedId.js'
-import { ConversationRole } from '../../src/model/conversation/ConversationRole.js'
+import {beforeEach, describe, expect, it, vi} from 'vitest'
+import {ConversationsApiClient} from '../../src/api/ConversationsApiClient.js'
+import type {QualifiedId} from '../../src/model/QualifiedId.js'
+import {ConversationRole} from '../../src/model/conversation/ConversationRole.js'
 
 const WIRE_USER_ID = 'self-user-id'
 const WIRE_USER_DOMAIN = 'wire.com'
 
-const CONVERSATION_ID: QualifiedId = { id: 'conv-1', domain: 'example.com' }
-const USER_ID: QualifiedId = { id: 'user-1', domain: 'example.com' }
+const CONVERSATION_ID: QualifiedId = {id: 'conv-1', domain: 'example.com'}
+const USER_ID: QualifiedId = {id: 'user-1', domain: 'example.com'}
 
 describe('ConversationsApiClient', () => {
   let mockHttpClient: any
@@ -69,7 +69,7 @@ describe('ConversationsApiClient', () => {
 
       expect(mockHttpClient.getRequest).toHaveBeenCalledWith(
         `conversations/${CONVERSATION_ID.domain}/${CONVERSATION_ID.id}/groupinfo`,
-        { headerAccept: 'message/mls' }
+        {headerAccept: 'message/mls'}
       )
     })
 
@@ -89,19 +89,18 @@ describe('ConversationsApiClient', () => {
     })
 
     it('should call postRequest with the correct path and body', async () => {
-      vi.mocked(mockHttpClient.postRequest).mockResolvedValue({ found: [] })
+      vi.mocked(mockHttpClient.postRequest).mockResolvedValue({found: []})
 
       await client.getConversationsById([CONVERSATION_ID])
 
-      expect(mockHttpClient.postRequest).toHaveBeenCalledWith(
-        'conversations/list',
-        { qualified_ids: [CONVERSATION_ID] }
-      )
+      expect(mockHttpClient.postRequest).toHaveBeenCalledWith('conversations/list', {
+        qualified_ids: [CONVERSATION_ID]
+      })
     })
 
     it('should return found conversations', async () => {
-      const mockConversation = { qualified_id: CONVERSATION_ID }
-      vi.mocked(mockHttpClient.postRequest).mockResolvedValue({ found: [mockConversation] })
+      const mockConversation = {qualified_id: CONVERSATION_ID}
+      vi.mocked(mockHttpClient.postRequest).mockResolvedValue({found: [mockConversation]})
 
       const result = await client.getConversationsById([CONVERSATION_ID])
 
@@ -162,7 +161,7 @@ describe('ConversationsApiClient', () => {
 
       expect(mockHttpClient.putRequest).toHaveBeenCalledWith(
         `conversations/${CONVERSATION_ID.domain}/${CONVERSATION_ID.id}/members/${USER_ID.domain}/${USER_ID.id}`,
-        { conversation_role: ConversationRole.ADMIN }
+        {conversation_role: ConversationRole.ADMIN}
       )
     })
 
@@ -179,22 +178,19 @@ describe('ConversationsApiClient', () => {
     const CREATE_CONVERSATION_REQUEST = {
       name: 'Test Conversation',
       qualified_users: [USER_ID],
-      team: { teamid: 'team-id' }
+      team: {teamid: 'team-id'}
     } as any
 
     it('should call postRequest with the correct path and body', async () => {
-      vi.mocked(mockHttpClient.postRequest).mockResolvedValue({ qualified_id: CONVERSATION_ID })
+      vi.mocked(mockHttpClient.postRequest).mockResolvedValue({qualified_id: CONVERSATION_ID})
 
       await client.createGroupConversation(CREATE_CONVERSATION_REQUEST)
 
-      expect(mockHttpClient.postRequest).toHaveBeenCalledWith(
-        'conversations',
-        CREATE_CONVERSATION_REQUEST
-      )
+      expect(mockHttpClient.postRequest).toHaveBeenCalledWith('conversations', CREATE_CONVERSATION_REQUEST)
     })
 
     it('should return the created conversation response', async () => {
-      const mockConversationResponse = { qualified_id: CONVERSATION_ID, name: 'Test Conversation' }
+      const mockConversationResponse = {qualified_id: CONVERSATION_ID, name: 'Test Conversation'}
       vi.mocked(mockHttpClient.postRequest).mockResolvedValue(mockConversationResponse)
 
       const result = await client.createGroupConversation(CREATE_CONVERSATION_REQUEST)

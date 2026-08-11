@@ -15,10 +15,10 @@
  */
 
 import {beforeEach, describe, expect, it, vi} from 'vitest'
-import type {MlsResetDTO} from "../../../src/model/EventContentDTO.js";
-import {ConversationService} from "../../../src/api/ConversationService.js";
-import {MlsResetEventProcessor} from "../../../src/core/event/MlsResetEventProcessor.js";
-import {QualifiedId} from "../../../src/model/QualifiedId.js";
+import type {MlsResetDTO} from '../../../src/model/EventContentDTO.js'
+import {ConversationService} from '../../../src/api/ConversationService.js'
+import {MlsResetEventProcessor} from '../../../src/core/event/MlsResetEventProcessor.js'
+import {QualifiedId} from '../../../src/model/QualifiedId.js'
 
 vi.mock('../../../src/api/ConversationService.js')
 
@@ -34,8 +34,8 @@ const makeEvent = (): MlsResetDTO => ({
   qualified_from: qualifiedFrom,
   data: {
     group_id: OLD_GROUP_ID,
-    new_group_id: NEW_GROUP_ID,
-  },
+    new_group_id: NEW_GROUP_ID
+  }
 })
 
 let conversationService: ConversationService
@@ -45,7 +45,7 @@ beforeEach(() => {
   vi.clearAllMocks()
 
   conversationService = {
-    resetMlsConversation: vi.fn().mockResolvedValue(undefined),
+    resetMlsConversation: vi.fn().mockResolvedValue(undefined)
   } as any
 
   processor = new MlsResetEventProcessor(conversationService)
@@ -63,7 +63,7 @@ describe('MlsResetEventProcessor', () => {
       expect(conversationService.resetMlsConversation).toHaveBeenCalledTimes(1)
       expect(conversationService.resetMlsConversation).toHaveBeenCalledWith(
         new QualifiedId(qualifiedConversation.id, qualifiedConversation.domain),
-        NEW_GROUP_ID,
+        NEW_GROUP_ID
       )
     })
 

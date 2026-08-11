@@ -16,10 +16,10 @@
 
 export interface HttpRetryPolicy {
   /*
-  * maxAttempts includes the first request. So 5 means:
-  * 1 initial request
-  * up to 4 retries
-  */
+   * maxAttempts includes the first request. So 5 means:
+   * 1 initial request
+   * up to 4 retries
+   */
   maxAttempts: number
   baseDelayMs: number
 }
@@ -31,7 +31,7 @@ export const RETRYABLE_STATUS_CODES = new Set([
   500, // Internal Server Error
   502, // Bad Gateway
   503, // Service Unavailable
-  504  // Gateway Timeout
+  504 // Gateway Timeout
 ])
 
 export const HTTP_RETRY_POLICY: HttpRetryPolicy = {

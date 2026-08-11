@@ -1,18 +1,18 @@
 /*
-* Wire
-* Copyright (C) 2026 Wire Swiss GmbH
-*
-* This program is free software: you can redistribute it and/or modify
-* it under the terms of the GNU General Public License as published by
-* the Free Software Foundation, either version 3 of the License, or
-* (at your option) any later version.
-* This program is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-* GNU General Public License for more details.
-* You should have received a copy of the GNU General Public License
-* along with this program. If not, see http://www.gnu.org/licenses/.
-*/
+ * Wire
+ * Copyright (C) 2026 Wire Swiss GmbH
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see http://www.gnu.org/licenses/.
+ */
 
 import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest'
 import {WebSocketClient} from '../../src/core/WebSocketClient.js'
@@ -35,11 +35,9 @@ vi.mock('ws', () => {
   return {WebSocket: MockWebSocket}
 })
 
-const makeEventBuffer = (event: Partial<EventResponse>): Buffer =>
-  Buffer.from(JSON.stringify(event), 'utf-8')
+const makeEventBuffer = (event: Partial<EventResponse>): Buffer => Buffer.from(JSON.stringify(event), 'utf-8')
 
-const makeMessageEvent = (data: Buffer): MessageEvent =>
-  ({data}) as MessageEvent
+const makeMessageEvent = (data: Buffer): MessageEvent => ({data}) as MessageEvent
 
 const NOTIFICATION_ID_1 = 'notification-id-1'
 const NOTIFICATION_ID_2 = 'notification-id-2'
@@ -66,24 +64,24 @@ beforeEach(() => {
 
   mockHttpClient = {
     getCachedAccessToken: vi.fn().mockReturnValue('access-token'),
-    refreshAccessToken: vi.fn().mockResolvedValue(undefined),
+    refreshAccessToken: vi.fn().mockResolvedValue(undefined)
   } as any
 
   mockEventRouter = {
-    route: vi.fn().mockResolvedValue(undefined),
+    route: vi.fn().mockResolvedValue(undefined)
   } as any
 
   mockNotificationsService = {
     getLastNotificationId: vi.fn().mockResolvedValue(null),
     getPaginatedNotifications: vi.fn().mockResolvedValue({
       notifications: [],
-      has_more: false,
-    }),
+      has_more: false
+    })
   } as any
 
   mockAppProperties = {
     getDeviceId: vi.fn().mockReturnValue('device-id'),
-    setLastNotificationId: vi.fn(),
+    setLastNotificationId: vi.fn()
   } as any
 
   vi.spyOn(console, 'info').mockImplementation(() => {})
@@ -96,13 +94,7 @@ afterEach(() => {
 })
 
 const makeClient = () =>
-  new WebSocketClient(
-    "https://wire.com",
-    mockHttpClient,
-    mockNotificationsService,
-    mockAppProperties,
-    mockEventRouter
-  )
+  new WebSocketClient('https://wire.com', mockHttpClient, mockNotificationsService, mockAppProperties, mockEventRouter)
 
 // Uses microtasks only — works correctly whether or not fake timers are active
 const flushPromises = async () => {
@@ -119,10 +111,7 @@ const stopClient = async (client: WebSocketClient, connectPromise: Promise<void>
 describe('WebSocketClient', () => {
   describe('syncMissedNotifications', () => {
     it('should route all notifications from a single page', async () => {
-      const notifications = [
-        makeNotification(NOTIFICATION_ID_1),
-        makeNotification(NOTIFICATION_ID_2),
-      ]
+      const notifications = [makeNotification(NOTIFICATION_ID_1), makeNotification(NOTIFICATION_ID_2)]
 
       vi.mocked(mockNotificationsService.getPaginatedNotifications).mockResolvedValueOnce({
         has_more: false,
@@ -201,10 +190,7 @@ describe('WebSocketClient', () => {
     })
 
     it('should continue processing other notifications if one fails to route', async () => {
-      const notifications = [
-        makeNotification(NOTIFICATION_ID_1),
-        makeNotification(NOTIFICATION_ID_2),
-      ]
+      const notifications = [makeNotification(NOTIFICATION_ID_1), makeNotification(NOTIFICATION_ID_2)]
 
       vi.mocked(mockNotificationsService.getPaginatedNotifications).mockResolvedValueOnce({
         notifications,
@@ -476,7 +462,7 @@ describe('WebSocketClient', () => {
       await flushPromises()
 
       // Only one reconnect should have occurred (settled flag prevents double trigger)
-      const { WebSocket: MockWS } = await import('ws')
+      const {WebSocket: MockWS} = await import('ws')
       expect(vi.mocked(MockWS as any)).toHaveBeenCalledTimes(2) // initial + one reconnect
 
       await stopClient(client, connectPromise)
@@ -485,7 +471,7 @@ describe('WebSocketClient', () => {
 
   describe('BackendConnectionListener', () => {
     it('should call onConnected when websocket opens', async () => {
-      const listener = { onConnected: vi.fn(), onDisconnected: vi.fn() }
+      const listener = {onConnected: vi.fn(), onDisconnected: vi.fn()}
 
       const client = makeClient()
       client.setBackendConnectionListener(listener)
@@ -499,7 +485,7 @@ describe('WebSocketClient', () => {
     })
 
     it('should call onDisconnected when websocket closes after being connected', async () => {
-      const listener = { onConnected: vi.fn(), onDisconnected: vi.fn() }
+      const listener = {onConnected: vi.fn(), onDisconnected: vi.fn()}
 
       const client = makeClient()
       client.setBackendConnectionListener(listener)
@@ -513,7 +499,7 @@ describe('WebSocketClient', () => {
     })
 
     it('should not call onDisconnected if connection was never established', async () => {
-      const listener = { onConnected: vi.fn(), onDisconnected: vi.fn() }
+      const listener = {onConnected: vi.fn(), onDisconnected: vi.fn()}
 
       const client = makeClient()
       client.setBackendConnectionListener(listener)
@@ -529,7 +515,7 @@ describe('WebSocketClient', () => {
     })
 
     it('should call onDisconnected only once on onerror followed by onclose', async () => {
-      const listener = { onConnected: vi.fn(), onDisconnected: vi.fn() }
+      const listener = {onConnected: vi.fn(), onDisconnected: vi.fn()}
 
       const client = makeClient()
       client.setBackendConnectionListener(listener)
@@ -550,7 +536,7 @@ describe('WebSocketClient', () => {
     it('should call onConnected and onDisconnected on each reconnect cycle', async () => {
       vi.useFakeTimers()
 
-      const listener = { onConnected: vi.fn(), onDisconnected: vi.fn() }
+      const listener = {onConnected: vi.fn(), onDisconnected: vi.fn()}
 
       const client = makeClient()
       client.setBackendConnectionListener(listener)
@@ -591,7 +577,7 @@ describe('WebSocketClient', () => {
         onConnected: vi.fn(),
         onDisconnected: vi.fn().mockImplementation(() => {
           throw new Error('User onDisconnected error')
-        }),
+        })
       }
 
       const client = makeClient()
@@ -621,7 +607,7 @@ describe('WebSocketClient', () => {
         onConnected: vi.fn().mockImplementation(() => {
           throw new Error('User onConnected error')
         }),
-        onDisconnected: vi.fn(),
+        onDisconnected: vi.fn()
       }
 
       const client = makeClient()

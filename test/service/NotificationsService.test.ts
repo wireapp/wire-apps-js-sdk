@@ -24,8 +24,7 @@ import type {EventResponse} from '../../src/api/response/EventResponse.js'
 
 const NOTIFICATION_ID_1 = 'notification-id-1'
 
-const makeNotification = (id: string): EventResponse =>
-  ({id, payload: []}) as unknown as EventResponse
+const makeNotification = (id: string): EventResponse => ({id, payload: []}) as unknown as EventResponse
 
 let mockNotificationsApiClient: NotificationsApiClient
 let mockAppProperties: AppProperties
@@ -33,20 +32,19 @@ let mockAppProperties: AppProperties
 beforeEach(() => {
   mockNotificationsApiClient = {
     getLastNotification: vi.fn(),
-    getPaginatedNotifications: vi.fn(),
+    getPaginatedNotifications: vi.fn()
   } as any
 
   mockAppProperties = {
     getLastNotificationId: vi.fn().mockReturnValue(null),
-    setLastNotificationId: vi.fn(),
+    setLastNotificationId: vi.fn()
   } as any
 
   vi.spyOn(console, 'info').mockImplementation(() => {})
   vi.spyOn(console, 'warn').mockImplementation(() => {})
 })
 
-const makeService = () =>
-  new NotificationsService(mockNotificationsApiClient, mockAppProperties)
+const makeService = () => new NotificationsService(mockNotificationsApiClient, mockAppProperties)
 
 describe('NotificationsService', () => {
   describe('getLastNotificationId', () => {
@@ -61,9 +59,7 @@ describe('NotificationsService', () => {
     })
 
     it('should fetch from API and cache if no cached id', async () => {
-      vi.mocked(mockNotificationsApiClient.getLastNotification).mockResolvedValue(
-        makeNotification(NOTIFICATION_ID_1)
-      )
+      vi.mocked(mockNotificationsApiClient.getLastNotification).mockResolvedValue(makeNotification(NOTIFICATION_ID_1))
 
       const service = makeService()
       const result = await service.getLastNotificationId()
@@ -79,7 +75,7 @@ describe('NotificationsService', () => {
       vi.mocked(mockNotificationsApiClient.getPaginatedNotifications).mockResolvedValue({
         notifications,
         has_more: false,
-        time: new Date(),
+        time: new Date()
       })
 
       const service = makeService()
@@ -93,22 +89,17 @@ describe('NotificationsService', () => {
       vi.mocked(mockNotificationsApiClient.getPaginatedNotifications).mockResolvedValue({
         notifications: [],
         has_more: false,
-        time: new Date(),
+        time: new Date()
       })
 
       const service = makeService()
       await service.getPaginatedNotifications(NOTIFICATION_ID_1)
 
-      expect(mockNotificationsApiClient.getPaginatedNotifications).toHaveBeenCalledWith(
-        100,
-        NOTIFICATION_ID_1
-      )
+      expect(mockNotificationsApiClient.getPaginatedNotifications).toHaveBeenCalledWith(100, NOTIFICATION_ID_1)
     })
 
     it('should return empty result if API throws', async () => {
-      vi.mocked(mockNotificationsApiClient.getPaginatedNotifications).mockRejectedValue(
-        new Error('API error')
-      )
+      vi.mocked(mockNotificationsApiClient.getPaginatedNotifications).mockRejectedValue(new Error('API error'))
 
       const service = makeService()
       const result = await service.getPaginatedNotifications()

@@ -14,41 +14,32 @@
  * along with this program. If not, see http://www.gnu.org/licenses/.
  */
 
-import {HttpClient} from "../core/HttpClient.js";
-import type {RegisterClientResponse} from "./response/RegisterClientResponse.js";
-import {RegisterClientRequest} from "./request/RegisterClientRequest.js";
-import type {MlsPublicKeys} from "../model/MlsPublicKeys.js";
-import type {ClientUpdateRequest} from "./request/ClientUpdateRequest.js";
-import {mapToPreKeyRequest} from "../mappers/PreKeyMapper.js";
-import type {PreKeyCrypto} from "../model/PreKeyCrypto.js";
-import {singleton} from "tsyringe";
-import {AppProperties} from "../service/AppProperties.js";
+import {HttpClient} from '../core/HttpClient.js'
+import type {RegisterClientResponse} from './response/RegisterClientResponse.js'
+import {RegisterClientRequest} from './request/RegisterClientRequest.js'
+import type {MlsPublicKeys} from '../model/MlsPublicKeys.js'
+import type {ClientUpdateRequest} from './request/ClientUpdateRequest.js'
+import {mapToPreKeyRequest} from '../mappers/PreKeyMapper.js'
+import type {PreKeyCrypto} from '../model/PreKeyCrypto.js'
+import {singleton} from 'tsyringe'
+import {AppProperties} from '../service/AppProperties.js'
 
 @singleton()
 export class ClientsApiClient {
   constructor(
     private httpClient: HttpClient,
     private appProperties: AppProperties
-  ) { }
+  ) {}
 
-  private readonly basePath = "clients";
+  private readonly basePath = 'clients'
 
-  async registerClient(
-    proteusPreKeys: PreKeyCrypto[],
-    proteusLastPreKey: PreKeyCrypto
-  ): Promise<string> {
-
+  async registerClient(proteusPreKeys: PreKeyCrypto[], proteusLastPreKey: PreKeyCrypto): Promise<string> {
     const requestPayload = new RegisterClientRequest(
       mapToPreKeyRequest(proteusLastPreKey),
-      proteusPreKeys.map((preKey) =>
-        mapToPreKeyRequest(preKey)
-      )
+      proteusPreKeys.map((preKey) => mapToPreKeyRequest(preKey))
     )
 
-    const response = await this.httpClient.postRequest<RegisterClientResponse>(
-      this.basePath,
-      requestPayload
-    )
+    const response = await this.httpClient.postRequest<RegisterClientResponse>(this.basePath, requestPayload)
 
     // Register client is performed with an access_token having limited scope.
     // Clear the token to force a refresh with the full-scope token for next requests.
@@ -59,13 +50,9 @@ export class ClientsApiClient {
 
   async updateClientWithMlsPublicKey(mlsPublicKeys: MlsPublicKeys): Promise<void> {
     const requestPayload: ClientUpdateRequest = {
-      mls_public_keys: mlsPublicKeys,
+      mls_public_keys: mlsPublicKeys
     }
 
-    await this.httpClient.putRequest<void>(
-      `${this.basePath}/${this.appProperties.getDeviceId()}`,
-      requestPayload
-    )
+    await this.httpClient.putRequest<void>(`${this.basePath}/${this.appProperties.getDeviceId()}`, requestPayload)
   }
-
 }

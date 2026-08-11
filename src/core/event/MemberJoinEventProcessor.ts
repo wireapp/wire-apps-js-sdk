@@ -14,41 +14,40 @@
  * along with this program. If not, see http://www.gnu.org/licenses/.
  */
 
-import {inject, injectable} from "tsyringe";
-import type {EventProcessor} from "./EventProcessor.js";
-import type {MemberJoinDTO} from "../../model/EventContentDTO.js";
-import {ConversationService} from "../../api/ConversationService.js";
-import {WireEventsHandler} from "../WireEventsHandler.js";
-import {EVENT_PROCESSOR, WIRE_EVENTS_HANDLER} from "../../utils/DependencyInjectionTokens.js";
-import type {ConversationMember} from "../../model/conversation/ConversationMember.js";
-import {LoggerFactory} from "../../utils/logger/LoggerFactory.js";
-import {QualifiedId} from "../../model/QualifiedId.js";
+import {inject, injectable} from 'tsyringe'
+import type {EventProcessor} from './EventProcessor.js'
+import type {MemberJoinDTO} from '../../model/EventContentDTO.js'
+import {ConversationService} from '../../api/ConversationService.js'
+import {WireEventsHandler} from '../WireEventsHandler.js'
+import {EVENT_PROCESSOR, WIRE_EVENTS_HANDLER} from '../../utils/DependencyInjectionTokens.js'
+import type {ConversationMember} from '../../model/conversation/ConversationMember.js'
+import {LoggerFactory} from '../../utils/logger/LoggerFactory.js'
+import {QualifiedId} from '../../model/QualifiedId.js'
 
 @injectable({token: EVENT_PROCESSOR})
 export class MemberJoinEventProcessor implements EventProcessor<MemberJoinDTO> {
-  private logger = LoggerFactory.getLogger(this.constructor.name);
+  private logger = LoggerFactory.getLogger(this.constructor.name)
 
-  readonly eventType = "conversation.member-join" as const;
+  readonly eventType = 'conversation.member-join' as const
 
   constructor(
     private conversationService: ConversationService,
     @inject(WIRE_EVENTS_HANDLER) private wireEventsHandler: WireEventsHandler
-  ) {
-  }
+  ) {}
 
   async process(event: MemberJoinDTO): Promise<void> {
-    const conversationId = new QualifiedId(event.qualified_conversation.id, event.qualified_conversation.domain);
-    this.logger.info(`Processing MemberJoin event for conversationId: ${conversationId}`);
+    const conversationId = new QualifiedId(event.qualified_conversation.id, event.qualified_conversation.domain)
+    this.logger.info(`Processing MemberJoin event for conversationId: ${conversationId}`)
 
-    const members: ConversationMember[] = (event.data.users || []).map(user => ({
+    const members: ConversationMember[] = (event.data.users || []).map((user) => ({
       userId: new QualifiedId(user.qualified_id.id, user.qualified_id.domain),
       role: user.conversation_role
-    }));
+    }))
 
-    this.logger.info(`New members to be added: ${members.map(member => member.userId).join()}`);
-    await this.conversationService.syncMembersAdded(members, conversationId);
-    await this.wireEventsHandler.onUserJoinedConversation(conversationId, members);
+    this.logger.info(`New members to be added: ${members.map((member) => member.userId).join()}`)
+    await this.conversationService.syncMembersAdded(members, conversationId)
+    await this.wireEventsHandler.onUserJoinedConversation(conversationId, members)
 
-    this.logger.info(`Processed MemberJoin event for conversationId: ${conversationId}`);
+    this.logger.info(`Processed MemberJoin event for conversationId: ${conversationId}`)
   }
 }

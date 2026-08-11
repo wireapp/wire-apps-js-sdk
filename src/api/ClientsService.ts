@@ -14,27 +14,20 @@
  * along with this program. If not, see http://www.gnu.org/licenses/.
  */
 
-import type {MlsPublicKeys} from "../model/MlsPublicKeys.js";
-import {ClientsApiClient} from "./ClientsApiClient.js";
-import {PreKeyCrypto} from "../model/PreKeyCrypto.js";
-import { singleton } from "tsyringe";
+import type {MlsPublicKeys} from '../model/MlsPublicKeys.js'
+import {ClientsApiClient} from './ClientsApiClient.js'
+import {PreKeyCrypto} from '../model/PreKeyCrypto.js'
+import {singleton} from 'tsyringe'
 
 @singleton()
 export class ClientsService {
-  constructor(
-    private clientsApiClient: ClientsApiClient) {
-  }
+  constructor(private clientsApiClient: ClientsApiClient) {}
 
-  async registerClient(
-    proteusPreKeys: PreKeyCrypto[],
-    proteusLastPreKey: PreKeyCrypto
-  ): Promise<string> {
+  async registerClient(proteusPreKeys: PreKeyCrypto[], proteusLastPreKey: PreKeyCrypto): Promise<string> {
     return await this.clientsApiClient.registerClient(proteusPreKeys, proteusLastPreKey)
   }
 
-  async updateClientWithMlsPublicKey(
-    mlsPublicKeys: MlsPublicKeys
-  ): Promise<void> {
+  async updateClientWithMlsPublicKey(mlsPublicKeys: MlsPublicKeys): Promise<void> {
     await this.clientsApiClient.updateClientWithMlsPublicKey(mlsPublicKeys)
   }
 }

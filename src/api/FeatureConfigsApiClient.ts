@@ -14,15 +14,15 @@
  * along with this program. If not, see http://www.gnu.org/licenses/.
  */
 
-import {HttpClient} from "../core/HttpClient.js";
-import type {FeatureConfigsResponse} from "./response/FeatureConfigsResponse.js";
-import { singleton } from "tsyringe";
+import {HttpClient} from '../core/HttpClient.js'
+import type {FeatureConfigsResponse} from './response/FeatureConfigsResponse.js'
+import {singleton} from 'tsyringe'
 
 @singleton()
 export class FeatureConfigsApiClient {
   constructor(private httpClient: HttpClient) {}
 
-  private readonly basePath = "feature-configs";
+  private readonly basePath = 'feature-configs'
 
   async getFeatureConfigs(): Promise<FeatureConfigsResponse> {
     await this.httpClient.refreshAccessToken()

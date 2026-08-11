@@ -1,26 +1,25 @@
 /*
-* Wire
-* Copyright (C) 2025 Wire Swiss GmbH
-*
-* This program is free software: you can redistribute it and/or modify
-* it under the terms of the GNU General Public License as published by
-* the Free Software Foundation, either version 3 of the License, or
-* (at your option) any later version.
-* This program is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-* GNU General Public License for more details.
-* You should have received a copy of the GNU General Public License
-* along with this program. If not, see http://www.gnu.org/licenses/.
-*/
+ * Wire
+ * Copyright (C) 2025 Wire Swiss GmbH
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see http://www.gnu.org/licenses/.
+ */
 
-import { describe, it, expect } from 'vitest'
-import { ConversationMemberMapper } from '../../../src/mappers/conversation/ConversationMemberMapper.js'
-import type { ConversationMemberEntity } from '../../../src/db/model/ConversationMemberEntity.js'
-import { ConversationRole } from '../../../src/model/conversation/ConversationRole.js'
+import {describe, it, expect} from 'vitest'
+import {ConversationMemberMapper} from '../../../src/mappers/conversation/ConversationMemberMapper.js'
+import type {ConversationMemberEntity} from '../../../src/db/model/ConversationMemberEntity.js'
+import {ConversationRole} from '../../../src/model/conversation/ConversationRole.js'
 
 describe('ConversationMemberMapper', () => {
-
   it('should map ConversationMemberEntity to ConversationMember correctly', () => {
     const entity: ConversationMemberEntity = {
       userId: 'user-1',
@@ -117,12 +116,12 @@ describe('ConversationMemberMapper', () => {
     expect(results).toHaveLength(2)
 
     expect(results[0]).toEqual({
-      userId: { id: 'user-1', domain: 'wire.com' },
+      userId: {id: 'user-1', domain: 'wire.com'},
       role: ConversationRole.ADMIN
     })
 
     expect(results[1]).toEqual({
-      userId: { id: 'user-2', domain: 'wire.com' },
+      userId: {id: 'user-2', domain: 'wire.com'},
       role: ConversationRole.MEMBER
     })
   })

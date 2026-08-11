@@ -15,7 +15,6 @@
  */
 
 export enum GroupConversationType {
-  REGULAR_GROUP = "group_conversation",
-  CHANNEL = "channel"
+  REGULAR_GROUP = 'group_conversation',
+  CHANNEL = 'channel'
 }
-

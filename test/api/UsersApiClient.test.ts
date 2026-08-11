@@ -1,23 +1,23 @@
 /*
-* Wire
-* Copyright (C) 2026 Wire Swiss GmbH
-*
-* This program is free software: you can redistribute it and/or modify
-* it under the terms of the GNU General Public License as published by
-* the Free Software Foundation, either version 3 of the License, or
-* (at your option) any later version.
-* This program is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-* GNU General Public License for more details.
-* You should have received a copy of the GNU General Public License
-* along with this program. If not, see http://www.gnu.org/licenses/.
-*/
+ * Wire
+ * Copyright (C) 2026 Wire Swiss GmbH
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see http://www.gnu.org/licenses/.
+ */
 
 import {beforeEach, describe, expect, it, vi} from 'vitest'
 import {UsersApiClient} from '../../src/api/UsersApiClient.js'
 import {CryptoProtocol} from '../../src/model/CryptoProtocol.js'
-import {QualifiedId} from "../../src/model/QualifiedId.js";
+import {QualifiedId} from '../../src/model/QualifiedId.js'
 
 describe('UsersApiClient (getUser)', () => {
   let mockHttpClient: any
@@ -30,8 +30,7 @@ describe('UsersApiClient (getUser)', () => {
 
     client = new UsersApiClient(mockHttpClient)
 
-    vi.spyOn(console, 'info').mockImplementation(() => {
-    })
+    vi.spyOn(console, 'info').mockImplementation(() => {})
   })
 
   const mockUser = {
@@ -90,7 +89,6 @@ describe('UsersApiClient (getUser)', () => {
   })
 })
 
-
 describe('UsersApiClient (getClientsByUserIds)', () => {
   let mockHttpClient: any
   let client: UsersApiClient
@@ -105,17 +103,17 @@ describe('UsersApiClient (getClientsByUserIds)', () => {
   })
 
   const userIds: QualifiedId[] = [
-    { id: '1d51e2d6-9c70-605f-efc8-ff85c3dabdc7', domain: 'domain1.example.com' },
-    { id: '2a62f3e7-0d81-716g-fgd9-gg96d4eced8', domain: 'domain2.example.com' }
+    {id: '1d51e2d6-9c70-605f-efc8-ff85c3dabdc7', domain: 'domain1.example.com'},
+    {id: '2a62f3e7-0d81-716g-fgd9-gg96d4eced8', domain: 'domain2.example.com'}
   ]
 
   const mockResponse = {
     qualified_user_map: {
       'domain1.example.com': {
-        '1d51e2d6-9c70-605f-efc8-ff85c3dabdc7': [{ id: 'd0' }]
+        '1d51e2d6-9c70-605f-efc8-ff85c3dabdc7': [{id: 'd0'}]
       },
       'domain2.example.com': {
-        '2a62f3e7-0d81-716g-fgd9-gg96d4eced8': [{ id: 'd1' }, { id: 'd2' }]
+        '2a62f3e7-0d81-716g-fgd9-gg96d4eced8': [{id: 'd1'}, {id: 'd2'}]
       }
     }
   }
@@ -125,10 +123,7 @@ describe('UsersApiClient (getClientsByUserIds)', () => {
 
     await client.getClientsByUserIds(userIds)
 
-    expect(mockHttpClient.postRequest).toHaveBeenCalledWith(
-      'users/list-clients',
-      { qualified_users: userIds }
-    )
+    expect(mockHttpClient.postRequest).toHaveBeenCalledWith('users/list-clients', {qualified_users: userIds})
   })
 
   it('should correctly parse the qualified_user_map into a Map with string keys', async () => {
@@ -138,15 +133,15 @@ describe('UsersApiClient (getClientsByUserIds)', () => {
 
     expect(result.size).toBe(2)
 
-    const key1 = QualifiedId.toKey(userIds[0]!);
-    const key2 = QualifiedId.toKey(userIds[1]!);
+    const key1 = QualifiedId.toKey(userIds[0]!)
+    const key2 = QualifiedId.toKey(userIds[1]!)
 
-    expect(result.get(key1)).toEqual([{ id: 'd0' }])
-    expect(result.get(key2)).toEqual([{ id: 'd1' }, { id: 'd2' }])
+    expect(result.get(key1)).toEqual([{id: 'd0'}])
+    expect(result.get(key2)).toEqual([{id: 'd1'}, {id: 'd2'}])
   })
 
   it('should return an empty map when qualified_user_map is empty', async () => {
-    vi.mocked(mockHttpClient.postRequest).mockResolvedValue({ qualified_user_map: {} })
+    vi.mocked(mockHttpClient.postRequest).mockResolvedValue({qualified_user_map: {}})
 
     const result = await client.getClientsByUserIds(userIds)
 
@@ -157,7 +152,7 @@ describe('UsersApiClient (getClientsByUserIds)', () => {
     const responseWithUndefined = {
       qualified_user_map: {
         'domain1.example.com': {
-          '1d51e2d6-9c70-605f-efc8-ff85c3dabdc7': [{ id: 'd0' }]
+          '1d51e2d6-9c70-605f-efc8-ff85c3dabdc7': [{id: 'd0'}]
         }
       }
     }

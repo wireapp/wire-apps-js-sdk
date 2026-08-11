@@ -28,7 +28,7 @@ const qualifiedFrom = {id: 'user-from', domain: 'example.com'}
 
 const makeUser = (id: string, role = ConversationRole.MEMBER) => ({
   qualified_id: {id, domain: 'example.com'},
-  conversation_role: role,
+  conversation_role: role
 })
 
 const makeEvent = (users = [makeUser('user-1')]): MemberJoinDTO => ({
@@ -36,7 +36,7 @@ const makeEvent = (users = [makeUser('user-1')]): MemberJoinDTO => ({
   time: new Date(),
   qualified_conversation: qualifiedConversation,
   qualified_from: qualifiedFrom,
-  data: {users},
+  data: {users}
 })
 
 let conversationService: ConversationService
@@ -47,11 +47,11 @@ beforeEach(() => {
   vi.clearAllMocks()
 
   conversationService = {
-    syncMembersAdded: vi.fn().mockResolvedValue(undefined),
+    syncMembersAdded: vi.fn().mockResolvedValue(undefined)
   } as any
 
   wireEventsHandler = {
-    onUserJoinedConversation: vi.fn().mockResolvedValue(undefined),
+    onUserJoinedConversation: vi.fn().mockResolvedValue(undefined)
   } as any
 
   processor = new MemberJoinEventProcessor(conversationService, wireEventsHandler)
@@ -77,23 +77,19 @@ describe('MemberJoinEventProcessor', () => {
       await processor.process(event)
 
       expect(wireEventsHandler.onUserJoinedConversation).toHaveBeenCalledTimes(1)
-      expect(wireEventsHandler.onUserJoinedConversation).toHaveBeenCalledWith(
-        qualifiedConversation,
-        [{userId: {id: 'user-1', domain: 'example.com'}, role: ConversationRole.ADMIN}]
-      )
+      expect(wireEventsHandler.onUserJoinedConversation).toHaveBeenCalledWith(qualifiedConversation, [
+        {userId: {id: 'user-1', domain: 'example.com'}, role: ConversationRole.ADMIN}
+      ])
     })
 
     it('should map multiple users correctly', async () => {
-      const event = makeEvent([
-        makeUser('user-1', ConversationRole.ADMIN),
-        makeUser('user-2', ConversationRole.MEMBER),
-      ])
+      const event = makeEvent([makeUser('user-1', ConversationRole.ADMIN), makeUser('user-2', ConversationRole.MEMBER)])
 
       await processor.process(event)
 
       const expectedMembers = [
         {userId: {id: 'user-1', domain: 'example.com'}, role: ConversationRole.ADMIN},
-        {userId: {id: 'user-2', domain: 'example.com'}, role: ConversationRole.MEMBER},
+        {userId: {id: 'user-2', domain: 'example.com'}, role: ConversationRole.MEMBER}
       ]
       expect(conversationService.syncMembersAdded).toHaveBeenCalledWith(expectedMembers, qualifiedConversation)
       expect(wireEventsHandler.onUserJoinedConversation).toHaveBeenCalledWith(qualifiedConversation, expectedMembers)
@@ -131,7 +127,9 @@ describe('MemberJoinEventProcessor', () => {
     })
 
     it('should propagate errors from onUserJoinedConversation', async () => {
-      vi.mocked(wireEventsHandler.onUserJoinedConversation).mockRejectedValue(new Error('onUserJoinedConversation failed'))
+      vi.mocked(wireEventsHandler.onUserJoinedConversation).mockRejectedValue(
+        new Error('onUserJoinedConversation failed')
+      )
 
       await expect(processor.process(makeEvent())).rejects.toThrow('onUserJoinedConversation failed')
     })

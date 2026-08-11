@@ -23,23 +23,24 @@ vi.mock('../../../src/api/ConversationService.js')
 
 const qualifiedConversation = {id: 'conv-123', domain: 'example.com'}
 
-const makeConversationResponse = () => ({
-  qualified_id: qualifiedConversation,
-  name: 'Test Conversation',
-  type: 0,
-  group_id: 'mls-group-id',
-  epoch: 1,
-  protocol: 'mls',
-  team: 'team-1',
-  members: {self: {}, others: []},
-} as any)
+const makeConversationResponse = () =>
+  ({
+    qualified_id: qualifiedConversation,
+    name: 'Test Conversation',
+    type: 0,
+    group_id: 'mls-group-id',
+    epoch: 1,
+    protocol: 'mls',
+    team: 'team-1',
+    members: {self: {}, others: []}
+  }) as any
 
 const makeEvent = (): NewConversationDTO => ({
   type: 'conversation.create',
   time: new Date(),
   qualified_conversation: qualifiedConversation,
   qualified_from: {id: 'user-from', domain: 'example.com'},
-  data: makeConversationResponse(),
+  data: makeConversationResponse()
 })
 
 let conversationService: ConversationService
@@ -49,7 +50,7 @@ beforeEach(() => {
   vi.clearAllMocks()
 
   conversationService = {
-    saveConversationWithMembers: vi.fn().mockResolvedValue(undefined),
+    saveConversationWithMembers: vi.fn().mockResolvedValue(undefined)
   } as any
 
   processor = new NewConversationEventProcessor(conversationService)
