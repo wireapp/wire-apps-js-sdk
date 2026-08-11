@@ -5,3 +5,4 @@ src/db/migrations/
 coverage/
 sample/build/
 package-lock.json
+*.proto
