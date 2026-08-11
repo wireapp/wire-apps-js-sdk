@@ -50,7 +50,7 @@ export const ProtobufSerializer = {
    * @throws Error if the message type is not supported
    */
   toGenericMessageByteArray: (wireMessage: WireMessage): Uint8Array => {
-    const genericMessage: Partial<protobufMessage.GenericMessage.$Properties> = {
+    const genericMessage: protobufMessage.GenericMessage.$Properties = {
       messageId: wireMessage.id,
     }
 
@@ -119,7 +119,7 @@ export const ProtobufSerializer = {
  */
 function packTextMessage(
   wireMessage: TextMessage,
-  genericMessage: Partial<protobufMessage.GenericMessage.$Properties>
+  genericMessage: protobufMessage.GenericMessage.$Properties
 ): protobufMessage.GenericMessage.$Properties {
   const textContent = packText(wireMessage)
 
@@ -135,7 +135,7 @@ function packTextMessage(
       : {
         text: textContent
       })
-  } as protobufMessage.GenericMessage.$Properties
+  }
 }
 
 function packText(
@@ -162,7 +162,7 @@ function packText(
 
 function packTextEditedMessage(
   wireMessage: TextEditedMessage,
-  genericMessage: Partial<protobufMessage.GenericMessage.$Properties>
+  genericMessage: protobufMessage.GenericMessage.$Properties
 ): protobufMessage.GenericMessage.$Properties {
   return {
     ...genericMessage,
@@ -174,12 +174,12 @@ function packTextEditedMessage(
         linkPreview: wireMessage.linkPreviews?.map(it => MessageLinkPreviewMapper.toProtobuf(it)) ?? []
       }
     })
-  } as protobufMessage.GenericMessage.$Properties
+  }
 }
 
 function packAssetMessage(
   wireMessage: AssetMessage,
-  genericMessage: Partial<protobufMessage.GenericMessage.$Properties>
+  genericMessage: protobufMessage.GenericMessage.$Properties
 ): protobufMessage.GenericMessage.$Properties {
   const original: protobufMessage.Asset.Original.$Properties = {
     mimeType: wireMessage.mimeType,
@@ -240,7 +240,7 @@ function packAssetMessage(
       : {
         asset: assetContent
       })
-  } as protobufMessage.GenericMessage.$Properties
+  }
 }
 
 function packItemList(itemsList: Item[]): protobufMessage.Composite.Item[] {
@@ -267,7 +267,7 @@ function packItemList(itemsList: Item[]): protobufMessage.Composite.Item[] {
 
 function packCompositeButtonAction(
   wireMessage: CompositeButtonAction,
-  genericMessage: Partial<protobufMessage.GenericMessage.$Properties>
+  genericMessage: protobufMessage.GenericMessage.$Properties
 ): protobufMessage.GenericMessage.$Properties {
   const buttonAction: protobufMessage.ButtonAction.$Properties = {
     referenceMessageId: wireMessage.referenceMessageId,
@@ -277,12 +277,12 @@ function packCompositeButtonAction(
   return {
     ...genericMessage,
     buttonAction: buttonAction
-  } as protobufMessage.GenericMessage.$Properties;
+  };
 }
 
 function packCompositeButtonActionConfirmation(
   wireMessage: CompositeButtonActionConfirmation,
-  genericMessage: Partial<protobufMessage.GenericMessage.$Properties>
+  genericMessage: protobufMessage.GenericMessage.$Properties
 ): protobufMessage.GenericMessage.$Properties {
   const buttonActionConfirmation: protobufMessage.ButtonActionConfirmation.$Properties = {
     referenceMessageId: wireMessage.referenceMessageId,
@@ -292,24 +292,24 @@ function packCompositeButtonActionConfirmation(
   return {
     ...genericMessage,
     buttonActionConfirmation: buttonActionConfirmation
-  } as protobufMessage.GenericMessage.$Properties
+  }
 }
 
 function packCompositeMessage(
   wireMessage: CompositeMessage,
-  genericMessage: Partial<protobufMessage.GenericMessage.$Properties>
+  genericMessage: protobufMessage.GenericMessage.$Properties
 ): protobufMessage.GenericMessage.$Properties {
   return {
     ...genericMessage,
     composite: protobufMessage.Composite.create({
       items: packItemList(wireMessage.items)
     })
-  } as protobufMessage.GenericMessage.$Properties
+  }
 }
 
 function packCompositeEditedMessage(
   wireMessage: CompositeEditedMessage,
-  genericMessage: Partial<protobufMessage.GenericMessage.$Properties>
+  genericMessage: protobufMessage.GenericMessage.$Properties
 ): protobufMessage.GenericMessage.$Properties {
   return {
     ...genericMessage,
@@ -319,12 +319,12 @@ function packCompositeEditedMessage(
         items: packItemList(wireMessage.items)
       }
     })
-  } as protobufMessage.GenericMessage.$Properties
+  }
 }
 
 function packPing(
   wireMessage: Ping,
-  genericMessage: Partial<protobufMessage.GenericMessage.$Properties>
+  genericMessage: protobufMessage.GenericMessage.$Properties
 ): protobufMessage.GenericMessage.$Properties {
   const knock = protobufMessage.Knock.create({hotKnock: false})
   return {
@@ -339,12 +339,12 @@ function packPing(
       : {
         knock: knock
       })
-  } as protobufMessage.GenericMessage.$Properties
+  }
 }
 
 function packLocation(
   wireMessage: Location,
-  genericMessage: Partial<protobufMessage.GenericMessage.$Properties>
+  genericMessage: protobufMessage.GenericMessage.$Properties
 ): protobufMessage.GenericMessage.$Properties {
   const locationContent = protobufMessage.Location.create({
     latitude: wireMessage.latitude,
@@ -365,24 +365,24 @@ function packLocation(
       : {
         location: locationContent
       })
-  } as protobufMessage.GenericMessage.$Properties
+  }
 }
 
 function packDeletedMessage(
   wireMessage: DeletedMessage,
-  genericMessage: Partial<protobufMessage.GenericMessage.$Properties>
+  genericMessage: protobufMessage.GenericMessage.$Properties
 ): protobufMessage.GenericMessage.$Properties {
   return {
     ...genericMessage,
     deleted: protobufMessage.MessageDelete.create({
       messageId: wireMessage.messageId
     })
-  } as protobufMessage.GenericMessage.$Properties
+  }
 }
 
 function packReceipt(
   wireMessage: Receipt,
-  genericMessage: Partial<protobufMessage.GenericMessage.$Properties>
+  genericMessage: protobufMessage.GenericMessage.$Properties
 ): protobufMessage.GenericMessage.$Properties {
   let type
   switch (wireMessage.receiptType) {
@@ -407,12 +407,12 @@ function packReceipt(
       firstMessageId: firstMessageId,
       moreMessageIds: moreMessageIds
     })
-  } as protobufMessage.GenericMessage.$Properties
+  }
 }
 
 function packReaction(
   wireMessage: Reaction,
-  genericMessage: Partial<protobufMessage.GenericMessage.$Properties>
+  genericMessage: protobufMessage.GenericMessage.$Properties
 ): protobufMessage.GenericMessage.$Properties {
   const emojis = [...wireMessage.emojiSet]
     .map(emojiString => emojiString.trim())
@@ -425,5 +425,5 @@ function packReaction(
       messageId: wireMessage.messageId,
       emoji: emojis
     })
-  } as protobufMessage.GenericMessage.$Properties
+  }
 }

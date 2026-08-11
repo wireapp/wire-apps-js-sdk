@@ -382,7 +382,7 @@ function unpackEphemeral(
 ): WireMessage {
   const ephemeralMessage = genericMessage.ephemeral!
 
-  const builtMessage: Partial<protobufMessage.GenericMessage.$Properties> = {
+  const builtMessage: protobufMessage.GenericMessage.$Properties = {
     messageId: genericMessage.messageId
   }
 
@@ -400,7 +400,7 @@ function unpackEphemeral(
       {
         ...builtMessage,
         text: textMessage
-      } as protobufMessage.GenericMessage.$Properties,
+      },
       qualifiedConversation,
       senderId,
       timestamp,
@@ -419,7 +419,7 @@ function unpackEphemeral(
       {
         ...builtMessage,
         asset: assetMessage
-      } as protobufMessage.GenericMessage.$Properties,
+      },
       qualifiedConversation,
       senderId,
       timestamp,
@@ -429,7 +429,7 @@ function unpackEphemeral(
     return unpackPing(
       {
         ...builtMessage
-      } as protobufMessage.GenericMessage.$Properties,
+      },
       qualifiedConversation,
       senderId,
       toNumber(ephemeralMessage.expireAfterMillis)
@@ -447,7 +447,7 @@ function unpackEphemeral(
       {
         ...builtMessage,
         location: locationMessage,
-      } as protobufMessage.GenericMessage.$Properties,
+      },
       qualifiedConversation,
       senderId,
       timestamp,

@@ -14,7 +14,7 @@
 * along with this program. If not, see http://www.gnu.org/licenses/.
 */
 
-import protobufMessage from "../../generated/messages.js";
+import type protobufMessage from "../../generated/messages.js";
 import {QualifiedId} from "../../model/QualifiedId.js";
 import type {Mention} from "../../model/WireMessage.js";
 

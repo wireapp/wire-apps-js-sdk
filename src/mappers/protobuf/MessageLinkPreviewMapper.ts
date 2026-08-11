@@ -14,7 +14,7 @@
 * along with this program. If not, see http://www.gnu.org/licenses/.
 */
 
-import protobufMessage from "../../generated/messages.js";
+import type protobufMessage from "../../generated/messages.js";
 import type {LinkPreview} from "../../model/WireMessage.js";
 import {EncryptionAlgorithmMapper} from "./EncryptionAlgorithmMapper.js";
 

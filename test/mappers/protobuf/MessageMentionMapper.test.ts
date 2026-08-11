@@ -15,7 +15,7 @@
 */
 
 import { describe, expect, it } from 'vitest'
-import type { Mention as ProtobufMention } from '../../../src/generated/messages.js'
+import type protobufMessage from '../../../src/generated/messages.js'
 import { MessageMentionMapper } from '../../../src/mappers/protobuf/MessageMentionMapper.js'
 import { QualifiedId } from '../../../src/model/QualifiedId.js'
 import type { Mention } from '../../../src/model/WireMessage.js'
@@ -39,7 +39,7 @@ describe('MessageMentionMapper', () => {
   })
 
   it('maps protobuf Mention to domain', () => {
-    const mention: ProtobufMention.$Properties = {
+    const mention: protobufMessage.Mention.$Properties = {
       qualifiedUserId: {
         id: 'user-id',
         domain: 'wire.com'
