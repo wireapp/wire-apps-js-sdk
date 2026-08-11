@@ -14,10 +14,8 @@
 * along with this program. If not, see http://www.gnu.org/licenses/.
 */
 
-import rootMessage from "../../generated/messages.js";
-import type {Composite as ProtobufComposite, IGenericMessage, IText, IAsset, ILocation} from "../../generated/messages.js";
+import protobufMessage from "../../generated/messages.js";
 import { QualifiedId } from "../../model/QualifiedId.js";
-const { GenericMessage, Confirmation } = rootMessage;
 import type {
   WireMessage,
   AssetMetadata,
@@ -62,9 +60,9 @@ export const ProtobufDeserializer = {
     senderId: QualifiedId,
     timestamp: Date
   ): WireMessage => {
-    let genericMessage: IGenericMessage
+    let genericMessage: protobufMessage.GenericMessage.$Properties
     try {
-      genericMessage = GenericMessage.decode(message)
+      genericMessage = protobufMessage.GenericMessage.decode(message)
     } catch (error) {
       if (error instanceof Error && error.name === "ProtocolError") {
         return new Ignored()
@@ -103,7 +101,7 @@ export const ProtobufDeserializer = {
 }
 
 function unpackTextMessage(
-  genericMessage: IGenericMessage,
+  genericMessage: protobufMessage.GenericMessage.$Properties,
   qualifiedConversation: QualifiedId,
   senderId: QualifiedId,
   timestamp: Date,
@@ -124,7 +122,7 @@ function unpackTextMessage(
 }
 
 function unpackEditedMessage(
-  genericMessage: IGenericMessage,
+  genericMessage: protobufMessage.GenericMessage.$Properties,
   qualifiedConversation: QualifiedId,
   senderId: QualifiedId
 ): TextEditedMessage | CompositeEditedMessage | Ignored {
@@ -155,7 +153,7 @@ function unpackEditedMessage(
 }
 
 function unpackAssetMessage(
-  genericMessage: IGenericMessage,
+  genericMessage: protobufMessage.GenericMessage.$Properties,
   qualifiedConversation: QualifiedId,
   senderId: QualifiedId,
   timestamp: Date,
@@ -202,7 +200,7 @@ function unpackAssetMessage(
 
 function unpackItemList(
   conversationId: QualifiedId,
-  compositeItemList: ProtobufComposite.Item.$Properties[]
+  compositeItemList: protobufMessage.Composite.Item.$Properties[]
 ): (TextMessage | CompositeButton)[] {
   return compositeItemList.flatMap((item): (TextMessage | CompositeButton)[] => {
     switch (item.content) {
@@ -222,7 +220,7 @@ function unpackItemList(
 }
 
 function unpackCompositeButtonAction(
-  genericMessage: IGenericMessage,
+  genericMessage: protobufMessage.GenericMessage.$Properties,
   qualifiedConversation: QualifiedId,
   senderId: QualifiedId
 ): CompositeButtonAction {
@@ -236,7 +234,7 @@ function unpackCompositeButtonAction(
 }
 
 function unpackCompositeButtonActionConfirmation(
-  genericMessage: IGenericMessage,
+  genericMessage: protobufMessage.GenericMessage.$Properties,
   qualifiedConversation: QualifiedId,
   senderId: QualifiedId
 ): CompositeButtonActionConfirmation {
@@ -254,7 +252,7 @@ function unpackCompositeButtonActionConfirmation(
 }
 
 function unpackComposite(
-  genericMessage: IGenericMessage,
+  genericMessage: protobufMessage.GenericMessage.$Properties,
   qualifiedConversation: QualifiedId,
   senderId: QualifiedId
 ): CompositeMessage {
@@ -270,7 +268,7 @@ function unpackComposite(
 }
 
 function unpackPing(
-  genericMessage: IGenericMessage,
+  genericMessage: protobufMessage.GenericMessage.$Properties,
   qualifiedConversation: QualifiedId,
   senderId: QualifiedId,
   expiresAfterMillis?: number | null | undefined
@@ -284,7 +282,7 @@ function unpackPing(
 }
 
 function unpackLocation(
-  genericMessage: IGenericMessage,
+  genericMessage: protobufMessage.GenericMessage.$Properties,
   qualifiedConversation: QualifiedId,
   senderId: QualifiedId,
   timestamp: Date,
@@ -306,7 +304,7 @@ function unpackLocation(
 }
 
 function unpackDeletedMessage(
-  genericMessage: IGenericMessage,
+  genericMessage: protobufMessage.GenericMessage.$Properties,
   qualifiedConversation: QualifiedId,
   senderId: QualifiedId
 ): DeletedMessage {
@@ -321,7 +319,7 @@ function unpackDeletedMessage(
 }
 
 function unpackReceipt(
-  genericMessage: IGenericMessage,
+  genericMessage: protobufMessage.GenericMessage.$Properties,
   qualifiedConversation: QualifiedId,
   senderId: QualifiedId
 ): Receipt | Ignored {
@@ -329,10 +327,10 @@ function unpackReceipt(
   let type: ReceiptType | null | undefined
 
   switch (receipt?.type) {
-    case Confirmation.Type.DELIVERED:
+    case protobufMessage.Confirmation.Type.DELIVERED:
       type = ReceiptType.DELIVERED
       break
-    case Confirmation.Type.READ:
+    case protobufMessage.Confirmation.Type.READ:
       type = ReceiptType.READ
       break
     default:
@@ -353,7 +351,7 @@ function unpackReceipt(
 }
 
 function unpackReaction(
-  genericMessage: IGenericMessage,
+  genericMessage: protobufMessage.GenericMessage.$Properties,
   qualifiedConversation: QualifiedId,
   senderId: QualifiedId
 ): Reaction {
@@ -377,20 +375,20 @@ function unpackReaction(
 }
 
 function unpackEphemeral(
-  genericMessage: IGenericMessage,
+  genericMessage: protobufMessage.GenericMessage.$Properties,
   qualifiedConversation: QualifiedId,
   senderId: QualifiedId,
   timestamp: Date
 ): WireMessage {
   const ephemeralMessage = genericMessage.ephemeral!
 
-  const builtMessage: Partial<IGenericMessage> = {
+  const builtMessage: Partial<protobufMessage.GenericMessage.$Properties> = {
     messageId: genericMessage.messageId
   }
 
   if (ephemeralMessage.text) {
     const textContent = ephemeralMessage.text!
-    const textMessage: IText = {
+    const textMessage: protobufMessage.Text.$Properties = {
       content: textContent.content!,
       mentions: textContent.mentions!,
       linkPreview: textContent.linkPreview!,
@@ -402,7 +400,7 @@ function unpackEphemeral(
       {
         ...builtMessage,
         text: textMessage
-      } as IGenericMessage,
+      } as protobufMessage.GenericMessage.$Properties,
       qualifiedConversation,
       senderId,
       timestamp,
@@ -410,7 +408,7 @@ function unpackEphemeral(
     )
   } else if (ephemeralMessage.asset) {
     const assetContent = ephemeralMessage.asset!
-    const assetMessage: IAsset = {
+    const assetMessage: protobufMessage.Asset.$Properties = {
       original: assetContent.original!,
       uploaded: assetContent.uploaded!,
       notUploaded: assetContent.notUploaded!,
@@ -421,7 +419,7 @@ function unpackEphemeral(
       {
         ...builtMessage,
         asset: assetMessage
-      } as IGenericMessage,
+      } as protobufMessage.GenericMessage.$Properties,
       qualifiedConversation,
       senderId,
       timestamp,
@@ -431,14 +429,14 @@ function unpackEphemeral(
     return unpackPing(
       {
         ...builtMessage
-      } as IGenericMessage,
+      } as protobufMessage.GenericMessage.$Properties,
       qualifiedConversation,
       senderId,
       toNumber(ephemeralMessage.expireAfterMillis)
     )
   } else if (ephemeralMessage.location) {
     const locationContent = ephemeralMessage.location!
-    const locationMessage: ILocation = {
+    const locationMessage: protobufMessage.Location.$Properties = {
       latitude: locationContent.latitude,
       longitude: locationContent.longitude,
       name: locationContent.name!,
@@ -449,7 +447,7 @@ function unpackEphemeral(
       {
         ...builtMessage,
         location: locationMessage,
-      } as IGenericMessage,
+      } as protobufMessage.GenericMessage.$Properties,
       qualifiedConversation,
       senderId,
       timestamp,

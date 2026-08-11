@@ -15,22 +15,20 @@
 */
 
 import { describe, expect, it } from 'vitest'
-import rootMessage from '../../../src/generated/messages.js'
+import protobufMessage from '../../../src/generated/messages.js'
 import { EncryptionAlgorithmMapper } from '../../../src/mappers/protobuf/EncryptionAlgorithmMapper.js'
 import { MessageEncryptionAlgorithm } from '../../../src/model/protobuf/MessageEncryptionAlgorithm.js'
 
-const { EncryptionAlgorithm } = rootMessage
-
 describe('EncryptionAlgorithmMapper', () => {
   it('maps protobuf encryption algorithms to domain algorithms', () => {
-    expect(EncryptionAlgorithmMapper.fromProtobufModel(EncryptionAlgorithm.AES_CBC)).toBe(MessageEncryptionAlgorithm.AES_CBC)
-    expect(EncryptionAlgorithmMapper.fromProtobufModel(EncryptionAlgorithm.AES_GCM)).toBe(MessageEncryptionAlgorithm.AES_GCM)
+    expect(EncryptionAlgorithmMapper.fromProtobufModel(protobufMessage.EncryptionAlgorithm.AES_CBC)).toBe(MessageEncryptionAlgorithm.AES_CBC)
+    expect(EncryptionAlgorithmMapper.fromProtobufModel(protobufMessage.EncryptionAlgorithm.AES_GCM)).toBe(MessageEncryptionAlgorithm.AES_GCM)
     expect(EncryptionAlgorithmMapper.fromProtobufModel(null)).toBe(MessageEncryptionAlgorithm.AES_CBC)
     expect(EncryptionAlgorithmMapper.fromProtobufModel(undefined)).toBe(MessageEncryptionAlgorithm.AES_CBC)
   })
 
   it('maps domain encryption algorithms to protobuf algorithms', () => {
-    expect(EncryptionAlgorithmMapper.toProtobufModel(MessageEncryptionAlgorithm.AES_CBC)).toBe(EncryptionAlgorithm.AES_CBC)
-    expect(EncryptionAlgorithmMapper.toProtobufModel(MessageEncryptionAlgorithm.AES_GCM)).toBe(EncryptionAlgorithm.AES_GCM)
+    expect(EncryptionAlgorithmMapper.toProtobufModel(MessageEncryptionAlgorithm.AES_CBC)).toBe(protobufMessage.EncryptionAlgorithm.AES_CBC)
+    expect(EncryptionAlgorithmMapper.toProtobufModel(MessageEncryptionAlgorithm.AES_GCM)).toBe(protobufMessage.EncryptionAlgorithm.AES_GCM)
   })
 })

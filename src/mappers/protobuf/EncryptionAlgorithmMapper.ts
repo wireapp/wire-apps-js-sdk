@@ -14,26 +14,23 @@
 * along with this program. If not, see http://www.gnu.org/licenses/.
 */
 
-import rootMessage from '../../generated/messages.js';
-import type {EncryptionAlgorithm as ProtobufEncryptionAlgorithm} from '../../generated/messages.js';
+import protobufMessage from "../../generated/messages.js";
 import {MessageEncryptionAlgorithm} from "../../model/protobuf/MessageEncryptionAlgorithm.js";
 
-const {EncryptionAlgorithm} = rootMessage;
-
 export class EncryptionAlgorithmMapper {
-  static fromProtobufModel(encryptionAlgorithm: ProtobufEncryptionAlgorithm | null | undefined): MessageEncryptionAlgorithm {
+  static fromProtobufModel(encryptionAlgorithm: protobufMessage.EncryptionAlgorithm | null | undefined): MessageEncryptionAlgorithm {
     switch (encryptionAlgorithm) {
-      case EncryptionAlgorithm.AES_CBC: return MessageEncryptionAlgorithm.AES_CBC;
-      case EncryptionAlgorithm.AES_GCM: return MessageEncryptionAlgorithm.AES_GCM;
+      case protobufMessage.EncryptionAlgorithm.AES_CBC: return MessageEncryptionAlgorithm.AES_CBC;
+      case protobufMessage.EncryptionAlgorithm.AES_GCM: return MessageEncryptionAlgorithm.AES_GCM;
       default: return MessageEncryptionAlgorithm.AES_CBC;
     }
   }
 
-  static toProtobufModel(encryptionAlgorithm: MessageEncryptionAlgorithm): ProtobufEncryptionAlgorithm {
+  static toProtobufModel(encryptionAlgorithm: MessageEncryptionAlgorithm): protobufMessage.EncryptionAlgorithm {
     switch (encryptionAlgorithm) {
-      case MessageEncryptionAlgorithm.AES_CBC: return EncryptionAlgorithm.AES_CBC;
-      case MessageEncryptionAlgorithm.AES_GCM: return EncryptionAlgorithm.AES_GCM;
-      default: return EncryptionAlgorithm.AES_CBC;
+      case MessageEncryptionAlgorithm.AES_CBC: return protobufMessage.EncryptionAlgorithm.AES_CBC;
+      case MessageEncryptionAlgorithm.AES_GCM: return protobufMessage.EncryptionAlgorithm.AES_GCM;
+      default: return protobufMessage.EncryptionAlgorithm.AES_CBC;
     }
   }
 }

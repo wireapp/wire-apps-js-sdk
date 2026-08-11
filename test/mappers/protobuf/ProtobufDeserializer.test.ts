@@ -15,24 +15,22 @@
 */
 
 import { describe, expect, it } from 'vitest'
-import rootMessage from '../../../src/generated/messages.js'
+import protobufMessage from '../../../src/generated/messages.js'
 import { ProtobufDeserializer } from '../../../src/mappers/protobuf/ProtobufDeserializer.js'
 import { QualifiedId } from '../../../src/model/QualifiedId.js'
 import { CompositeButton, TextMessage } from "../../../src/index.js"
 import {WireMessageType} from "../../../src/model/WireMessage.js";
-
-const { GenericMessage, Confirmation } = rootMessage
 
 describe('Protobuf deserialization', () => {
   const conversationId = new QualifiedId('conversation-id', 'wire.com')
   const senderId = new QualifiedId('sender-id', 'wire.com')
   const timestamp = new Date('2026-06-18T12:00:00.000Z')
 
-  const toWireMessage = (genericMessage: rootMessage.IGenericMessage) =>
-    ProtobufDeserializer.toWireMessage(GenericMessage.encode(genericMessage).finish(), conversationId, senderId, timestamp)
+  const toWireMessage = (genericMessage: protobufMessage.GenericMessage.$Properties) =>
+    ProtobufDeserializer.toWireMessage(protobufMessage.GenericMessage.encode(genericMessage).finish(), conversationId, senderId, timestamp)
 
   it('deserializes text message mentions', () => {
-    const genericMessage = GenericMessage.create({
+    const genericMessage = protobufMessage.GenericMessage.create({
       messageId: 'message-id',
       text: {
         content: 'Hello @Wire',
@@ -58,7 +56,7 @@ describe('Protobuf deserialization', () => {
   })
 
   it('deserializes missing text message mentions as an empty list', () => {
-    const genericMessage = GenericMessage.create({
+    const genericMessage = protobufMessage.GenericMessage.create({
       messageId: 'message-id',
       text: {
         content: 'No mention'
@@ -72,7 +70,7 @@ describe('Protobuf deserialization', () => {
   })
 
   it('preserves text message ids', () => {
-    const genericMessage = GenericMessage.create({
+    const genericMessage = protobufMessage.GenericMessage.create({
       messageId: 'message-id',
       text: {
         content: 'Hello'
@@ -86,7 +84,7 @@ describe('Protobuf deserialization', () => {
   })
 
   it('preserves received text message metadata', () => {
-    const genericMessage = GenericMessage.create({
+    const genericMessage = protobufMessage.GenericMessage.create({
       messageId: 'message-id',
       text: {
         content: 'Hello'
@@ -101,7 +99,7 @@ describe('Protobuf deserialization', () => {
   })
 
   it('deserializes ephemeral text messages as expiring text messages', () => {
-    const genericMessage = GenericMessage.create({
+    const genericMessage = protobufMessage.GenericMessage.create({
       messageId: 'message-id',
       ephemeral: {
         expireAfterMillis: 5000,
@@ -135,7 +133,7 @@ describe('Protobuf deserialization', () => {
   })
 
   it('deserializes ephemeral asset messages as expiring asset messages', () => {
-    const genericMessage = GenericMessage.create({
+    const genericMessage = protobufMessage.GenericMessage.create({
       messageId: 'message-id',
       ephemeral: {
         expireAfterMillis: 5000,
@@ -174,7 +172,7 @@ describe('Protobuf deserialization', () => {
   })
 
   it('deserializes knocks as pings', () => {
-    const genericMessage = GenericMessage.create({
+    const genericMessage = protobufMessage.GenericMessage.create({
       messageId: 'message-id',
       knock: {
         hotKnock: false
@@ -190,7 +188,7 @@ describe('Protobuf deserialization', () => {
   })
 
   it('deserializes ephemeral knocks as expiring pings', () => {
-    const genericMessage = GenericMessage.create({
+    const genericMessage = protobufMessage.GenericMessage.create({
       messageId: 'message-id',
       ephemeral: {
         expireAfterMillis: 1000,
@@ -208,7 +206,7 @@ describe('Protobuf deserialization', () => {
   })
 
   it('deserializes locations', () => {
-    const genericMessage = GenericMessage.create({
+    const genericMessage = protobufMessage.GenericMessage.create({
       messageId: 'message-id',
       location: {
         latitude: 52.520008,
@@ -232,7 +230,7 @@ describe('Protobuf deserialization', () => {
   })
 
   it('preserves omitted optional location fields as null', () => {
-    const genericMessage = GenericMessage.create({
+    const genericMessage = protobufMessage.GenericMessage.create({
       messageId: 'message-id',
       location: {
         latitude: 52.520008,
@@ -248,7 +246,7 @@ describe('Protobuf deserialization', () => {
   })
 
   it('preserves explicit location zoom 0', () => {
-    const genericMessage = GenericMessage.create({
+    const genericMessage = protobufMessage.GenericMessage.create({
       messageId: 'message-id',
       location: {
         latitude: 52.520008,
@@ -264,7 +262,7 @@ describe('Protobuf deserialization', () => {
   })
 
   it('deserializes ephemeral locations as expiring locations', () => {
-    const genericMessage = GenericMessage.create({
+    const genericMessage = protobufMessage.GenericMessage.create({
       messageId: 'message-id',
       ephemeral: {
         expireAfterMillis: 5000,
@@ -291,7 +289,7 @@ describe('Protobuf deserialization', () => {
   })
 
   it('deserializes deleted messages', () => {
-    const genericMessage = GenericMessage.create({
+    const genericMessage = protobufMessage.GenericMessage.create({
       messageId: 'message-id',
       deleted: {
         messageId: 'deleted-message-id'
@@ -308,10 +306,10 @@ describe('Protobuf deserialization', () => {
   })
 
   it('deserializes delivered receipts', () => {
-    const genericMessage = GenericMessage.create({
+    const genericMessage = protobufMessage.GenericMessage.create({
       messageId: 'message-id',
       confirmation: {
-        type: Confirmation.Type.DELIVERED,
+        type: protobufMessage.Confirmation.Type.DELIVERED,
         firstMessageId: 'first-message-id',
         moreMessageIds: ['second-message-id', 'third-message-id']
       }
@@ -332,10 +330,10 @@ describe('Protobuf deserialization', () => {
   })
 
   it('deserializes read receipts', () => {
-    const genericMessage = GenericMessage.create({
+    const genericMessage = protobufMessage.GenericMessage.create({
       messageId: 'message-id',
       confirmation: {
-        type: Confirmation.Type.READ,
+        type: protobufMessage.Confirmation.Type.READ,
         firstMessageId: 'read-message-id'
       }
     })
@@ -348,10 +346,10 @@ describe('Protobuf deserialization', () => {
   })
 
   it('ignores unsupported receipt types', () => {
-    const genericMessage = GenericMessage.create({
+    const genericMessage = protobufMessage.GenericMessage.create({
       messageId: 'message-id',
       confirmation: {
-        type: 99 as unknown as rootMessage.Confirmation.Type,
+        type: 99 as unknown as protobufMessage.Confirmation.Type,
         firstMessageId: 'message-id'
       }
     })
@@ -382,7 +380,7 @@ describe('Protobuf deserialization', () => {
       image: null
     }]
 
-    const genericMessage = GenericMessage.create({
+    const genericMessage = protobufMessage.GenericMessage.create({
       messageId: 'edited-message-id',
       edited: {
         replacingMessageId: 'replacing-message-id',
@@ -422,7 +420,7 @@ describe('Protobuf deserialization', () => {
     }
     const mentions = [mention]
 
-    const genericMessage = GenericMessage.create({
+    const genericMessage = protobufMessage.GenericMessage.create({
       messageId: 'edited-message-id',
       composite: {
         items: [
@@ -484,7 +482,7 @@ describe('Protobuf deserialization', () => {
     }
     const mentions = [mention]
 
-    const genericMessage = GenericMessage.create({
+    const genericMessage = protobufMessage.GenericMessage.create({
       messageId: 'edited-message-id',
       edited: {
         replacingMessageId: 'replacing-message-id',

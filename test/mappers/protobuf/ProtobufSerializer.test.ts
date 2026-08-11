@@ -15,7 +15,7 @@
 */
 
 import { describe, expect, it } from 'vitest'
-import rootMessage from '../../../src/generated/messages.js'
+import protobufMessage from '../../../src/generated/messages.js'
 import { ProtobufDeserializer } from '../../../src/mappers/protobuf/ProtobufDeserializer.js'
 import { ProtobufSerializer } from '../../../src/mappers/protobuf/ProtobufSerializer.js'
 import { QualifiedId } from '../../../src/model/QualifiedId.js'
@@ -33,8 +33,6 @@ import {
   TextEditedMessage,
   TextMessage, WireMessageType
 } from '../../../src/model/WireMessage.js'
-
-const { GenericMessage, Confirmation } = rootMessage
 
 const wireBlogUrl = "https://wire.com/blog"
 const senderId = new QualifiedId('wireUserId', 'wire.com')
@@ -58,7 +56,7 @@ describe('Protobuf serialization', () => {
     })
 
     const serialized = ProtobufSerializer.toGenericMessageByteArray(message)
-    const result = GenericMessage.decode(serialized)
+    const result = protobufMessage.GenericMessage.decode(serialized)
 
     expect(result.text?.linkPreview).toHaveLength(1)
     expect(result.text?.linkPreview![0]).toMatchObject({
@@ -77,7 +75,7 @@ describe('Protobuf serialization', () => {
     })
 
     const serialized = ProtobufSerializer.toGenericMessageByteArray(message)
-    const result = GenericMessage.decode(serialized)
+    const result = protobufMessage.GenericMessage.decode(serialized)
 
     expect(result.text?.linkPreview).toStrictEqual([])
   })
@@ -94,7 +92,7 @@ describe('Protobuf serialization', () => {
     })
 
     const serialized = ProtobufSerializer.toGenericMessageByteArray(message)
-    const result = GenericMessage.decode(serialized)
+    const result = protobufMessage.GenericMessage.decode(serialized)
 
     expect(result.text?.mentions).toMatchObject([{
       qualifiedUserId: {
@@ -115,7 +113,7 @@ describe('Protobuf serialization', () => {
     })
 
     const serialized = ProtobufSerializer.toGenericMessageByteArray(message)
-    const result = GenericMessage.decode(serialized)
+    const result = protobufMessage.GenericMessage.decode(serialized)
 
     expect(result.messageId).toBe('message-id')
     expect(result.content).toBe('ephemeral')
@@ -143,7 +141,7 @@ describe('Protobuf serialization', () => {
     })
 
     const serialized = ProtobufSerializer.toGenericMessageByteArray(message)
-    const result = GenericMessage.decode(serialized)
+    const result = protobufMessage.GenericMessage.decode(serialized)
 
     expect(result.messageId).toBe('message-id')
     expect(result.content).toBe('ephemeral')
@@ -156,7 +154,7 @@ describe('Protobuf serialization', () => {
   })
 
   it('deserializes text message link previews', () => {
-    const genericMessage = GenericMessage.create({
+    const genericMessage = protobufMessage.GenericMessage.create({
       messageId: 'message-id',
       text: {
         content: `Read ${wireBlogUrl}`,
@@ -171,7 +169,7 @@ describe('Protobuf serialization', () => {
     })
 
     const result = ProtobufDeserializer.toWireMessage(
-      GenericMessage.encode(genericMessage).finish(),
+      protobufMessage.GenericMessage.encode(genericMessage).finish(),
       conversationId,
       senderId,
       timestamp
@@ -189,7 +187,7 @@ describe('Protobuf serialization', () => {
   })
 
   it('deserializes missing text message link previews as an empty list', () => {
-    const genericMessage = GenericMessage.create({
+    const genericMessage = protobufMessage.GenericMessage.create({
       messageId: 'message-id',
       text: {
         content: 'No preview',
@@ -198,7 +196,7 @@ describe('Protobuf serialization', () => {
     })
 
     const result = ProtobufDeserializer.toWireMessage(
-      GenericMessage.encode(genericMessage).finish(),
+      protobufMessage.GenericMessage.encode(genericMessage).finish(),
       conversationId,
       senderId,
       timestamp
@@ -217,7 +215,7 @@ describe('Protobuf serialization', () => {
     })
 
     const serialized = ProtobufSerializer.toGenericMessageByteArray(message)
-    const result = GenericMessage.decode(serialized)
+    const result = protobufMessage.GenericMessage.decode(serialized)
 
     expect(result.messageId).toBe('message-id')
     expect(result.content).toBe('buttonActionConfirmation')
@@ -234,7 +232,7 @@ describe('Protobuf serialization', () => {
     })
 
     const serialized = ProtobufSerializer.toGenericMessageByteArray(message)
-    const result = GenericMessage.decode(serialized)
+    const result = protobufMessage.GenericMessage.decode(serialized)
 
     expect(result.messageId).toBe('message-id')
     expect(result.content).toBe('knock')
@@ -251,7 +249,7 @@ describe('Protobuf serialization', () => {
     })
 
     const serialized = ProtobufSerializer.toGenericMessageByteArray(message)
-    const result = GenericMessage.decode(serialized)
+    const result = protobufMessage.GenericMessage.decode(serialized)
 
     expect(result.messageId).toBe('message-id')
     expect(result.content).toBe('ephemeral')
@@ -273,7 +271,7 @@ describe('Protobuf serialization', () => {
     })
 
     const serialized = ProtobufSerializer.toGenericMessageByteArray(message)
-    const result = GenericMessage.decode(serialized)
+    const result = protobufMessage.GenericMessage.decode(serialized)
 
     expect(result.messageId).toBe('message-id')
     expect(result.content).toBe('location')
@@ -295,7 +293,7 @@ describe('Protobuf serialization', () => {
     })
 
     const serialized = ProtobufSerializer.toGenericMessageByteArray(message)
-    const result = GenericMessage.decode(serialized)
+    const result = protobufMessage.GenericMessage.decode(serialized)
 
     expect(result.messageId).toBe('message-id')
     expect(result.content).toBe('ephemeral')
@@ -316,7 +314,7 @@ describe('Protobuf serialization', () => {
     })
 
     const serialized = ProtobufSerializer.toGenericMessageByteArray(message)
-    const result = GenericMessage.decode(serialized)
+    const result = protobufMessage.GenericMessage.decode(serialized)
 
     expect(result.messageId).toBe('message-id')
     expect(result.content).toBe('deleted')
@@ -332,11 +330,11 @@ describe('Protobuf serialization', () => {
     })
 
     const serialized = ProtobufSerializer.toGenericMessageByteArray(message)
-    const result = GenericMessage.decode(serialized)
+    const result = protobufMessage.GenericMessage.decode(serialized)
 
     expect(result.messageId).toBe('message-id')
     expect(result.content).toBe('confirmation')
-    expect(result.confirmation?.type).toBe(Confirmation.Type.DELIVERED)
+    expect(result.confirmation?.type).toBe(protobufMessage.Confirmation.Type.DELIVERED)
     expect(result.confirmation?.firstMessageId).toBe('first-message-id')
     expect(result.confirmation?.moreMessageIds).toStrictEqual(['second-message-id', 'third-message-id'])
   })
@@ -350,10 +348,10 @@ describe('Protobuf serialization', () => {
     })
 
     const serialized = ProtobufSerializer.toGenericMessageByteArray(message)
-    const result = GenericMessage.decode(serialized)
+    const result = protobufMessage.GenericMessage.decode(serialized)
 
     expect(result.content).toBe('confirmation')
-    expect(result.confirmation?.type).toBe(Confirmation.Type.READ)
+    expect(result.confirmation?.type).toBe(protobufMessage.Confirmation.Type.READ)
     expect(result.confirmation?.firstMessageId).toBe('read-message-id')
     expect(result.confirmation?.moreMessageIds).toStrictEqual([])
   })
@@ -367,7 +365,7 @@ describe('Protobuf serialization', () => {
     })
 
     const serialized = ProtobufSerializer.toGenericMessageByteArray(message)
-    const result = GenericMessage.decode(serialized)
+    const result = protobufMessage.GenericMessage.decode(serialized)
 
     expect(result.messageId).toBe('reaction-message-id')
     expect(result.content).toBe('reaction')
@@ -414,7 +412,7 @@ describe('Protobuf serialization', () => {
     })
 
     const serialized = ProtobufSerializer.toGenericMessageByteArray(message)
-    const result = GenericMessage.decode(serialized)
+    const result = protobufMessage.GenericMessage.decode(serialized)
 
     expect(result.content).toBe('edited')
     expect(result.messageId).toBe('new-message-id')
@@ -455,7 +453,7 @@ describe('Protobuf serialization', () => {
     })
 
     const serialized = ProtobufSerializer.toGenericMessageByteArray(message)
-    const result = GenericMessage.decode(serialized)
+    const result = protobufMessage.GenericMessage.decode(serialized)
 
     expect(result.content).toBe('edited')
     expect(result.messageId).toBe('new-message-id')
@@ -486,7 +484,7 @@ describe('Protobuf serialization', () => {
   })
 
   it('deserializes composite button action confirmations', () => {
-    const genericMessage = GenericMessage.create({
+    const genericMessage = protobufMessage.GenericMessage.create({
       messageId: 'message-id',
       buttonActionConfirmation: {
         referenceMessageId: 'reference-message-id',
@@ -495,7 +493,7 @@ describe('Protobuf serialization', () => {
     })
 
     const result = ProtobufDeserializer.toWireMessage(
-      GenericMessage.encode(genericMessage).finish(),
+      protobufMessage.GenericMessage.encode(genericMessage).finish(),
       conversationId,
       senderId,
       timestamp
@@ -508,7 +506,7 @@ describe('Protobuf serialization', () => {
   })
 
   it('deserializes composite button action confirmations without a button id', () => {
-    const genericMessage = GenericMessage.create({
+    const genericMessage = protobufMessage.GenericMessage.create({
       messageId: 'message-id',
       buttonActionConfirmation: {
         referenceMessageId: 'reference-message-id'
@@ -516,7 +514,7 @@ describe('Protobuf serialization', () => {
     })
 
     const result = ProtobufDeserializer.toWireMessage(
-      GenericMessage.encode(genericMessage).finish(),
+      protobufMessage.GenericMessage.encode(genericMessage).finish(),
       conversationId,
       senderId,
       timestamp
@@ -528,7 +526,7 @@ describe('Protobuf serialization', () => {
   })
 
   it('deserializes reactions', () => {
-    const genericMessage = GenericMessage.create({
+    const genericMessage = protobufMessage.GenericMessage.create({
       messageId: 'reaction-message-id',
       reaction: {
         messageId: 'target-message-id',
@@ -537,7 +535,7 @@ describe('Protobuf serialization', () => {
     })
 
     const result = ProtobufDeserializer.toWireMessage(
-      GenericMessage.encode(genericMessage).finish(),
+      protobufMessage.GenericMessage.encode(genericMessage).finish(),
       conversationId,
       senderId,
       timestamp
