@@ -14,12 +14,12 @@
 * along with this program. If not, see http://www.gnu.org/licenses/.
 */
 
-import type {Asset, ILinkPreview} from "../../generated/messages.js";
+import type protobufMessage from "../../generated/messages.js";
 import type {LinkPreview} from "../../model/WireMessage.js";
 import {EncryptionAlgorithmMapper} from "./EncryptionAlgorithmMapper.js";
 
 export class MessageLinkPreviewMapper {
-  static fromProtobuf(linkPreview: ILinkPreview): LinkPreview {
+  static fromProtobuf(linkPreview: protobufMessage.LinkPreview.$Properties): LinkPreview {
     const hasImage = linkPreview.image != null
 
     return {
@@ -47,8 +47,8 @@ export class MessageLinkPreviewMapper {
     }
   }
 
-  static toProtobuf(linkPreview: LinkPreview): ILinkPreview {
-    const result: ILinkPreview = {
+  static toProtobuf(linkPreview: LinkPreview): protobufMessage.LinkPreview.$Properties {
+    const result: protobufMessage.LinkPreview.$Properties = {
       url: linkPreview.url,
       urlOffset: linkPreview.urlOffset,
       permanentUrl: linkPreview.permanentUrl ?? null,
@@ -59,7 +59,7 @@ export class MessageLinkPreviewMapper {
     if (linkPreview.image) {
       const image = linkPreview.image
 
-      const original: Asset.IOriginal = {
+      const original: protobufMessage.Asset.Original.$Properties = {
         size: image.assetDataSize,
         mimeType: image.mimeType,
         image: {
@@ -69,7 +69,7 @@ export class MessageLinkPreviewMapper {
         name: image.assetName ?? null
       }
 
-      const uploaded: Asset.IRemoteData = {
+      const uploaded: protobufMessage.Asset.RemoteData.$Properties = {
         otrKey: image.otrKey,
         sha256: image.sha256Key,
         assetId: image.assetKey ?? null,

@@ -14,12 +14,12 @@
 * along with this program. If not, see http://www.gnu.org/licenses/.
 */
 
-import type {IMention} from "../../generated/messages.js";
+import type protobufMessage from "../../generated/messages.js";
 import {QualifiedId} from "../../model/QualifiedId.js";
 import type {Mention} from "../../model/WireMessage.js";
 
 export class MessageMentionMapper {
-  static fromProtobuf(mention: IMention): Mention | null {
+  static fromProtobuf(mention: protobufMessage.Mention.$Properties): Mention | null {
     if (!mention.qualifiedUserId?.id || !mention.qualifiedUserId?.domain) {
       return null;
     }
@@ -30,7 +30,7 @@ export class MessageMentionMapper {
     };
   }
 
-  static toProtobuf(mention: Mention): IMention {
+  static toProtobuf(mention: Mention): protobufMessage.Mention.$Properties {
     return {
       qualifiedUserId: {
         id: mention.userId.id,

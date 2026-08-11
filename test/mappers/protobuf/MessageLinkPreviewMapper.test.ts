@@ -15,13 +15,10 @@
 */
 
 import { describe, expect, it } from 'vitest'
-import rootMessage from '../../../src/generated/messages.js'
-import type { ILinkPreview } from '../../../src/generated/messages.js'
+import protobufMessage from '../../../src/generated/messages.js'
 import { MessageLinkPreviewMapper } from '../../../src/mappers/protobuf/MessageLinkPreviewMapper.js'
 import { MessageEncryptionAlgorithm } from '../../../src/model/protobuf/MessageEncryptionAlgorithm.js'
 import type { LinkPreview } from '../../../src/model/WireMessage.js'
-
-const { EncryptionAlgorithm } = rootMessage
 
 const wireBlogUrl = "https://wire.com/blog"
 
@@ -81,7 +78,7 @@ describe('MessageLinkPreviewMapper', () => {
       assetId: 'asset-id',
       assetToken: 'asset-token',
       assetDomain: 'assets.wire.com',
-      encryption: EncryptionAlgorithm.AES_GCM
+      encryption: protobufMessage.EncryptionAlgorithm.AES_GCM
     })
   })
 
@@ -101,11 +98,11 @@ describe('MessageLinkPreviewMapper', () => {
     }
 
     expect(MessageLinkPreviewMapper.toProtobuf(linkPreview).image?.uploaded?.encryption)
-      .toBe(EncryptionAlgorithm.AES_CBC)
+      .toBe(protobufMessage.EncryptionAlgorithm.AES_CBC)
   })
 
   it('maps LinkPreview without image to domain', () => {
-    const linkPreview: ILinkPreview = {
+    const linkPreview: protobufMessage.LinkPreview.$Properties = {
       url: wireBlogUrl,
       urlOffset: 7,
       permanentUrl: wireBlogUrl,
@@ -124,7 +121,7 @@ describe('MessageLinkPreviewMapper', () => {
   })
 
   it('maps LinkPreview image to domain asset data', () => {
-    const linkPreview: ILinkPreview = {
+    const linkPreview: protobufMessage.LinkPreview.$Properties = {
       url: wireBlogUrl,
       urlOffset: 7,
       image: {
@@ -143,7 +140,7 @@ describe('MessageLinkPreviewMapper', () => {
           assetId: 'asset-id',
           assetToken: 'asset-token',
           assetDomain: 'assets.wire.com',
-          encryption: EncryptionAlgorithm.AES_GCM
+          encryption: protobufMessage.EncryptionAlgorithm.AES_GCM
         }
       }
     }
@@ -173,7 +170,7 @@ describe('MessageLinkPreviewMapper', () => {
   })
 
   it('uses defaults for missing protobuf image fields', () => {
-    const linkPreview: ILinkPreview = {
+    const linkPreview: protobufMessage.LinkPreview.$Properties = {
       url: wireBlogUrl,
       urlOffset: 0,
       image: {}

@@ -14,16 +14,7 @@
 * along with this program. If not, see http://www.gnu.org/licenses/.
 */
 
-import type {
-  Asset,
-  Composite as ProtobufComposite,
-  IAsset,
-  IButtonAction,
-  IButtonActionConfirmation,
-  IGenericMessage,
-  IText
-} from "../../generated/messages.js";
-import rootMessage from "../../generated/messages.js";
+import protobufMessage from "../../generated/messages.js";
 import {
   AssetMessage,
   CompositeButton,
@@ -47,18 +38,6 @@ import {MessageLinkPreviewMapper} from "./MessageLinkPreviewMapper.js";
 import {MessageMentionMapper} from "./MessageMentionMapper.js";
 import {CryptographicSystemError} from "../../exception/WireException.js";
 
-const {
-  GenericMessage,
-  Composite,
-  Ephemeral,
-  Knock,
-  Location: ProtobufLocation,
-  MessageDelete,
-  Confirmation,
-  MessageEdit,
-  Reaction: ProtobufReaction
-} = rootMessage;
-
 /**
  * Utility object responsible for serializing WireMessage to GenericMessage
  */
@@ -71,11 +50,11 @@ export const ProtobufSerializer = {
    * @throws Error if the message type is not supported
    */
   toGenericMessageByteArray: (wireMessage: WireMessage): Uint8Array => {
-    const genericMessage: Partial<IGenericMessage> = {
+    const genericMessage: protobufMessage.GenericMessage.$Properties = {
       messageId: wireMessage.id,
     }
 
-    let builtMessage: IGenericMessage;
+    let builtMessage: protobufMessage.GenericMessage.$Properties;
 
     switch (wireMessage.type) {
       case WireMessageType.TEXT:
@@ -130,8 +109,8 @@ export const ProtobufSerializer = {
         throw new CryptographicSystemError(`Unsupported message type: ${(wireMessage as WireMessage).type}`);
     }
 
-    const message = GenericMessage.create(builtMessage);
-    return GenericMessage.encode(message).finish();
+    const message = protobufMessage.GenericMessage.create(builtMessage);
+    return protobufMessage.GenericMessage.encode(message).finish();
   },
 }
 
@@ -140,15 +119,15 @@ export const ProtobufSerializer = {
  */
 function packTextMessage(
   wireMessage: TextMessage,
-  genericMessage: Partial<IGenericMessage>
-): IGenericMessage {
+  genericMessage: protobufMessage.GenericMessage.$Properties
+): protobufMessage.GenericMessage.$Properties {
   const textContent = packText(wireMessage)
 
   return {
     ...genericMessage,
     ...(wireMessage.expiresAfterMillis
       ? {
-        ephemeral: Ephemeral.create({
+        ephemeral: protobufMessage.Ephemeral.create({
           expireAfterMillis: wireMessage.expiresAfterMillis,
           text: textContent
         })
@@ -156,13 +135,13 @@ function packTextMessage(
       : {
         text: textContent
       })
-  } as IGenericMessage
+  }
 }
 
 function packText(
   wireMessage: TextMessage
 ) {
-  const textContent: IText = {
+  const textContent: protobufMessage.Text.$Properties = {
     content: wireMessage.text,
     // Add other text-specific fields
     mentions: wireMessage.mentions?.map(MessageMentionMapper.toProtobuf) ?? [],
@@ -183,11 +162,11 @@ function packText(
 
 function packTextEditedMessage(
   wireMessage: TextEditedMessage,
-  genericMessage: Partial<IGenericMessage>
-): IGenericMessage {
+  genericMessage: protobufMessage.GenericMessage.$Properties
+): protobufMessage.GenericMessage.$Properties {
   return {
     ...genericMessage,
-    edited: MessageEdit.create({
+    edited: protobufMessage.MessageEdit.create({
       replacingMessageId: wireMessage.replacingMessageId,
       text: {
         content: wireMessage.text,
@@ -195,14 +174,14 @@ function packTextEditedMessage(
         linkPreview: wireMessage.linkPreviews?.map(it => MessageLinkPreviewMapper.toProtobuf(it)) ?? []
       }
     })
-  } as IGenericMessage
+  }
 }
 
 function packAssetMessage(
   wireMessage: AssetMessage,
-  genericMessage: Partial<IGenericMessage>
-): IGenericMessage {
-  const original: Asset.IOriginal = {
+  genericMessage: protobufMessage.GenericMessage.$Properties
+): protobufMessage.GenericMessage.$Properties {
+  const original: protobufMessage.Asset.Original.$Properties = {
     mimeType: wireMessage.mimeType,
     size: wireMessage.sizeInBytes,
     name: wireMessage.name ?? null
@@ -236,7 +215,7 @@ function packAssetMessage(
     }
   }
 
-  const uploaded: Asset.IRemoteData = {
+  const uploaded: protobufMessage.Asset.RemoteData.$Properties = {
     otrKey: wireMessage.remoteData?.otrKey || new Uint8Array(),
     sha256: wireMessage.remoteData?.sha256 || new Uint8Array(),
     assetId: wireMessage.remoteData?.assetId || null,
@@ -244,7 +223,7 @@ function packAssetMessage(
     assetDomain: wireMessage.remoteData?.assetDomain || null
   };
 
-  const assetContent: IAsset = {
+  const assetContent: protobufMessage.Asset.$Properties = {
     original,
     uploaded
   };
@@ -253,7 +232,7 @@ function packAssetMessage(
     ...genericMessage,
     ...(wireMessage.expiresAfterMillis
       ? {
-        ephemeral: Ephemeral.create({
+        ephemeral: protobufMessage.Ephemeral.create({
           expireAfterMillis: wireMessage.expiresAfterMillis,
           asset: assetContent
         })
@@ -261,21 +240,21 @@ function packAssetMessage(
       : {
         asset: assetContent
       })
-  } as IGenericMessage
+  }
 }
 
-function packItemList(itemsList: Item[]): ProtobufComposite.Item[] {
+function packItemList(itemsList: Item[]): protobufMessage.Composite.Item[] {
   return itemsList.flatMap((item) => {
     switch ((item as TextMessage | CompositeButton).type) {
       case WireMessageType.COMPOSITE_BUTTON: {
         const button = item as CompositeButton
-        return [Composite.Item.create({
+        return [protobufMessage.Composite.Item.create({
           content: 'button',
           button: {id: button.id, text: button.text}
         })]
       }
       case WireMessageType.TEXT: {
-        return [Composite.Item.create({
+        return [protobufMessage.Composite.Item.create({
           content: 'text',
           text: packText(item as TextMessage)
         })]
@@ -288,9 +267,9 @@ function packItemList(itemsList: Item[]): ProtobufComposite.Item[] {
 
 function packCompositeButtonAction(
   wireMessage: CompositeButtonAction,
-  genericMessage: Partial<IGenericMessage>
-): IGenericMessage {
-  const buttonAction: IButtonAction = {
+  genericMessage: protobufMessage.GenericMessage.$Properties
+): protobufMessage.GenericMessage.$Properties {
+  const buttonAction: protobufMessage.ButtonAction.$Properties = {
     referenceMessageId: wireMessage.referenceMessageId,
     buttonId: wireMessage.buttonId
   }
@@ -298,14 +277,14 @@ function packCompositeButtonAction(
   return {
     ...genericMessage,
     buttonAction: buttonAction
-  } as IGenericMessage;
+  };
 }
 
 function packCompositeButtonActionConfirmation(
   wireMessage: CompositeButtonActionConfirmation,
-  genericMessage: Partial<IGenericMessage>
-): IGenericMessage {
-  const buttonActionConfirmation: IButtonActionConfirmation = {
+  genericMessage: protobufMessage.GenericMessage.$Properties
+): protobufMessage.GenericMessage.$Properties {
+  const buttonActionConfirmation: protobufMessage.ButtonActionConfirmation.$Properties = {
     referenceMessageId: wireMessage.referenceMessageId,
     buttonId: wireMessage.buttonId
   }
@@ -313,46 +292,46 @@ function packCompositeButtonActionConfirmation(
   return {
     ...genericMessage,
     buttonActionConfirmation: buttonActionConfirmation
-  } as IGenericMessage
+  }
 }
 
 function packCompositeMessage(
   wireMessage: CompositeMessage,
-  genericMessage: Partial<IGenericMessage>
-): IGenericMessage {
+  genericMessage: protobufMessage.GenericMessage.$Properties
+): protobufMessage.GenericMessage.$Properties {
   return {
     ...genericMessage,
-    composite: Composite.create({
+    composite: protobufMessage.Composite.create({
       items: packItemList(wireMessage.items)
     })
-  } as IGenericMessage
+  }
 }
 
 function packCompositeEditedMessage(
   wireMessage: CompositeEditedMessage,
-  genericMessage: Partial<IGenericMessage>
-): IGenericMessage {
+  genericMessage: protobufMessage.GenericMessage.$Properties
+): protobufMessage.GenericMessage.$Properties {
   return {
     ...genericMessage,
-    edited: MessageEdit.create({
+    edited: protobufMessage.MessageEdit.create({
       replacingMessageId: wireMessage.replacingMessageId,
       composite: {
         items: packItemList(wireMessage.items)
       }
     })
-  } as IGenericMessage
+  }
 }
 
 function packPing(
   wireMessage: Ping,
-  genericMessage: Partial<IGenericMessage>
-): IGenericMessage {
-  const knock = Knock.create({hotKnock: false})
+  genericMessage: protobufMessage.GenericMessage.$Properties
+): protobufMessage.GenericMessage.$Properties {
+  const knock = protobufMessage.Knock.create({hotKnock: false})
   return {
     ...genericMessage,
     ...(wireMessage.expiresAfterMillis
       ? {
-        ephemeral: Ephemeral.create({
+        ephemeral: protobufMessage.Ephemeral.create({
           expireAfterMillis: wireMessage.expiresAfterMillis,
           knock: knock
         })
@@ -360,14 +339,14 @@ function packPing(
       : {
         knock: knock
       })
-  } as IGenericMessage
+  }
 }
 
 function packLocation(
   wireMessage: Location,
-  genericMessage: Partial<IGenericMessage>
-): IGenericMessage {
-  const locationContent = ProtobufLocation.create({
+  genericMessage: protobufMessage.GenericMessage.$Properties
+): protobufMessage.GenericMessage.$Properties {
+  const locationContent = protobufMessage.Location.create({
     latitude: wireMessage.latitude,
     longitude: wireMessage.longitude,
     name: wireMessage.name,
@@ -378,7 +357,7 @@ function packLocation(
     ...genericMessage,
     ...(wireMessage.expiresAfterMillis
       ? {
-        ephemeral: Ephemeral.create({
+        ephemeral: protobufMessage.Ephemeral.create({
           expireAfterMillis: wireMessage.expiresAfterMillis,
           location: locationContent
         })
@@ -386,32 +365,32 @@ function packLocation(
       : {
         location: locationContent
       })
-  } as IGenericMessage
+  }
 }
 
 function packDeletedMessage(
   wireMessage: DeletedMessage,
-  genericMessage: Partial<IGenericMessage>
-): IGenericMessage {
+  genericMessage: protobufMessage.GenericMessage.$Properties
+): protobufMessage.GenericMessage.$Properties {
   return {
     ...genericMessage,
-    deleted: MessageDelete.create({
+    deleted: protobufMessage.MessageDelete.create({
       messageId: wireMessage.messageId
     })
-  } as IGenericMessage
+  }
 }
 
 function packReceipt(
   wireMessage: Receipt,
-  genericMessage: Partial<IGenericMessage>
-): IGenericMessage {
+  genericMessage: protobufMessage.GenericMessage.$Properties
+): protobufMessage.GenericMessage.$Properties {
   let type
   switch (wireMessage.receiptType) {
     case ReceiptType.DELIVERED:
-      type = Confirmation.Type.DELIVERED
+      type = protobufMessage.Confirmation.Type.DELIVERED
       break
     case ReceiptType.READ:
-      type = Confirmation.Type.READ
+      type = protobufMessage.Confirmation.Type.READ
       break
   }
 
@@ -423,18 +402,18 @@ function packReceipt(
 
   return {
     ...genericMessage,
-    confirmation: Confirmation.create({
+    confirmation: protobufMessage.Confirmation.create({
       type: type,
       firstMessageId: firstMessageId,
       moreMessageIds: moreMessageIds
     })
-  } as IGenericMessage
+  }
 }
 
 function packReaction(
   wireMessage: Reaction,
-  genericMessage: Partial<IGenericMessage>
-): IGenericMessage {
+  genericMessage: protobufMessage.GenericMessage.$Properties
+): protobufMessage.GenericMessage.$Properties {
   const emojis = [...wireMessage.emojiSet]
     .map(emojiString => emojiString.trim())
     .filter(emojiString => emojiString.length > 0)
@@ -442,9 +421,9 @@ function packReaction(
 
   return {
     ...genericMessage,
-    reaction: ProtobufReaction.create({
+    reaction: protobufMessage.Reaction.create({
       messageId: wireMessage.messageId,
       emoji: emojis
     })
-  } as IGenericMessage
+  }
 }
