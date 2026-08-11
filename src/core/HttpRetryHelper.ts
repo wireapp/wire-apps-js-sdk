@@ -14,8 +14,8 @@
  * along with this program. If not, see http://www.gnu.org/licenses/.
  */
 
-import type {HttpRetryPolicy} from "./HttpRetryPolicy.js";
-import {RETRYABLE_STATUS_CODES} from "./HttpRetryPolicy.js";
+import type {HttpRetryPolicy} from './HttpRetryPolicy.js'
+import {RETRYABLE_STATUS_CODES} from './HttpRetryPolicy.js'
 
 export class RetryableHttpStatusError extends Error {
   constructor(
@@ -23,7 +23,7 @@ export class RetryableHttpStatusError extends Error {
     readonly path: string
   ) {
     super(`Retryable HTTP ${status} for ${path}`)
-    this.name = "RetryableHttpStatusError"
+    this.name = 'RetryableHttpStatusError'
   }
 }
 
@@ -33,14 +33,11 @@ export class RetryableNetworkError extends Error {
     readonly originalError: unknown
   ) {
     super(`Retryable network error for ${path}`)
-    this.name = "RetryableNetworkError"
+    this.name = 'RetryableNetworkError'
   }
 }
 
-export function calculateHttpRetryDelay(
-  policy: HttpRetryPolicy,
-  retryAttemptNumber: number
-): number {
+export function calculateHttpRetryDelay(policy: HttpRetryPolicy, retryAttemptNumber: number): number {
   return policy.baseDelayMs * retryAttemptNumber
 }
 
@@ -53,5 +50,5 @@ export function isRetryableHttpError(exception: unknown): boolean {
 }
 
 export async function waitForHttpRetry(delayMs: number): Promise<void> {
-  await new Promise<void>(resolve => setTimeout(resolve, delayMs))
+  await new Promise<void>((resolve) => setTimeout(resolve, delayMs))
 }

@@ -14,20 +14,18 @@
  * along with this program. If not, see http://www.gnu.org/licenses/.
  */
 
-import {HttpClient} from "../core/HttpClient.js";
-import type {QualifiedId} from "../model/QualifiedId.js";
-import {singleton} from "tsyringe";
-import {LoggerFactory} from "../utils/logger/LoggerFactory.js";
-import type {OneToOneConversationResponse} from "./response/OneToOneConversationResponse.js";
+import {HttpClient} from '../core/HttpClient.js'
+import type {QualifiedId} from '../model/QualifiedId.js'
+import {singleton} from 'tsyringe'
+import {LoggerFactory} from '../utils/logger/LoggerFactory.js'
+import type {OneToOneConversationResponse} from './response/OneToOneConversationResponse.js'
 
 @singleton()
 export class OneToOneConversationsApiClient {
-  constructor(
-    private httpClient: HttpClient) {
-  }
+  constructor(private httpClient: HttpClient) {}
 
   private logger = LoggerFactory.getLogger(this.constructor.name)
-  private readonly basePath = "one2one-conversations";
+  private readonly basePath = 'one2one-conversations'
 
   async getOneToOneConversation(userId: QualifiedId): Promise<OneToOneConversationResponse> {
     this.logger.debug(`Getting OneToOne conversation. userId: ${userId}`)
@@ -35,5 +33,4 @@ export class OneToOneConversationsApiClient {
       `${this.basePath}/${userId.domain}/${userId.id}`
     )
   }
-
 }

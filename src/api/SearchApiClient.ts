@@ -14,46 +14,43 @@
  * along with this program. If not, see http://www.gnu.org/licenses/.
  */
 
-import {HttpClient} from "../core/HttpClient.js";
-import {singleton} from "tsyringe";
-import type {SearchContactsResponse} from "./response/SearchContactsResponse.js";
-import {InvalidParameterError} from "../exception/WireException.js";
+import {HttpClient} from '../core/HttpClient.js'
+import {singleton} from 'tsyringe'
+import type {SearchContactsResponse} from './response/SearchContactsResponse.js'
+import {InvalidParameterError} from '../exception/WireException.js'
 
-const DEFAULT_RESULT_SIZE = 15;
-const MIN_RESULT_SIZE = 1;
-const MAX_RESULT_SIZE = 500;
+const DEFAULT_RESULT_SIZE = 15
+const MIN_RESULT_SIZE = 1
+const MAX_RESULT_SIZE = 500
 
 @singleton()
 export class SearchApiClient {
-  constructor(private httpClient: HttpClient) {
-  }
+  constructor(private httpClient: HttpClient) {}
 
-  private readonly basePath = "search";
+  private readonly basePath = 'search'
 
-  async searchUsers(
-    query: string,
-    domain: string,
-    numberOfResults?: number
-  ): Promise<SearchContactsResponse> {
-    const size = numberOfResults ?? DEFAULT_RESULT_SIZE;
+  async searchUsers(query: string, domain: string, numberOfResults?: number): Promise<SearchContactsResponse> {
+    const size = numberOfResults ?? DEFAULT_RESULT_SIZE
 
     if (size < MIN_RESULT_SIZE || size > MAX_RESULT_SIZE) {
-      throw new InvalidParameterError(`Number of results value must be between ${MIN_RESULT_SIZE} and ${MAX_RESULT_SIZE}. Value provided: ${size}`);
+      throw new InvalidParameterError(
+        `Number of results value must be between ${MIN_RESULT_SIZE} and ${MAX_RESULT_SIZE}. Value provided: ${size}`
+      )
     }
     if (!query.trim()) {
-      throw new InvalidParameterError("Search query must not be blank.");
+      throw new InvalidParameterError('Search query must not be blank.')
     }
     if (!domain.trim()) {
-      throw new InvalidParameterError("Domain must not be blank.");
+      throw new InvalidParameterError('Domain must not be blank.')
     }
 
     const params = new URLSearchParams({
       q: query,
       domain,
-      type: "regular",
-      size: String(size),
-    });
+      type: 'regular',
+      size: String(size)
+    })
 
-    return await this.httpClient.getRequest<SearchContactsResponse>(`${this.basePath}/contacts?${params}`);
+    return await this.httpClient.getRequest<SearchContactsResponse>(`${this.basePath}/contacts?${params}`)
   }
 }

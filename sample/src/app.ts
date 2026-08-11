@@ -1,23 +1,23 @@
 /*
-* Wire
-* Copyright (C) 2025 Wire Swiss GmbH
-*
-* This program is free software: you can redistribute it and/or modify
-* it under the terms of the GNU General Public License as published by
-* the Free Software Foundation, either version 3 of the License, or
-* (at your option) any later version.
-* This program is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-* GNU General Public License for more details.
-* You should have received a copy of the GNU General Public License
-* along with this program. If not, see http://www.gnu.org/licenses/.
-*/
+ * Wire
+ * Copyright (C) 2025 Wire Swiss GmbH
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see http://www.gnu.org/licenses/.
+ */
 
 /* eslint-disable no-undef */
 
-import "reflect-metadata";
-import dotenv from 'dotenv';
+import 'reflect-metadata'
+import dotenv from 'dotenv'
 import {PinoLogger} from './PinoLogger.js'
 import {
   AssetMessage,
@@ -37,29 +37,29 @@ import {
   WireEventsHandler
 } from '@wireapp/wire-apps-js-sdk'
 import fs from 'fs'
-import {SampleCommandHandler} from "./SampleCommandHandler.js";
+import {SampleCommandHandler} from './SampleCommandHandler.js'
 
 dotenv.config({path: '../.env'})
 
-const userId = process.env['WIRE_SDK_USER_ID'];
-const apiToken = process.env['WIRE_SDK_API_TOKEN'];
-const userDomain = process.env['WIRE_SDK_USER_DOMAIN'];
-const apiHost = process.env['WIRE_SDK_API_HOST'];
+const userId = process.env['WIRE_SDK_USER_ID']
+const apiToken = process.env['WIRE_SDK_API_TOKEN']
+const userDomain = process.env['WIRE_SDK_USER_DOMAIN']
+const apiHost = process.env['WIRE_SDK_API_HOST']
 
 if (!userId) {
-  throw new Error('WIRE_SDK_USER_ID must be set in .env file');
+  throw new Error('WIRE_SDK_USER_ID must be set in .env file')
 }
 
 if (!apiToken) {
-  throw new Error('WIRE_SDK_API_TOKEN must be set in .env file');
+  throw new Error('WIRE_SDK_API_TOKEN must be set in .env file')
 }
 
 if (!userDomain) {
-  throw new Error('WIRE_SDK_USER_DOMAIN must be set in .env file');
+  throw new Error('WIRE_SDK_USER_DOMAIN must be set in .env file')
 }
 
 if (!apiHost) {
-  throw new Error('WIRE_SDK_API_HOST must be set in .env file');
+  throw new Error('WIRE_SDK_API_HOST must be set in .env file')
 }
 
 class SampleEventsHandler extends WireEventsHandler {
@@ -78,7 +78,7 @@ class SampleEventsHandler extends WireEventsHandler {
     if (this.sampleCommandHandler.isSampleCommand(wireMessage.text)) {
       await this.sampleCommandHandler.process(wireMessage.text, wireMessage.conversationId)
     } else {
-      await this.processSimpleTextMessage(wireMessage);
+      await this.processSimpleTextMessage(wireMessage)
     }
   }
 
@@ -134,8 +134,13 @@ class SampleEventsHandler extends WireEventsHandler {
     this.appLogger?.info(`[Sample App] A conversation was deleted: ${conversationId.id}@${conversationId.domain}`)
   }
 
-  public override async onAppAddedToConversation(conversation: Conversation, members: ConversationMember[]): Promise<void> {
-    this.appLogger?.info(`[Sample App] App was added to conversation: ${obfuscateId(conversation.id)} with ${members.length} members`)
+  public override async onAppAddedToConversation(
+    conversation: Conversation,
+    members: ConversationMember[]
+  ): Promise<void> {
+    this.appLogger?.info(
+      `[Sample App] App was added to conversation: ${obfuscateId(conversation.id)} with ${members.length} members`
+    )
     const textMessage = TextMessage.create({
       conversationId: new QualifiedId(conversation.id, conversation.domain),
       text: `Hello! I'm the Typescript SDK Sample App 🙂 I've just joined this conversation 👋`
@@ -143,22 +148,29 @@ class SampleEventsHandler extends WireEventsHandler {
     await this.manager.sendMessage(textMessage)
   }
 
-  public override async onUserJoinedConversation(conversationId: QualifiedId, members: ConversationMember[]): Promise<void> {
-    this.appLogger?.info(`[Sample App] Users are added to conversation: ${obfuscateId(conversationId.id)} with ${members.length} members`)
+  public override async onUserJoinedConversation(
+    conversationId: QualifiedId,
+    members: ConversationMember[]
+  ): Promise<void> {
+    this.appLogger?.info(
+      `[Sample App] Users are added to conversation: ${obfuscateId(conversationId.id)} with ${members.length} members`
+    )
 
     const textMessage = TextMessage.create({
       conversationId: conversationId,
-      text: `🎉 Welcome ${members.map(m => obfuscateId(m.userId.id)).join(', ')}! 🎉`
+      text: `🎉 Welcome ${members.map((m) => obfuscateId(m.userId.id)).join(', ')}! 🎉`
     })
     await this.manager.sendMessage(textMessage)
   }
 
   public override async onUserLeftConversation(conversationId: QualifiedId, members: QualifiedId[]): Promise<void> {
-    this.appLogger?.info(`[Sample App] User left the conversation: ${obfuscateId(conversationId.id)} - length: ${members.length}`)
+    this.appLogger?.info(
+      `[Sample App] User left the conversation: ${obfuscateId(conversationId.id)} - length: ${members.length}`
+    )
 
     const textMessage = TextMessage.create({
       conversationId: conversationId,
-      text: `Goodbye ${members.map(m => obfuscateId(m.id)).join(', ')}! 👋`
+      text: `Goodbye ${members.map((m) => obfuscateId(m.id)).join(', ')}! 👋`
     })
     await this.manager.sendMessage(textMessage)
   }
@@ -172,22 +184,21 @@ class SampleEventsHandler extends WireEventsHandler {
     const filename = wireMessage.name ? wireMessage.name : `unknown-${crypto.randomUUID()}`
     const dir = 'build/downloaded_assets/'
     if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir);
+      fs.mkdirSync(dir)
     }
-    const filePath = dir + filename;
+    const filePath = dir + filename
     fs.writeFile(filePath, asset, (err) => {
-        if (err) {
-          console.log("There was an error writing the image")
-        } else {
-          console.log(`Downloaded asset with size: ${asset.length} bytes, saved to: ${filePath}`)
-        }
+      if (err) {
+        console.log('There was an error writing the image')
+      } else {
+        console.log(`Downloaded asset with size: ${asset.length} bytes, saved to: ${filePath}`)
       }
-    )
+    })
 
     // Reply the asset message
     const replyMessage = TextMessage.createReply({
       originalMessage: wireMessage,
-      text: `😍Very nice!`,
+      text: `😍Very nice!`
     })
     await this.manager.sendMessage(replyMessage)
   }
@@ -215,7 +226,7 @@ class SampleEventsHandler extends WireEventsHandler {
     const reaction = Reaction.create({
       conversationId: wireMessage.conversationId,
       messageId: wireMessage.id,
-      emojiSet: new Set<string>(["🧩", "T", "S", "🚀"])
+      emojiSet: new Set<string>(['🧩', 'T', 'S', '🚀'])
     })
 
     await this.manager.sendMessage(reaction)
@@ -238,7 +249,7 @@ const sdk = await WireAppSdk.create(
 
 const backendConnectionListener: BackendConnectionListener = {
   onConnected: () => sampleEventsHandler.appLogger?.info('[Sample App] Connected to Wire backend 😍'),
-  onDisconnected: () => sampleEventsHandler.appLogger?.info('[Sample App] Disconnected from Wire backend 😭'),
+  onDisconnected: () => sampleEventsHandler.appLogger?.info('[Sample App] Disconnected from Wire backend 😭')
 }
 
 sdk.setBackendConnectionListener(backendConnectionListener)

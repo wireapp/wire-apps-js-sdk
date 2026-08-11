@@ -14,57 +14,56 @@
  * along with this program. If not, see http://www.gnu.org/licenses/.
  */
 
-import {inject, injectable} from "tsyringe";
-import {ProtobufDeserializer} from "../../mappers/protobuf/ProtobufDeserializer.js";
-import type {EventProcessor} from "./EventProcessor.js";
-import type {NewMLSMessageDTO} from "../../model/EventContentDTO.js";
-import {CoreCryptoService} from "../CoreCryptoService.js";
-import {ConversationService} from "../../api/ConversationService.js";
-import {WireEventsHandler} from "../WireEventsHandler.js";
-import {EVENT_PROCESSOR, WIRE_EVENTS_HANDLER} from "../../utils/DependencyInjectionTokens.js";
-import {isCoreCryptoMlsException} from "../../exception/CoreCryptoMlsException.js";
-import {isMlsException} from "../../exception/MlsException.js";
-import {LoggerFactory} from "../../utils/logger/LoggerFactory.js";
-import {MlsFallbackStrategy} from "../../service/MlsFallbackStrategy.js";
-import {QualifiedId} from "../../model/QualifiedId.js";
-import {WireMessageType} from "../../model/WireMessage.js";
+import {inject, injectable} from 'tsyringe'
+import {ProtobufDeserializer} from '../../mappers/protobuf/ProtobufDeserializer.js'
+import type {EventProcessor} from './EventProcessor.js'
+import type {NewMLSMessageDTO} from '../../model/EventContentDTO.js'
+import {CoreCryptoService} from '../CoreCryptoService.js'
+import {ConversationService} from '../../api/ConversationService.js'
+import {WireEventsHandler} from '../WireEventsHandler.js'
+import {EVENT_PROCESSOR, WIRE_EVENTS_HANDLER} from '../../utils/DependencyInjectionTokens.js'
+import {isCoreCryptoMlsException} from '../../exception/CoreCryptoMlsException.js'
+import {isMlsException} from '../../exception/MlsException.js'
+import {LoggerFactory} from '../../utils/logger/LoggerFactory.js'
+import {MlsFallbackStrategy} from '../../service/MlsFallbackStrategy.js'
+import {QualifiedId} from '../../model/QualifiedId.js'
+import {WireMessageType} from '../../model/WireMessage.js'
 
 @injectable({token: EVENT_PROCESSOR})
 export class MlsMessageEventProcessor implements EventProcessor<NewMLSMessageDTO> {
-  private logger = LoggerFactory.getLogger(this.constructor.name);
+  private logger = LoggerFactory.getLogger(this.constructor.name)
 
-  readonly eventType = "conversation.mls-message-add" as const;
+  readonly eventType = 'conversation.mls-message-add' as const
 
   constructor(
     private coreCryptoService: CoreCryptoService,
     private conversationService: ConversationService,
     private mlsFallbackStrategy: MlsFallbackStrategy,
     @inject(WIRE_EVENTS_HANDLER) private wireEventsHandler: WireEventsHandler
-  ) {
-  }
+  ) {}
 
   async process(event: NewMLSMessageDTO): Promise<void> {
     const conversationId = new QualifiedId(event.qualified_conversation.id, event.qualified_conversation.domain)
-    const mlsGroupId = await this.conversationService.getConversationMLSGroupId(conversationId);
+    const mlsGroupId = await this.conversationService.getConversationMLSGroupId(conversationId)
 
     try {
-      const message = await this.coreCryptoService.decryptMls(mlsGroupId, event.data);
+      const message = await this.coreCryptoService.decryptMls(mlsGroupId, event.data)
 
       if (message == null) {
-        this.logger.debug("Decryption success but no message, probably epoch update");
-        return;
+        this.logger.debug('Decryption success but no message, probably epoch update')
+        return
       }
 
-      await this.forwardMessage(message, event);
+      await this.forwardMessage(message, event)
     } catch (exception) {
       if (isMlsException(exception)) {
-        this.logger.warn("Message decryption failed, exception:", exception);
-        await this.mlsFallbackStrategy.verifyConversationOutOfSync(mlsGroupId, conversationId);
+        this.logger.warn('Message decryption failed, exception:', exception)
+        await this.mlsFallbackStrategy.verifyConversationOutOfSync(mlsGroupId, conversationId)
       } else if (isCoreCryptoMlsException(exception)) {
-        this.logger.warn("Message decryption failed, exception:", exception);
-        await this.mlsFallbackStrategy.verifyConversationOutOfSync(mlsGroupId, conversationId);
+        this.logger.warn('Message decryption failed, exception:', exception)
+        await this.mlsFallbackStrategy.verifyConversationOutOfSync(mlsGroupId, conversationId)
       } else {
-        throw exception;
+        throw exception
       }
     }
   }
@@ -72,12 +71,7 @@ export class MlsMessageEventProcessor implements EventProcessor<NewMLSMessageDTO
   private async forwardMessage(message: Uint8Array, event: NewMLSMessageDTO): Promise<void> {
     const conversationId = new QualifiedId(event.qualified_conversation.id, event.qualified_conversation.domain)
     const senderId = new QualifiedId(event.qualified_from.id, event.qualified_from.domain)
-    const wireMessage = ProtobufDeserializer.toWireMessage(
-      message,
-      conversationId,
-      senderId,
-      event.time
-    )
+    const wireMessage = ProtobufDeserializer.toWireMessage(message, conversationId, senderId, event.time)
 
     switch (wireMessage.type) {
       case WireMessageType.TEXT:
@@ -118,7 +112,7 @@ export class MlsMessageEventProcessor implements EventProcessor<NewMLSMessageDTO
         break
       case WireMessageType.UNKNOWN:
       default:
-        this.logger.info("Unknown event received.")
+        this.logger.info('Unknown event received.')
     }
   }
 }

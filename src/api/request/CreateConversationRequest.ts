@@ -14,22 +14,19 @@
  * along with this program. If not, see http://www.gnu.org/licenses/.
  */
 
-import type {QualifiedId} from "../../model/QualifiedId.js"
-import {CryptoProtocol} from "../../model/CryptoProtocol.js"
-import {ConversationAccess} from "../../model/conversation/ConversationAccess.js"
-import {ConversationAccessRole} from "../../model/conversation/ConversationAccessRole.js"
-import {GroupConversationType} from "../../model/conversation/GroupConversationType.js"
-import {ChannelAddPermissionType} from "../../model/conversation/ChannelAddPermissionType.js"
-import {ReceiptMode} from "../../model/conversation/ReceiptMode.js"
-import type {ConversationTeamInfo} from "../model/ConversationTeamInfo.js"
-import type {TeamId} from "../../model/TeamId.js"
+import type {QualifiedId} from '../../model/QualifiedId.js'
+import {CryptoProtocol} from '../../model/CryptoProtocol.js'
+import {ConversationAccess} from '../../model/conversation/ConversationAccess.js'
+import {ConversationAccessRole} from '../../model/conversation/ConversationAccessRole.js'
+import {GroupConversationType} from '../../model/conversation/GroupConversationType.js'
+import {ChannelAddPermissionType} from '../../model/conversation/ChannelAddPermissionType.js'
+import {ReceiptMode} from '../../model/conversation/ReceiptMode.js'
+import type {ConversationTeamInfo} from '../model/ConversationTeamInfo.js'
+import type {TeamId} from '../../model/TeamId.js'
 
-export const DEFAULT_MEMBER_ROLE = "wire_member"
+export const DEFAULT_MEMBER_ROLE = 'wire_member'
 
-export const DEFAULT_ACCESS_LIST: ConversationAccess[] = [
-  ConversationAccess.INVITE,
-  ConversationAccess.CODE
-]
+export const DEFAULT_ACCESS_LIST: ConversationAccess[] = [ConversationAccess.INVITE, ConversationAccess.CODE]
 
 export const DEFAULT_ACCESS_ROLE_LIST: ConversationAccessRole[] = [
   ConversationAccessRole.GUEST,

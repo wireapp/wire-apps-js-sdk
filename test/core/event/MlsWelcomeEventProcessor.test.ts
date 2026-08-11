@@ -31,8 +31,8 @@ vi.mock('../../../src/core/CoreCryptoService.js')
 vi.mock('../../../src/mappers/conversation/ConversationMapper.js')
 vi.mock('bazinga64', () => ({
   Decoder: {
-    fromBase64: vi.fn().mockReturnValue({asBytes: new Uint8Array([1, 2, 3])}),
-  },
+    fromBase64: vi.fn().mockReturnValue({asBytes: new Uint8Array([1, 2, 3])})
+  }
 }))
 
 const qualifiedConversation = {id: 'conv-123', domain: 'example.com'}
@@ -45,7 +45,7 @@ const makeEvent = (): MLSWelcomeDTO => ({
   time: new Date(),
   data: 'base64encodedwelcome',
   qualified_conversation: qualifiedConversation,
-  qualified_from: {id: 'user-from', domain: 'example.com'},
+  qualified_from: {id: 'user-from', domain: 'example.com'}
 })
 
 const makeConversationEntity = () => ({
@@ -55,7 +55,7 @@ const makeConversationEntity = () => ({
   team_id: 'team-1',
   mls_group_id: 'mls-group-id',
   creation_date: null,
-  type: 'group',
+  type: 'group'
 })
 
 const makeConversation = () => ({
@@ -63,12 +63,10 @@ const makeConversation = () => ({
   domain: qualifiedConversation.domain,
   name: 'Test Conversation',
   type: 'group',
-  teamId: 'team-1',
+  teamId: 'team-1'
 })
 
-const makeMembers = () => [
-  {userId: {id: 'user-1', domain: 'example.com'}, role: ConversationRole.MEMBER},
-]
+const makeMembers = () => [{userId: {id: 'user-1', domain: 'example.com'}, role: ConversationRole.MEMBER}]
 
 let coreCryptoService: CoreCryptoService
 let conversationService: ConversationService
@@ -83,7 +81,7 @@ beforeEach(() => {
   coreCryptoService = {
     processWelcomeMessage: vi.fn().mockResolvedValue(undefined),
     hasTooFewKeyPackageCount: vi.fn().mockResolvedValue(false),
-    mlsGenerateKeyPackages: vi.fn().mockResolvedValue(keyPackages),
+    mlsGenerateKeyPackages: vi.fn().mockResolvedValue(keyPackages)
   } as any
 
   conversationService = {
@@ -91,25 +89,31 @@ beforeEach(() => {
     fetchConversationById: vi.fn().mockResolvedValue({}),
     saveConversationWithMembers: vi.fn().mockResolvedValue({
       conversation: makeConversationEntity(),
-      members: makeMembers(),
-    }),
+      members: makeMembers()
+    })
   } as any
 
   mlsService = {
-    uploadMlsKeyPackages: vi.fn().mockResolvedValue(undefined),
+    uploadMlsKeyPackages: vi.fn().mockResolvedValue(undefined)
   } as any
 
   appProperties = {
-    getDeviceId: vi.fn().mockReturnValue('device-id'),
+    getDeviceId: vi.fn().mockReturnValue('device-id')
   } as any
 
   wireEventsHandler = {
-    onAppAddedToConversation: vi.fn().mockResolvedValue(undefined),
+    onAppAddedToConversation: vi.fn().mockResolvedValue(undefined)
   } as any
 
   vi.mocked(ConversationMapper.fromEntity).mockReturnValue(makeConversation() as any)
 
-  processor = new MlsWelcomeEventProcessor(coreCryptoService, conversationService, mlsService, appProperties, wireEventsHandler)
+  processor = new MlsWelcomeEventProcessor(
+    coreCryptoService,
+    conversationService,
+    mlsService,
+    appProperties,
+    wireEventsHandler
+  )
 })
 
 describe('MlsWelcomeEventProcessor', () => {
@@ -142,7 +146,10 @@ describe('MlsWelcomeEventProcessor', () => {
       await processor.process(makeEvent())
 
       expect(conversationService.saveConversationWithMembers).toHaveBeenCalledTimes(1)
-      expect(conversationService.saveConversationWithMembers).toHaveBeenCalledWith(qualifiedConversation, conversationResponse)
+      expect(conversationService.saveConversationWithMembers).toHaveBeenCalledWith(
+        qualifiedConversation,
+        conversationResponse
+      )
     })
 
     it('should notify wireEventsHandler with the mapped conversation and members', async () => {
@@ -151,7 +158,7 @@ describe('MlsWelcomeEventProcessor', () => {
       vi.mocked(ConversationMapper.fromEntity).mockReturnValue(conversation as any)
       vi.mocked(conversationService.saveConversationWithMembers).mockResolvedValue({
         conversation: makeConversationEntity() as any,
-        members,
+        members
       })
 
       await processor.process(makeEvent())

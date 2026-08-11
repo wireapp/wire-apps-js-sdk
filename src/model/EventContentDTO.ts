@@ -1,22 +1,22 @@
 /*
-* Wire
-* Copyright (C) 2025 Wire Swiss GmbH
-*
-* This program is free software: you can redistribute it and/or modify
-* it under the terms of the GNU General Public License as published by
-* the Free Software Foundation, either version 3 of the License, or
-* (at your option) any later version.
-* This program is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-* GNU General Public License for more details.
-* You should have received a copy of the GNU General Public License
-* along with this program. If not, see http://www.gnu.org/licenses/.
-*/
+ * Wire
+ * Copyright (C) 2025 Wire Swiss GmbH
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see http://www.gnu.org/licenses/.
+ */
 
-import type {QualifiedId} from "./QualifiedId.js"
-import type {ConversationResponse} from "../api/response/ConversationResponse.js";
-import type {ConversationRole} from "./conversation/ConversationRole.js";
+import type {QualifiedId} from './QualifiedId.js'
+import type {ConversationResponse} from '../api/response/ConversationResponse.js'
+import type {ConversationRole} from './conversation/ConversationRole.js'
 
 export interface MLSWelcomeDTO {
   type: string
@@ -67,7 +67,7 @@ interface MemberJoinEventData {
 }
 
 interface MemberData {
-  qualified_id: QualifiedId,
+  qualified_id: QualifiedId
   conversation_role: ConversationRole
 }
 
@@ -80,7 +80,7 @@ export interface MemberLeaveDTO {
 }
 
 interface MemberLeaveEventData {
-  qualified_user_ids: QualifiedId[],
+  qualified_user_ids: QualifiedId[]
   reason: string
 }
 
@@ -93,7 +93,7 @@ export interface MemberUpdateDTO {
 }
 
 interface MemberRoleChangeData {
-  qualified_target: QualifiedId,
+  qualified_target: QualifiedId
   conversation_role: ConversationRole
 }
 
@@ -106,12 +106,12 @@ export interface MlsResetDTO {
 }
 
 interface MlsConversationResetData {
-  group_id: string,
+  group_id: string
   new_group_id: string
 }
 
 export type EventContentDTO =
-  MLSWelcomeDTO
+  | MLSWelcomeDTO
   | NewMLSMessageDTO
   | NewConversationDTO
   | DeleteConversationDTO
@@ -120,4 +120,3 @@ export type EventContentDTO =
   | MemberLeaveDTO
   | MemberUpdateDTO
   | MlsResetDTO
-

@@ -15,10 +15,9 @@
  */
 
 export enum ConversationAccessRole {
-  TEAM_MEMBER = "team_member",
-  NON_TEAM_MEMBER = "non_team_member",
-  GUEST = "guest",
-  SERVICE = "service",
-  EXTERNAL = "partner"
+  TEAM_MEMBER = 'team_member',
+  NON_TEAM_MEMBER = 'non_team_member',
+  GUEST = 'guest',
+  SERVICE = 'service',
+  EXTERNAL = 'partner'
 }
-

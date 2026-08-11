@@ -31,7 +31,7 @@ describe('MlsApiClient', () => {
   beforeEach(() => {
     mockHttpClient = {
       getRequest: vi.fn(),
-      postRequest: vi.fn(),
+      postRequest: vi.fn()
     }
     mockAppProperties = {
       getDeviceId: vi.fn(() => 'device-id')
@@ -47,11 +47,9 @@ describe('MlsApiClient', () => {
 
       await client.uploadCommitBundle(commitBundle)
 
-      expect(mockHttpClient.postRequest).toHaveBeenCalledWith(
-        'mls/commit-bundles',
-        commitBundle,
-        {headerContentType: 'message/mls'}
-      )
+      expect(mockHttpClient.postRequest).toHaveBeenCalledWith('mls/commit-bundles', commitBundle, {
+        headerContentType: 'message/mls'
+      })
     })
   })
 
@@ -62,11 +60,9 @@ describe('MlsApiClient', () => {
 
       await client.sendMessage(message)
 
-      expect(mockHttpClient.postRequest).toHaveBeenCalledWith(
-        'mls/messages',
-        message,
-        {headerContentType: 'message/mls'}
-      )
+      expect(mockHttpClient.postRequest).toHaveBeenCalledWith('mls/messages', message, {
+        headerContentType: 'message/mls'
+      })
     })
   })
 
@@ -77,10 +73,9 @@ describe('MlsApiClient', () => {
 
       await client.uploadMlsKeyPackages(keyPackages)
 
-      expect(mockHttpClient.postRequest).toHaveBeenCalledWith(
-        'mls/key-packages/self/device-id',
-        {key_packages: ['encoded-key-package']}
-      )
+      expect(mockHttpClient.postRequest).toHaveBeenCalledWith('mls/key-packages/self/device-id', {
+        key_packages: ['encoded-key-package']
+      })
     })
   })
 
@@ -90,9 +85,7 @@ describe('MlsApiClient', () => {
 
       await client.getPublicKeys()
 
-      expect(mockHttpClient.getRequest).toHaveBeenCalledWith(
-        'mls/public-keys'
-      )
+      expect(mockHttpClient.getRequest).toHaveBeenCalledWith('mls/public-keys')
     })
   })
 

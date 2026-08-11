@@ -15,8 +15,8 @@
  */
 
 export interface AssetUploadResponse {
-  key: string,
-  domain: string,
-  expires?: string,
+  key: string
+  domain: string
+  expires?: string
   token?: string
 }

@@ -14,18 +14,17 @@
  * along with this program. If not, see http://www.gnu.org/licenses/.
  */
 
-import {HttpClient} from "../core/HttpClient.js";
-import type {UserResponse} from "./model/UserResponse.js";
-import {singleton} from "tsyringe";
-import type {UserClientResponse} from "./model/UserClientResponse.js";
-import {QualifiedId} from "../model/QualifiedId.js";
+import {HttpClient} from '../core/HttpClient.js'
+import type {UserResponse} from './model/UserResponse.js'
+import {singleton} from 'tsyringe'
+import type {UserClientResponse} from './model/UserClientResponse.js'
+import {QualifiedId} from '../model/QualifiedId.js'
 
 @singleton()
 export class UsersApiClient {
-  constructor(private httpClient: HttpClient) {
-  }
+  constructor(private httpClient: HttpClient) {}
 
-  private readonly basePath = "users";
+  private readonly basePath = 'users'
 
   async getUser(userId: string, userDomain: string): Promise<UserResponse> {
     const path = `${this.basePath}/${userDomain}/${userId}`
@@ -33,29 +32,26 @@ export class UsersApiClient {
   }
 
   async getClientsByUserIds(userIds: QualifiedId[]): Promise<Map<string, UserClientResponse[]>> {
-    const path = `${this.basePath}/list-clients`;
-    const response = await this.httpClient
-      .postRequest<{ qualified_user_map: Record<string, Record<string, UserClientResponse[]>> }>(
-        path,
-        {qualified_users: userIds}
-      );
+    const path = `${this.basePath}/list-clients`
+    const response = await this.httpClient.postRequest<{
+      qualified_user_map: Record<string, Record<string, UserClientResponse[]>>
+    }>(path, {qualified_users: userIds})
 
-    const result = new Map<string, UserClientResponse[]>();
+    const result = new Map<string, UserClientResponse[]>()
 
     for (const domain of Object.keys(response.qualified_user_map)) {
-      const usersInDomain = response.qualified_user_map[domain];
-      if (!usersInDomain) continue;
+      const usersInDomain = response.qualified_user_map[domain]
+      if (!usersInDomain) continue
 
       for (const userId of Object.keys(usersInDomain)) {
-        const clients = usersInDomain[userId];
-        if (!clients) continue;
+        const clients = usersInDomain[userId]
+        if (!clients) continue
 
-        const key = QualifiedId.toKey(new QualifiedId(userId, domain));
-        result.set(key, clients);
+        const key = QualifiedId.toKey(new QualifiedId(userId, domain))
+        result.set(key, clients)
       }
     }
 
-    return result;
+    return result
   }
-
 }

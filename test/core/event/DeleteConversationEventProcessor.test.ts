@@ -15,10 +15,10 @@
  */
 
 import {beforeEach, describe, expect, it, vi} from 'vitest'
-import type {DeleteConversationDTO} from "../../../src/model/EventContentDTO.js";
-import {ConversationService} from "../../../src/api/ConversationService.js";
-import {DeleteConversationEventProcessor} from "../../../src/core/event/DeleteConversationEventProcessor.js";
-import type { WireEventsHandler } from "../../../src/core/WireEventsHandler.js";
+import type {DeleteConversationDTO} from '../../../src/model/EventContentDTO.js'
+import {ConversationService} from '../../../src/api/ConversationService.js'
+import {DeleteConversationEventProcessor} from '../../../src/core/event/DeleteConversationEventProcessor.js'
+import type {WireEventsHandler} from '../../../src/core/WireEventsHandler.js'
 
 vi.mock('../../../src/api/ConversationService.js')
 vi.mock('../../../src/core/WireEventsHandler.js')
@@ -30,7 +30,7 @@ const makeEvent = (): DeleteConversationDTO => ({
   type: 'conversation.delete',
   time: new Date(),
   qualified_conversation: qualifiedConversation,
-  qualified_from: qualifiedFrom,
+  qualified_from: qualifiedFrom
 })
 
 let conversationService: ConversationService
@@ -41,11 +41,11 @@ beforeEach(() => {
   vi.clearAllMocks()
 
   conversationService = {
-    deleteAllConversationDataFromLocalStorages: vi.fn().mockResolvedValue(undefined),
+    deleteAllConversationDataFromLocalStorages: vi.fn().mockResolvedValue(undefined)
   } as any
 
   wireEventsHandler = {
-    onConversationDeleted: vi.fn().mockResolvedValue(undefined),
+    onConversationDeleted: vi.fn().mockResolvedValue(undefined)
   } as any
 
   processor = new DeleteConversationEventProcessor(conversationService, wireEventsHandler)
@@ -83,7 +83,9 @@ describe('DeleteConversationEventProcessor', () => {
     })
 
     it('should propagate errors from deleteAllConversationDataFromLocalStorages and not call onConversationDeleted', async () => {
-      vi.mocked(conversationService.deleteAllConversationDataFromLocalStorages).mockRejectedValue(new Error('Storage deletion failed'))
+      vi.mocked(conversationService.deleteAllConversationDataFromLocalStorages).mockRejectedValue(
+        new Error('Storage deletion failed')
+      )
 
       await expect(processor.process(makeEvent())).rejects.toThrow('Storage deletion failed')
       expect(wireEventsHandler.onConversationDeleted).not.toHaveBeenCalled()

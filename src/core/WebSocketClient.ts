@@ -1,31 +1,31 @@
 /*
-* Wire
-* Copyright (C) 2025 Wire Swiss GmbH
-*
-* This program is free software: you can redistribute it and/or modify
-* it under the terms of the GNU General Public License as published by
-* the Free Software Foundation, either version 3 of the License, or
-* (at your option) any later version.
-* This program is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-* GNU General Public License for more details.
-* You should have received a copy of the GNU General Public License
-* along with this program. If not, see http://www.gnu.org/licenses/.
-*/
+ * Wire
+ * Copyright (C) 2025 Wire Swiss GmbH
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see http://www.gnu.org/licenses/.
+ */
 
-import {HttpClient} from "./HttpClient.js";
-import {WIRE_API_HOST} from "../utils/DependencyInjectionTokens.js";
-import {WebSocket as NodeWebSocket} from "ws";
-import {EventRouter} from "./event/EventRouter.js";
-import {inject, singleton} from "tsyringe";
-import {LoggerFactory} from "../utils/logger/LoggerFactory.js";
-import type {EventResponse} from "../api/response/EventResponse.js";
-import {NotificationsService} from "../service/NotificationsService.js";
-import {AppProperties} from "../service/AppProperties.js";
-import type {BackendConnectionListener} from "./BackendConnectionListener.js";
+import {HttpClient} from './HttpClient.js'
+import {WIRE_API_HOST} from '../utils/DependencyInjectionTokens.js'
+import {WebSocket as NodeWebSocket} from 'ws'
+import {EventRouter} from './event/EventRouter.js'
+import {inject, singleton} from 'tsyringe'
+import {LoggerFactory} from '../utils/logger/LoggerFactory.js'
+import type {EventResponse} from '../api/response/EventResponse.js'
+import {NotificationsService} from '../service/NotificationsService.js'
+import {AppProperties} from '../service/AppProperties.js'
+import type {BackendConnectionListener} from './BackendConnectionListener.js'
 
-const getWebSocketImpl = (): typeof WebSocket => (globalThis.WebSocket ?? NodeWebSocket) as typeof WebSocket;
+const getWebSocketImpl = (): typeof WebSocket => (globalThis.WebSocket ?? NodeWebSocket) as typeof WebSocket
 
 /**
  * Handles the WebSocket connection to the backend.
@@ -82,17 +82,21 @@ export class WebSocketClient {
         if (this._stopped) break
 
         if (this._reconnectAttempts >= WebSocketClient.MAX_RECONNECT_ATTEMPTS) {
-          this.logger.error(`WebSocket stopped after ${WebSocketClient.MAX_RECONNECT_ATTEMPTS} failed reconnect attempts`)
+          this.logger.error(
+            `WebSocket stopped after ${WebSocketClient.MAX_RECONNECT_ATTEMPTS} failed reconnect attempts`
+          )
           break
         }
 
         const delay = Math.min(
-          WebSocketClient.BASE_RECONNECT_DELAY_MS * (2 ** this._reconnectAttempts),
+          WebSocketClient.BASE_RECONNECT_DELAY_MS * 2 ** this._reconnectAttempts,
           WebSocketClient.MAX_RECONNECT_DELAY_MS
         )
         this._reconnectAttempts++
-        this.logger.info(`Reconnecting in ${delay}ms (attempt ${this._reconnectAttempts}/${WebSocketClient.MAX_RECONNECT_ATTEMPTS})`)
-        await new Promise<void>(r => setTimeout(r, delay))
+        this.logger.info(
+          `Reconnecting in ${delay}ms (attempt ${this._reconnectAttempts}/${WebSocketClient.MAX_RECONNECT_ATTEMPTS})`
+        )
+        await new Promise<void>((r) => setTimeout(r, delay))
       }
     } finally {
       this._connecting = false
@@ -102,16 +106,14 @@ export class WebSocketClient {
   }
 
   private buildUrl(): string {
-    const webSocketBaseUrl = this.wireApiHost
-      .replace(/^https/, "wss")
-      .replace(/-https/, "-ssl")
+    const webSocketBaseUrl = this.wireApiHost.replace(/^https/, 'wss').replace(/-https/, '-ssl')
 
     const url = new URL(`${webSocketBaseUrl}/await`)
     const storedDeviceId = this.appProperties.getDeviceId()
     if (storedDeviceId) {
-      url.searchParams.append("client", storedDeviceId)
+      url.searchParams.append('client', storedDeviceId)
     }
-    url.searchParams.append("access_token", this.httpClient.getCachedAccessToken())
+    url.searchParams.append('access_token', this.httpClient.getCachedAccessToken())
 
     return url.toString()
   }
@@ -143,11 +145,12 @@ export class WebSocketClient {
       let isSyncing = true
 
       const processMessage = async (event: MessageEvent) => {
-        if (event.data instanceof Blob ||
+        if (
+          event.data instanceof Blob ||
           event.data instanceof ArrayBuffer ||
           event.data instanceof Uint8Array ||
-          Buffer.isBuffer(event.data)) {
-
+          Buffer.isBuffer(event.data)
+        ) {
           let buffer: Buffer
           if (event.data instanceof Blob) {
             const arrayBuffer = await event.data.arrayBuffer()
@@ -162,21 +165,21 @@ export class WebSocketClient {
 
           await this.handleEvent(buffer)
         } else {
-          this.logger.error("Unsupported frame type:", typeof event.data)
+          this.logger.error('Unsupported frame type:', typeof event.data)
         }
       }
 
       webSocket.onopen = async () => {
         this._reconnectAttempts = 0
-        this.logger.info("Websocket Connected")
+        this.logger.info('Websocket Connected')
 
         hadConnected = true
         this.notifyListenerOnConnected()
 
         try {
-          await this.syncMissedNotifications();
+          await this.syncMissedNotifications()
         } catch (error) {
-          this.logger.error("Failed to sync missed notifications:", error)
+          this.logger.error('Failed to sync missed notifications:', error)
         }
 
         isSyncing = false
@@ -184,7 +187,7 @@ export class WebSocketClient {
         for (const bufferedMsg of messageBuffer) {
           await processMessage(bufferedMsg)
         }
-        this.logger.info("Sync of missed notifications completed")
+        this.logger.info('Sync of missed notifications completed')
         messageBuffer.length = 0
       }
 
@@ -197,13 +200,13 @@ export class WebSocketClient {
       }
 
       webSocket.onerror = (error) => {
-        this.logger.error("Websocket Error:", error)
+        this.logger.error('Websocket Error:', error)
         handleDisconnect()
         settle()
       }
 
       webSocket.onclose = () => {
-        this.logger.warn("WebSocket Closed")
+        this.logger.warn('WebSocket Closed')
         handleDisconnect()
         settle()
       }
@@ -214,7 +217,7 @@ export class WebSocketClient {
     try {
       this.backendConnectionListener?.onConnected()
     } catch (error) {
-      this.logger.error("BackendConnectionListener.onConnected threw an error:", error)
+      this.logger.error('BackendConnectionListener.onConnected threw an error:', error)
     }
   }
 
@@ -222,13 +225,13 @@ export class WebSocketClient {
     try {
       this.backendConnectionListener?.onDisconnected()
     } catch (error) {
-      this.logger.error("BackendConnectionListener.onDisconnected threw an error:", error)
+      this.logger.error('BackendConnectionListener.onDisconnected threw an error:', error)
     }
   }
 
   private async handleEvent(data: Buffer) {
-    const jsonString = data.toString('utf-8');
-    const event = JSON.parse(jsonString) as EventResponse;
+    const jsonString = data.toString('utf-8')
+    const event = JSON.parse(jsonString) as EventResponse
 
     try {
       if (!event.transient && !this.processedEventIds.has(event.id)) {

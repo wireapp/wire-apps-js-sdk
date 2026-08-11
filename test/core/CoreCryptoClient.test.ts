@@ -1,18 +1,18 @@
 /*
-* Wire
-* Copyright (C) 2026 Wire Swiss GmbH
-*
-* This program is free software: you can redistribute it and/or modify
-* it under the terms of the GNU General Public License as published by
-* the Free Software Foundation, either version 3 of the License, or
-* (at your option) any later version.
-* This program is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-* GNU General Public License for more details.
-* You should have received a copy of the GNU General Public License
-* along with this program. If not, see http://www.gnu.org/licenses/.
-*/
+ * Wire
+ * Copyright (C) 2026 Wire Swiss GmbH
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see http://www.gnu.org/licenses/.
+ */
 
 import {beforeEach, describe, expect, it, vi} from 'vitest'
 import {join} from 'node:path'
@@ -35,13 +35,15 @@ vi.mock('@wireapp/core-crypto/native', () => {
   }
 
   class ClientId {
-    constructor(public uuid: any, public deviceId: any, public domain: any) {
-    }
+    constructor(
+      public uuid: any,
+      public deviceId: any,
+      public domain: any
+    ) {}
   }
 
   class ConversationId {
-    constructor(public bytes: Uint8Array) {
-    }
+    constructor(public bytes: Uint8Array) {}
   }
 
   class DeviceId {
@@ -55,23 +57,19 @@ vi.mock('@wireapp/core-crypto/native', () => {
   }
 
   class Uuid {
-    constructor(public value: string) {
-    }
+    constructor(public value: string) {}
   }
 
   class Welcome {
-    constructor(public bytes: Uint8Array) {
-    }
+    constructor(public bytes: Uint8Array) {}
   }
 
   class KeyPackage {
-    constructor(public bytes: Uint8Array) {
-    }
+    constructor(public bytes: Uint8Array) {}
   }
 
   class DatabaseKey {
-    constructor(public key: Uint8Array) {
-    }
+    constructor(public key: Uint8Array) {}
   }
 
   class Database {
@@ -98,14 +96,12 @@ vi.mock('@wireapp/core-crypto/native', () => {
     ConversationId,
     CoreCrypto,
     Credential,
-    CredentialRef: class {
-    },
+    CredentialRef: class {},
     Database,
     DatabaseKey,
     DeviceId,
     ExternalSender,
-    GroupInfo: class {
-    },
+    GroupInfo: class {},
     KeyPackage,
     proteusLastResortPrekeyId,
     Uuid,
@@ -137,13 +133,7 @@ vi.mock('../../src/utils/StoragePaths.js', () => ({
 }))
 
 import {CoreCryptoClient} from '../../src/core/CoreCryptoClient.js'
-import {
-  CipherSuite,
-  CoreCrypto,
-  Credential,
-  Database,
-  ExternalSender
-} from '@wireapp/core-crypto/native'
+import {CipherSuite, CoreCrypto, Credential, Database, ExternalSender} from '@wireapp/core-crypto/native'
 import {Decoder} from 'bazinga64'
 
 describe('CoreCryptoClient', () => {
@@ -251,9 +241,7 @@ describe('CoreCryptoClient', () => {
     })
 
     it('should fall back to the default ciphersuite for an unknown code', () => {
-      expect(CoreCryptoClient.getMlsCiphersuiteName(999)).toBe(
-        CipherSuite.Mls128Dhkemx25519Aes128gcmSha256Ed25519
-      )
+      expect(CoreCryptoClient.getMlsCiphersuiteName(999)).toBe(CipherSuite.Mls128Dhkemx25519Aes128gcmSha256Ed25519)
     })
   })
 
@@ -550,9 +538,7 @@ describe('CoreCryptoClient', () => {
       await client.processWelcomeMessage(welcomeBytes)
 
       // then
-      expect(mockContext.processWelcomeMessage).toHaveBeenCalledWith(
-        expect.objectContaining({bytes: welcomeBytes})
-      )
+      expect(mockContext.processWelcomeMessage).toHaveBeenCalledWith(expect.objectContaining({bytes: welcomeBytes}))
     })
   })
 
@@ -690,10 +676,7 @@ describe('CoreCryptoClient', () => {
       // then
       expect(mockContext.addClientsToConversation).toHaveBeenCalledWith(
         expect.objectContaining({bytes: new Uint8Array([9, 9, 9])}),
-        [
-          expect.objectContaining({bytes: keyPackages[0]}),
-          expect.objectContaining({bytes: keyPackages[1]})
-        ]
+        [expect.objectContaining({bytes: keyPackages[0]}), expect.objectContaining({bytes: keyPackages[1]})]
       )
     })
   })

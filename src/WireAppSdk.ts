@@ -1,23 +1,23 @@
 /*
-* Wire
-* Copyright (C) 2025 Wire Swiss GmbH
-*
-* This program is free software: you can redistribute it and/or modify
-* it under the terms of the GNU General Public License as published by
-* the Free Software Foundation, either version 3 of the License, or
-* (at your option) any later version.
-* This program is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-* GNU General Public License for more details.
-* You should have received a copy of the GNU General Public License
-* along with this program. If not, see http://www.gnu.org/licenses/.
-*/
+ * Wire
+ * Copyright (C) 2025 Wire Swiss GmbH
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see http://www.gnu.org/licenses/.
+ */
 
-import "reflect-metadata";
+import 'reflect-metadata'
 import './core/event/processors.index.js'
-import {mkdirSync} from "node:fs";
-import {CoreCryptoService} from "./core/CoreCryptoService.js";
+import {mkdirSync} from 'node:fs'
+import {CoreCryptoService} from './core/CoreCryptoService.js'
 import {
   WIRE_API_HOST,
   WIRE_CRYPTOGRAPHY_STORAGE_KEY,
@@ -25,19 +25,19 @@ import {
   WIRE_USER_DOMAIN,
   WIRE_USER_ID,
   WIRE_SDK_API_TOKEN
-} from "./utils/DependencyInjectionTokens.js";
-import {WebSocketClient} from "./core/WebSocketClient.js";
-import {WireEventsHandler} from "./core/WireEventsHandler.js";
-import {DatabaseService} from "./db/DatabaseService.js";
-import {container} from "tsyringe";
-import type {Logger} from "./utils/logger/Logger.js";
-import {LoggerFactory} from "./utils/logger/LoggerFactory.js";
-import {ConsoleLogger} from "./utils/logger/ConsoleLogger.js";
-import {ConversationService} from "./api/ConversationService.js";
-import {AppProperties} from "./service/AppProperties.js";
-import {CRYPTOGRAPHY_STORAGE_PATH, STORAGE_PATH} from "./utils/StoragePaths.js";
-import type {BackendConnectionListener} from "./core/BackendConnectionListener.js";
-import {InvalidParameterError, UnknownError} from "./exception/WireException.js";
+} from './utils/DependencyInjectionTokens.js'
+import {WebSocketClient} from './core/WebSocketClient.js'
+import {WireEventsHandler} from './core/WireEventsHandler.js'
+import {DatabaseService} from './db/DatabaseService.js'
+import {container} from 'tsyringe'
+import type {Logger} from './utils/logger/Logger.js'
+import {LoggerFactory} from './utils/logger/LoggerFactory.js'
+import {ConsoleLogger} from './utils/logger/ConsoleLogger.js'
+import {ConversationService} from './api/ConversationService.js'
+import {AppProperties} from './service/AppProperties.js'
+import {CRYPTOGRAPHY_STORAGE_PATH, STORAGE_PATH} from './utils/StoragePaths.js'
+import type {BackendConnectionListener} from './core/BackendConnectionListener.js'
+import {InvalidParameterError, UnknownError} from './exception/WireException.js'
 
 export class WireAppSdk {
   private readonly CRYPTOGRAPHY_STORAGE_KEY_BYTES = 32
@@ -69,9 +69,8 @@ export class WireAppSdk {
     if (cryptographyStorageKey.length !== this.CRYPTOGRAPHY_STORAGE_KEY_BYTES) {
       throw new InvalidParameterError(
         `cryptographyStorageKey must be exactly ${this.CRYPTOGRAPHY_STORAGE_KEY_BYTES} bytes long`
-      );
+      )
     }
-
 
     this.userId = userId
     this.apiToken = apiToken
@@ -90,7 +89,7 @@ export class WireAppSdk {
     apiHost: string,
     cryptographyStorageKey: Uint8Array,
     wireEventsHandler: WireEventsHandler,
-    logger?: Logger,
+    logger?: Logger
   ): Promise<WireAppSdk> {
     const wireAppSdk = new WireAppSdk(
       userId,
@@ -146,13 +145,13 @@ export class WireAppSdk {
 
   async startListening() {
     if (this.isWebSocketRunning) {
-      this.logger.info("Wire Apps SDK is already running.")
+      this.logger.info('Wire Apps SDK is already running.')
       return
     }
     this.isWebSocketRunning = true
 
     if (!this.webSocketClient || !this.conversationService) {
-      throw new UnknownError("Wire Apps SDK dependencies are not initialized.")
+      throw new UnknownError('Wire Apps SDK dependencies are not initialized.')
     }
 
     this.webSocketClient.connect().finally(() => {
@@ -164,24 +163,24 @@ export class WireAppSdk {
 
   stopListening() {
     if (!this.isWebSocketRunning) {
-      this.logger.info("Wire Apps SDK is not running.")
+      this.logger.info('Wire Apps SDK is not running.')
     }
-    this.logger.info("Wire Apps SDK shutting down.")
+    this.logger.info('Wire Apps SDK shutting down.')
     this.isWebSocketRunning = false
 
     this.webSocketClient?.close()
   }
 
   async close() {
-    this.logger.debug("Closing Websocket connections.")
+    this.logger.debug('Closing Websocket connections.')
     this.stopListening()
 
-    this.logger.debug("Closing Database connections.")
+    this.logger.debug('Closing Database connections.')
     try {
       const databaseService = container.resolve(DatabaseService)
       databaseService.close()
     } catch (exception) {
-      this.logger.debug("Database service was not initialized or could not be closed.", exception)
+      this.logger.debug('Database service was not initialized or could not be closed.', exception)
     }
 
     // Clear container to prevent memory leaks

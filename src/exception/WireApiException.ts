@@ -14,20 +14,20 @@
  * along with this program. If not, see http://www.gnu.org/licenses/.
  */
 
-import type {WireApiError} from "./WireApiError.js";
+import type {WireApiError} from './WireApiError.js'
 
 export class WireApiException extends Error {
-  readonly code: number;
-  readonly label: string;
+  readonly code: number
+  readonly label: string
 
-  constructor({ code, label, message }: WireApiError) {
-    super(message);
-    this.name = "WireApiException";
-    this.code = code;
-    this.label = label;
+  constructor({code, label, message}: WireApiError) {
+    super(message)
+    this.name = 'WireApiException'
+    this.code = code
+    this.label = label
   }
 
   isCredentialsInvalid(): boolean {
-    return this.label === "invalid-credentials";
+    return this.label === 'invalid-credentials'
   }
 }

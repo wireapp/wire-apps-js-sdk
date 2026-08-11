@@ -48,9 +48,7 @@ describe('SearchApiClient (searchUsers)', () => {
 
     await client.searchUsers('bob', 'wire.com', 50)
 
-    expect(mockHttpClient.getRequest).toHaveBeenCalledWith(
-      'search/contacts?q=bob&domain=wire.com&type=regular&size=50'
-    )
+    expect(mockHttpClient.getRequest).toHaveBeenCalledWith('search/contacts?q=bob&domain=wire.com&type=regular&size=50')
   })
 
   it('should return the response from httpClient.getRequest', async () => {
@@ -97,27 +95,19 @@ describe('SearchApiClient (searchUsers)', () => {
   })
 
   it('should throw when query is blank', async () => {
-    await expect(client.searchUsers('   ', 'example.com')).rejects.toThrow(
-      'Search query must not be blank.'
-    )
+    await expect(client.searchUsers('   ', 'example.com')).rejects.toThrow('Search query must not be blank.')
   })
 
   it('should throw when query is empty string', async () => {
-    await expect(client.searchUsers('', 'example.com')).rejects.toThrow(
-      'Search query must not be blank.'
-    )
+    await expect(client.searchUsers('', 'example.com')).rejects.toThrow('Search query must not be blank.')
   })
 
   it('should throw when domain is blank', async () => {
-    await expect(client.searchUsers('alice', '   ')).rejects.toThrow(
-      'Domain must not be blank.'
-    )
+    await expect(client.searchUsers('alice', '   ')).rejects.toThrow('Domain must not be blank.')
   })
 
   it('should throw when domain is empty string', async () => {
-    await expect(client.searchUsers('alice', '')).rejects.toThrow(
-      'Domain must not be blank.'
-    )
+    await expect(client.searchUsers('alice', '')).rejects.toThrow('Domain must not be blank.')
   })
 
   it('should propagate errors from httpClient.getRequest', async () => {

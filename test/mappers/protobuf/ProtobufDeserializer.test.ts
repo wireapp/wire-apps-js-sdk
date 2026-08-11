@@ -1,25 +1,25 @@
 /*
-* Wire
-* Copyright (C) 2026 Wire Swiss GmbH
-*
-* This program is free software: you can redistribute it and/or modify
-* it under the terms of the GNU General Public License as published by
-* the Free Software Foundation, either version 3 of the License, or
-* (at your option) any later version.
-* This program is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-* GNU General Public License for more details.
-* You should have received a copy of the GNU General Public License
-* along with this program. If not, see http://www.gnu.org/licenses/.
-*/
+ * Wire
+ * Copyright (C) 2026 Wire Swiss GmbH
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see http://www.gnu.org/licenses/.
+ */
 
-import { describe, expect, it } from 'vitest'
+import {describe, expect, it} from 'vitest'
 import protobufMessage from '../../../src/generated/messages.js'
-import { ProtobufDeserializer } from '../../../src/mappers/protobuf/ProtobufDeserializer.js'
-import { QualifiedId } from '../../../src/model/QualifiedId.js'
-import { CompositeButton, TextMessage } from "../../../src/index.js"
-import {WireMessageType} from "../../../src/model/WireMessage.js";
+import {ProtobufDeserializer} from '../../../src/mappers/protobuf/ProtobufDeserializer.js'
+import {QualifiedId} from '../../../src/model/QualifiedId.js'
+import {CompositeButton, TextMessage} from '../../../src/index.js'
+import {WireMessageType} from '../../../src/model/WireMessage.js'
 
 describe('Protobuf deserialization', () => {
   const conversationId = new QualifiedId('conversation-id', 'wire.com')
@@ -27,32 +27,41 @@ describe('Protobuf deserialization', () => {
   const timestamp = new Date('2026-06-18T12:00:00.000Z')
 
   const toWireMessage = (genericMessage: protobufMessage.GenericMessage.$Properties) =>
-    ProtobufDeserializer.toWireMessage(protobufMessage.GenericMessage.encode(genericMessage).finish(), conversationId, senderId, timestamp)
+    ProtobufDeserializer.toWireMessage(
+      protobufMessage.GenericMessage.encode(genericMessage).finish(),
+      conversationId,
+      senderId,
+      timestamp
+    )
 
   it('deserializes text message mentions', () => {
     const genericMessage = protobufMessage.GenericMessage.create({
       messageId: 'message-id',
       text: {
         content: 'Hello @Wire',
-        mentions: [{
-          qualifiedUserId: {
-            id: 'user-id',
-            domain: 'wire.com'
-          },
-          start: 6,
-          length: 5
-        }]
+        mentions: [
+          {
+            qualifiedUserId: {
+              id: 'user-id',
+              domain: 'wire.com'
+            },
+            start: 6,
+            length: 5
+          }
+        ]
       }
     })
 
     const result = toWireMessage(genericMessage)
 
     expect(result.type).toBe(WireMessageType.TEXT)
-    expect(result.type === WireMessageType.TEXT ? result.mentions : []).toStrictEqual([{
-      userId: new QualifiedId('user-id', 'wire.com'),
-      offset: 6,
-      length: 5
-    }])
+    expect(result.type === WireMessageType.TEXT ? result.mentions : []).toStrictEqual([
+      {
+        userId: new QualifiedId('user-id', 'wire.com'),
+        offset: 6,
+        length: 5
+      }
+    ])
   })
 
   it('deserializes missing text message mentions as an empty list', () => {
@@ -105,14 +114,16 @@ describe('Protobuf deserialization', () => {
         expireAfterMillis: 5000,
         text: {
           content: 'Temporary hello',
-          mentions: [{
-            qualifiedUserId: {
-              id: 'user-id',
-              domain: 'wire.com'
-            },
-            start: 10,
-            length: 5
-          }]
+          mentions: [
+            {
+              qualifiedUserId: {
+                id: 'user-id',
+                domain: 'wire.com'
+              },
+              start: 10,
+              length: 5
+            }
+          ]
         }
       }
     })
@@ -125,11 +136,13 @@ describe('Protobuf deserialization', () => {
     expect(result.type === WireMessageType.TEXT ? result.expiresAfterMillis : null).toBe(5000)
     expect(result.type === WireMessageType.TEXT ? result.sender : null).toStrictEqual(senderId)
     expect(result.type === WireMessageType.TEXT ? result.timestamp : null).toStrictEqual(timestamp)
-    expect(result.type === WireMessageType.TEXT ? result.mentions : []).toStrictEqual([{
-      userId: new QualifiedId('user-id', 'wire.com'),
-      offset: 10,
-      length: 5
-    }])
+    expect(result.type === WireMessageType.TEXT ? result.mentions : []).toStrictEqual([
+      {
+        userId: new QualifiedId('user-id', 'wire.com'),
+        offset: 10,
+        length: 5
+      }
+    ])
   })
 
   it('deserializes ephemeral asset messages as expiring asset messages', () => {
@@ -360,7 +373,7 @@ describe('Protobuf deserialization', () => {
   })
 
   it('deserializes text edited message', () => {
-    const wireBlogUrl = "https://wire.com/blog"
+    const wireBlogUrl = 'https://wire.com/blog'
     const mention = {
       qualifiedUserId: {
         id: 'user-id',
@@ -371,14 +384,16 @@ describe('Protobuf deserialization', () => {
     }
     const mentions = [mention]
 
-    const linkPreview = [{
-      url: wireBlogUrl,
-      urlOffset: 16,
-      permanentUrl: wireBlogUrl,
-      title: 'Wire',
-      summary: 'Secure collaboration',
-      image: null
-    }]
+    const linkPreview = [
+      {
+        url: wireBlogUrl,
+        urlOffset: 16,
+        permanentUrl: wireBlogUrl,
+        title: 'Wire',
+        summary: 'Secure collaboration',
+        image: null
+      }
+    ]
 
     const genericMessage = protobufMessage.GenericMessage.create({
       messageId: 'edited-message-id',

@@ -20,7 +20,7 @@ import {
   createChannelConversationRequest,
   DEFAULT_MEMBER_ROLE,
   DEFAULT_ACCESS_LIST,
-  DEFAULT_ACCESS_ROLE_LIST,
+  DEFAULT_ACCESS_ROLE_LIST
 } from '../../src/api/request/CreateConversationRequest.js'
 import {TeamId} from '../../src/model/TeamId.js'
 import {CryptoProtocol} from '../../src/model/CryptoProtocol.js'
@@ -36,10 +36,7 @@ const CONVERSATION_NAME = 'My Conversation'
 describe('CreateConversationRequest', () => {
   describe('DEFAULT_ACCESS_LIST', () => {
     it('should contain INVITE and CODE access types', () => {
-      expect(DEFAULT_ACCESS_LIST).toEqual([
-        ConversationAccess.INVITE,
-        ConversationAccess.CODE,
-      ])
+      expect(DEFAULT_ACCESS_LIST).toEqual([ConversationAccess.INVITE, ConversationAccess.CODE])
     })
   })
 
@@ -49,7 +46,7 @@ describe('CreateConversationRequest', () => {
         ConversationAccessRole.GUEST,
         ConversationAccessRole.NON_TEAM_MEMBER,
         ConversationAccessRole.TEAM_MEMBER,
-        ConversationAccessRole.SERVICE,
+        ConversationAccessRole.SERVICE
       ])
     })
   })
@@ -229,4 +226,3 @@ describe('CreateConversationRequest', () => {
     })
   })
 })
-

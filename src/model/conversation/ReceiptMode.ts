@@ -18,4 +18,3 @@ export enum ReceiptMode {
   DISABLED = 0,
   ENABLED = 1
 }
-

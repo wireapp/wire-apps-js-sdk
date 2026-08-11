@@ -1,18 +1,18 @@
 /*
-* Wire
-* Copyright (C) 2025 Wire Swiss GmbH
-*
-* This program is free software: you can redistribute it and/or modify
-* it under the terms of the GNU General Public License as published by
-* the Free Software Foundation, either version 3 of the License, or
-* (at your option) any later version.
-* This program is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-* GNU General Public License for more details.
-* You should have received a copy of the GNU General Public License
-* along with this program. If not, see http://www.gnu.org/licenses/.
-*/
+ * Wire
+ * Copyright (C) 2025 Wire Swiss GmbH
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see http://www.gnu.org/licenses/.
+ */
 
 import {beforeEach, describe, expect, it, vi} from 'vitest'
 import {ConversationService} from '../../src/api/ConversationService.js'
@@ -27,13 +27,13 @@ import {container} from 'tsyringe'
 import {AppProperties} from '../../src/service/AppProperties.js'
 import {CoreCryptoService} from '../../src/core/CoreCryptoService.js'
 import {CryptoProtocol} from '../../src/model/CryptoProtocol.js'
-import {ConversationRole} from "../../src/model/conversation/ConversationRole.js";
-import {TeamsApiClient} from "../../src/api/TeamsApiClient.js";
-import {TeamId} from "../../src/model/TeamId.js";
-import {UserService} from "../../src/api/UserService.js";
-import {CryptoClientId} from "../../src/model/CryptoClientId.js";
-import type {OneToOneConversationsApiClient} from "../../src/api/OneToOneConversationsApiClient.js";
-import type {OneToOneConversationResponse} from "../../src/api/response/OneToOneConversationResponse.js";
+import {ConversationRole} from '../../src/model/conversation/ConversationRole.js'
+import {TeamsApiClient} from '../../src/api/TeamsApiClient.js'
+import {TeamId} from '../../src/model/TeamId.js'
+import {UserService} from '../../src/api/UserService.js'
+import {CryptoClientId} from '../../src/model/CryptoClientId.js'
+import type {OneToOneConversationsApiClient} from '../../src/api/OneToOneConversationsApiClient.js'
+import type {OneToOneConversationResponse} from '../../src/api/response/OneToOneConversationResponse.js'
 
 describe('ConversationService', () => {
   let conversationService: ConversationService
@@ -58,7 +58,7 @@ describe('ConversationService', () => {
       getConversationGroupInfo: vi.fn(),
       getAllConversationIds: vi.fn(),
       getConversationsById: vi.fn(),
-      leaveConversation: vi.fn(),
+      leaveConversation: vi.fn()
     } as any
 
     mockOneToOneConversationsApiClient = {
@@ -78,7 +78,7 @@ describe('ConversationService', () => {
       getMembersByConversationId: vi.fn(),
       deleteAllMembersInConversation: vi.fn(),
       deleteMany: vi.fn(),
-      exists: vi.fn(),
+      exists: vi.fn()
     } as any
 
     mockAppProperties = {
@@ -113,8 +113,7 @@ describe('ConversationService', () => {
       mockUserService
     )
 
-    vi.spyOn(console, 'info').mockImplementation(() => {
-    })
+    vi.spyOn(console, 'info').mockImplementation(() => {})
   })
 
   describe('saveConversationWithMembers', () => {
@@ -141,10 +140,7 @@ describe('ConversationService', () => {
         }
       } as ConversationResponse
 
-      const result = await conversationService.saveConversationWithMembers(
-        CONVERSATION_ID,
-        conversationResponse
-      )
+      const result = await conversationService.saveConversationWithMembers(CONVERSATION_ID, conversationResponse)
 
       expect(mockConversationRepository.save).toHaveBeenCalledWith({
         id: CONVERSATION_ID.id,
@@ -202,10 +198,7 @@ describe('ConversationService', () => {
         }
       } as ConversationResponse
 
-      const result = await conversationService.saveConversationWithMembers(
-        CONVERSATION_ID,
-        conversationResponse
-      )
+      const result = await conversationService.saveConversationWithMembers(CONVERSATION_ID, conversationResponse)
 
       expect(result.conversation.name).toBe('Test Conversation')
       expect(result.members).toHaveLength(2)
@@ -229,10 +222,7 @@ describe('ConversationService', () => {
         }
       } as ConversationResponse
 
-      const result = await conversationService.saveConversationWithMembers(
-        CONVERSATION_ID,
-        conversationResponse
-      )
+      const result = await conversationService.saveConversationWithMembers(CONVERSATION_ID, conversationResponse)
 
       expect(result.conversation.name).toBe('')
     })
@@ -254,7 +244,10 @@ describe('ConversationService', () => {
 
       const result = await conversationService.getConversationById(CONVERSATION_ID)
 
-      expect(mockConversationRepository.findByIdAndDomain).toHaveBeenCalledWith(CONVERSATION_ID.id, CONVERSATION_ID.domain)
+      expect(mockConversationRepository.findByIdAndDomain).toHaveBeenCalledWith(
+        CONVERSATION_ID.id,
+        CONVERSATION_ID.domain
+      )
       expect(mockConversationsApiClient.getConversation).not.toHaveBeenCalled()
       expect(result).toEqual(mockConversationEntity)
     })
@@ -286,7 +279,10 @@ describe('ConversationService', () => {
 
       const result = await conversationService.getConversationById(CONVERSATION_ID)
 
-      expect(mockConversationRepository.findByIdAndDomain).toHaveBeenCalledWith(CONVERSATION_ID.id, CONVERSATION_ID.domain)
+      expect(mockConversationRepository.findByIdAndDomain).toHaveBeenCalledWith(
+        CONVERSATION_ID.id,
+        CONVERSATION_ID.domain
+      )
       expect(mockConversationsApiClient.getConversation).toHaveBeenCalledWith(CONVERSATION_ID)
       expect(mockConversationRepository.save).toHaveBeenCalled()
       expect(mockConversationMemberRepository.saveMany).toHaveBeenCalled()
@@ -359,7 +355,10 @@ describe('ConversationService', () => {
 
       const result = conversationService.getMembersByConversationId(CONVERSATION_ID)
 
-      expect(mockConversationMemberRepository.getMembersByConversationId).toHaveBeenCalledWith(CONVERSATION_ID.id, CONVERSATION_ID.domain)
+      expect(mockConversationMemberRepository.getMembersByConversationId).toHaveBeenCalledWith(
+        CONVERSATION_ID.id,
+        CONVERSATION_ID.domain
+      )
       expect(result).toEqual([
         {
           userId: {id: 'a', domain: 'wire.com'},
@@ -387,10 +386,16 @@ describe('ConversationService', () => {
 
       await conversationService.deleteAllConversationDataFromLocalStorages(CONVERSATION_ID)
 
-      expect(mockConversationRepository.findByIdAndDomain).toHaveBeenCalledWith(CONVERSATION_ID.id, CONVERSATION_ID.domain)
+      expect(mockConversationRepository.findByIdAndDomain).toHaveBeenCalledWith(
+        CONVERSATION_ID.id,
+        CONVERSATION_ID.domain
+      )
       expect(mockCoreCryptoService.conversationExists).toHaveBeenCalledWith(MLS_GROUP_ID)
       expect(mockCoreCryptoService.wipeConversation).toHaveBeenCalledWith(MLS_GROUP_ID)
-      expect(mockConversationMemberRepository.deleteAllMembersInConversation).toHaveBeenCalledWith(CONVERSATION_ID.id, CONVERSATION_ID.domain)
+      expect(mockConversationMemberRepository.deleteAllMembersInConversation).toHaveBeenCalledWith(
+        CONVERSATION_ID.id,
+        CONVERSATION_ID.domain
+      )
       expect(mockConversationRepository.delete).toHaveBeenCalledWith(CONVERSATION_ID.id, CONVERSATION_ID.domain)
     })
 
@@ -412,7 +417,10 @@ describe('ConversationService', () => {
 
       expect(mockCoreCryptoService.conversationExists).toHaveBeenCalledWith(MLS_GROUP_ID)
       expect(mockCoreCryptoService.wipeConversation).not.toHaveBeenCalled()
-      expect(mockConversationMemberRepository.deleteAllMembersInConversation).toHaveBeenCalledWith(CONVERSATION_ID.id, CONVERSATION_ID.domain)
+      expect(mockConversationMemberRepository.deleteAllMembersInConversation).toHaveBeenCalledWith(
+        CONVERSATION_ID.id,
+        CONVERSATION_ID.domain
+      )
       expect(mockConversationRepository.delete).toHaveBeenCalledWith(CONVERSATION_ID.id, CONVERSATION_ID.domain)
     })
 
@@ -431,7 +439,9 @@ describe('ConversationService', () => {
       vi.mocked(mockCoreCryptoService.conversationExists).mockResolvedValue(true)
       vi.mocked(mockCoreCryptoService.wipeConversation).mockRejectedValue(new Error('wipe failed'))
 
-      await expect(conversationService.deleteAllConversationDataFromLocalStorages(CONVERSATION_ID)).rejects.toThrow('wipe failed')
+      await expect(conversationService.deleteAllConversationDataFromLocalStorages(CONVERSATION_ID)).rejects.toThrow(
+        'wipe failed'
+      )
 
       expect(mockConversationMemberRepository.deleteAllMembersInConversation).not.toHaveBeenCalled()
       expect(mockConversationRepository.delete).not.toHaveBeenCalled()
@@ -459,7 +469,10 @@ describe('ConversationService', () => {
       await conversationService.resetMlsConversation(CONVERSATION_ID, NEW_GROUP_ID)
 
       expect(mockCoreCryptoService.wipeConversation).toHaveBeenCalledWith(MLS_GROUP_ID)
-      expect(mockConversationMemberRepository.deleteAllMembersInConversation).toHaveBeenCalledWith(CONVERSATION_ID.id, CONVERSATION_ID.domain)
+      expect(mockConversationMemberRepository.deleteAllMembersInConversation).toHaveBeenCalledWith(
+        CONVERSATION_ID.id,
+        CONVERSATION_ID.domain
+      )
       expect(mockConversationRepository.delete).toHaveBeenCalledWith(CONVERSATION_ID.id, CONVERSATION_ID.domain)
     })
 
@@ -480,7 +493,10 @@ describe('ConversationService', () => {
       await conversationService.resetMlsConversation(CONVERSATION_ID, NEW_GROUP_ID)
 
       expect(mockCoreCryptoService.wipeConversation).not.toHaveBeenCalled()
-      expect(mockConversationMemberRepository.deleteAllMembersInConversation).toHaveBeenCalledWith(CONVERSATION_ID.id, CONVERSATION_ID.domain)
+      expect(mockConversationMemberRepository.deleteAllMembersInConversation).toHaveBeenCalledWith(
+        CONVERSATION_ID.id,
+        CONVERSATION_ID.domain
+      )
       expect(mockConversationRepository.delete).toHaveBeenCalledWith(CONVERSATION_ID.id, CONVERSATION_ID.domain)
     })
 
@@ -735,9 +751,7 @@ describe('ConversationService', () => {
       await (conversationService as any).establishOrJoinMlsConversation(conversation)
 
       expect(mockCoreCryptoService.conversationExists).toHaveBeenCalledWith(MLS_GROUP_ID)
-      expect(mockConversationsApiClient.getConversationGroupInfo).toHaveBeenCalledWith(
-        CONVERSATION_ID
-      )
+      expect(mockConversationsApiClient.getConversationGroupInfo).toHaveBeenCalledWith(CONVERSATION_ID)
       expect(mockCoreCryptoService.joinMlsConversation).toHaveBeenCalledWith(mockGroupInfoBytes)
       expect(mockCoreCryptoService.establishMlsConversation).not.toHaveBeenCalled()
 
@@ -834,19 +848,22 @@ describe('ConversationService', () => {
       // Mock API to return MLS conversations for all batches
       vi.mocked(mockConversationsApiClient.getAllConversationIds).mockResolvedValue(conversationIds)
       vi.mocked(mockConversationsApiClient.getConversationsById).mockImplementation(async (ids) => {
-        return ids.map(id => ({
-          qualified_id: id,
-          type: ConversationType.GROUP,
-          name: `Conversation ${id.id}`,
-          team: TEAM_ID,
-          protocol: CryptoProtocol.MLS,
-          group_id: `mls-${id.id}`,
-          epoch: 5,
-          members: {
-            others: [],
-            self: {qualified_id: SELF_USER_ID, conversation_role: 'wire_admin'}
-          }
-        } as ConversationResponse))
+        return ids.map(
+          (id) =>
+            ({
+              qualified_id: id,
+              type: ConversationType.GROUP,
+              name: `Conversation ${id.id}`,
+              team: TEAM_ID,
+              protocol: CryptoProtocol.MLS,
+              group_id: `mls-${id.id}`,
+              epoch: 5,
+              members: {
+                others: [],
+                self: {qualified_id: SELF_USER_ID, conversation_role: 'wire_admin'}
+              }
+            }) as ConversationResponse
+        )
       })
 
       const mockGroupInfoBytes = new Uint8Array([1, 2, 3])
@@ -858,8 +875,14 @@ describe('ConversationService', () => {
       // Should be called 3 times: batches of 1000, 1000, and 500
       expect(mockConversationsApiClient.getConversationsById).toHaveBeenCalledTimes(3)
       expect(mockConversationsApiClient.getConversationsById).toHaveBeenNthCalledWith(1, conversationIds.slice(0, 1000))
-      expect(mockConversationsApiClient.getConversationsById).toHaveBeenNthCalledWith(2, conversationIds.slice(1000, 2000))
-      expect(mockConversationsApiClient.getConversationsById).toHaveBeenNthCalledWith(3, conversationIds.slice(2000, 2500))
+      expect(mockConversationsApiClient.getConversationsById).toHaveBeenNthCalledWith(
+        2,
+        conversationIds.slice(1000, 2000)
+      )
+      expect(mockConversationsApiClient.getConversationsById).toHaveBeenNthCalledWith(
+        3,
+        conversationIds.slice(2000, 2500)
+      )
 
       // Should process all 2500 MLS conversations
       expect(mockCoreCryptoService.conversationExists).toHaveBeenCalledTimes(2500)
@@ -877,19 +900,22 @@ describe('ConversationService', () => {
       vi.mocked(mockConversationsApiClient.getAllConversationIds).mockResolvedValue(conversationIds)
       vi.mocked(mockConversationsApiClient.getConversationsById).mockImplementation(async (ids) => {
         // Return mix of MLS and non-MLS (50/50 split)
-        return ids.map((id, idx) => ({
-          qualified_id: id,
-          type: ConversationType.GROUP,
-          name: `Conversation ${id.id}`,
-          team: TEAM_ID,
-          protocol: idx % 2 === 0 ? CryptoProtocol.MLS : CryptoProtocol.PROTEUS,
-          group_id: `mls-${id.id}`,
-          epoch: 0,
-          members: {
-            others: [],
-            self: {qualified_id: SELF_USER_ID, conversation_role: 'wire_admin'}
-          }
-        } as ConversationResponse))
+        return ids.map(
+          (id, idx) =>
+            ({
+              qualified_id: id,
+              type: ConversationType.GROUP,
+              name: `Conversation ${id.id}`,
+              team: TEAM_ID,
+              protocol: idx % 2 === 0 ? CryptoProtocol.MLS : CryptoProtocol.PROTEUS,
+              group_id: `mls-${id.id}`,
+              epoch: 0,
+              members: {
+                others: [],
+                self: {qualified_id: SELF_USER_ID, conversation_role: 'wire_admin'}
+              }
+            }) as ConversationResponse
+        )
       })
 
       vi.mocked(mockCoreCryptoService.conversationExists).mockResolvedValue(false)
@@ -899,8 +925,14 @@ describe('ConversationService', () => {
       // Should be called 3 times with exactly 1000 conversations each
       expect(mockConversationsApiClient.getConversationsById).toHaveBeenCalledTimes(3)
       expect(mockConversationsApiClient.getConversationsById).toHaveBeenNthCalledWith(1, conversationIds.slice(0, 1000))
-      expect(mockConversationsApiClient.getConversationsById).toHaveBeenNthCalledWith(2, conversationIds.slice(1000, 2000))
-      expect(mockConversationsApiClient.getConversationsById).toHaveBeenNthCalledWith(3, conversationIds.slice(2000, 3000))
+      expect(mockConversationsApiClient.getConversationsById).toHaveBeenNthCalledWith(
+        2,
+        conversationIds.slice(1000, 2000)
+      )
+      expect(mockConversationsApiClient.getConversationsById).toHaveBeenNthCalledWith(
+        3,
+        conversationIds.slice(2000, 3000)
+      )
 
       // Should only process 1500 MLS conversations (50% of 3000)
       expect(mockCoreCryptoService.conversationExists).toHaveBeenCalledTimes(1500)
@@ -918,10 +950,10 @@ describe('ConversationService', () => {
         mls_group_id: MLS_GROUP_ID,
         creation_date: null,
         type: ConversationType.GROUP
-      } as any);
+      } as any)
 
-        // ensure deleteMany is available on the mock for tests that expect it
-        (mockConversationMemberRepository as any).deleteMany = vi.fn()
+      // ensure deleteMany is available on the mock for tests that expect it
+      ;(mockConversationMemberRepository as any).deleteMany = vi.fn()
     })
 
     it('calls deleteAllConversationDataFromLocalStorages when wire user is in userIds', async () => {
@@ -957,8 +989,8 @@ describe('ConversationService', () => {
 
   describe('updateMember', () => {
     it('skips updating when conversation does not exist locally', async () => {
-      vi.mocked(mockConversationRepository.findByIdAndDomain).mockReturnValue(null);
-      (mockConversationMemberRepository as any).save = vi.fn()
+      vi.mocked(mockConversationRepository.findByIdAndDomain).mockReturnValue(null)
+      ;(mockConversationMemberRepository as any).save = vi.fn()
 
       const newRole: ConversationRole = ConversationRole.ADMIN
       await conversationService.syncMemberUpdate(USER_ID, CONVERSATION_ID, newRole)
@@ -998,7 +1030,10 @@ describe('ConversationService', () => {
 
       await conversationService.leaveConversation(CONVERSATION_ID)
 
-      expect(mockConversationRepository.findByIdAndDomain).toHaveBeenCalledWith(CONVERSATION_ID.id, CONVERSATION_ID.domain)
+      expect(mockConversationRepository.findByIdAndDomain).toHaveBeenCalledWith(
+        CONVERSATION_ID.id,
+        CONVERSATION_ID.domain
+      )
       expect(mockConversationsApiClient.leaveConversation).not.toHaveBeenCalled()
     })
 
@@ -1027,7 +1062,10 @@ describe('ConversationService', () => {
 
       await conversationService.leaveConversation(CONVERSATION_ID)
 
-      expect(mockConversationMemberRepository.getMembersByConversationId).toHaveBeenCalledWith(CONVERSATION_ID.id, CONVERSATION_ID.domain)
+      expect(mockConversationMemberRepository.getMembersByConversationId).toHaveBeenCalledWith(
+        CONVERSATION_ID.id,
+        CONVERSATION_ID.domain
+      )
       expect(mockConversationsApiClient.leaveConversation).not.toHaveBeenCalled()
     })
 
@@ -1055,7 +1093,9 @@ describe('ConversationService', () => {
       ])
 
       vi.mocked(mockConversationsApiClient.leaveConversation).mockResolvedValue(undefined)
-      const wipeSpy = vi.spyOn(conversationService as any, 'deleteAllConversationDataFromLocalStorages').mockResolvedValue(undefined)
+      const wipeSpy = vi
+        .spyOn(conversationService as any, 'deleteAllConversationDataFromLocalStorages')
+        .mockResolvedValue(undefined)
 
       await conversationService.leaveConversation(CONVERSATION_ID)
 
@@ -1088,7 +1128,9 @@ describe('ConversationService', () => {
       ])
 
       vi.mocked(mockConversationsApiClient.leaveConversation).mockRejectedValue(new Error('leave failed'))
-      const wipeSpy = vi.spyOn(conversationService as any, 'deleteAllConversationDataFromLocalStorages').mockResolvedValue(undefined)
+      const wipeSpy = vi
+        .spyOn(conversationService as any, 'deleteAllConversationDataFromLocalStorages')
+        .mockResolvedValue(undefined)
 
       await expect(conversationService.leaveConversation(CONVERSATION_ID)).rejects.toThrow('leave failed')
 
@@ -1123,7 +1165,9 @@ describe('ConversationService', () => {
       vi.mocked(mockConversationRepository.findByIdAndDomain).mockReturnValue(groupConversationEntity)
       vi.mocked(mockConversationMemberRepository.getMembersByConversationId).mockReturnValue([adminMember])
       vi.mocked(mockTeamsApiClient.deleteConversation).mockResolvedValue(undefined)
-      const wipeSpy = vi.spyOn(conversationService as any, 'deleteAllConversationDataFromLocalStorages').mockResolvedValue(undefined)
+      const wipeSpy = vi
+        .spyOn(conversationService as any, 'deleteAllConversationDataFromLocalStorages')
+        .mockResolvedValue(undefined)
 
       await conversationService.deleteConversation(CONVERSATION_ID)
 
@@ -1152,17 +1196,21 @@ describe('ConversationService', () => {
       })
       vi.mocked(mockConversationMemberRepository.getMembersByConversationId).mockReturnValue([adminMember])
 
-      await expect(conversationService.deleteConversation(CONVERSATION_ID)).rejects.toThrow('Conversation teamId must not be null.')
+      await expect(conversationService.deleteConversation(CONVERSATION_ID)).rejects.toThrow(
+        'Conversation teamId must not be null.'
+      )
 
       expect(mockTeamsApiClient.deleteConversation).not.toHaveBeenCalled()
     })
 
     it('should throw when app user is not an admin', async () => {
       vi.mocked(mockConversationRepository.findByIdAndDomain).mockReturnValue(groupConversationEntity)
-      vi.mocked(mockConversationMemberRepository.getMembersByConversationId).mockReturnValue([{
-        ...adminMember,
-        role: ConversationRole.MEMBER
-      }])
+      vi.mocked(mockConversationMemberRepository.getMembersByConversationId).mockReturnValue([
+        {
+          ...adminMember,
+          role: ConversationRole.MEMBER
+        }
+      ])
 
       await expect(conversationService.deleteConversation(CONVERSATION_ID)).rejects.toThrow()
 
@@ -1187,10 +1235,12 @@ describe('ConversationService', () => {
 
     it('should throw when app user is not in the conversation', async () => {
       vi.mocked(mockConversationRepository.findByIdAndDomain).mockReturnValue(groupConversationEntity)
-      vi.mocked(mockConversationMemberRepository.getMembersByConversationId).mockReturnValue([{
-        ...adminMember,
-        userId: USER_ID.id
-      }])
+      vi.mocked(mockConversationMemberRepository.getMembersByConversationId).mockReturnValue([
+        {
+          ...adminMember,
+          userId: USER_ID.id
+        }
+      ])
 
       await expect(conversationService.deleteConversation(CONVERSATION_ID)).rejects.toThrow()
 
@@ -1201,7 +1251,9 @@ describe('ConversationService', () => {
       vi.mocked(mockConversationRepository.findByIdAndDomain).mockReturnValue(groupConversationEntity)
       vi.mocked(mockConversationMemberRepository.getMembersByConversationId).mockReturnValue([adminMember])
       vi.mocked(mockTeamsApiClient.deleteConversation).mockRejectedValue(new Error('delete failed'))
-      const wipeSpy = vi.spyOn(conversationService as any, 'deleteAllConversationDataFromLocalStorages').mockResolvedValue(undefined)
+      const wipeSpy = vi
+        .spyOn(conversationService as any, 'deleteAllConversationDataFromLocalStorages')
+        .mockResolvedValue(undefined)
 
       await expect(conversationService.deleteConversation(CONVERSATION_ID)).rejects.toThrow('delete failed')
 
@@ -1236,9 +1288,9 @@ describe('ConversationService', () => {
     })
 
     it('should throw when members list is empty', async () => {
-      await expect(
-        conversationService.addMembersToConversation(CONVERSATION_ID, [])
-      ).rejects.toThrow('List of members cannot be empty.')
+      await expect(conversationService.addMembersToConversation(CONVERSATION_ID, [])).rejects.toThrow(
+        'List of members cannot be empty.'
+      )
 
       expect((mockCoreCryptoService as any).addClientsToMlsConversation).not.toHaveBeenCalled()
     })
@@ -1250,23 +1302,25 @@ describe('ConversationService', () => {
       })
       vi.mocked(mockConversationMemberRepository.getMembersByConversationId).mockReturnValue([adminMember])
 
-      await expect(
-        conversationService.addMembersToConversation(CONVERSATION_ID, [USER_ID])
-      ).rejects.toThrow('Conversation type is not GROUP.')
+      await expect(conversationService.addMembersToConversation(CONVERSATION_ID, [USER_ID])).rejects.toThrow(
+        'Conversation type is not GROUP.'
+      )
 
       expect((mockCoreCryptoService as any).addClientsToMlsConversation).not.toHaveBeenCalled()
     })
 
     it('should throw when app user is not an admin', async () => {
       vi.mocked(mockConversationRepository.findByIdAndDomain).mockReturnValue(groupConversationEntity)
-      vi.mocked(mockConversationMemberRepository.getMembersByConversationId).mockReturnValue([{
-        ...adminMember,
-        role: ConversationRole.MEMBER
-      }])
+      vi.mocked(mockConversationMemberRepository.getMembersByConversationId).mockReturnValue([
+        {
+          ...adminMember,
+          role: ConversationRole.MEMBER
+        }
+      ])
 
-      await expect(
-        conversationService.addMembersToConversation(CONVERSATION_ID, [USER_ID])
-      ).rejects.toThrow('App user is not an admin in the conversation.')
+      await expect(conversationService.addMembersToConversation(CONVERSATION_ID, [USER_ID])).rejects.toThrow(
+        'App user is not an admin in the conversation.'
+      )
 
       expect((mockCoreCryptoService as any).addClientsToMlsConversation).not.toHaveBeenCalled()
     })
@@ -1281,14 +1335,11 @@ describe('ConversationService', () => {
 
       await conversationService.addMembersToConversation(CONVERSATION_ID, [USER_ID])
 
-      expect((mockCoreCryptoService as any).addClientsToMlsConversation).toHaveBeenCalledWith(
-        MLS_GROUP_ID,
-        [USER_ID]
-      )
+      expect((mockCoreCryptoService as any).addClientsToMlsConversation).toHaveBeenCalledWith(MLS_GROUP_ID, [USER_ID])
     })
 
     it('should save only successUsers to the repository', async () => {
-      const anotherUserId: QualifiedId = { id: 'another-user-id', domain: 'wire.com' }
+      const anotherUserId: QualifiedId = {id: 'another-user-id', domain: 'wire.com'}
 
       vi.mocked(mockConversationRepository.findByIdAndDomain).mockReturnValue(groupConversationEntity)
       vi.mocked(mockConversationMemberRepository.getMembersByConversationId).mockReturnValue([adminMember])
@@ -1312,7 +1363,7 @@ describe('ConversationService', () => {
     })
 
     it('should return successUsers and failedUsers from coreCryptoService', async () => {
-      const anotherUserId: QualifiedId = { id: 'another-user-id', domain: 'wire.com' }
+      const anotherUserId: QualifiedId = {id: 'another-user-id', domain: 'wire.com'}
 
       vi.mocked(mockConversationRepository.findByIdAndDomain).mockReturnValue(groupConversationEntity)
       vi.mocked(mockConversationMemberRepository.getMembersByConversationId).mockReturnValue([adminMember])
@@ -1321,10 +1372,7 @@ describe('ConversationService', () => {
         membersFailedToAdd: [anotherUserId]
       })
 
-      const result = await conversationService.addMembersToConversation(
-        CONVERSATION_ID,
-        [USER_ID, anotherUserId]
-      )
+      const result = await conversationService.addMembersToConversation(CONVERSATION_ID, [USER_ID, anotherUserId])
 
       expect(result.membersAdded).toEqual([USER_ID])
       expect(result.membersFailedToAdd).toEqual([anotherUserId])
@@ -1333,13 +1381,11 @@ describe('ConversationService', () => {
     it('should throw and not save members when coreCryptoService fails', async () => {
       vi.mocked(mockConversationRepository.findByIdAndDomain).mockReturnValue(groupConversationEntity)
       vi.mocked(mockConversationMemberRepository.getMembersByConversationId).mockReturnValue([adminMember])
-      vi.mocked((mockCoreCryptoService as any).addClientsToMlsConversation).mockRejectedValue(
-        new Error('MLS error')
-      )
+      vi.mocked((mockCoreCryptoService as any).addClientsToMlsConversation).mockRejectedValue(new Error('MLS error'))
 
-      await expect(
-        conversationService.addMembersToConversation(CONVERSATION_ID, [USER_ID])
-      ).rejects.toThrow('Unable to add members to MLS conversation')
+      await expect(conversationService.addMembersToConversation(CONVERSATION_ID, [USER_ID])).rejects.toThrow(
+        'Unable to add members to MLS conversation'
+      )
 
       expect(mockConversationMemberRepository.saveMany).not.toHaveBeenCalled()
     })
@@ -1399,11 +1445,7 @@ describe('ConversationService', () => {
       vi.mocked((mockConversationMemberRepository as any).exists).mockReturnValue(false)
 
       await expect(
-        conversationService.updateConversationMemberRole(
-          CONVERSATION_ID,
-          USER_ID,
-          ConversationRole.MEMBER
-        )
+        conversationService.updateConversationMemberRole(CONVERSATION_ID, USER_ID, ConversationRole.MEMBER)
       ).rejects.toThrow('App user is not in the conversation.')
 
       expect((mockConversationsApiClient as any).updateConversationMemberRole).not.toHaveBeenCalled()
@@ -1427,10 +1469,12 @@ describe('ConversationService', () => {
 
     it('should throw when app user is not an admin', async () => {
       vi.mocked(mockConversationRepository.findByIdAndDomain).mockReturnValue(groupConversationEntity)
-      vi.mocked(mockConversationMemberRepository.getMembersByConversationId).mockReturnValue([{
-        ...adminMember,
-        role: ConversationRole.MEMBER
-      }])
+      vi.mocked(mockConversationMemberRepository.getMembersByConversationId).mockReturnValue([
+        {
+          ...adminMember,
+          role: ConversationRole.MEMBER
+        }
+      ])
 
       await expect(
         conversationService.updateConversationMemberRole(CONVERSATION_ID, USER_ID, ConversationRole.ADMIN)
@@ -1444,7 +1488,9 @@ describe('ConversationService', () => {
       vi.mocked(mockConversationRepository.findByIdAndDomain).mockReturnValue(groupConversationEntity)
       vi.mocked(mockConversationMemberRepository.getMembersByConversationId).mockReturnValue([adminMember])
       vi.mocked((mockConversationMemberRepository as any).exists).mockReturnValue(true)
-      vi.mocked((mockConversationsApiClient as any).updateConversationMemberRole).mockRejectedValue(new Error('update failed'))
+      vi.mocked((mockConversationsApiClient as any).updateConversationMemberRole).mockRejectedValue(
+        new Error('update failed')
+      )
 
       await expect(
         conversationService.updateConversationMemberRole(CONVERSATION_ID, USER_ID, ConversationRole.MEMBER)
@@ -1491,8 +1537,20 @@ describe('ConversationService', () => {
       const result = await conversationService.getAllConversations()
 
       expect(result).toHaveLength(2)
-      expect(result[0]).toEqual({ id: 'conv-1', domain: 'wire.com', name: 'Group Conversation', type: ConversationType.GROUP, teamId: TEAM_ID })
-      expect(result[1]).toEqual({ id: 'conv-3', domain: 'wire.com', name: 'One To One Conversation', type: ConversationType.ONE_TO_ONE, teamId: TEAM_ID })
+      expect(result[0]).toEqual({
+        id: 'conv-1',
+        domain: 'wire.com',
+        name: 'Group Conversation',
+        type: ConversationType.GROUP,
+        teamId: TEAM_ID
+      })
+      expect(result[1]).toEqual({
+        id: 'conv-3',
+        domain: 'wire.com',
+        name: 'One To One Conversation',
+        type: ConversationType.ONE_TO_ONE,
+        teamId: TEAM_ID
+      })
     })
 
     it('should return empty list when all conversations are of SELF type', async () => {
@@ -1542,12 +1600,10 @@ describe('ConversationService', () => {
       vi.clearAllMocks()
 
       // Mock getConversationById
-      vi.spyOn(conversationService as any, 'getConversationById')
-        .mockResolvedValue(CONVERSATION)
+      vi.spyOn(conversationService as any, 'getConversationById').mockResolvedValue(CONVERSATION)
 
       // Mock filterMembersInConversation to return all members (valid scenario)
-      vi.spyOn(conversationService as any, 'filterMembersInConversation')
-        .mockReturnValue(MEMBERS)
+      vi.spyOn(conversationService as any, 'filterMembersInConversation').mockReturnValue(MEMBERS)
 
       // Create mock CryptoClientId objects
       const mockClientId1 = CryptoClientId.create('user-1', 'device-1', 'wire.com')
@@ -1568,24 +1624,19 @@ describe('ConversationService', () => {
       vi.mocked(mockConversationMemberRepository.exists).mockReturnValue(true)
 
       // Mock permission checks
-      vi.spyOn(conversationService as any, 'requireConversationIsGroupOrChannel')
-        .mockImplementation(() => {})
+      vi.spyOn(conversationService as any, 'requireConversationIsGroupOrChannel').mockImplementation(() => {})
 
-      vi.spyOn(conversationService as any, 'requireAppIsAdminInConversation')
-        .mockImplementation(() => {})
+      vi.spyOn(conversationService as any, 'requireAppIsAdminInConversation').mockImplementation(() => {})
     })
 
     it('should throw when members list is empty', async () => {
-      await expect(
-        conversationService.removeMembersFromConversation(CONVERSATION_ID, [])
-      ).rejects.toThrow('List of members cannot be empty.')
+      await expect(conversationService.removeMembersFromConversation(CONVERSATION_ID, [])).rejects.toThrow(
+        'List of members cannot be empty.'
+      )
     })
 
     it('should return result with membersRemoved', async () => {
-      const result = await conversationService.removeMembersFromConversation(
-        CONVERSATION_ID,
-        MEMBERS
-      )
+      const result = await conversationService.removeMembersFromConversation(CONVERSATION_ID, MEMBERS)
 
       expect(result).toHaveProperty('membersRemoved')
       expect(result.membersRemoved).toEqual(MEMBERS)
@@ -1595,40 +1646,29 @@ describe('ConversationService', () => {
       const mockClientId1 = CryptoClientId.create('user-1', 'device-1', 'wire.com')
       const mockClientId2 = CryptoClientId.create('user-2', 'device-1', 'wire.com')
 
-      await conversationService.removeMembersFromConversation(
-        CONVERSATION_ID,
-        MEMBERS
+      await conversationService.removeMembersFromConversation(CONVERSATION_ID, MEMBERS)
+
+      expect(conversationService['getConversationById']).toHaveBeenCalledWith(CONVERSATION_ID)
+
+      expect(mockUserService.getUsersClientIds).toHaveBeenCalledWith(MEMBERS)
+
+      expect(mockCoreCryptoService.removeClientsFromMlsConversation).toHaveBeenCalledWith(
+        MLS_GROUP_ID,
+        expect.arrayContaining([mockClientId1, mockClientId2])
       )
 
-      expect(conversationService['getConversationById'])
-        .toHaveBeenCalledWith(CONVERSATION_ID)
-
-      expect(mockUserService.getUsersClientIds)
-        .toHaveBeenCalledWith(MEMBERS)
-
-      expect(mockCoreCryptoService.removeClientsFromMlsConversation)
-        .toHaveBeenCalledWith(
-          MLS_GROUP_ID,
-          expect.arrayContaining([mockClientId1, mockClientId2])
-        )
-
-      expect(mockConversationMemberRepository.deleteMany)
-        .toHaveBeenCalledWith(
-          MEMBERS,
-          CONVERSATION_ID.id,
-          CONVERSATION_ID.domain
-        )
+      expect(mockConversationMemberRepository.deleteMany).toHaveBeenCalledWith(
+        MEMBERS,
+        CONVERSATION_ID.id,
+        CONVERSATION_ID.domain
+      )
     })
 
     it('should return empty result when members are not in conversation', async () => {
       // Mock filterMembersInConversation to return empty array (no valid members)
-      vi.spyOn(conversationService as any, 'filterMembersInConversation')
-        .mockReturnValue([])
+      vi.spyOn(conversationService as any, 'filterMembersInConversation').mockReturnValue([])
 
-      const result = await conversationService.removeMembersFromConversation(
-        CONVERSATION_ID,
-        MEMBERS
-      )
+      const result = await conversationService.removeMembersFromConversation(CONVERSATION_ID, MEMBERS)
 
       expect(result.membersRemoved).toEqual([])
       expect(mockCoreCryptoService.removeClientsFromMlsConversation).not.toHaveBeenCalled()
@@ -1639,10 +1679,7 @@ describe('ConversationService', () => {
       // Mock getUsersClientIds to return empty map (users have no clients)
       vi.mocked(mockUserService.getUsersClientIds).mockResolvedValue(new Map())
 
-      const result = await conversationService.removeMembersFromConversation(
-        CONVERSATION_ID,
-        MEMBERS
-      )
+      const result = await conversationService.removeMembersFromConversation(CONVERSATION_ID, MEMBERS)
 
       expect(result.membersRemoved).toEqual([])
       expect(mockCoreCryptoService.removeClientsFromMlsConversation).not.toHaveBeenCalled()
@@ -1654,31 +1691,26 @@ describe('ConversationService', () => {
 
       // Only first user has clients (second user not in map since they have no clients)
       vi.mocked(mockUserService.getUsersClientIds).mockResolvedValue(
-        new Map([
-          [QualifiedId.toKey(MEMBERS[0]!), [mockClientId1]]
-        ])
+        new Map([[QualifiedId.toKey(MEMBERS[0]!), [mockClientId1]]])
       )
 
-      const result = await conversationService.removeMembersFromConversation(
-        CONVERSATION_ID,
-        MEMBERS
-      )
+      const result = await conversationService.removeMembersFromConversation(CONVERSATION_ID, MEMBERS)
 
       expect(result.membersRemoved).toEqual([MEMBERS[0]])
-      expect(mockCoreCryptoService.removeClientsFromMlsConversation)
-        .toHaveBeenCalledWith(MLS_GROUP_ID, [mockClientId1])
-      expect(mockConversationMemberRepository.deleteMany)
-        .toHaveBeenCalledWith([MEMBERS[0]], CONVERSATION_ID.id, CONVERSATION_ID.domain)
+      expect(mockCoreCryptoService.removeClientsFromMlsConversation).toHaveBeenCalledWith(MLS_GROUP_ID, [mockClientId1])
+      expect(mockConversationMemberRepository.deleteMany).toHaveBeenCalledWith(
+        [MEMBERS[0]],
+        CONVERSATION_ID.id,
+        CONVERSATION_ID.domain
+      )
     })
 
     it('should handle MLS removal failure and return empty result', async () => {
-      vi.mocked(mockCoreCryptoService.removeClientsFromMlsConversation)
-        .mockRejectedValue(new Error('MLS removal failed'))
-
-      const result = await conversationService.removeMembersFromConversation(
-        CONVERSATION_ID,
-        MEMBERS
+      vi.mocked(mockCoreCryptoService.removeClientsFromMlsConversation).mockRejectedValue(
+        new Error('MLS removal failed')
       )
+
+      const result = await conversationService.removeMembersFromConversation(CONVERSATION_ID, MEMBERS)
 
       expect(result.membersRemoved).toEqual([])
       expect(mockConversationMemberRepository.deleteMany).not.toHaveBeenCalled()
@@ -1688,22 +1720,23 @@ describe('ConversationService', () => {
   describe('createOneToOne', () => {
     const OTHER_USER_ID: QualifiedId = {id: 'other-user-id', domain: 'wire.com'}
 
-    const buildOneToOneResponse = (): OneToOneConversationResponse => ({
-      conversation: {
-        qualified_id: CONVERSATION_ID,
-        type: ConversationType.ONE_TO_ONE,
-        name: null,
-        team: TEAM_ID,
-        group_id: MLS_GROUP_ID,
-        epoch: 0,
-        protocol: CryptoProtocol.MLS,
-        members: {
-          others: [],
-          self: {qualified_id: SELF_USER_ID, conversation_role: 'wire_admin'}
-        }
-      } as ConversationResponse,
-      public_keys: {} as any
-    } as any)
+    const buildOneToOneResponse = (): OneToOneConversationResponse =>
+      ({
+        conversation: {
+          qualified_id: CONVERSATION_ID,
+          type: ConversationType.ONE_TO_ONE,
+          name: null,
+          team: TEAM_ID,
+          group_id: MLS_GROUP_ID,
+          epoch: 0,
+          protocol: CryptoProtocol.MLS,
+          members: {
+            others: [],
+            self: {qualified_id: SELF_USER_ID, conversation_role: 'wire_admin'}
+          }
+        } as ConversationResponse,
+        public_keys: {} as any
+      }) as any
 
     it('should return existing conversation when it exists in DB and MLS group exists', async () => {
       const existingEntity: ConversationEntity = {
@@ -1756,7 +1789,9 @@ describe('ConversationService', () => {
 
       expect((mockOneToOneConversationsApiClient as any).getOneToOneConversation).toHaveBeenCalledWith(OTHER_USER_ID)
       expect(mockCoreCryptoService.establishMlsConversation).toHaveBeenCalledWith(MLS_GROUP_ID, response.public_keys)
-      expect((mockCoreCryptoService as any).addClientsToMlsConversation).toHaveBeenCalledWith(MLS_GROUP_ID, [OTHER_USER_ID])
+      expect((mockCoreCryptoService as any).addClientsToMlsConversation).toHaveBeenCalledWith(MLS_GROUP_ID, [
+        OTHER_USER_ID
+      ])
       expect(mockConversationRepository.save).toHaveBeenCalled()
       expect(result).toEqual(new QualifiedId(CONVERSATION_ID.id, CONVERSATION_ID.domain))
     })
@@ -1823,7 +1858,9 @@ describe('ConversationService', () => {
 
     it('should propagate error and skip local persistence when API call fails', async () => {
       vi.mocked((mockConversationRepository as any).findOneToOneByNameAndDomain).mockReturnValue(null)
-      vi.mocked((mockOneToOneConversationsApiClient as any).getOneToOneConversation).mockRejectedValue(new Error('network error'))
+      vi.mocked((mockOneToOneConversationsApiClient as any).getOneToOneConversation).mockRejectedValue(
+        new Error('network error')
+      )
 
       await expect(conversationService.createOneToOne(OTHER_USER_ID)).rejects.toThrow('network error')
 
@@ -1868,7 +1905,9 @@ describe('ConversationService', () => {
 
       const result = await conversationService.createGroup(GROUP_NAME, [USER_ID])
 
-      expect((mockUserService as any).getUser).toHaveBeenCalledWith(new QualifiedId(SELF_USER_ID.id, SELF_USER_ID.domain))
+      expect((mockUserService as any).getUser).toHaveBeenCalledWith(
+        new QualifiedId(SELF_USER_ID.id, SELF_USER_ID.domain)
+      )
       expect((mockConversationsApiClient as any).createGroupConversation).toHaveBeenCalled()
       expect((mockCoreCryptoService as any).establishMlsConversation).toHaveBeenCalledWith(MLS_GROUP_ID)
       expect((mockCoreCryptoService as any).addClientsToMlsConversation).toHaveBeenCalledWith(MLS_GROUP_ID, [USER_ID])
@@ -1908,8 +1947,9 @@ describe('ConversationService', () => {
     it('should throw when app user does not belong to a team', async () => {
       vi.mocked((mockUserService as any).getUser).mockResolvedValue({teamId: null} as any)
 
-      await expect(conversationService.createGroup(GROUP_NAME, [USER_ID]))
-        .rejects.toThrow('App user does not belong to a team.')
+      await expect(conversationService.createGroup(GROUP_NAME, [USER_ID])).rejects.toThrow(
+        'App user does not belong to a team.'
+      )
 
       expect((mockConversationsApiClient as any).createGroupConversation).not.toHaveBeenCalled()
       expect((mockCoreCryptoService as any).establishMlsConversation).not.toHaveBeenCalled()
@@ -1944,7 +1984,10 @@ describe('ConversationService', () => {
 
       await conversationService.createGroup(GROUP_NAME, [USER_ID, anotherUserId])
 
-      expect((mockCoreCryptoService as any).addClientsToMlsConversation).toHaveBeenCalledWith(MLS_GROUP_ID, [USER_ID, anotherUserId])
+      expect((mockCoreCryptoService as any).addClientsToMlsConversation).toHaveBeenCalledWith(MLS_GROUP_ID, [
+        USER_ID,
+        anotherUserId
+      ])
 
       expect(mockConversationMemberRepository.saveMany).toHaveBeenCalledWith([
         {
@@ -2003,7 +2046,9 @@ describe('ConversationService', () => {
 
       const result = await conversationService.createChannel(CHANNEL_NAME, [USER_ID])
 
-      expect((mockUserService as any).getUser).toHaveBeenCalledWith(new QualifiedId(SELF_USER_ID.id, SELF_USER_ID.domain))
+      expect((mockUserService as any).getUser).toHaveBeenCalledWith(
+        new QualifiedId(SELF_USER_ID.id, SELF_USER_ID.domain)
+      )
       expect((mockConversationsApiClient as any).createGroupConversation).toHaveBeenCalled()
       expect((mockCoreCryptoService as any).establishMlsConversation).toHaveBeenCalledWith(MLS_GROUP_ID)
       expect((mockCoreCryptoService as any).addClientsToMlsConversation).toHaveBeenCalledWith(MLS_GROUP_ID, [USER_ID])
@@ -2043,22 +2088,23 @@ describe('ConversationService', () => {
     it('should throw when app user does not belong to a team', async () => {
       vi.mocked((mockUserService as any).getUser).mockResolvedValue({teamId: null} as any)
 
-      await expect(conversationService.createChannel(CHANNEL_NAME, [USER_ID]))
-        .rejects.toThrow('App user does not belong to a team.')
+      await expect(conversationService.createChannel(CHANNEL_NAME, [USER_ID])).rejects.toThrow(
+        'App user does not belong to a team.'
+      )
 
       expect((mockConversationsApiClient as any).createGroupConversation).not.toHaveBeenCalled()
       expect((mockCoreCryptoService as any).establishMlsConversation).not.toHaveBeenCalled()
     })
   })
 
-  const TEAM_ID: string = "team-id"
+  const TEAM_ID: string = 'team-id'
   const SELF_USER_ID: QualifiedId = {
-    id: "self-user-id",
-    domain: "wire.com"
+    id: 'self-user-id',
+    domain: 'wire.com'
   }
   const USER_ID: QualifiedId = {
-    id: "user-id",
-    domain: "wire.com"
+    id: 'user-id',
+    domain: 'wire.com'
   }
   const CONVERSATION_ID: QualifiedId = {
     id: 'conversation-id',

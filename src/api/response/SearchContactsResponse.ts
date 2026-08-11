@@ -14,19 +14,19 @@
  * along with this program. If not, see http://www.gnu.org/licenses/.
  */
 
-import type {QualifiedId} from "../../model/QualifiedId.js";
+import type {QualifiedId} from '../../model/QualifiedId.js'
 
 export interface SearchContactsResponse {
-  documents: ContactDocument[];
-  found: number;
-  returned: number;
+  documents: ContactDocument[]
+  found: number
+  returned: number
 }
 
 export interface ContactDocument {
-  qualified_id: QualifiedId;
-  id: string;
-  handle: string | null;
-  name: string;
-  type: string;
-  team: string | null;
+  qualified_id: QualifiedId
+  id: string
+  handle: string | null
+  name: string
+  type: string
+  team: string | null
 }

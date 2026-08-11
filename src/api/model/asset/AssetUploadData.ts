@@ -15,6 +15,6 @@
  */
 
 export interface AssetUploadData {
-  retention?: string;
-  public?: boolean;
+  retention?: string
+  public?: boolean
 }

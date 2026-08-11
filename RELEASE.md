@@ -38,8 +38,8 @@ Before publishing a GitHub Release, run:
 npm run release:check
 ```
 
-This runs linting, the SDK build, the sample build, the typechecked coverage test suite,
-the packed install smoke test, and a dry-run npm pack.
+This runs linting, a formatting check, the SDK build, the sample build, the typechecked coverage
+test suite, the packed install smoke test, and a dry-run npm pack.
 
 ## Publish
 

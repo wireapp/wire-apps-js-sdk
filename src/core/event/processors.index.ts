@@ -14,11 +14,11 @@
  * along with this program. If not, see http://www.gnu.org/licenses/.
  */
 
-import "./DeleteConversationEventProcessor.js"
-import "./MemberJoinEventProcessor.js"
-import "./MemberLeaveEventProcessor.js"
-import "./MemberUpdateEventProcessor.js"
-import "./MlsMessageEventProcessor.js"
-import "./MlsResetEventProcessor.js"
-import "./MlsWelcomeEventProcessor.js"
-import "./NewConversationEventProcessor.js"
+import './DeleteConversationEventProcessor.js'
+import './MemberJoinEventProcessor.js'
+import './MemberLeaveEventProcessor.js'
+import './MemberUpdateEventProcessor.js'
+import './MlsMessageEventProcessor.js'
+import './MlsResetEventProcessor.js'
+import './MlsWelcomeEventProcessor.js'
+import './NewConversationEventProcessor.js'

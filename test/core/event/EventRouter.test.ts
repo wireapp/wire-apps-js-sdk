@@ -20,18 +20,19 @@ import type {EventResponse} from '../../../src/api/response/EventResponse.js'
 import type {EventContentDTO} from '../../../src/model/EventContentDTO.js'
 import type {EventProcessor} from '../../../src/core/event/EventProcessor.js'
 
-const makeEvent = (type: string) => ({type} as any)
+const makeEvent = (type: string) => ({type}) as any
 
 const makeEventResponse = (payload?: EventContentDTO[]): EventResponse => ({
   id: 'notification-id',
   transient: false,
-  ...(payload !== undefined && {payload}),
+  ...(payload !== undefined && {payload})
 })
 
-const createProcessorMock = (eventType: string) => ({
-  eventType,
-  process: vi.fn().mockResolvedValue(undefined),
-}) as EventProcessor<any>
+const createProcessorMock = (eventType: string) =>
+  ({
+    eventType,
+    process: vi.fn().mockResolvedValue(undefined)
+  }) as EventProcessor<any>
 
 let processors: EventProcessor<any>[]
 let router: EventRouter
@@ -69,7 +70,7 @@ beforeEach(() => {
     memberJoinEventProcessor,
     memberLeaveEventProcessor,
     memberUpdateEventProcessor,
-    typingEventProcessor,
+    typingEventProcessor
   ]
 
   router = new EventRouter(processors)
@@ -77,11 +78,10 @@ beforeEach(() => {
 
 describe('EventRouter', () => {
   describe('route', () => {
-
     it('should do nothing when payload is undefined', async () => {
       await router.route(makeEventResponse())
 
-      processors.forEach(p => {
+      processors.forEach((p) => {
         expect(p.process).not.toHaveBeenCalled()
       })
     })
@@ -89,7 +89,7 @@ describe('EventRouter', () => {
     it('should do nothing when payload is empty', async () => {
       await router.route(makeEventResponse([]))
 
-      processors.forEach(p => {
+      processors.forEach((p) => {
         expect(p.process).not.toHaveBeenCalled()
       })
     })
@@ -105,7 +105,7 @@ describe('EventRouter', () => {
     it('should not route unknown event types', async () => {
       await router.route(makeEventResponse([makeEvent('conversation.unknown-event')]))
 
-      processors.forEach(p => {
+      processors.forEach((p) => {
         expect(p.process).not.toHaveBeenCalled()
       })
     })
@@ -141,18 +141,15 @@ describe('EventRouter', () => {
         callOrder.push('member-join')
       })
 
-      await router.route(makeEventResponse([
-        makeEvent('conversation.mls-welcome'),
-        makeEvent('conversation.member-join'),
-      ]))
+      await router.route(
+        makeEventResponse([makeEvent('conversation.mls-welcome'), makeEvent('conversation.member-join')])
+      )
 
       expect(callOrder).toEqual(['mls-welcome', 'member-join'])
     })
 
     it('should resolve without a value', async () => {
-      await expect(
-        router.route(makeEventResponse([makeEvent('conversation.create')]))
-      ).resolves.toBeUndefined()
+      await expect(router.route(makeEventResponse([makeEvent('conversation.create')]))).resolves.toBeUndefined()
     })
 
     it('should call typing processor (no longer ignored by router)', async () => {
@@ -162,6 +159,5 @@ describe('EventRouter', () => {
 
       expect(typingEventProcessor.process).toHaveBeenCalledWith(event)
     })
-
   })
 })

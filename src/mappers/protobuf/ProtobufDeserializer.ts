@@ -1,21 +1,21 @@
 /*
-* Wire
-* Copyright (C) 2025 Wire Swiss GmbH
-*
-* This program is free software: you can redistribute it and/or modify
-* it under the terms of the GNU General Public License as published by
-* the Free Software Foundation, either version 3 of the License, or
-* (at your option) any later version.
-* This program is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-* GNU General Public License for more details.
-* You should have received a copy of the GNU General Public License
-* along with this program. If not, see http://www.gnu.org/licenses/.
-*/
+ * Wire
+ * Copyright (C) 2025 Wire Swiss GmbH
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see http://www.gnu.org/licenses/.
+ */
 
-import protobufMessage from "../../generated/messages.js";
-import { QualifiedId } from "../../model/QualifiedId.js";
+import protobufMessage from '../../generated/messages.js'
+import {QualifiedId} from '../../model/QualifiedId.js'
 import type {
   WireMessage,
   AssetMetadata,
@@ -24,7 +24,7 @@ import type {
   Video,
   AssetRemoteData,
   Mention
-} from "../../model/WireMessage.js";
+} from '../../model/WireMessage.js'
 import {
   TextMessage,
   TextEditedMessage,
@@ -42,10 +42,10 @@ import {
   ReceiptType,
   Reaction,
   Ignored
-} from '../../model/WireMessage.js';
-import {MessageEncryptionAlgorithm} from "../../model/protobuf/MessageEncryptionAlgorithm.js";
-import {MessageLinkPreviewMapper} from "./MessageLinkPreviewMapper.js";
-import {MessageMentionMapper} from "./MessageMentionMapper.js";
+} from '../../model/WireMessage.js'
+import {MessageEncryptionAlgorithm} from '../../model/protobuf/MessageEncryptionAlgorithm.js'
+import {MessageLinkPreviewMapper} from './MessageLinkPreviewMapper.js'
+import {MessageMentionMapper} from './MessageMentionMapper.js'
 
 /**
  * Utility object responsible for mapping a GenericMessage to WireMessage
@@ -64,7 +64,7 @@ export const ProtobufDeserializer = {
     try {
       genericMessage = protobufMessage.GenericMessage.decode(message)
     } catch (error) {
-      if (error instanceof Error && error.name === "ProtocolError") {
+      if (error instanceof Error && error.name === 'ProtocolError') {
         return new Ignored()
       }
       throw error
@@ -112,9 +112,10 @@ function unpackTextMessage(
     conversationId: qualifiedConversation,
     text: genericMessage.text!.content,
     linkPreviews: genericMessage.text!.linkPreview?.map(MessageLinkPreviewMapper.fromProtobuf) ?? [],
-    mentions: genericMessage.text!.mentions
-      ?.map(MessageMentionMapper.fromProtobuf)
-      .filter((mention): mention is Mention => mention !== null) ?? [],
+    mentions:
+      genericMessage
+        .text!.mentions?.map(MessageMentionMapper.fromProtobuf)
+        .filter((mention): mention is Mention => mention !== null) ?? [],
     senderId: senderId,
     timestamp: timestamp,
     expiresAfterMillis: expiresAfterMillis
@@ -132,11 +133,12 @@ function unpackEditedMessage(
       replacingMessageId: messageEdit.replacingMessageId,
       messageId: genericMessage.messageId,
       conversationId: qualifiedConversation,
-      text: messageEdit.text.content ?? "",
+      text: messageEdit.text.content ?? '',
       linkPreviews: messageEdit.text.linkPreview?.map(MessageLinkPreviewMapper.fromProtobuf) ?? [],
-      mentions: messageEdit.text.mentions
-        ?.map(MessageMentionMapper.fromProtobuf)
-        .filter((mention): mention is Mention => mention !== null) ?? [],
+      mentions:
+        messageEdit.text.mentions
+          ?.map(MessageMentionMapper.fromProtobuf)
+          .filter((mention): mention is Mention => mention !== null) ?? [],
       senderId: senderId
     })
   } else if (messageEdit?.composite) {
@@ -188,7 +190,7 @@ function unpackAssetMessage(
     messageId: genericMessage.messageId,
     conversationId: qualifiedConversation,
     metadata: metadata,
-    mimeType: original?.mimeType ?? "*/*",
+    mimeType: original?.mimeType ?? '*/*',
     name: original?.name ?? null,
     remoteData: remoteData,
     sizeInBytes: original?.size ?? 0,
@@ -205,14 +207,20 @@ function unpackItemList(
   return compositeItemList.flatMap((item): (TextMessage | CompositeButton)[] => {
     switch (item.content) {
       case 'text':
-        return item.text ? [TextMessage.create({
-          conversationId: conversationId,
-          text: item.text.content,
-          mentions: item.text.mentions?.map(MessageMentionMapper.fromProtobuf)
-            .filter((mention): mention is Mention => mention !== null) ?? []
-        })] : []
+        return item.text
+          ? [
+              TextMessage.create({
+                conversationId: conversationId,
+                text: item.text.content,
+                mentions:
+                  item.text.mentions
+                    ?.map(MessageMentionMapper.fromProtobuf)
+                    .filter((mention): mention is Mention => mention !== null) ?? []
+              })
+            ]
+          : []
       case 'button':
-        return item.button ? [CompositeButton.create({ id: item.button.id, text: item.button.text })] : []
+        return item.button ? [CompositeButton.create({id: item.button.id, text: item.button.text})] : []
       default:
         return []
     }
@@ -240,7 +248,7 @@ function unpackCompositeButtonActionConfirmation(
 ): CompositeButtonActionConfirmation {
   const buttonActionConfirmation = genericMessage.buttonActionConfirmation!
   const buttonId = Object.prototype.hasOwnProperty.call(buttonActionConfirmation, 'buttonId')
-    ? buttonActionConfirmation.buttonId ?? null
+    ? (buttonActionConfirmation.buttonId ?? null)
     : null
   return CompositeButtonActionConfirmation.create({
     messageId: genericMessage.messageId,
@@ -359,10 +367,10 @@ function unpackReaction(
 
   const emoji = reaction.emoji
   const emojiSet = new Set(
-    (emoji ?? "")
-      .split(",")
-      .map(emojiString => emojiString.trim())
-      .filter(emojiString => emojiString.length > 0)
+    (emoji ?? '')
+      .split(',')
+      .map((emojiString) => emojiString.trim())
+      .filter((emojiString) => emojiString.length > 0)
   )
 
   return Reaction.create({
@@ -446,7 +454,7 @@ function unpackEphemeral(
     return unpackLocation(
       {
         ...builtMessage,
-        location: locationMessage,
+        location: locationMessage
       },
       qualifiedConversation,
       senderId,
@@ -463,6 +471,6 @@ function unpackEphemeral(
  * Depending on protobufjs runtime configuration, int64 fields may decode as
  * either JavaScript numbers or Long-like objects.
  */
-function toNumber(value: number | { toNumber(): number }): number {
+function toNumber(value: number | {toNumber(): number}): number {
   return typeof value === 'number' ? value : value.toNumber()
 }

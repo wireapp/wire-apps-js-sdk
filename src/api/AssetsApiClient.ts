@@ -14,41 +14,30 @@
  * along with this program. If not, see http://www.gnu.org/licenses/.
  */
 
-import { HttpClient } from "../core/HttpClient.js";
-import { singleton } from "tsyringe";
-import type { AssetUploadData } from "./model/asset/AssetUploadData.js";
-import type { AssetUploadResponse } from "./model/asset/AssetUploadResponse.js";
-import { randomUUID } from "crypto";
-import { concatToBuffer } from "../utils/BufferUtils.js";
-import type { AssetData } from "../model/Asset.js";
+import {HttpClient} from '../core/HttpClient.js'
+import {singleton} from 'tsyringe'
+import type {AssetUploadData} from './model/asset/AssetUploadData.js'
+import type {AssetUploadResponse} from './model/asset/AssetUploadResponse.js'
+import {randomUUID} from 'crypto'
+import {concatToBuffer} from '../utils/BufferUtils.js'
+import type {AssetData} from '../model/Asset.js'
 
 @singleton()
 export class AssetsApiClient {
-  constructor(private httpClient: HttpClient) {
-  }
+  constructor(private httpClient: HttpClient) {}
 
-  private static readonly BASE_PATH = "assets";
+  private static readonly BASE_PATH = 'assets'
 
-  async downloadAsset(
-    assetId: string,
-    assetDomain: string,
-    assetToken?: string | null
-  ): Promise<AssetData> {
+  async downloadAsset(assetId: string, assetDomain: string, assetToken?: string | null): Promise<AssetData> {
     const path = `${AssetsApiClient.BASE_PATH}/${assetDomain}/${assetId}`
-    const headerAssetToken: Record<string, string> = assetToken ? {"Asset-Token": assetToken} : {}
+    const headerAssetToken: Record<string, string> = assetToken ? {'Asset-Token': assetToken} : {}
 
-    return await this.httpClient.getRequest<Uint8Array>(
-      path,
-      {
-        additionalHeaders: headerAssetToken
-      }
-    )
+    return await this.httpClient.getRequest<Uint8Array>(path, {
+      additionalHeaders: headerAssetToken
+    })
   }
 
-  async uploadAsset(
-    asset: AssetData,
-    assetUploadData: AssetUploadData
-  ): Promise<AssetUploadResponse> {
+  async uploadAsset(asset: AssetData, assetUploadData: AssetUploadData): Promise<AssetUploadResponse> {
     const boundary = `Frontier${randomUUID()}`
 
     const metadata = JSON.stringify(assetUploadData)
@@ -62,16 +51,12 @@ export class AssetsApiClient {
       `--${boundary}\r\n` +
       'Content-Type: application/octet-stream\r\n' +
       `Content-length: ${asset.length}\r\n` +
-      '\r\n';
+      '\r\n'
 
-    const footer = `\r\n--${boundary}--\r\n`;
+    const footer = `\r\n--${boundary}--\r\n`
 
-    return await this.httpClient.postRequest(
-      AssetsApiClient.BASE_PATH,
-      concatToBuffer(body, asset, footer),
-      {
-        headerContentType: `multipart/mixed; boundary=${boundary}`,
-      },
-    )
+    return await this.httpClient.postRequest(AssetsApiClient.BASE_PATH, concatToBuffer(body, asset, footer), {
+      headerContentType: `multipart/mixed; boundary=${boundary}`
+    })
   }
 }

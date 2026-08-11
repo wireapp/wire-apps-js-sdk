@@ -1,0 +1,8 @@
+build/
+node_modules/
+src/generated/
+src/db/migrations/
+coverage/
+sample/build/
+package-lock.json
+*.proto

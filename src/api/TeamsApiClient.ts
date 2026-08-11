@@ -14,23 +14,23 @@
  * along with this program. If not, see http://www.gnu.org/licenses/.
  */
 
-import {HttpClient} from "../core/HttpClient.js";
-import type {QualifiedId} from "../model/QualifiedId.js";
-import {singleton} from "tsyringe";
-import {LoggerFactory} from "../utils/logger/LoggerFactory.js";
-import type {TeamId} from "../model/TeamId.js";
+import {HttpClient} from '../core/HttpClient.js'
+import type {QualifiedId} from '../model/QualifiedId.js'
+import {singleton} from 'tsyringe'
+import {LoggerFactory} from '../utils/logger/LoggerFactory.js'
+import type {TeamId} from '../model/TeamId.js'
 
 @singleton()
 export class TeamsApiClient {
-  constructor(
-    private httpClient: HttpClient) {
-  }
+  constructor(private httpClient: HttpClient) {}
 
   private logger = LoggerFactory.getLogger(this.constructor.name)
-  private readonly basePath = "teams";
+  private readonly basePath = 'teams'
 
   async deleteConversation(teamId: TeamId, conversationId: QualifiedId): Promise<void> {
-    this.logger.info(`Conversation will be deleted in the backend. teamId: ${teamId}, conversationId: ${conversationId}`)
+    this.logger.info(
+      `Conversation will be deleted in the backend. teamId: ${teamId}, conversationId: ${conversationId}`
+    )
 
     const path = `${this.basePath}/${teamId.value}/conversations/${conversationId.id}`
     await this.httpClient.deleteRequest(path)

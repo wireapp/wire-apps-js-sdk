@@ -1,18 +1,18 @@
 /*
-* Wire
-* Copyright (C) 2025 Wire Swiss GmbH
-*
-* This program is free software: you can redistribute it and/or modify
-* it under the terms of the GNU General Public License as published by
-* the Free Software Foundation, either version 3 of the License, or
-* (at your option) any later version.
-* This program is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-* GNU General Public License for more details.
-* You should have received a copy of the GNU General Public License
-* along with this program. If not, see http://www.gnu.org/licenses/.
-*/
+ * Wire
+ * Copyright (C) 2025 Wire Swiss GmbH
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see http://www.gnu.org/licenses/.
+ */
 
 import {
   CipherSuite,
@@ -30,17 +30,17 @@ import {
   proteusLastResortPrekeyId,
   Uuid,
   Welcome
-} from "@wireapp/core-crypto/native";
-import type {CryptoClientId} from "../model/CryptoClientId.js";
-import {CoreCryptoMlsTransport} from "./CoreCryptoMlsTransport.js";
-import type {MlsPublicKeys} from "../model/MlsPublicKeys.js";
-import {PreKeyCrypto} from "../model/PreKeyCrypto.js";
-import {Decoder, Encoder} from "bazinga64";
-import {LoggerFactory} from "../utils/logger/LoggerFactory.js";
-import {obfuscateId} from "../utils/ObfuscateUtil.js";
-import {join} from "node:path";
-import {CRYPTOGRAPHY_STORAGE_PATH} from "../utils/StoragePaths.js";
-import {CryptographicSystemError} from "../exception/WireException.js";
+} from '@wireapp/core-crypto/native'
+import type {CryptoClientId} from '../model/CryptoClientId.js'
+import {CoreCryptoMlsTransport} from './CoreCryptoMlsTransport.js'
+import type {MlsPublicKeys} from '../model/MlsPublicKeys.js'
+import {PreKeyCrypto} from '../model/PreKeyCrypto.js'
+import {Decoder, Encoder} from 'bazinga64'
+import {LoggerFactory} from '../utils/logger/LoggerFactory.js'
+import {obfuscateId} from '../utils/ObfuscateUtil.js'
+import {join} from 'node:path'
+import {CRYPTOGRAPHY_STORAGE_PATH} from '../utils/StoragePaths.js'
+import {CryptographicSystemError} from '../exception/WireException.js'
 
 // TODO: Baris: If we can find a way to make this class only reachable from CoreCryptoService, that will be awesome.
 
@@ -52,11 +52,7 @@ export class CoreCryptoClient {
   private coreCrypto: CoreCrypto
   private credential?: CredentialRef
 
-  private constructor(
-    ciphersuite: number,
-    mlsTransport: CoreCryptoMlsTransport,
-    coreCrypto: CoreCrypto
-  ) {
+  private constructor(ciphersuite: number, mlsTransport: CoreCryptoMlsTransport, coreCrypto: CoreCrypto) {
     this.ciphersuite = ciphersuite
     this.mlsTransport = mlsTransport
     this.coreCrypto = coreCrypto
@@ -68,17 +64,10 @@ export class CoreCryptoClient {
     cryptographyStorageKey: Uint8Array,
     mlsTransport: CoreCryptoMlsTransport
   ): Promise<CoreCryptoClient> {
-    const db = await Database.open(
-      join(CRYPTOGRAPHY_STORAGE_PATH, userId),
-      new DatabaseKey(cryptographyStorageKey)
-    )
+    const db = await Database.open(join(CRYPTOGRAPHY_STORAGE_PATH, userId), new DatabaseKey(cryptographyStorageKey))
     const coreCrypto = CoreCrypto.new(db)
 
-    const coreCryptoClient = new CoreCryptoClient(
-      this.getMlsCiphersuiteName(ciphersuiteCode),
-      mlsTransport,
-      coreCrypto
-    )
+    const coreCryptoClient = new CoreCryptoClient(this.getMlsCiphersuiteName(ciphersuiteCode), mlsTransport, coreCrypto)
 
     return coreCryptoClient
   }
@@ -112,18 +101,12 @@ export class CoreCryptoClient {
     )
 
     await this.coreCrypto.transaction(async (context) => {
-      await context.mlsInit(
-        clientId,
-        this.mlsTransport
-      )
+      await context.mlsInit(clientId, this.mlsTransport)
 
       const credentials = await this.coreCrypto.getCredentials()
       if (credentials.length == 0) {
         this.logger.info(`Creating CoreCrypto Credential`)
-        const credential = Credential.basic(
-          this.ciphersuite,
-          clientId
-        )
+        const credential = Credential.basic(this.ciphersuite, clientId)
         this.credential = await context.addCredential(credential)
       } else {
         this.logger.info(`Loading CoreCrypto Credential`)
@@ -150,24 +133,24 @@ export class CoreCryptoClient {
 
     switch (this.ciphersuite) {
       case CipherSuite.Mls128Dhkemp256Aes128gcmSha256P256:
-        return {ecdsa_secp256r1_sha256: encodedKey};
+        return {ecdsa_secp256r1_sha256: encodedKey}
 
       case CipherSuite.Mls256Dhkemp384Aes256gcmSha384P384:
-        return {ecdsa_secp384r1_sha384: encodedKey};
+        return {ecdsa_secp384r1_sha384: encodedKey}
 
       case CipherSuite.Mls256Dhkemp521Aes256gcmSha512P521:
-        return {ecdsa_secp521r1_sha512: encodedKey};
+        return {ecdsa_secp521r1_sha512: encodedKey}
 
       case CipherSuite.Mls128Dhkemx25519Chacha20poly1305Sha256Ed25519:
       case CipherSuite.Mls128Dhkemx25519Aes128gcmSha256Ed25519:
-        return {ed25519: encodedKey};
+        return {ed25519: encodedKey}
 
       case CipherSuite.Mls256Dhkemx448Aes256gcmSha512Ed448:
       case CipherSuite.Mls256Dhkemx448Chacha20poly1305Sha512Ed448:
         throw new CryptographicSystemError(`Unsupported ciphersuite`)
 
       default:
-        throw new CryptographicSystemError(`Unknown ciphersuite`);
+        throw new CryptographicSystemError(`Unknown ciphersuite`)
     }
   }
 
@@ -184,11 +167,11 @@ export class CoreCryptoClient {
     return await this.coreCrypto.transaction(async (context) => {
       const preKeys: PreKeyCrypto[] = await Promise.all(
         Array.from({length: count}, async (__, index) => {
-          const updatedIndex = from + index;
-          const id = updatedIndex & 0xffff;
+          const updatedIndex = from + index
+          const id = updatedIndex & 0xffff
           const data = await context.proteusNewPrekey(id)
 
-          return new PreKeyCrypto(id, Encoder.toBase64(data).asString);
+          return new PreKeyCrypto(id, Encoder.toBase64(data).asString)
         })
       )
 
@@ -201,34 +184,19 @@ export class CoreCryptoClient {
       const proteusLastPreKeyId = proteusLastResortPrekeyId()
       const proteusLastPreKeyValue = await context.proteusLastResortPrekey()
 
-      return new PreKeyCrypto(
-        proteusLastPreKeyId,
-        Encoder.toBase64(proteusLastPreKeyValue).asString
-      )
+      return new PreKeyCrypto(proteusLastPreKeyId, Encoder.toBase64(proteusLastPreKeyValue).asString)
     })
   }
 
-  async encryptMls(
-    mlsGroupId: ConversationId,
-    message: Uint8Array
-  ): Promise<Uint8Array> {
+  async encryptMls(mlsGroupId: ConversationId, message: Uint8Array): Promise<Uint8Array> {
     return await this.coreCrypto.transaction(async (context) => {
-      return await context.encryptMessage(
-        mlsGroupId,
-        message
-      )
+      return await context.encryptMessage(mlsGroupId, message)
     })
   }
 
-  async decryptMls(
-    mlsGroupId: ConversationId,
-    encryptedMessageBytes: Uint8Array
-  ): Promise<Uint8Array | undefined> {
+  async decryptMls(mlsGroupId: ConversationId, encryptedMessageBytes: Uint8Array): Promise<Uint8Array | undefined> {
     const decryptedMessage = await this.coreCrypto.transaction(async (context) => {
-      return await context.decryptMessage(
-        mlsGroupId,
-        encryptedMessageBytes
-      )
+      return await context.decryptMessage(mlsGroupId, encryptedMessageBytes)
     })
 
     return decryptedMessage.message
@@ -236,9 +204,7 @@ export class CoreCryptoClient {
 
   async processWelcomeMessage(welcomeMessageBytes: Uint8Array) {
     await this.coreCrypto.transaction(async (context) => {
-      await context.processWelcomeMessage(
-        new Welcome(welcomeMessageBytes)
-      )
+      await context.processWelcomeMessage(new Welcome(welcomeMessageBytes))
     })
   }
 
@@ -250,10 +216,10 @@ export class CoreCryptoClient {
   }
 
   async wipeConversation(mlsGroupId: ConversationId) {
-    this.logger.debug("Conversation will be deleted from CoreCrypto. mlsGroupId: {}", obfuscateId(String(mlsGroupId)))
+    this.logger.debug('Conversation will be deleted from CoreCrypto. mlsGroupId: {}', obfuscateId(String(mlsGroupId)))
     await this.coreCrypto.transaction(async (context) => {
       await context.wipeConversation(mlsGroupId)
-      this.logger.debug("Conversation is deleted from CoreCrypto. mlsGroupId: {}", obfuscateId(String(mlsGroupId)))
+      this.logger.debug('Conversation is deleted from CoreCrypto. mlsGroupId: {}', obfuscateId(String(mlsGroupId)))
     })
   }
 
@@ -271,10 +237,7 @@ export class CoreCryptoClient {
 
   async joinMlsConversation(groupInfo: GroupInfo): Promise<void> {
     await this.coreCrypto.transaction(async (context) => {
-      await context.joinByExternalCommit(
-        groupInfo,
-        this.credential!
-      )
+      await context.joinByExternalCommit(groupInfo, this.credential!)
     })
   }
 
@@ -284,20 +247,14 @@ export class CoreCryptoClient {
    * @param ConversationId Group ID from creating the conversation on the backend
    * @param externalSenders Keys fetched from backend for validating external remove proposals
    */
-  async createConversation(
-    mlsGroupId: string,
-    removalKey: Uint8Array
-  ) {
+  async createConversation(mlsGroupId: string, removalKey: Uint8Array) {
     await this.coreCrypto.transaction(async (context) => {
       const mlsGroupIdBytes = Decoder.fromBase64(mlsGroupId).asBytes
 
       await context.createConversation(
         new ConversationId(mlsGroupIdBytes),
         this.credential!,
-        ExternalSender.parse(
-          removalKey,
-          this.credential!.signatureScheme()
-        )
+        ExternalSender.parse(removalKey, this.credential!.signatureScheme())
       )
     })
   }
@@ -305,9 +262,7 @@ export class CoreCryptoClient {
   async updateKeyingMaterial(mlsGroupId: string) {
     await this.coreCrypto.transaction(async (context) => {
       const mlsGroupIdBytes = Decoder.fromBase64(mlsGroupId).asBytes
-      await context.updateKeyingMaterial(
-        new ConversationId(mlsGroupIdBytes)
-      )
+      await context.updateKeyingMaterial(new ConversationId(mlsGroupIdBytes))
     })
   }
 
@@ -316,10 +271,7 @@ export class CoreCryptoClient {
    * Instead of creating a join request accepted by the new client,
    * this method directly adds members (clients) to a conversation.
    */
-  async addClientsToMlsConversation(
-    mlsGroupId: string,
-    keyPackages: Uint8Array[]
-  ) {
+  async addClientsToMlsConversation(mlsGroupId: string, keyPackages: Uint8Array[]) {
     await this.coreCrypto.transaction(async (context) => {
       const mlsGroupIdBytes = Decoder.fromBase64(mlsGroupId).asBytes
       await context.addClientsToConversation(
@@ -329,29 +281,28 @@ export class CoreCryptoClient {
     })
   }
 
-  async removeClientsFromMlsConversation(
-    mlsGroupId: string,
-    cryptoClientIds: CryptoClientId[]
-  ) {
-    this.logger.debug(`Clients will be removed from the conversation in CoreCrypto. mlsGroupId: ${obfuscateId(mlsGroupId)}`)
+  async removeClientsFromMlsConversation(mlsGroupId: string, cryptoClientIds: CryptoClientId[]) {
+    this.logger.debug(
+      `Clients will be removed from the conversation in CoreCrypto. mlsGroupId: ${obfuscateId(mlsGroupId)}`
+    )
 
     await this.coreCrypto.transaction(async (context) => {
-      const mlsGroupIdBytes = Decoder.fromBase64(mlsGroupId).asBytes;
+      const mlsGroupIdBytes = Decoder.fromBase64(mlsGroupId).asBytes
       const clientIds: ClientId[] = cryptoClientIds.map(
-        (cryptoClientId: CryptoClientId) => new ClientId(
-          new Uuid(cryptoClientId.userId),
-          DeviceId.fromHexString(cryptoClientId.deviceId),
-          cryptoClientId.userDomain
-        )
+        (cryptoClientId: CryptoClientId) =>
+          new ClientId(
+            new Uuid(cryptoClientId.userId),
+            DeviceId.fromHexString(cryptoClientId.deviceId),
+            cryptoClientId.userDomain
+          )
       )
 
-      await context.removeClientsFromConversation(
-        new ConversationId(mlsGroupIdBytes),
-        clientIds
-      );
+      await context.removeClientsFromConversation(new ConversationId(mlsGroupIdBytes), clientIds)
 
-      this.logger.debug(`Clients are removed from the conversation in CoreCrypto. mlsGroupId: ${obfuscateId(mlsGroupId)}`)
-    });
+      this.logger.debug(
+        `Clients are removed from the conversation in CoreCrypto. mlsGroupId: ${obfuscateId(mlsGroupId)}`
+      )
+    })
   }
 
   private PROTEUS_PREKEYS_FROM_COUNT: number = 0

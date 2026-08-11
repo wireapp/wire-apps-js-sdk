@@ -1,36 +1,34 @@
 /*
-* Wire
-* Copyright (C) 2025 Wire Swiss GmbH
-*
-* This program is free software: you can redistribute it and/or modify
-* it under the terms of the GNU General Public License as published by
-* the Free Software Foundation, either version 3 of the License, or
-* (at your option) any later version.
-* This program is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-* GNU General Public License for more details.
-* You should have received a copy of the GNU General Public License
-* along with this program. If not, see http://www.gnu.org/licenses/.
-*/
+ * Wire
+ * Copyright (C) 2025 Wire Swiss GmbH
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see http://www.gnu.org/licenses/.
+ */
 
-import type { CommitBundle, HistorySecret, MlsTransport, MlsTransportData } from "@wireapp/core-crypto/native";
-import { MlsService } from "../api/MlsService.js";
-import { singleton } from "tsyringe";
-import {UnknownError} from "../exception/WireException.js";
+import type {CommitBundle, HistorySecret, MlsTransport, MlsTransportData} from '@wireapp/core-crypto/native'
+import {MlsService} from '../api/MlsService.js'
+import {singleton} from 'tsyringe'
+import {UnknownError} from '../exception/WireException.js'
 
 @singleton()
 export class CoreCryptoMlsTransport implements MlsTransport {
   constructor(private mlsService: MlsService) {}
 
   async sendCommitBundle(commitBundle: CommitBundle): Promise<void> {
-    await this.mlsService.uploadCommitBundle(
-      this.parseBundleIntoUint8Array(commitBundle)
-    )
+    await this.mlsService.uploadCommitBundle(this.parseBundleIntoUint8Array(commitBundle))
   }
 
   async prepareForTransport(__: HistorySecret): Promise<MlsTransportData> {
-    throw new UnknownError("This method is not applicable for SDKs.")
+    throw new UnknownError('This method is not applicable for SDKs.')
   }
 
   /**
@@ -50,10 +48,10 @@ export class CoreCryptoMlsTransport implements MlsTransport {
     const totalLength = commit.length + payload.length + welcome.length
     const combined = new Uint8Array(totalLength)
 
-    combined.set(commit, 0);
+    combined.set(commit, 0)
     combined.set(payload, commit.length)
     combined.set(welcome, commit.length + payload.length)
 
-    return combined;
+    return combined
   }
 }

@@ -1,24 +1,24 @@
 /*
-* Wire
-* Copyright (C) 2026 Wire Swiss GmbH
-*
-* This program is free software: you can redistribute it and/or modify
-* it under the terms of the GNU General Public License as published by
-* the Free Software Foundation, either version 3 of the License, or
-* (at your option) any later version.
-* This program is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-* GNU General Public License for more details.
-* You should have received a copy of the GNU General Public License
-* along with this program. If not, see http://www.gnu.org/licenses/.
-*/
+ * Wire
+ * Copyright (C) 2026 Wire Swiss GmbH
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see http://www.gnu.org/licenses/.
+ */
 
-import { describe, expect, it } from 'vitest'
+import {describe, expect, it} from 'vitest'
 import protobufMessage from '../../../src/generated/messages.js'
-import { ProtobufDeserializer } from '../../../src/mappers/protobuf/ProtobufDeserializer.js'
-import { ProtobufSerializer } from '../../../src/mappers/protobuf/ProtobufSerializer.js'
-import { QualifiedId } from '../../../src/model/QualifiedId.js'
+import {ProtobufDeserializer} from '../../../src/mappers/protobuf/ProtobufDeserializer.js'
+import {ProtobufSerializer} from '../../../src/mappers/protobuf/ProtobufSerializer.js'
+import {QualifiedId} from '../../../src/model/QualifiedId.js'
 import {
   AssetMessage,
   CompositeButton,
@@ -31,10 +31,11 @@ import {
   Receipt,
   ReceiptType,
   TextEditedMessage,
-  TextMessage, WireMessageType
+  TextMessage,
+  WireMessageType
 } from '../../../src/model/WireMessage.js'
 
-const wireBlogUrl = "https://wire.com/blog"
+const wireBlogUrl = 'https://wire.com/blog'
 const senderId = new QualifiedId('wireUserId', 'wire.com')
 const timestamp = new Date()
 
@@ -45,14 +46,16 @@ describe('Protobuf serialization', () => {
     const message = TextMessage.create({
       conversationId,
       text: `Read ${wireBlogUrl}`,
-      linkPreviews: [{
-        url: wireBlogUrl,
-        urlOffset: 5,
-        permanentUrl: wireBlogUrl,
-        title: 'Wire',
-        summary: 'Secure collaboration',
-        image: null
-      }]
+      linkPreviews: [
+        {
+          url: wireBlogUrl,
+          urlOffset: 5,
+          permanentUrl: wireBlogUrl,
+          title: 'Wire',
+          summary: 'Secure collaboration',
+          image: null
+        }
+      ]
     })
 
     const serialized = ProtobufSerializer.toGenericMessageByteArray(message)
@@ -84,24 +87,28 @@ describe('Protobuf serialization', () => {
     const message = TextMessage.create({
       conversationId,
       text: 'Hello @Wire',
-      mentions: [{
-        userId: new QualifiedId('user-id', 'wire.com'),
-        offset: 6,
-        length: 5
-      }]
+      mentions: [
+        {
+          userId: new QualifiedId('user-id', 'wire.com'),
+          offset: 6,
+          length: 5
+        }
+      ]
     })
 
     const serialized = ProtobufSerializer.toGenericMessageByteArray(message)
     const result = protobufMessage.GenericMessage.decode(serialized)
 
-    expect(result.text?.mentions).toMatchObject([{
-      qualifiedUserId: {
-        id: 'user-id',
-        domain: 'wire.com'
-      },
-      start: 6,
-      length: 5
-    }])
+    expect(result.text?.mentions).toMatchObject([
+      {
+        qualifiedUserId: {
+          id: 'user-id',
+          domain: 'wire.com'
+        },
+        start: 6,
+        length: 5
+      }
+    ])
   })
 
   it('serializes expiring text messages as ephemeral text', () => {
@@ -158,13 +165,15 @@ describe('Protobuf serialization', () => {
       messageId: 'message-id',
       text: {
         content: `Read ${wireBlogUrl}`,
-        linkPreview: [{
-          url: wireBlogUrl,
-          urlOffset: 5,
-          permanentUrl: wireBlogUrl,
-          title: 'Wire',
-          summary: 'Secure collaboration'
-        }]
+        linkPreview: [
+          {
+            url: wireBlogUrl,
+            urlOffset: 5,
+            permanentUrl: wireBlogUrl,
+            title: 'Wire',
+            summary: 'Secure collaboration'
+          }
+        ]
       }
     })
 
@@ -176,14 +185,16 @@ describe('Protobuf serialization', () => {
     )
 
     expect(result.type).toBe(WireMessageType.TEXT)
-    expect(result.type === WireMessageType.TEXT ? result.linkPreviews : []).toStrictEqual([{
-      url: wireBlogUrl,
-      urlOffset: 5,
-      permanentUrl: wireBlogUrl,
-      title: 'Wire',
-      summary: 'Secure collaboration',
-      image: null
-    }])
+    expect(result.type === WireMessageType.TEXT ? result.linkPreviews : []).toStrictEqual([
+      {
+        url: wireBlogUrl,
+        urlOffset: 5,
+        permanentUrl: wireBlogUrl,
+        title: 'Wire',
+        summary: 'Secure collaboration',
+        image: null
+      }
+    ])
   })
 
   it('deserializes missing text message link previews as an empty list', () => {
@@ -394,18 +405,20 @@ describe('Protobuf serialization', () => {
     }
     const mentions = [mention]
 
-    const linkPreview = [{
-      url: wireBlogUrl,
-      urlOffset: 16,
-      permanentUrl: wireBlogUrl,
-      title: 'Wire',
-      summary: 'Secure collaboration'
-    }]
+    const linkPreview = [
+      {
+        url: wireBlogUrl,
+        urlOffset: 16,
+        permanentUrl: wireBlogUrl,
+        title: 'Wire',
+        summary: 'Secure collaboration'
+      }
+    ]
 
     const message = TextEditedMessage.create({
       conversationId: conversationId,
-      messageId: "new-message-id",
-      replacingMessageId: "replacing-message-id",
+      messageId: 'new-message-id',
+      replacingMessageId: 'replacing-message-id',
       text: `Hello @Wire see ${wireBlogUrl}`,
       mentions: mentions,
       linkPreviews: linkPreview
@@ -445,8 +458,8 @@ describe('Protobuf serialization', () => {
           text: 'hello @Wire',
           mentions: mentions
         }),
-        CompositeButton.create({ text: 'button1' }),
-        CompositeButton.create({ text: 'button2' })
+        CompositeButton.create({text: 'button1'}),
+        CompositeButton.create({text: 'button2'})
       ],
       messageId: 'new-message-id',
       replacingMessageId: 'replacing-message-id'
@@ -501,8 +514,12 @@ describe('Protobuf serialization', () => {
 
     expect(result.type).toBe(WireMessageType.COMPOSITE_BUTTON_ACTION_CONFIRMATION)
     expect(result.type === WireMessageType.COMPOSITE_BUTTON_ACTION_CONFIRMATION ? result.id : null).toBe('message-id')
-    expect(result.type === WireMessageType.COMPOSITE_BUTTON_ACTION_CONFIRMATION ? result.referenceMessageId : null).toBe('reference-message-id')
-    expect(result.type === WireMessageType.COMPOSITE_BUTTON_ACTION_CONFIRMATION ? result.buttonId : null).toBe('button-id')
+    expect(
+      result.type === WireMessageType.COMPOSITE_BUTTON_ACTION_CONFIRMATION ? result.referenceMessageId : null
+    ).toBe('reference-message-id')
+    expect(result.type === WireMessageType.COMPOSITE_BUTTON_ACTION_CONFIRMATION ? result.buttonId : null).toBe(
+      'button-id'
+    )
   })
 
   it('deserializes composite button action confirmations without a button id', () => {
@@ -521,8 +538,12 @@ describe('Protobuf serialization', () => {
     )
 
     expect(result.type).toBe(WireMessageType.COMPOSITE_BUTTON_ACTION_CONFIRMATION)
-    expect(result.type === WireMessageType.COMPOSITE_BUTTON_ACTION_CONFIRMATION ? result.referenceMessageId : null).toBe('reference-message-id')
-    expect(result.type === WireMessageType.COMPOSITE_BUTTON_ACTION_CONFIRMATION ? result.buttonId : undefined).toBeNull()
+    expect(
+      result.type === WireMessageType.COMPOSITE_BUTTON_ACTION_CONFIRMATION ? result.referenceMessageId : null
+    ).toBe('reference-message-id')
+    expect(
+      result.type === WireMessageType.COMPOSITE_BUTTON_ACTION_CONFIRMATION ? result.buttonId : undefined
+    ).toBeNull()
   })
 
   it('deserializes reactions', () => {

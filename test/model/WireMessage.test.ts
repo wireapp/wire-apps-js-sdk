@@ -130,25 +130,25 @@ describe('WireMessage', () => {
     it('should throw when the original message type is not replyable', () => {
       const original = Ping.create({conversationId})
 
-      expect(() =>
-        TextMessage.createReply({text: 'a reply', originalMessage: original})
-      ).toThrow(/Cannot reply to unreplyable WireMessage type/)
+      expect(() => TextMessage.createReply({text: 'a reply', originalMessage: original})).toThrow(
+        /Cannot reply to unreplyable WireMessage type/
+      )
     })
 
     it('should throw when replying to an Unknown message', () => {
       const original = new Unknown()
 
-      expect(() =>
-        TextMessage.createReply({text: 'a reply', originalMessage: original})
-      ).toThrow(/Cannot reply to unreplyable WireMessage type/)
+      expect(() => TextMessage.createReply({text: 'a reply', originalMessage: original})).toThrow(
+        /Cannot reply to unreplyable WireMessage type/
+      )
     })
 
     it('should throw when replying to an Ignored message', () => {
       const original = new Ignored()
 
-      expect(() =>
-        TextMessage.createReply({text: 'a reply', originalMessage: original})
-      ).toThrow(/Cannot reply to unreplyable WireMessage type/)
+      expect(() => TextMessage.createReply({text: 'a reply', originalMessage: original})).toThrow(
+        /Cannot reply to unreplyable WireMessage type/
+      )
     })
 
     it('should throw when the original message is ephemeral (expiring)', () => {
@@ -158,9 +158,9 @@ describe('WireMessage', () => {
         expiresAfterMillis: 10_000
       })
 
-      expect(() =>
-        TextMessage.createReply({text: 'a reply', originalMessage: original})
-      ).toThrow(/Cannot reply to an expiring message/)
+      expect(() => TextMessage.createReply({text: 'a reply', originalMessage: original})).toThrow(
+        /Cannot reply to an expiring message/
+      )
     })
 
     it('should default mentions and linkPreviews to empty arrays', () => {

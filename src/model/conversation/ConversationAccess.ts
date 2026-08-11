@@ -15,10 +15,9 @@
  */
 
 export enum ConversationAccess {
-  PRIVATE = "private",
-  CODE = "code",
-  INVITE = "invite",
-  SELF_INVITE = "self_invite",
-  LINK = "link"
+  PRIVATE = 'private',
+  CODE = 'code',
+  INVITE = 'invite',
+  SELF_INVITE = 'self_invite',
+  LINK = 'link'
 }
-

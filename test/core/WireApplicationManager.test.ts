@@ -1,23 +1,23 @@
 /*
-* Wire
-* Copyright (C) 2026 Wire Swiss GmbH
-*
-* This program is free software: you can redistribute it and/or modify
-* it under the terms of the GNU General Public License as published by
-* the Free Software Foundation, either version 3 of the License, or
-* (at your option) any later version.
-* This program is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-* GNU General Public License for more details.
-* You should have received a copy of the GNU General Public License
-* along with this program. If not, see http://www.gnu.org/licenses/.
-*/
+ * Wire
+ * Copyright (C) 2026 Wire Swiss GmbH
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see http://www.gnu.org/licenses/.
+ */
 
-import { describe, expect, it, vi } from 'vitest'
-import { WireApplicationManager } from '../../src/core/WireApplicationManager.js'
-import { QualifiedId } from '../../src/model/QualifiedId.js'
-import type {WireUser} from "../../src/model/WireUser.js";
+import {describe, expect, it, vi} from 'vitest'
+import {WireApplicationManager} from '../../src/core/WireApplicationManager.js'
+import {QualifiedId} from '../../src/model/QualifiedId.js'
+import type {WireUser} from '../../src/model/WireUser.js'
 
 describe('WireApplicationManager', () => {
   const conversationId = new QualifiedId('conversation-id', 'wire.com')
@@ -33,16 +33,8 @@ describe('WireApplicationManager', () => {
     const assetsTransferService = {
       uploadAssetForSending: vi.fn().mockResolvedValue(remoteData)
     }
-    const manager = new WireApplicationManager(
-      {} as any,
-      {} as any,
-      {} as any,
-      assetsTransferService as any,
-      {} as any
-    )
-    const sendMessage = vi
-      .spyOn(manager, 'sendMessage')
-      .mockResolvedValue('sent-message-id')
+    const manager = new WireApplicationManager({} as any, {} as any, {} as any, assetsTransferService as any, {} as any)
+    const sendMessage = vi.spyOn(manager, 'sendMessage').mockResolvedValue('sent-message-id')
 
     const result = await manager.sendAsset(
       conversationId,
@@ -71,19 +63,13 @@ describe('WireApplicationManager', () => {
   describe('searchUsers', () => {
     it('delegates to userService and returns results', async () => {
       const mockUsers: WireUser[] = [
-        { id: new QualifiedId('user-1', 'wire.com'), name: 'Alice', handle: 'alice', deleted: false },
-        { id: new QualifiedId('user-2', 'wire.com'), name: 'Bob', handle: 'bob', deleted: false }
+        {id: new QualifiedId('user-1', 'wire.com'), name: 'Alice', handle: 'alice', deleted: false},
+        {id: new QualifiedId('user-2', 'wire.com'), name: 'Bob', handle: 'bob', deleted: false}
       ]
       const userService = {
         searchUsers: vi.fn().mockResolvedValue(mockUsers)
       }
-      const manager = new WireApplicationManager(
-        {} as any,
-        {} as any,
-        {} as any,
-        {} as any,
-        userService as any
-      )
+      const manager = new WireApplicationManager({} as any, {} as any, {} as any, {} as any, userService as any)
 
       const result = await manager.searchUsers('ali', 'wire.com', 10)
 
@@ -95,13 +81,7 @@ describe('WireApplicationManager', () => {
       const userService = {
         searchUsers: vi.fn().mockResolvedValue([])
       }
-      const manager = new WireApplicationManager(
-        {} as any,
-        {} as any,
-        {} as any,
-        {} as any,
-        userService as any
-      )
+      const manager = new WireApplicationManager({} as any, {} as any, {} as any, {} as any, userService as any)
 
       await manager.searchUsers('ali', 'wire.com')
 
@@ -112,13 +92,7 @@ describe('WireApplicationManager', () => {
       const userService = {
         searchUsers: vi.fn().mockResolvedValue([])
       }
-      const manager = new WireApplicationManager(
-        {} as any,
-        {} as any,
-        {} as any,
-        {} as any,
-        userService as any
-      )
+      const manager = new WireApplicationManager({} as any, {} as any, {} as any, {} as any, userService as any)
 
       const result = await manager.searchUsers('nonexistent', 'wire.com', 5)
 
@@ -133,13 +107,7 @@ describe('WireApplicationManager', () => {
       const conversationService = {
         createGroup: vi.fn().mockResolvedValue(createdConversationId)
       }
-      const manager = new WireApplicationManager(
-        {} as any,
-        conversationService as any,
-        {} as any,
-        {} as any,
-        {} as any
-      )
+      const manager = new WireApplicationManager({} as any, conversationService as any, {} as any, {} as any, {} as any)
 
       const result = await manager.createGroupConversation('Test Group', userIds)
 
@@ -151,13 +119,7 @@ describe('WireApplicationManager', () => {
       const conversationService = {
         createGroup: vi.fn().mockRejectedValue(new Error('create-group-failed'))
       }
-      const manager = new WireApplicationManager(
-        {} as any,
-        conversationService as any,
-        {} as any,
-        {} as any,
-        {} as any
-      )
+      const manager = new WireApplicationManager({} as any, conversationService as any, {} as any, {} as any, {} as any)
 
       await expect(manager.createGroupConversation('Test Group', [])).rejects.toThrow('create-group-failed')
     })
@@ -170,13 +132,7 @@ describe('WireApplicationManager', () => {
       const conversationService = {
         createChannel: vi.fn().mockResolvedValue(createdConversationId)
       }
-      const manager = new WireApplicationManager(
-        {} as any,
-        conversationService as any,
-        {} as any,
-        {} as any,
-        {} as any
-      )
+      const manager = new WireApplicationManager({} as any, conversationService as any, {} as any, {} as any, {} as any)
 
       const result = await manager.createChannelConversation('Test Channel', userIds)
 
@@ -188,13 +144,7 @@ describe('WireApplicationManager', () => {
       const conversationService = {
         createChannel: vi.fn().mockRejectedValue(new Error('create-channel-failed'))
       }
-      const manager = new WireApplicationManager(
-        {} as any,
-        conversationService as any,
-        {} as any,
-        {} as any,
-        {} as any
-      )
+      const manager = new WireApplicationManager({} as any, conversationService as any, {} as any, {} as any, {} as any)
 
       await expect(manager.createChannelConversation('Test Channel', [])).rejects.toThrow('create-channel-failed')
     })

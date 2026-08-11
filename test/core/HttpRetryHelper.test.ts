@@ -38,9 +38,8 @@ describe('HttpRetryHelper', () => {
     })
 
     it('should keep the default retry policy total delay below five seconds', () => {
-      const retryDelays = Array.from(
-        {length: HTTP_RETRY_POLICY.maxAttempts - 1},
-        (_, retryIndex) => calculateHttpRetryDelay(HTTP_RETRY_POLICY, retryIndex + 1)
+      const retryDelays = Array.from({length: HTTP_RETRY_POLICY.maxAttempts - 1}, (_, retryIndex) =>
+        calculateHttpRetryDelay(HTTP_RETRY_POLICY, retryIndex + 1)
       )
 
       expect(retryDelays).toEqual([300, 600, 900, 1200])
@@ -54,7 +53,9 @@ describe('HttpRetryHelper', () => {
     })
 
     it('should treat wrapped network errors as retryable', () => {
-      expect(isRetryableHttpError(new RetryableNetworkError('feature-configs', new TypeError('fetch failed')))).toBe(true)
+      expect(isRetryableHttpError(new RetryableNetworkError('feature-configs', new TypeError('fetch failed')))).toBe(
+        true
+      )
     })
 
     it('should not treat arbitrary TypeErrors as retryable', () => {

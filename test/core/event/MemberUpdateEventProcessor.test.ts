@@ -32,8 +32,8 @@ const makeEvent = (role = ConversationRole.MEMBER): MemberUpdateDTO => ({
   qualified_from: {id: 'user-from', domain: 'example.com'},
   data: {
     qualified_target: qualifiedTarget,
-    conversation_role: role,
-  },
+    conversation_role: role
+  }
 })
 
 let conversationService: ConversationService
@@ -43,7 +43,7 @@ beforeEach(() => {
   vi.clearAllMocks()
 
   conversationService = {
-    syncMemberUpdate: vi.fn().mockResolvedValue(undefined),
+    syncMemberUpdate: vi.fn().mockResolvedValue(undefined)
   } as any
 
   processor = new MemberUpdateEventProcessor(conversationService)

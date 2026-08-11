@@ -1,24 +1,24 @@
 /*
-* Wire
-* Copyright (C) 2025 Wire Swiss GmbH
-*
-* This program is free software: you can redistribute it and/or modify
-* it under the terms of the GNU General Public License as published by
-* the Free Software Foundation, either version 3 of the License, or
-* (at your option) any later version.
-* This program is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-* GNU General Public License for more details.
-* You should have received a copy of the GNU General Public License
-* along with this program. If not, see http://www.gnu.org/licenses/.
-*/
+ * Wire
+ * Copyright (C) 2025 Wire Swiss GmbH
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see http://www.gnu.org/licenses/.
+ */
 
-import { QualifiedId } from "./QualifiedId.js";
-import { MessageEncryptionAlgorithm } from "./protobuf/MessageEncryptionAlgorithm.js";
-import Long from "long";
-import {MessageContentEncoder} from "../mappers/protobuf/MessageContentEncoder.js";
-import {InvalidParameterError} from "../exception/WireException.js";
+import {QualifiedId} from './QualifiedId.js'
+import {MessageEncryptionAlgorithm} from './protobuf/MessageEncryptionAlgorithm.js'
+import Long from 'long'
+import {MessageContentEncoder} from '../mappers/protobuf/MessageContentEncoder.js'
+import {InvalidParameterError} from '../exception/WireException.js'
 
 const appUserId = process.env['WIRE_SDK_USER_ID']!
 const appUserDomain = process.env['WIRE_SDK_USER_DOMAIN']!
@@ -44,7 +44,7 @@ export const WireMessageType = {
   REACTION: 'reaction'
 } as const
 
-export type WireMessageType = typeof WireMessageType[keyof typeof WireMessageType]
+export type WireMessageType = (typeof WireMessageType)[keyof typeof WireMessageType]
 
 /**
  * Interface for message types to be extended from that can be used as Ephemeral(self-deleting) messages
@@ -118,19 +118,19 @@ export interface WireMessageBase {
 
 export class Unknown implements WireMessageBase {
   get id(): string {
-    throw new InvalidParameterError("Unknown message, no ID")
+    throw new InvalidParameterError('Unknown message, no ID')
   }
 
   get conversationId(): QualifiedId {
-    throw new InvalidParameterError("Unknown message, no conversation")
+    throw new InvalidParameterError('Unknown message, no conversation')
   }
 
   get sender(): QualifiedId {
-    throw new InvalidParameterError("Unknown message, no sender")
+    throw new InvalidParameterError('Unknown message, no sender')
   }
 
   get timestamp(): Date {
-    throw new InvalidParameterError("Unknown message, no timestamp")
+    throw new InvalidParameterError('Unknown message, no timestamp')
   }
 
   readonly type = WireMessageType.UNKNOWN
@@ -138,19 +138,19 @@ export class Unknown implements WireMessageBase {
 
 export class Ignored implements WireMessageBase {
   get id(): string {
-    throw new InvalidParameterError("Ignored message, no ID")
+    throw new InvalidParameterError('Ignored message, no ID')
   }
 
   get conversationId(): QualifiedId {
-    throw new InvalidParameterError("Ignored message, no conversation")
+    throw new InvalidParameterError('Ignored message, no conversation')
   }
 
   get sender(): QualifiedId {
-    throw new InvalidParameterError("Ignored message, no sender")
+    throw new InvalidParameterError('Ignored message, no sender')
   }
 
   get timestamp(): Date {
-    throw new InvalidParameterError("Ignored message, no timestamp")
+    throw new InvalidParameterError('Ignored message, no timestamp')
   }
 
   readonly type = WireMessageType.IGNORED
@@ -169,24 +169,24 @@ export interface TextMessage extends WireMessageBase, Item, Ephemeral, Replyable
 type ReplyableMessageType = TextMessage | AssetMessage | Location
 
 function isReplyable(message: WireMessage): message is ReplyableMessageType {
-  return message.type === WireMessageType.TEXT
-    || message.type === WireMessageType.ASSET
-    || message.type === WireMessageType.LOCATION
+  return (
+    message.type === WireMessageType.TEXT ||
+    message.type === WireMessageType.ASSET ||
+    message.type === WireMessageType.LOCATION
+  )
 }
 
 export const TextMessage = {
-  create(
-    params: {
-      messageId?: string
-      conversationId: QualifiedId
-      text: string
-      mentions?: Mention[]
-      linkPreviews?: LinkPreview[]
-      senderId?: QualifiedId
-      expiresAfterMillis?: number | null | undefined,
-      timestamp?: Date
-    }
-  ): TextMessage {
+  create(params: {
+    messageId?: string
+    conversationId: QualifiedId
+    text: string
+    mentions?: Mention[]
+    linkPreviews?: LinkPreview[]
+    senderId?: QualifiedId
+    expiresAfterMillis?: number | null | undefined
+    timestamp?: Date
+  }): TextMessage {
     return {
       type: WireMessageType.TEXT,
       id: params.messageId ?? crypto.randomUUID(),
@@ -200,18 +200,16 @@ export const TextMessage = {
     }
   },
 
-  createReply(
-    params: {
-      messageId?: string
-      text: string
-      mentions?: Mention[]
-      linkPreviews?: LinkPreview[]
-      originalMessage: WireMessage
-      senderId?: QualifiedId
-      expiresAfterMillis?: number | null | undefined
-      timestamp?: Date
-    }
-  ): TextMessage {
+  createReply(params: {
+    messageId?: string
+    text: string
+    mentions?: Mention[]
+    linkPreviews?: LinkPreview[]
+    originalMessage: WireMessage
+    senderId?: QualifiedId
+    expiresAfterMillis?: number | null | undefined
+    timestamp?: Date
+  }): TextMessage {
     if (!isReplyable(params.originalMessage)) {
       throw new InvalidParameterError(`Cannot reply to unreplyable WireMessage type: ${params.originalMessage.type}`)
     }
@@ -244,17 +242,15 @@ export interface TextEditedMessage extends WireMessageBase, Editable {
 }
 
 export const TextEditedMessage = {
-  create(
-    params: {
-      messageId?: string
-      conversationId: QualifiedId
-      replacingMessageId: string
-      text: string
-      mentions?: Mention[]
-      linkPreviews?: LinkPreview[]
-      senderId?: QualifiedId
-    }
-  ): TextEditedMessage {
+  create(params: {
+    messageId?: string
+    conversationId: QualifiedId
+    replacingMessageId: string
+    text: string
+    mentions?: Mention[]
+    linkPreviews?: LinkPreview[]
+    senderId?: QualifiedId
+  }): TextEditedMessage {
     return {
       type: WireMessageType.TEXT_EDITED,
       id: params.messageId ?? crypto.randomUUID(),
@@ -278,20 +274,18 @@ export interface AssetMessage extends WireMessageBase, Ephemeral, Replyable {
 }
 
 export const AssetMessage = {
-  create(
-    params: {
-      messageId?: string
-      conversationId: QualifiedId
-      sizeInBytes: number | Long
-      name?: string | null
-      mimeType: string
-      metadata?: AssetMetadata | null
-      remoteData?: AssetRemoteData | null
-      senderId?: QualifiedId,
-      expiresAfterMillis?: number | null | undefined,
-      timestamp?: Date
-    }
-  ): AssetMessage {
+  create(params: {
+    messageId?: string
+    conversationId: QualifiedId
+    sizeInBytes: number | Long
+    name?: string | null
+    mimeType: string
+    metadata?: AssetMetadata | null
+    remoteData?: AssetRemoteData | null
+    senderId?: QualifiedId
+    expiresAfterMillis?: number | null | undefined
+    timestamp?: Date
+  }): AssetMessage {
     return {
       type: WireMessageType.ASSET,
       id: params.messageId ?? crypto.randomUUID(),
@@ -345,12 +339,7 @@ export interface CompositeButton extends Item {
 }
 
 export const CompositeButton = {
-  create(
-    params: {
-      text: string
-      id?: string
-    }
-  ): CompositeButton {
+  create(params: {text: string; id?: string}): CompositeButton {
     return {
       type: WireMessageType.COMPOSITE_BUTTON,
       id: params.id ?? crypto.randomUUID(),
@@ -366,15 +355,13 @@ export interface CompositeButtonAction extends WireMessageBase {
 }
 
 export const CompositeButtonAction = {
-  create(
-    params: {
-      messageId: string
-      conversationId: QualifiedId
-      referenceMessageId: string
-      buttonId: string,
-      senderId?: QualifiedId
-    }
-  ): CompositeButtonAction {
+  create(params: {
+    messageId: string
+    conversationId: QualifiedId
+    referenceMessageId: string
+    buttonId: string
+    senderId?: QualifiedId
+  }): CompositeButtonAction {
     return {
       type: WireMessageType.COMPOSITE_BUTTON_ACTION,
       id: params.messageId,
@@ -393,22 +380,20 @@ export interface CompositeButtonActionConfirmation extends WireMessageBase {
 }
 
 export const CompositeButtonActionConfirmation = {
-  create(
-    params: {
-      messageId: string
-      conversationId: QualifiedId
-      referenceMessageId: string
-      buttonId: string | null,
-      senderId?: QualifiedId
-    }
-  ): CompositeButtonActionConfirmation {
+  create(params: {
+    messageId: string
+    conversationId: QualifiedId
+    referenceMessageId: string
+    buttonId: string | null
+    senderId?: QualifiedId
+  }): CompositeButtonActionConfirmation {
     return {
       type: WireMessageType.COMPOSITE_BUTTON_ACTION_CONFIRMATION,
       id: params.messageId,
       conversationId: params.conversationId,
       buttonId: params.buttonId,
       referenceMessageId: params.referenceMessageId,
-      ...(params.senderId && { sender: params.senderId })
+      ...(params.senderId && {sender: params.senderId})
     }
   }
 }
@@ -419,20 +404,18 @@ export interface CompositeMessage extends WireMessageBase {
 }
 
 export const CompositeMessage = {
-  create(
-    params: {
-      messageId?: string
-      conversationId: QualifiedId
-      text?: string
-      itemList: Item[],
-      senderId?: QualifiedId
-    }
-  ): CompositeMessage {
+  create(params: {
+    messageId?: string
+    conversationId: QualifiedId
+    text?: string
+    itemList: Item[]
+    senderId?: QualifiedId
+  }): CompositeMessage {
     const textItem = params.text
       ? TextMessage.create({
-        conversationId: params.conversationId,
-        text: params.text
-      })
+          conversationId: params.conversationId,
+          text: params.text
+        })
       : null
 
     return {
@@ -451,15 +434,13 @@ export interface CompositeEditedMessage extends WireMessageBase, Editable {
 }
 
 export const CompositeEditedMessage = {
-  create(
-    params: {
-      messageId?: string
-      conversationId: QualifiedId
-      replacingMessageId: string,
-      itemList: Item[],
-      senderId?: QualifiedId
-    }
-  ): CompositeEditedMessage {
+  create(params: {
+    messageId?: string
+    conversationId: QualifiedId
+    replacingMessageId: string
+    itemList: Item[]
+    senderId?: QualifiedId
+  }): CompositeEditedMessage {
     return {
       type: WireMessageType.COMPOSITE_EDITED,
       id: params.messageId ?? crypto.randomUUID(),
@@ -476,19 +457,17 @@ export interface Ping extends WireMessageBase, Ephemeral {
 }
 
 export const Ping = {
-  create(
-    params: {
-      messageId?: string
-      conversationId: QualifiedId
-      expiresAfterMillis?: number | null | undefined,
-      senderId?: QualifiedId
-    }
-  ): Ping {
+  create(params: {
+    messageId?: string
+    conversationId: QualifiedId
+    expiresAfterMillis?: number | null | undefined
+    senderId?: QualifiedId
+  }): Ping {
     return {
       type: WireMessageType.PING,
       id: params.messageId ?? crypto.randomUUID(),
       conversationId: params.conversationId,
-      ...(params.senderId && { sender: params.senderId }),
+      ...(params.senderId && {sender: params.senderId}),
       expiresAfterMillis: params.expiresAfterMillis ?? null
     }
   }
@@ -503,19 +482,17 @@ export interface Location extends WireMessageBase, Ephemeral, Replyable {
 }
 
 export const Location = {
-  create(
-    params: {
-      messageId?: string
-      conversationId: QualifiedId
-      latitude: number
-      longitude: number
-      name?: string | null | undefined
-      zoom?: number | null | undefined
-      senderId?: QualifiedId,
-      expiresAfterMillis?: number | null | undefined,
-      timestamp?: Date
-    }
-  ): Location {
+  create(params: {
+    messageId?: string
+    conversationId: QualifiedId
+    latitude: number
+    longitude: number
+    name?: string | null | undefined
+    zoom?: number | null | undefined
+    senderId?: QualifiedId
+    expiresAfterMillis?: number | null | undefined
+    timestamp?: Date
+  }): Location {
     return {
       type: WireMessageType.LOCATION,
       id: params.messageId ?? crypto.randomUUID(),
@@ -537,30 +514,28 @@ export interface DeletedMessage extends WireMessageBase {
 }
 
 export const DeletedMessage = {
-  create(
-    params: {
-      id?: string
-      conversationId: QualifiedId
-      messageId: string,
-      senderId?: QualifiedId
-    }
-  ): DeletedMessage {
+  create(params: {
+    id?: string
+    conversationId: QualifiedId
+    messageId: string
+    senderId?: QualifiedId
+  }): DeletedMessage {
     return {
       type: WireMessageType.DELETED,
       id: params.id ?? crypto.randomUUID(),
       conversationId: params.conversationId,
       messageId: params.messageId,
-      ...(params.senderId && { sender: params.senderId })
+      ...(params.senderId && {sender: params.senderId})
     }
   }
 }
 
 export const ReceiptType = {
-  DELIVERED: "DELIVERED",
-  READ: "READ"
-} as const;
+  DELIVERED: 'DELIVERED',
+  READ: 'READ'
+} as const
 
-export type ReceiptType = typeof ReceiptType[keyof typeof ReceiptType];
+export type ReceiptType = (typeof ReceiptType)[keyof typeof ReceiptType]
 
 export interface Receipt extends WireMessageBase {
   type: typeof WireMessageType.RECEIPT
@@ -569,15 +544,13 @@ export interface Receipt extends WireMessageBase {
 }
 
 export const Receipt = {
-  create(
-    params: {
-      id?: string
-      conversationId: QualifiedId
-      receiptType: ReceiptType
-      messageIds: string[],
-      senderId?: QualifiedId
-    }
-  ): Receipt {
+  create(params: {
+    id?: string
+    conversationId: QualifiedId
+    receiptType: ReceiptType
+    messageIds: string[]
+    senderId?: QualifiedId
+  }): Receipt {
     return {
       type: WireMessageType.RECEIPT,
       id: params.id ?? crypto.randomUUID(),
@@ -596,22 +569,20 @@ export interface Reaction extends WireMessageBase {
 }
 
 export const Reaction = {
-  create(
-    params: {
-      id?: string
-      conversationId: QualifiedId
-      messageId: string
-      emojiSet: Set<string>,
-      senderId?: QualifiedId
-    }
-  ): Reaction {
+  create(params: {
+    id?: string
+    conversationId: QualifiedId
+    messageId: string
+    emojiSet: Set<string>
+    senderId?: QualifiedId
+  }): Reaction {
     return {
       type: WireMessageType.REACTION,
       id: params.id ?? crypto.randomUUID(),
       conversationId: params.conversationId,
       messageId: params.messageId,
       emojiSet: params.emojiSet,
-      ...(params.senderId && { sender: params.senderId })
+      ...(params.senderId && {sender: params.senderId})
     }
   }
 }
@@ -630,4 +601,4 @@ export type WireMessage =
   | Location
   | DeletedMessage
   | Receipt
-  | Reaction;
+  | Reaction

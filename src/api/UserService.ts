@@ -14,16 +14,16 @@
  * along with this program. If not, see http://www.gnu.org/licenses/.
  */
 
-import {singleton} from "tsyringe";
-import {UsersApiClient} from "./UsersApiClient.js";
-import {SearchApiClient} from "./SearchApiClient.js";
-import {QualifiedId} from "../model/QualifiedId.js";
-import type {UserResponse} from "./model/UserResponse.js";
-import {LoggerFactory} from "../utils/logger/LoggerFactory.js";
-import {CryptoClientId} from "../model/CryptoClientId.js";
-import {WireUser} from "../model/WireUser.js";
-import {TeamId} from "../model/TeamId.js";
-import type {ContactDocument} from "./response/SearchContactsResponse.js";
+import {singleton} from 'tsyringe'
+import {UsersApiClient} from './UsersApiClient.js'
+import {SearchApiClient} from './SearchApiClient.js'
+import {QualifiedId} from '../model/QualifiedId.js'
+import type {UserResponse} from './model/UserResponse.js'
+import {LoggerFactory} from '../utils/logger/LoggerFactory.js'
+import {CryptoClientId} from '../model/CryptoClientId.js'
+import {WireUser} from '../model/WireUser.js'
+import {TeamId} from '../model/TeamId.js'
+import type {ContactDocument} from './response/SearchContactsResponse.js'
 
 @singleton()
 export class UserService {
@@ -31,13 +31,12 @@ export class UserService {
 
   constructor(
     private usersApiClient: UsersApiClient,
-    private searchApiClient: SearchApiClient,
-  ) {
-  }
+    private searchApiClient: SearchApiClient
+  ) {}
 
   async getUser(userQualifiedId: QualifiedId): Promise<WireUser> {
-    const response = await this.usersApiClient.getUser(userQualifiedId.id, userQualifiedId.domain);
-    return this.mapUserResponseToWireUser(response);
+    const response = await this.usersApiClient.getUser(userQualifiedId.id, userQualifiedId.domain)
+    return this.mapUserResponseToWireUser(response)
   }
 
   /**
@@ -51,14 +50,10 @@ export class UserService {
    * or undefined to use the backend default.
    * @returns A list of WireUser objects matching the query.
    */
-  async searchUsers(
-    query: string,
-    domain: string,
-    numberOfResults?: number
-  ): Promise<WireUser[]> {
-    this.logger.info(`Searching users with query: ${query} on domain: ${domain}`);
-    const response = await this.searchApiClient.searchUsers(query, domain, numberOfResults);
-    return response.documents.map(doc => this.mapContactDocumentToWireUser(doc));
+  async searchUsers(query: string, domain: string, numberOfResults?: number): Promise<WireUser[]> {
+    this.logger.info(`Searching users with query: ${query} on domain: ${domain}`)
+    const response = await this.searchApiClient.searchUsers(query, domain, numberOfResults)
+    return response.documents.map((doc) => this.mapContactDocumentToWireUser(doc))
   }
 
   private mapUserResponseToWireUser(userResponse: UserResponse): WireUser {
@@ -68,8 +63,8 @@ export class UserService {
       userResponse.deleted,
       userResponse.email,
       userResponse.handle,
-      userResponse.team ? new TeamId(userResponse.team) : undefined,
-    );
+      userResponse.team ? new TeamId(userResponse.team) : undefined
+    )
   }
 
   private mapContactDocumentToWireUser(doc: ContactDocument): WireUser {
@@ -79,33 +74,32 @@ export class UserService {
       false,
       undefined,
       doc.handle ?? undefined,
-      doc.team ? new TeamId(doc.team) : undefined,
-    );
+      doc.team ? new TeamId(doc.team) : undefined
+    )
   }
 
   async getUsersClientIds(userIds: QualifiedId[]): Promise<Map<string, CryptoClientId[]>> {
-    this.logger.info(`Retrieving clients for ${userIds.length} users.`);
-    if (userIds.length === 0) return new Map();
+    this.logger.info(`Retrieving clients for ${userIds.length} users.`)
+    if (userIds.length === 0) return new Map()
 
-    const usersToClients = await this.usersApiClient.getClientsByUserIds(userIds);
+    const usersToClients = await this.usersApiClient.getClientsByUserIds(userIds)
 
     return new Map(
-      userIds.flatMap(qualifiedUserId => {
-        const key = QualifiedId.toKey(qualifiedUserId);
-        const userClientResponses = usersToClients.get(key);
+      userIds.flatMap((qualifiedUserId) => {
+        const key = QualifiedId.toKey(qualifiedUserId)
+        const userClientResponses = usersToClients.get(key)
 
         if (!userClientResponses?.length) {
-          this.logger.warn(`User has no clients returned from API. userId: ${qualifiedUserId}`);
-          return [];
+          this.logger.warn(`User has no clients returned from API. userId: ${qualifiedUserId}`)
+          return []
         }
 
         const clientIds = userClientResponses.map(({id}) =>
           CryptoClientId.create(qualifiedUserId.id, id, qualifiedUserId.domain)
-        );
+        )
 
-        return [[key, clientIds]] as const;
+        return [[key, clientIds]] as const
       })
-    );
+    )
   }
-
 }

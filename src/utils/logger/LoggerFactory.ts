@@ -1,11 +1,11 @@
-import type {Logger} from "./Logger.js";
-import {ConsoleLogger} from "./ConsoleLogger.js";
+import type {Logger} from './Logger.js'
+import {ConsoleLogger} from './ConsoleLogger.js'
 
 export class LoggerFactory {
-  private static rootLogger: Logger;
+  private static rootLogger: Logger
 
   static setRootLogger(logger: Logger): void {
-    LoggerFactory.rootLogger = logger;
+    LoggerFactory.rootLogger = logger
   }
 
   static getLogger(namespace: string): Logger {
@@ -21,7 +21,7 @@ export class LoggerFactory {
       warn: (message: string, ...meta: unknown[]) =>
         LoggerFactory.rootLogger.warn(`[${namespace}] ${message}`, ...meta),
       error: (message: string, ...meta: unknown[]) =>
-        LoggerFactory.rootLogger.error(`[${namespace}] ${message}`, ...meta),
-    };
+        LoggerFactory.rootLogger.error(`[${namespace}] ${message}`, ...meta)
+    }
   }
 }

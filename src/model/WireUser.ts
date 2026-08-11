@@ -14,8 +14,8 @@
  * along with this program. If not, see http://www.gnu.org/licenses/.
  */
 
-import type {QualifiedId} from "./QualifiedId.js";
-import type {TeamId} from "./TeamId.js";
+import type {QualifiedId} from './QualifiedId.js'
+import type {TeamId} from './TeamId.js'
 
 export class WireUser {
   constructor(
@@ -24,7 +24,6 @@ export class WireUser {
     readonly deleted: boolean,
     readonly email?: string,
     readonly handle?: string,
-    readonly teamId?: TeamId,
+    readonly teamId?: TeamId
   ) {}
 }
-

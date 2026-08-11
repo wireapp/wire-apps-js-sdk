@@ -14,29 +14,28 @@
  * along with this program. If not, see http://www.gnu.org/licenses/.
  */
 
-import {injectable} from "tsyringe";
-import type {EventProcessor} from "./EventProcessor.js";
-import type {NewConversationDTO} from "../../model/EventContentDTO.js";
-import {ConversationService} from "../../api/ConversationService.js";
-import {LoggerFactory} from "../../utils/logger/LoggerFactory.js";
-import {EVENT_PROCESSOR} from "../../utils/DependencyInjectionTokens.js";
-import {QualifiedId} from "../../model/QualifiedId.js";
+import {injectable} from 'tsyringe'
+import type {EventProcessor} from './EventProcessor.js'
+import type {NewConversationDTO} from '../../model/EventContentDTO.js'
+import {ConversationService} from '../../api/ConversationService.js'
+import {LoggerFactory} from '../../utils/logger/LoggerFactory.js'
+import {EVENT_PROCESSOR} from '../../utils/DependencyInjectionTokens.js'
+import {QualifiedId} from '../../model/QualifiedId.js'
 
 @injectable({token: EVENT_PROCESSOR})
 export class NewConversationEventProcessor implements EventProcessor<NewConversationDTO> {
-  private logger = LoggerFactory.getLogger(this.constructor.name);
+  private logger = LoggerFactory.getLogger(this.constructor.name)
 
-  readonly eventType = "conversation.create" as const;
+  readonly eventType = 'conversation.create' as const
 
-  constructor(private conversationService: ConversationService) {
-  }
+  constructor(private conversationService: ConversationService) {}
 
   async process(event: NewConversationDTO): Promise<void> {
-    const conversationId = new QualifiedId(event.qualified_conversation.id, event.qualified_conversation.domain);
-    this.logger.info(`Processing NewConversation event for conversationId: ${conversationId}`);
+    const conversationId = new QualifiedId(event.qualified_conversation.id, event.qualified_conversation.domain)
+    this.logger.info(`Processing NewConversation event for conversationId: ${conversationId}`)
 
-    await this.conversationService.saveConversationWithMembers(conversationId, event.data);
+    await this.conversationService.saveConversationWithMembers(conversationId, event.data)
 
-    this.logger.info(`Processed NewConversation event for conversationId: ${conversationId}`);
+    this.logger.info(`Processed NewConversation event for conversationId: ${conversationId}`)
   }
 }

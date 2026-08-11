@@ -1,8 +1,8 @@
-import pino from 'pino';
-import { type Logger } from '@wireapp/wire-apps-js-sdk'
+import pino from 'pino'
+import {type Logger} from '@wireapp/wire-apps-js-sdk'
 
 export class PinoLogger implements Logger {
-  private pinoLogger: pino.Logger;
+  private pinoLogger: pino.Logger
 
   constructor() {
     this.pinoLogger = pino({
@@ -10,22 +10,22 @@ export class PinoLogger implements Logger {
       transport: {
         target: 'pino-pretty'
       }
-    });
+    })
   }
 
   debug(message: string, ...meta: unknown[]): void {
-    this.pinoLogger.debug(meta[0] || {}, message);
+    this.pinoLogger.debug(meta[0] || {}, message)
   }
 
   info(message: string, ...meta: unknown[]): void {
-    this.pinoLogger.info(meta[0] || {}, message);
+    this.pinoLogger.info(meta[0] || {}, message)
   }
 
   warn(message: string, ...meta: unknown[]): void {
-    this.pinoLogger.warn(meta[0] || {}, message);
+    this.pinoLogger.warn(meta[0] || {}, message)
   }
 
   error(message: string, ...meta: unknown[]): void {
-    this.pinoLogger.error(meta[0] || {}, message);
+    this.pinoLogger.error(meta[0] || {}, message)
   }
 }

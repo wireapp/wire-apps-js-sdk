@@ -38,7 +38,7 @@
     "proto:generate": "npm run proto:mkdir && npm run proto:package && npm run proto:js && npm run proto:ts",
     "build": "npm run proto:generate && tsc -p tsconfig.json && npm run proto:copy && npm run migrations:copy",
     "prepack": "npm run build",
-    "release:check": "npm run lint && npm run build && npm run -w sample build && npm run test:coverage -- --no-cache && npm run test:pack && npm pack --dry-run --cache /tmp/wire-sdk-release-npm-cache",
+    "release:check": "npm run lint && npm run format:check && npm run build && npm run -w sample build && npm run test:coverage -- --no-cache && npm run test:pack && npm pack --dry-run --cache /tmp/wire-sdk-release-npm-cache",
     "sample": "npm run -w sample dev",
     "test": "npm run test:typecheck",
     "test:pack": "node scripts/verify-packed-install.js",
@@ -46,7 +46,17 @@
     "test:coverage": "vitest run --coverage --typecheck --typecheck.tsconfig tsconfig.test.json",
     "clean": "rm -rf ./build ./sample/build ./sample/storage ./src/generated",
     "clean:all": "npm run clean && rm -rf ./node_modules",
-    "lint": "eslint src --ext .ts"
+    "lint": "eslint src test drizzle.config.ts vitest.config.ts",
+    "lint:fix": "eslint src test drizzle.config.ts vitest.config.ts --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "prepare": "husky || true"
+  },
+  "lint-staged": {
+    "*.ts": "prettier --write",
+    "{src,test,scripts}/**/*.ts": "eslint --fix",
+    "drizzle.config.ts": "eslint --fix",
+    "vitest.config.ts": "eslint --fix"
   },
   "files": [
     "build/**/*",
@@ -82,8 +92,12 @@
     "dotenv": "^17.4.2",
     "drizzle-kit": "^0.31.9",
     "eslint": "^10.7.0",
+    "eslint-config-prettier": "^10.1.8",
     "globals": "^17.7.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.4.0",
     "msw": "^2.14.6",
+    "prettier": "^3.9.6",
     "protobufjs-cli": "^2.6.1",
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.65.0",

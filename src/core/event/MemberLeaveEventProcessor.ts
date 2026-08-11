@@ -14,34 +14,33 @@
  * along with this program. If not, see http://www.gnu.org/licenses/.
  */
 
-import {inject, injectable} from "tsyringe";
-import type {EventProcessor} from "./EventProcessor.js";
-import type {MemberLeaveDTO} from "../../model/EventContentDTO.js";
-import {ConversationService} from "../../api/ConversationService.js";
-import {WireEventsHandler} from "./../WireEventsHandler.js";
-import {EVENT_PROCESSOR, WIRE_EVENTS_HANDLER} from "../../utils/DependencyInjectionTokens.js";
-import {LoggerFactory} from "../../utils/logger/LoggerFactory.js";
-import {QualifiedId} from "../../model/QualifiedId.js";
+import {inject, injectable} from 'tsyringe'
+import type {EventProcessor} from './EventProcessor.js'
+import type {MemberLeaveDTO} from '../../model/EventContentDTO.js'
+import {ConversationService} from '../../api/ConversationService.js'
+import {WireEventsHandler} from './../WireEventsHandler.js'
+import {EVENT_PROCESSOR, WIRE_EVENTS_HANDLER} from '../../utils/DependencyInjectionTokens.js'
+import {LoggerFactory} from '../../utils/logger/LoggerFactory.js'
+import {QualifiedId} from '../../model/QualifiedId.js'
 
 @injectable({token: EVENT_PROCESSOR})
 export class MemberLeaveEventProcessor implements EventProcessor<MemberLeaveDTO> {
-  private logger = LoggerFactory.getLogger(this.constructor.name);
+  private logger = LoggerFactory.getLogger(this.constructor.name)
 
-  readonly eventType = "conversation.member-leave" as const;
+  readonly eventType = 'conversation.member-leave' as const
 
   constructor(
     private conversationService: ConversationService,
     @inject(WIRE_EVENTS_HANDLER) private wireEventsHandler: WireEventsHandler
-  ) {
-  }
+  ) {}
 
   async process(event: MemberLeaveDTO): Promise<void> {
-    const conversationId = new QualifiedId(event.qualified_conversation.id, event.qualified_conversation.domain);
-    this.logger.info(`Processing MemberLeave event for conversationId: ${conversationId}`);
+    const conversationId = new QualifiedId(event.qualified_conversation.id, event.qualified_conversation.domain)
+    this.logger.info(`Processing MemberLeave event for conversationId: ${conversationId}`)
 
-    await this.conversationService.syncMembersRemoved(event.data.qualified_user_ids, conversationId);
-    await this.wireEventsHandler.onUserLeftConversation(conversationId, event.data.qualified_user_ids);
+    await this.conversationService.syncMembersRemoved(event.data.qualified_user_ids, conversationId)
+    await this.wireEventsHandler.onUserLeftConversation(conversationId, event.data.qualified_user_ids)
 
-    this.logger.info(`Processed MemberLeave event for conversationId: ${conversationId}`);
+    this.logger.info(`Processed MemberLeave event for conversationId: ${conversationId}`)
   }
 }

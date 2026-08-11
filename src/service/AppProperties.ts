@@ -1,37 +1,37 @@
 /*
-* Wire
-* Copyright (C) 2026 Wire Swiss GmbH
-*
-* This program is free software: you can redistribute it and/or modify
-* it under the terms of the GNU General Public License as published by
-* the Free Software Foundation, either version 3 of the License, or
-* (at your option) any later version.
-* This program is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-* GNU General Public License for more details.
-* You should have received a copy of the GNU General Public License
-* along with this program. If not, see http://www.gnu.org/licenses/.
-*/
+ * Wire
+ * Copyright (C) 2026 Wire Swiss GmbH
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see http://www.gnu.org/licenses/.
+ */
 
-import {inject, singleton} from "tsyringe";
-import {AppPropertiesRepository} from "../db/AppPropertiesRepository.js";
-import {WIRE_CRYPTOGRAPHY_STORAGE_KEY} from "../utils/DependencyInjectionTokens.js";
-import {AESUtils} from "../utils/AESUtils.js";
-import {LoggerFactory} from "../utils/logger/LoggerFactory.js";
-import {InvalidParameterError} from "../exception/WireException.js";
+import {inject, singleton} from 'tsyringe'
+import {AppPropertiesRepository} from '../db/AppPropertiesRepository.js'
+import {WIRE_CRYPTOGRAPHY_STORAGE_KEY} from '../utils/DependencyInjectionTokens.js'
+import {AESUtils} from '../utils/AESUtils.js'
+import {LoggerFactory} from '../utils/logger/LoggerFactory.js'
+import {InvalidParameterError} from '../exception/WireException.js'
 
 @singleton()
 export class AppProperties {
   private logger = LoggerFactory.getLogger(this.constructor.name)
-  private readonly SHOULD_REJOIN_CONVERSATIONS = "should_rejoin_conversations"
-  private readonly LAST_NOTIFICATION_ID = "last_notification_id"
-  private readonly BACKEND_COOKIE = "backend_cookie"
-  private readonly DEVICE_ID = "device_id"
+  private readonly SHOULD_REJOIN_CONVERSATIONS = 'should_rejoin_conversations'
+  private readonly LAST_NOTIFICATION_ID = 'last_notification_id'
+  private readonly BACKEND_COOKIE = 'backend_cookie'
+  private readonly DEVICE_ID = 'device_id'
 
   constructor(
     private appPropertiesRepository: AppPropertiesRepository,
-    @inject(WIRE_CRYPTOGRAPHY_STORAGE_KEY) private wireCryptoStorageKey: Uint8Array,
+    @inject(WIRE_CRYPTOGRAPHY_STORAGE_KEY) private wireCryptoStorageKey: Uint8Array
   ) {}
 
   getShouldRejoinConversations(): boolean {
@@ -42,10 +42,7 @@ export class AppProperties {
   }
 
   setShouldRejoinConversations(should: boolean) {
-    this.appPropertiesRepository.save(
-      this.SHOULD_REJOIN_CONVERSATIONS,
-      this.booleanToDatabaseValue(should)
-    )
+    this.appPropertiesRepository.save(this.SHOULD_REJOIN_CONVERSATIONS, this.booleanToDatabaseValue(should))
   }
 
   getLastNotificationId(): string | undefined {
@@ -53,10 +50,7 @@ export class AppProperties {
   }
 
   setLastNotificationId(lastNotificationId: string) {
-    this.appPropertiesRepository.save(
-      this.LAST_NOTIFICATION_ID,
-      lastNotificationId
-    )
+    this.appPropertiesRepository.save(this.LAST_NOTIFICATION_ID, lastNotificationId)
   }
 
   getBackendCookie(): string | undefined {
@@ -74,7 +68,7 @@ export class AppProperties {
 
   saveBackendCookieIfMissing(cookie: string) {
     if (!this.getBackendCookie()) {
-      this.logger.info("Initializing API Token")
+      this.logger.info('Initializing API Token')
       this.saveBackendCookie(cookie)
     }
   }
@@ -84,16 +78,13 @@ export class AppProperties {
   }
 
   setDeviceId(deviceId: string) {
-    this.appPropertiesRepository.save(
-      this.DEVICE_ID,
-      deviceId
-    )
+    this.appPropertiesRepository.save(this.DEVICE_ID, deviceId)
   }
 
   getDeviceId(): string {
     const deviceId = this.appPropertiesRepository.getByKey(this.DEVICE_ID)?.value
     if (!deviceId) {
-      throw new InvalidParameterError("No stored deviceId found")
+      throw new InvalidParameterError('No stored deviceId found')
     }
 
     return deviceId
@@ -103,7 +94,7 @@ export class AppProperties {
     return !!this.appPropertiesRepository.getByKey(this.DEVICE_ID)?.value
   }
 
-  private booleanToDatabaseValue = (value: boolean): string => value ? '1' : '0'
+  private booleanToDatabaseValue = (value: boolean): string => (value ? '1' : '0')
   private databaseValueToBoolean = (value?: string): boolean | undefined => {
     if (value === undefined) return undefined
     return value === '1'
