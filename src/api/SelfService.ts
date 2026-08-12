@@ -17,19 +17,26 @@
 import {singleton} from 'tsyringe'
 import {SelfApiClient} from './SelfApiClient.js'
 import {AppProperties} from '../service/AppProperties.js'
-import type {QualifiedId} from '../model/QualifiedId.js'
+import {QualifiedId} from '../model/QualifiedId.js'
+import {LoggerFactory} from '../utils/logger/LoggerFactory.js'
 
 @singleton()
 export class SelfService {
+  private logger = LoggerFactory.getLogger(this.constructor.name)
+
   constructor(
     private selfApiClient: SelfApiClient,
     private appProperties: AppProperties
   ) {}
 
   async fetchAndSaveSelfCredentials(): Promise<QualifiedId> {
-    const applicationQualifiedId = await this.selfApiClient.getSelfQualifiedId()
+    const response = await this.selfApiClient.getSelfQualifiedId()
+    this.logger.info('Fetching self credentials')
 
+    const applicationQualifiedId = new QualifiedId(response.id, response.domain)
     this.appProperties.saveApplicationQualifiedId(applicationQualifiedId)
+    this.logger.info(`Saved Self credentials for App: ${applicationQualifiedId}`)
+
     return applicationQualifiedId
   }
 }
