@@ -83,7 +83,8 @@ describe('ConversationService', () => {
 
     mockAppProperties = {
       getShouldRejoinConversations: vi.fn(),
-      setShouldRejoinConversations: vi.fn()
+      setShouldRejoinConversations: vi.fn(),
+      getApplicationQualifiedId: vi.fn().mockReturnValue(SELF_USER_ID)
     } as any
 
     mockCoreCryptoService = {
@@ -101,8 +102,6 @@ describe('ConversationService', () => {
     } as any
 
     conversationService = new ConversationService(
-      SELF_USER_ID.id,
-      SELF_USER_ID.domain,
       mockTeamsApiClient,
       mockConversationsApiClient,
       mockOneToOneConversationsApiClient,
@@ -1099,7 +1098,7 @@ describe('ConversationService', () => {
 
       await conversationService.leaveConversation(CONVERSATION_ID)
 
-      expect(mockConversationsApiClient.leaveConversation).toHaveBeenCalledWith(CONVERSATION_ID)
+      expect(mockConversationsApiClient.leaveConversation).toHaveBeenCalledWith(CONVERSATION_ID, SELF_USER_ID)
       expect(wipeSpy).toHaveBeenCalledWith(CONVERSATION_ID)
 
       wipeSpy.mockRestore()
@@ -1134,7 +1133,7 @@ describe('ConversationService', () => {
 
       await expect(conversationService.leaveConversation(CONVERSATION_ID)).rejects.toThrow('leave failed')
 
-      expect(mockConversationsApiClient.leaveConversation).toHaveBeenCalledWith(CONVERSATION_ID)
+      expect(mockConversationsApiClient.leaveConversation).toHaveBeenCalledWith(CONVERSATION_ID, SELF_USER_ID)
       expect(wipeSpy).not.toHaveBeenCalled()
 
       wipeSpy.mockRestore()

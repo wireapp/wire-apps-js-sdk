@@ -41,21 +41,11 @@ import {SampleCommandHandler} from './SampleCommandHandler.js'
 
 dotenv.config({path: '../.env'})
 
-const userId = process.env['WIRE_SDK_USER_ID']
 const apiToken = process.env['WIRE_SDK_API_TOKEN']
-const userDomain = process.env['WIRE_SDK_USER_DOMAIN']
 const apiHost = process.env['WIRE_SDK_API_HOST']
-
-if (!userId) {
-  throw new Error('WIRE_SDK_USER_ID must be set in .env file')
-}
 
 if (!apiToken) {
   throw new Error('WIRE_SDK_API_TOKEN must be set in .env file')
-}
-
-if (!userDomain) {
-  throw new Error('WIRE_SDK_USER_DOMAIN must be set in .env file')
 }
 
 if (!apiHost) {
@@ -238,9 +228,7 @@ sampleEventsHandler.appLogger = new PinoLogger()
 const cryptographyStorageKey = new Uint8Array(32).fill(1)
 
 const sdk = await WireAppSdk.create(
-  userId,
   apiToken,
-  userDomain,
   apiHost,
   cryptographyStorageKey,
   sampleEventsHandler,

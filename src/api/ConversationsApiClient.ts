@@ -17,24 +17,19 @@
 import {HttpClient} from '../core/HttpClient.js'
 import type {ConversationResponse} from './response/ConversationResponse.js'
 import type {QualifiedId} from '../model/QualifiedId.js'
-import {inject, singleton} from 'tsyringe'
+import {singleton} from 'tsyringe'
 import type {ConversationIdsPaginationConfig} from './model/ConversationIdsPaginationConfig.js'
 import type {ConversationIdsResponse} from './response/ConversationIdsResponse.js'
 import type {ConversationIdsRequest} from './request/ConversationIdsRequest.js'
 import type {ConversationsResponse} from './response/ConversationsResponse.js'
 import {LoggerFactory} from '../utils/logger/LoggerFactory.js'
-import {WIRE_USER_DOMAIN, WIRE_USER_ID} from '../utils/DependencyInjectionTokens.js'
 import {obfuscateId} from '../utils/ObfuscateUtil.js'
 import type {ConversationRole} from '../model/conversation/ConversationRole.js'
 import type {CreateConversationRequest} from './request/CreateConversationRequest.js'
 
 @singleton()
 export class ConversationsApiClient {
-  constructor(
-    @inject(WIRE_USER_ID) private wireUserId: string,
-    @inject(WIRE_USER_DOMAIN) private wireUserDomain: string,
-    private httpClient: HttpClient
-  ) {}
+  constructor(private httpClient: HttpClient) {}
 
   private logger = LoggerFactory.getLogger(this.constructor.name)
 
@@ -131,10 +126,10 @@ export class ConversationsApiClient {
     return await this.httpClient.postRequest<ConversationResponse>(this.basePath, createConversationRequest)
   }
 
-  async leaveConversation(conversationQualifiedId: QualifiedId): Promise<void> {
+  async leaveConversation(conversationQualifiedId: QualifiedId, appQualifiedId: QualifiedId): Promise<void> {
     this.logger.debug(`Leaving the conversation. conversationId: ${obfuscateId(conversationQualifiedId.id)}`)
 
-    const path = `${this.basePath}/${conversationQualifiedId.domain}/${conversationQualifiedId.id}/members/${this.wireUserDomain}/${this.wireUserId}`
+    const path = `${this.basePath}/${conversationQualifiedId.domain}/${conversationQualifiedId.id}/members/${appQualifiedId.domain}/${appQualifiedId.id}`
     await this.httpClient.deleteRequest(path)
 
     this.logger.info(`Left the conversation. conversationId: ${obfuscateId(conversationQualifiedId.id)}`)

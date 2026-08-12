@@ -14,7 +14,7 @@
  * along with this program. If not, see http://www.gnu.org/licenses/.
  */
 
-import {describe, expect, it} from 'vitest'
+import {beforeEach, describe, expect, it} from 'vitest'
 import {
   AssetMessage,
   CompositeButton,
@@ -29,6 +29,7 @@ import {
   Reaction,
   Receipt,
   ReceiptType,
+  setWireMessageAppQualifiedId,
   TextEditedMessage,
   TextMessage,
   Unknown
@@ -40,6 +41,11 @@ const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12
 describe('WireMessage', () => {
   const conversationId = new QualifiedId('conversation-1', 'example.com')
   const senderId = new QualifiedId('sender-1', 'example.com')
+  const appQualifiedId = new QualifiedId('app-1', 'example.com')
+
+  beforeEach(() => {
+    setWireMessageAppQualifiedId(undefined)
+  })
 
   describe('TextMessage.create', () => {
     it('should create a text message with required fields and defaults', () => {
@@ -71,6 +77,22 @@ describe('WireMessage', () => {
       expect(message.sender).toBe(senderId)
       expect(message.timestamp).toBe(timestamp)
       expect(message.expiresAfterMillis).toBe(5000)
+    })
+
+    it('should use the configured app qualified id as default sender', () => {
+      setWireMessageAppQualifiedId(appQualifiedId)
+
+      const message = TextMessage.create({conversationId, text: 'hello'})
+
+      expect(message.sender).toBe(appQualifiedId)
+    })
+
+    it('should prefer provided sender over the configured app qualified id', () => {
+      setWireMessageAppQualifiedId(appQualifiedId)
+
+      const message = TextMessage.create({conversationId, text: 'hello', senderId})
+
+      expect(message.sender).toBe(senderId)
     })
 
     it('should preserve provided mentions and linkPreviews', () => {

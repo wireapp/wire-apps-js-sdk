@@ -21,7 +21,7 @@ import {ConversationsApiClient} from '../../src/api/ConversationsApiClient.js'
 import {ConversationRepository} from '../../src/db/ConversationRepository.js'
 import {ConversationMemberRepository} from '../../src/db/ConversationMemberRepository.js'
 import {ConversationType} from '../../src/model/conversation/ConversationType.js'
-import type {QualifiedId} from '../../src/model/QualifiedId.js'
+import {QualifiedId} from '../../src/model/QualifiedId.js'
 import type {ConversationResponse} from '../../src/api/response/ConversationResponse.js'
 import {TestDatabaseService} from '../helpers/TestDatabaseService.js'
 import type {ConversationEntity} from '../../src/db/model/ConversationEntity.js'
@@ -79,7 +79,8 @@ describe('ConversationService Integration', () => {
 
     mockAppProperties = {
       getShouldRejoinConversations: vi.fn(),
-      setShouldRejoinConversations: vi.fn()
+      setShouldRejoinConversations: vi.fn(),
+      getApplicationQualifiedId: vi.fn().mockReturnValue(SELF_USER_ID)
     } as any
 
     mockCoreCryptoService = {
@@ -96,8 +97,6 @@ describe('ConversationService Integration', () => {
     } as any
 
     conversationService = new ConversationService(
-      SELF_USER_ID.id,
-      SELF_USER_ID.domain,
       mockTeamsApiClient,
       mockConversationsApiClient,
       mockOneToOneConversationsApiClient,
