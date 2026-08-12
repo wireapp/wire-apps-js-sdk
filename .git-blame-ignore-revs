@@ -3,5 +3,5 @@
 #   git config blame.ignoreRevsFile .git-blame-ignore-revs
 # GitHub's web blame view honours this file automatically.
 
-# chore: WPB-22412 mass Prettier reformat
-53e56ea76fbb53c05ac00e68b88b038c3656072e
+# chore: WPB-22412 mass Prettier reformat + shared linter setup (squash-merged)
+609cbcffc1f906d0cced1c7a5e634efe09ca9d0e
