@@ -16,7 +16,9 @@
 
 import {singleton} from 'tsyringe'
 import {HttpClient} from '../core/HttpClient.js'
-import type {QualifiedId} from '../model/QualifiedId.js'
+import {QualifiedId} from '../model/QualifiedId.js'
+import {UnknownError} from '../exception/WireException.js'
+import type {SelfResponse} from './response/SelfResponse.js'
 
 @singleton()
 export class SelfApiClient {
@@ -25,10 +27,12 @@ export class SelfApiClient {
   private readonly basePath = 'self'
 
   async getSelfQualifiedId(): Promise<QualifiedId> {
-    return (await this.httpClient.getRequest<SelfResponse>(this.basePath)).qualified_id
-  }
-}
+    const response = await this.httpClient.getRequest<SelfResponse>(this.basePath)
 
-export interface SelfResponse {
-  qualified_id: QualifiedId
+    if (!response.qualified_id?.id || !response.qualified_id.domain) {
+      throw new UnknownError('Invalid /self response: missing qualified_id.')
+    }
+
+    return new QualifiedId(response.qualified_id.id, response.qualified_id.domain)
+  }
 }

@@ -30,12 +30,11 @@ export class SelfService {
   ) {}
 
   async fetchAndSaveSelfCredentials(): Promise<QualifiedId> {
-    const response = await this.selfApiClient.getSelfQualifiedId()
     this.logger.info('Fetching self credentials')
+    const applicationQualifiedId = await this.selfApiClient.getSelfQualifiedId()
 
-    const applicationQualifiedId = new QualifiedId(response.id, response.domain)
+    this.logger.info(`Saving self credentials for App: ${applicationQualifiedId}`)
     this.appProperties.saveApplicationQualifiedId(applicationQualifiedId)
-    this.logger.info(`Saved Self credentials for App: ${applicationQualifiedId}`)
 
     return applicationQualifiedId
   }

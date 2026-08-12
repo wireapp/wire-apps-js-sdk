@@ -47,7 +47,7 @@ describe('SelfService', () => {
 
       expect(mockSelfApiClient.getSelfQualifiedId).toHaveBeenCalled()
       expect(mockAppProperties.saveApplicationQualifiedId).toHaveBeenCalledWith(APP_QUALIFIED_ID)
-      expect(result).toBe(APP_QUALIFIED_ID)
+      expect(result).toEqual(APP_QUALIFIED_ID)
     })
 
     it('should not save when fetching self credentials fails', async () => {

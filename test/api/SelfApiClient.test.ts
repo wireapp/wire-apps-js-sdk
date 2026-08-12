@@ -35,18 +35,33 @@ describe('SelfApiClient', () => {
 
   describe('getSelfQualifiedId', () => {
     it('should get the current app qualified id from /self', async () => {
-      vi.mocked(mockHttpClient.getRequest).mockResolvedValue({qualified_id: APP_QUALIFIED_ID})
+      vi.mocked(mockHttpClient.getRequest).mockResolvedValue({
+        qualified_id: {id: APP_QUALIFIED_ID.id, domain: APP_QUALIFIED_ID.domain}
+      })
 
       const result = await selfApiClient.getSelfQualifiedId()
 
       expect(mockHttpClient.getRequest).toHaveBeenCalledWith('self')
-      expect(result).toBe(APP_QUALIFIED_ID)
+      expect(result).toBeInstanceOf(QualifiedId)
+      expect(result).toEqual(APP_QUALIFIED_ID)
     })
 
     it('should propagate errors from getRequest', async () => {
       vi.mocked(mockHttpClient.getRequest).mockRejectedValue(new Error('network-failure'))
 
       await expect(selfApiClient.getSelfQualifiedId()).rejects.toThrow('network-failure')
+    })
+
+    it('should throw when /self does not include qualified_id', async () => {
+      vi.mocked(mockHttpClient.getRequest).mockResolvedValue({})
+
+      await expect(selfApiClient.getSelfQualifiedId()).rejects.toThrow('Invalid /self response: missing qualified_id.')
+    })
+
+    it('should throw when /self qualified_id is incomplete', async () => {
+      vi.mocked(mockHttpClient.getRequest).mockResolvedValue({qualified_id: {id: APP_QUALIFIED_ID.id}})
+
+      await expect(selfApiClient.getSelfQualifiedId()).rejects.toThrow('Invalid /self response: missing qualified_id.')
     })
   })
 })
