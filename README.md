@@ -83,9 +83,7 @@ CommonJS `require()` is not the supported integration path for this alpha releas
 Environment Variables can be checked from: `.env.example` file
 
 ```
-WIRE_SDK_USER_ID=your-user-ID-UUID-format
 WIRE_SDK_API_TOKEN=your-api-token
-WIRE_SDK_USER_DOMAIN=yourdomain
 WIRE_SDK_API_HOST=https://your-api.host
 ```
 
@@ -113,7 +111,7 @@ If the SDK fails to start because a native module cannot be loaded, check that N
 
 If database migrations fail at startup, verify that the package was built before running and that `build/db/migrations/**` exists. Published npm installs include these files, but local development builds need `npm run build` to copy them into `build`.
 
-If environment variables are missing, confirm that `.env` exists at the repository root when running the bundled sample app. The sample validates `WIRE_SDK_USER_ID`, `WIRE_SDK_API_TOKEN`, `WIRE_SDK_USER_DOMAIN`, and `WIRE_SDK_API_HOST` on startup.
+If environment variables are missing, confirm that `.env` exists at the repository root when running the bundled sample app. The sample validates `WIRE_SDK_API_TOKEN` and `WIRE_SDK_API_HOST` on startup.
 
 ### Testing the SDK
 
