@@ -20,12 +20,9 @@ import {singleton} from 'tsyringe'
 import type {UserClientResponse} from './model/UserClientResponse.js'
 import {QualifiedId} from '../model/QualifiedId.js'
 import type {ListUsersResponse} from './response/ListUsersResponse.js'
-import {LoggerFactory} from '../utils/logger/LoggerFactory.js'
 
 @singleton()
 export class UsersApiClient {
-  private logger = LoggerFactory.getLogger(this.constructor.name)
-
   constructor(private httpClient: HttpClient) {}
 
   private readonly basePathUsers = 'users'
@@ -63,8 +60,6 @@ export class UsersApiClient {
   // Note that this method is using {$basePathListUsers} as the base path
   async listUsers(userIds: QualifiedId[]): Promise<ListUsersResponse> {
     const path = `${this.basePathListUsers}`
-    const response = await this.httpClient.postRequest<ListUsersResponse>(path, {qualified_ids: userIds})
-    this.logger.debug(`Baris - TEMPORARY listUsers response: ${JSON.stringify(response)}`)
-    return response
+    return await this.httpClient.postRequest<ListUsersResponse>(path, {qualified_ids: userIds})
   }
 }
