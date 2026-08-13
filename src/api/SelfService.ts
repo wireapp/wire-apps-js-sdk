@@ -30,12 +30,12 @@ export class SelfService {
     private appProperties: AppProperties
   ) {}
 
-  async fetchAndSaveSelfCredentials(): Promise<QualifiedId> {
-    this.logger.info('Fetching self credentials')
+  async fetchAndSaveApplicationQualifiedId(): Promise<QualifiedId> {
+    this.logger.info('Fetching application QualifiedId')
     const applicationQualifiedId = await this.selfApiClient.getSelfQualifiedId()
 
     if (!this.appProperties.hasApplicationQualifiedId()) {
-      this.logger.info(`Saving self credentials for App: ${applicationQualifiedId}`)
+      this.logger.info(`Saving application QualifiedId: ${applicationQualifiedId}`)
       this.appProperties.saveApplicationQualifiedId(applicationQualifiedId)
       return applicationQualifiedId
     }
@@ -43,11 +43,11 @@ export class SelfService {
     const storedApplicationQualifiedId = this.appProperties.getApplicationQualifiedId()
     if (QualifiedId.toKey(storedApplicationQualifiedId) !== QualifiedId.toKey(applicationQualifiedId)) {
       throw new UnknownError(
-        `Stored App ${storedApplicationQualifiedId} does not match fetched self ${applicationQualifiedId}. Clear SDK storage before using a token for another app.`
+        `Stored application QualifiedId ${storedApplicationQualifiedId} does not match fetched self QualifiedId ${applicationQualifiedId}. Clear SDK storage before using a token for another app.`
       )
     }
 
-    this.logger.info(`Self credentials already stored for App: ${storedApplicationQualifiedId}`)
+    this.logger.info(`Application QualifiedId already stored: ${storedApplicationQualifiedId}`)
     return applicationQualifiedId
   }
 }

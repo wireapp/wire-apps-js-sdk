@@ -96,9 +96,9 @@ export class WireAppSdk {
     // Save cookie from constructor parameter only at first application start.
     // Once BE provides new token, the one stored in `apiToken` will be obsolete.
     this.appProperties = container.resolve(AppProperties)
-    this.appProperties!.saveBackendCookieIfMissing(this.apiToken)
+    this.appProperties.saveBackendCookieIfMissing(this.apiToken)
 
-    await this.configureApplicationCredentials()
+    await this.configureApplicationIdentity()
     this.resolveRuntimeDependencies()
 
     await this.initCryptoClient()
@@ -122,9 +122,9 @@ export class WireAppSdk {
     this.conversationService = container.resolve(ConversationService)
   }
 
-  private async configureApplicationCredentials() {
+  private async configureApplicationIdentity() {
     const selfService = container.resolve(SelfService)
-    await selfService.fetchAndSaveSelfCredentials()
+    await selfService.fetchAndSaveApplicationQualifiedId()
   }
 
   private async initCryptoClient() {

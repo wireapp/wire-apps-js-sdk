@@ -42,11 +42,11 @@ describe('SelfService', () => {
     selfService = new SelfService(mockSelfApiClient, mockAppProperties)
   })
 
-  describe('fetchAndSaveSelfCredentials', () => {
+  describe('fetchAndSaveApplicationQualifiedId', () => {
     it('should fetch, save, and return the current app qualified id when none is stored', async () => {
       vi.mocked(mockSelfApiClient.getSelfQualifiedId).mockResolvedValue(APP_QUALIFIED_ID)
 
-      const result = await selfService.fetchAndSaveSelfCredentials()
+      const result = await selfService.fetchAndSaveApplicationQualifiedId()
 
       expect(mockSelfApiClient.getSelfQualifiedId).toHaveBeenCalled()
       expect(mockAppProperties.hasApplicationQualifiedId).toHaveBeenCalled()
@@ -60,7 +60,7 @@ describe('SelfService', () => {
       vi.mocked(mockAppProperties.hasApplicationQualifiedId).mockReturnValue(true)
       vi.mocked(mockAppProperties.getApplicationQualifiedId).mockReturnValue(APP_QUALIFIED_ID)
 
-      const result = await selfService.fetchAndSaveSelfCredentials()
+      const result = await selfService.fetchAndSaveApplicationQualifiedId()
 
       expect(mockAppProperties.getApplicationQualifiedId).toHaveBeenCalled()
       expect(mockAppProperties.saveApplicationQualifiedId).not.toHaveBeenCalled()
@@ -72,15 +72,15 @@ describe('SelfService', () => {
       vi.mocked(mockAppProperties.hasApplicationQualifiedId).mockReturnValue(true)
       vi.mocked(mockAppProperties.getApplicationQualifiedId).mockReturnValue(OTHER_APP_QUALIFIED_ID)
 
-      await expect(selfService.fetchAndSaveSelfCredentials()).rejects.toThrow('Stored application QualifiedId')
+      await expect(selfService.fetchAndSaveApplicationQualifiedId()).rejects.toThrow('Stored application QualifiedId')
 
       expect(mockAppProperties.saveApplicationQualifiedId).not.toHaveBeenCalled()
     })
 
-    it('should not save when fetching self credentials fails', async () => {
+    it('should not save when fetching application qualified id fails', async () => {
       vi.mocked(mockSelfApiClient.getSelfQualifiedId).mockRejectedValue(new Error('network-failure'))
 
-      await expect(selfService.fetchAndSaveSelfCredentials()).rejects.toThrow('network-failure')
+      await expect(selfService.fetchAndSaveApplicationQualifiedId()).rejects.toThrow('network-failure')
 
       expect(mockAppProperties.hasApplicationQualifiedId).not.toHaveBeenCalled()
       expect(mockAppProperties.saveApplicationQualifiedId).not.toHaveBeenCalled()
