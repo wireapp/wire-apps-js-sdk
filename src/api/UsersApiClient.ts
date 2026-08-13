@@ -19,20 +19,22 @@ import type {UserResponse} from './model/UserResponse.js'
 import {singleton} from 'tsyringe'
 import type {UserClientResponse} from './model/UserClientResponse.js'
 import {QualifiedId} from '../model/QualifiedId.js'
+import type {ListUsersResponse} from './response/ListUsersResponse.js'
 
 @singleton()
 export class UsersApiClient {
   constructor(private httpClient: HttpClient) {}
 
-  private readonly basePath = 'users'
+  private readonly basePathUsers = 'users'
+  private readonly basePathListUsers = 'list-users'
 
   async getUser(userId: string, userDomain: string): Promise<UserResponse> {
-    const path = `${this.basePath}/${userDomain}/${userId}`
+    const path = `${this.basePathUsers}/${userDomain}/${userId}`
     return await this.httpClient.getRequest<UserResponse>(path)
   }
 
   async getClientsByUserIds(userIds: QualifiedId[]): Promise<Map<string, UserClientResponse[]>> {
-    const path = `${this.basePath}/list-clients`
+    const path = `${this.basePathUsers}/list-clients`
     const response = await this.httpClient.postRequest<{
       qualified_user_map: Record<string, Record<string, UserClientResponse[]>>
     }>(path, {qualified_users: userIds})
@@ -53,5 +55,11 @@ export class UsersApiClient {
     }
 
     return result
+  }
+
+  // Note that this method is using {$basePathListUsers} as the base path
+  async listUsers(userIds: QualifiedId[]): Promise<ListUsersResponse> {
+    const path = `${this.basePathListUsers}`
+    return await this.httpClient.postRequest<ListUsersResponse>(path, {qualified_ids: userIds})
   }
 }

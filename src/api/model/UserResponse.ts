@@ -16,6 +16,7 @@
 
 import type {CryptoProtocol} from '../../model/CryptoProtocol.js'
 import type {QualifiedId} from '../../model/QualifiedId.js'
+import type {UserType} from '../../model/UserType.js'
 
 export interface UserResponse {
   qualified_id: QualifiedId
@@ -25,4 +26,5 @@ export interface UserResponse {
   handle?: string
   supported_protocols: CryptoProtocol[]
   deleted: boolean
+  type?: UserType | null
 }

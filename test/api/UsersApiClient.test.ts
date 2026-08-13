@@ -170,3 +170,101 @@ describe('UsersApiClient (getClientsByUserIds)', () => {
     await expect(client.getClientsByUserIds(userIds)).rejects.toThrow('network-failure')
   })
 })
+
+describe('UsersApiClient (listUsers)', () => {
+  let mockHttpClient: any
+  let client: UsersApiClient
+
+  beforeEach(() => {
+    mockHttpClient = {
+      postRequest: vi.fn()
+    }
+
+    client = new UsersApiClient(mockHttpClient)
+
+    vi.spyOn(console, 'debug').mockImplementation(() => {})
+  })
+
+  const userIds: QualifiedId[] = [
+    {id: 'user-1', domain: 'example.com'},
+    {id: 'user-2', domain: 'example.com'}
+  ]
+
+  const mockFoundUsers = [
+    {
+      qualified_id: {id: 'user-1', domain: 'example.com'},
+      name: 'Alice',
+      handle: 'alice',
+      email: 'alice@example.com',
+      supported_protocols: [CryptoProtocol.PROTEUS],
+      deleted: false,
+      type: 'regular'
+    },
+    {
+      qualified_id: {id: 'user-2', domain: 'example.com'},
+      name: 'Bot',
+      handle: 'bot_handle',
+      supported_protocols: [CryptoProtocol.PROTEUS],
+      deleted: false,
+      type: 'bot'
+    }
+  ]
+
+  it('should call httpClient.postRequest with the correct path and body', async () => {
+    vi.mocked(mockHttpClient.postRequest).mockResolvedValue({found: mockFoundUsers})
+
+    await client.listUsers(userIds)
+
+    expect(mockHttpClient.postRequest).toHaveBeenCalledWith('list-users', {qualified_ids: userIds})
+  })
+
+  it('should return found users from the response', async () => {
+    vi.mocked(mockHttpClient.postRequest).mockResolvedValue({found: mockFoundUsers})
+
+    const result = await client.listUsers(userIds)
+
+    expect(result.found).toHaveLength(2)
+    expect(result.found[0]).toEqual(mockFoundUsers[0])
+    expect(result.found[1]).toEqual(mockFoundUsers[1])
+  })
+
+  it('should include failed users in the response when present', async () => {
+    const failedUsers = [{id: 'user-3', domain: 'example.com'}]
+    vi.mocked(mockHttpClient.postRequest).mockResolvedValue({found: mockFoundUsers, failed: failedUsers})
+
+    const result = await client.listUsers(userIds)
+
+    expect(result.failed).toEqual(failedUsers)
+  })
+
+  it('should return an empty found array when no users are found', async () => {
+    vi.mocked(mockHttpClient.postRequest).mockResolvedValue({found: []})
+
+    const result = await client.listUsers(userIds)
+
+    expect(result.found).toHaveLength(0)
+  })
+
+  it('should return user with type field when present', async () => {
+    vi.mocked(mockHttpClient.postRequest).mockResolvedValue({found: [mockFoundUsers[0]]})
+
+    const result = await client.listUsers(userIds)
+
+    expect(result.found[0]!.type).toBe('regular')
+  })
+
+  it('should return user without type field when absent', async () => {
+    const {type: _, ...userWithoutType} = mockFoundUsers[0]!
+    vi.mocked(mockHttpClient.postRequest).mockResolvedValue({found: [userWithoutType]})
+
+    const result = await client.listUsers(userIds)
+
+    expect(result.found[0]!.type).toBeUndefined()
+  })
+
+  it('should propagate errors from httpClient.postRequest', async () => {
+    vi.mocked(mockHttpClient.postRequest).mockRejectedValue(new Error('network-failure'))
+
+    await expect(client.listUsers(userIds)).rejects.toThrow('network-failure')
+  })
+})

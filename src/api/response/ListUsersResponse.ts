@@ -14,18 +14,10 @@
  * along with this program. If not, see http://www.gnu.org/licenses/.
  */
 
-import type {QualifiedId} from './QualifiedId.js'
-import type {TeamId} from './TeamId.js'
-import type {UserType} from './UserType.js'
+import type {UserResponse} from '../model/UserResponse.js'
+import type {QualifiedId} from '../../model/QualifiedId.js'
 
-export class WireUser {
-  constructor(
-    readonly id: QualifiedId,
-    readonly name: string,
-    readonly deleted: boolean,
-    readonly email?: string,
-    readonly handle?: string,
-    readonly teamId?: TeamId,
-    readonly type?: UserType | null
-  ) {}
+export interface ListUsersResponse {
+  found: UserResponse[]
+  failed?: QualifiedId[]
 }

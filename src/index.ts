@@ -65,6 +65,7 @@ export {ConversationRole} from './model/conversation/ConversationRole.js'
 export type {RemoveMembersFromConversationResult} from './api/model/RemoveMembersFromConversationResult.js'
 export {QualifiedId} from './model/QualifiedId.js'
 export {WireUser} from './model/WireUser.js'
+export {UserType} from './model/UserType.js'
 export {obfuscateId} from './utils/ObfuscateUtil.js'
 export {
   WireException,
