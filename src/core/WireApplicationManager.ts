@@ -172,6 +172,11 @@ export class WireApplicationManager {
     return await this.userService.getUser(userQualifiedId)
   }
 
+  async getUsers(userIds: QualifiedId[]): Promise<WireUser[]> {
+    this.logger.debug(`App requested to get info for ${userIds.length} users`)
+    return await this.userService.getUsers(userIds)
+  }
+
   async getAllConversations(): Promise<Conversation[]> {
     this.logger.debug('App requested to get all conversations')
     return this.conversationService.getAllConversations()
