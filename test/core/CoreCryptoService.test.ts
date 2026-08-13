@@ -20,6 +20,7 @@ import {CoreCryptoClient} from '../../src/core/CoreCryptoClient.js'
 import {CoreCryptoError, MlsError} from '@wireapp/core-crypto/native'
 import {Decoder} from 'bazinga64'
 import {CryptoClientId} from '../../src/model/CryptoClientId.js'
+import {QualifiedId} from '../../src/model/QualifiedId.js'
 
 // ---------------------------------------------------------------------------
 // CoreCryptoService builds its own CoreCryptoClient internally (via the
@@ -113,7 +114,8 @@ describe('CoreCryptoService', () => {
       hasDeviceId: vi.fn(),
       getDeviceId: vi.fn(),
       setDeviceId: vi.fn(),
-      setShouldRejoinConversations: vi.fn()
+      setShouldRejoinConversations: vi.fn(),
+      getApplicationQualifiedId: vi.fn().mockReturnValue(new QualifiedId(WIRE_USER_ID, WIRE_USER_DOMAIN))
     }
 
     mockCoreCryptoClientInstance = {
@@ -141,8 +143,6 @@ describe('CoreCryptoService', () => {
     vi.mocked(CoreCryptoClient.getMlsCiphersuiteName).mockReturnValue('mock-ciphersuite' as any)
 
     service = new CoreCryptoService(
-      WIRE_USER_ID,
-      WIRE_USER_DOMAIN,
       STORAGE_KEY,
       mockFeatureConfigsService,
       mockClientsService,
@@ -150,6 +150,8 @@ describe('CoreCryptoService', () => {
       mockMlsTransport,
       mockAppProperties
     )
+
+    expect(mockAppProperties.getApplicationQualifiedId).not.toHaveBeenCalled()
   })
 
   const initService = async () => {
@@ -162,6 +164,7 @@ describe('CoreCryptoService', () => {
       await initService()
 
       // then
+      expect(mockAppProperties.getApplicationQualifiedId).toHaveBeenCalled()
       expect(mockFeatureConfigsService.getDefaultCipherSuite).toHaveBeenCalled()
       expect(CoreCryptoClient.create).toHaveBeenCalledWith(
         WIRE_USER_ID,

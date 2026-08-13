@@ -22,8 +22,6 @@ import {
   WIRE_API_HOST,
   WIRE_CRYPTOGRAPHY_STORAGE_KEY,
   WIRE_EVENTS_HANDLER,
-  WIRE_USER_DOMAIN,
-  WIRE_USER_ID,
   WIRE_SDK_API_TOKEN
 } from './utils/DependencyInjectionTokens.js'
 import {WebSocketClient} from './core/WebSocketClient.js'
@@ -38,12 +36,11 @@ import {AppProperties} from './service/AppProperties.js'
 import {CRYPTOGRAPHY_STORAGE_PATH, STORAGE_PATH} from './utils/StoragePaths.js'
 import type {BackendConnectionListener} from './core/BackendConnectionListener.js'
 import {InvalidParameterError, UnknownError} from './exception/WireException.js'
+import {SelfService} from './api/SelfService.js'
 
 export class WireAppSdk {
   private readonly CRYPTOGRAPHY_STORAGE_KEY_BYTES = 32
-  private userId: string
   private apiToken: string
-  private userDomain: string
   private apiHost: string
   private cryptographyStorageKey: Uint8Array
 
@@ -58,9 +55,7 @@ export class WireAppSdk {
   private logger: Logger
 
   private constructor(
-    userId: string,
     apiToken: string,
-    userDomain: string,
     apiHost: string,
     cryptographyStorageKey: Uint8Array,
     wireEventsHandler: WireEventsHandler,
@@ -72,9 +67,7 @@ export class WireAppSdk {
       )
     }
 
-    this.userId = userId
     this.apiToken = apiToken
-    this.userDomain = userDomain
     this.apiHost = apiHost
     this.cryptographyStorageKey = cryptographyStorageKey
     this.wireEventsHandler = wireEventsHandler
@@ -83,23 +76,13 @@ export class WireAppSdk {
   }
 
   static async create(
-    userId: string,
     apiToken: string,
-    userDomain: string,
     apiHost: string,
     cryptographyStorageKey: Uint8Array,
     wireEventsHandler: WireEventsHandler,
     logger?: Logger
   ): Promise<WireAppSdk> {
-    const wireAppSdk = new WireAppSdk(
-      userId,
-      apiToken,
-      userDomain,
-      apiHost,
-      cryptographyStorageKey,
-      wireEventsHandler,
-      logger
-    )
+    const wireAppSdk = new WireAppSdk(apiToken, apiHost, cryptographyStorageKey, wireEventsHandler, logger)
 
     wireAppSdk.registerExitHandlers()
     await wireAppSdk.init()
@@ -108,10 +91,15 @@ export class WireAppSdk {
 
   private async init() {
     this.prepareStorage()
-    this.configureDependencies()
+    this.configureDependencyTokens()
+
     // Save cookie from constructor parameter only at first application start.
     // Once BE provides new token, the one stored in `apiToken` will be obsolete.
-    this.appProperties!.saveBackendCookieIfMissing(this.apiToken)
+    this.appProperties = container.resolve(AppProperties)
+    this.appProperties.saveBackendCookieIfMissing(this.apiToken)
+
+    await this.configureApplicationIdentity()
+    this.resolveRuntimeDependencies()
 
     await this.initCryptoClient()
   }
@@ -121,18 +109,22 @@ export class WireAppSdk {
     mkdirSync(CRYPTOGRAPHY_STORAGE_PATH, {recursive: true})
   }
 
-  private configureDependencies() {
+  private configureDependencyTokens() {
     container.registerInstance(WIRE_API_HOST, this.apiHost)
     container.registerInstance(WIRE_SDK_API_TOKEN, this.apiToken)
-    container.registerInstance(WIRE_USER_ID, this.userId)
-    container.registerInstance(WIRE_USER_DOMAIN, this.userDomain)
     container.registerInstance(WIRE_CRYPTOGRAPHY_STORAGE_KEY, this.cryptographyStorageKey)
 
     container.registerInstance(WIRE_EVENTS_HANDLER, this.wireEventsHandler)
+  }
 
+  private resolveRuntimeDependencies() {
     this.webSocketClient = container.resolve(WebSocketClient)
     this.conversationService = container.resolve(ConversationService)
-    this.appProperties = container.resolve(AppProperties)
+  }
+
+  private async configureApplicationIdentity() {
+    const selfService = container.resolve(SelfService)
+    await selfService.fetchAndSaveApplicationQualifiedId()
   }
 
   private async initCryptoClient() {

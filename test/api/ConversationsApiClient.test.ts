@@ -19,11 +19,9 @@ import {ConversationsApiClient} from '../../src/api/ConversationsApiClient.js'
 import type {QualifiedId} from '../../src/model/QualifiedId.js'
 import {ConversationRole} from '../../src/model/conversation/ConversationRole.js'
 
-const WIRE_USER_ID = 'self-user-id'
-const WIRE_USER_DOMAIN = 'wire.com'
-
 const CONVERSATION_ID: QualifiedId = {id: 'conv-1', domain: 'example.com'}
 const USER_ID: QualifiedId = {id: 'user-1', domain: 'example.com'}
+const APP_QUALIFIED_ID: QualifiedId = {id: 'self-user-id', domain: 'wire.com'}
 
 describe('ConversationsApiClient', () => {
   let mockHttpClient: any
@@ -37,7 +35,7 @@ describe('ConversationsApiClient', () => {
       deleteRequest: vi.fn()
     }
 
-    client = new ConversationsApiClient(WIRE_USER_ID, WIRE_USER_DOMAIN, mockHttpClient)
+    client = new ConversationsApiClient(mockHttpClient)
 
     vi.spyOn(console, 'info').mockImplementation(() => {})
     vi.spyOn(console, 'debug').mockImplementation(() => {})
@@ -209,17 +207,17 @@ describe('ConversationsApiClient', () => {
     it('should call deleteRequest with the correct path', async () => {
       vi.mocked(mockHttpClient.deleteRequest).mockResolvedValue(undefined)
 
-      await client.leaveConversation(CONVERSATION_ID)
+      await client.leaveConversation(CONVERSATION_ID, APP_QUALIFIED_ID)
 
       expect(mockHttpClient.deleteRequest).toHaveBeenCalledWith(
-        `conversations/${CONVERSATION_ID.domain}/${CONVERSATION_ID.id}/members/${WIRE_USER_DOMAIN}/${WIRE_USER_ID}`
+        `conversations/${CONVERSATION_ID.domain}/${CONVERSATION_ID.id}/members/${APP_QUALIFIED_ID.domain}/${APP_QUALIFIED_ID.id}`
       )
     })
 
     it('should propagate errors from deleteRequest', async () => {
       vi.mocked(mockHttpClient.deleteRequest).mockRejectedValue(new Error('network-failure'))
 
-      await expect(client.leaveConversation(CONVERSATION_ID)).rejects.toThrow('network-failure')
+      await expect(client.leaveConversation(CONVERSATION_ID, APP_QUALIFIED_ID)).rejects.toThrow('network-failure')
     })
   })
 })

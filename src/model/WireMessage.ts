@@ -20,10 +20,6 @@ import Long from 'long'
 import {MessageContentEncoder} from '../mappers/protobuf/MessageContentEncoder.js'
 import {InvalidParameterError} from '../exception/WireException.js'
 
-const appUserId = process.env['WIRE_SDK_USER_ID']!
-const appUserDomain = process.env['WIRE_SDK_USER_DOMAIN']!
-const appQualifiedId = new QualifiedId(appUserId, appUserDomain)
-
 export type Item = object
 
 export const WireMessageType = {
@@ -191,7 +187,7 @@ export const TextMessage = {
       type: WireMessageType.TEXT,
       id: params.messageId ?? crypto.randomUUID(),
       conversationId: params.conversationId,
-      sender: params.senderId ?? appQualifiedId,
+      ...(params.senderId && {sender: params.senderId}),
       text: params.text,
       mentions: params.mentions ?? [],
       linkPreviews: params.linkPreviews ?? [],
@@ -222,7 +218,7 @@ export const TextMessage = {
       type: WireMessageType.TEXT,
       id: params.messageId ?? crypto.randomUUID(),
       conversationId: params.originalMessage.conversationId,
-      sender: params.senderId ?? appQualifiedId,
+      ...(params.senderId && {sender: params.senderId}),
       text: params.text,
       mentions: params.mentions ?? [],
       quotedMessageId: params.originalMessage.id,
@@ -255,7 +251,7 @@ export const TextEditedMessage = {
       type: WireMessageType.TEXT_EDITED,
       id: params.messageId ?? crypto.randomUUID(),
       conversationId: params.conversationId,
-      sender: params.senderId ?? appQualifiedId,
+      ...(params.senderId && {sender: params.senderId}),
       replacingMessageId: params.replacingMessageId,
       text: params.text,
       mentions: params.mentions ?? [],
@@ -290,7 +286,7 @@ export const AssetMessage = {
       type: WireMessageType.ASSET,
       id: params.messageId ?? crypto.randomUUID(),
       conversationId: params.conversationId,
-      sender: params.senderId ?? appQualifiedId,
+      ...(params.senderId && {sender: params.senderId}),
       timestamp: params.timestamp ?? new Date(),
       sizeInBytes: params.sizeInBytes,
       name: params.name ?? null,
@@ -368,7 +364,7 @@ export const CompositeButtonAction = {
       conversationId: params.conversationId,
       buttonId: params.buttonId,
       referenceMessageId: params.referenceMessageId,
-      sender: params.senderId ?? appQualifiedId
+      ...(params.senderId && {sender: params.senderId})
     }
   }
 }
@@ -423,7 +419,7 @@ export const CompositeMessage = {
       id: params.messageId ?? crypto.randomUUID(),
       conversationId: params.conversationId,
       items: [...(textItem ? [textItem] : []), ...params.itemList],
-      sender: params.senderId ?? appQualifiedId
+      ...(params.senderId && {sender: params.senderId})
     }
   }
 }
@@ -446,7 +442,7 @@ export const CompositeEditedMessage = {
       id: params.messageId ?? crypto.randomUUID(),
       conversationId: params.conversationId,
       items: params.itemList,
-      sender: params.senderId ?? appQualifiedId,
+      ...(params.senderId && {sender: params.senderId}),
       replacingMessageId: params.replacingMessageId
     }
   }
@@ -501,7 +497,7 @@ export const Location = {
       longitude: params.longitude,
       name: params.name ?? null,
       zoom: params.zoom ?? null,
-      sender: params.senderId ?? appQualifiedId,
+      ...(params.senderId && {sender: params.senderId}),
       timestamp: params.timestamp ?? new Date(),
       expiresAfterMillis: params.expiresAfterMillis ?? null
     }
@@ -557,7 +553,7 @@ export const Receipt = {
       conversationId: params.conversationId,
       receiptType: params.receiptType,
       messageIds: params.messageIds,
-      sender: params.senderId ?? appQualifiedId
+      ...(params.senderId && {sender: params.senderId})
     }
   }
 }

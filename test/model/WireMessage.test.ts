@@ -53,6 +53,7 @@ describe('WireMessage', () => {
       expect(message.linkPreviews).toEqual([])
       expect(message.expiresAfterMillis).toBeNull()
       expect(message.timestamp).toBeInstanceOf(Date)
+      expect('sender' in message).toBe(false)
     })
 
     it('should use provided messageId, sender, timestamp and expiresAfterMillis', () => {

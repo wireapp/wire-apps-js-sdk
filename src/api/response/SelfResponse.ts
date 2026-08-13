@@ -1,6 +1,6 @@
 /*
  * Wire
- * Copyright (C) 2025 Wire Swiss GmbH
+ * Copyright (C) 2026 Wire Swiss GmbH
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,10 +14,8 @@
  * along with this program. If not, see http://www.gnu.org/licenses/.
  */
 
-export const WIRE_API_HOST = 'WIRE_API_HOST'
-export const WIRE_SDK_API_TOKEN = 'WIRE_SDK_API_TOKEN'
-export const WIRE_CRYPTOGRAPHY_STORAGE_KEY = 'WIRE_CRYPTOGRAPHY_STORAGE_KEY'
+import type {QualifiedId} from '../../model/QualifiedId.js'
 
-export const WIRE_EVENTS_HANDLER = 'WIRE_EVENTS_HANDLER'
-
-export const EVENT_PROCESSOR = 'EVENT_PROCESSOR'
+export interface SelfResponse {
+  qualified_id: QualifiedId
+}

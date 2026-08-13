@@ -24,13 +24,12 @@ import type {ConversationMember} from '../model/conversation/ConversationMember.
 import type {ConversationMemberEntity} from '../db/model/ConversationMemberEntity.js'
 import {obfuscateId} from '../utils/ObfuscateUtil.js'
 import {ConversationsApiClient} from './ConversationsApiClient.js'
-import {inject, singleton} from 'tsyringe'
+import {singleton} from 'tsyringe'
 import type {ConversationMemberOtherResponse} from './model/ConversationMemberOtherResponse.js'
 import {LoggerFactory} from '../utils/logger/LoggerFactory.js'
 import {AppProperties} from '../service/AppProperties.js'
 import {CryptoProtocol} from '../model/CryptoProtocol.js'
 import {CoreCryptoService} from '../core/CoreCryptoService.js'
-import {WIRE_USER_DOMAIN, WIRE_USER_ID} from '../utils/DependencyInjectionTokens.js'
 import {ConversationRole} from '../model/conversation/ConversationRole.js'
 import {TeamsApiClient} from './TeamsApiClient.js'
 import {TeamId} from '../model/TeamId.js'
@@ -53,10 +52,9 @@ import {ForbiddenError, InvalidParameterError, UnknownError} from '../exception/
 @singleton()
 export class ConversationService {
   private logger = LoggerFactory.getLogger(this.constructor.name)
+  private appQualifiedId?: QualifiedId
 
   constructor(
-    @inject(WIRE_USER_ID) private wireUserId: string,
-    @inject(WIRE_USER_DOMAIN) private wireUserDomain: string,
     private teamsApiClient: TeamsApiClient,
     private conversationsApiClient: ConversationsApiClient,
     private oneToOneConversationsApiClient: OneToOneConversationsApiClient,
@@ -66,6 +64,11 @@ export class ConversationService {
     private coreCryptoService: CoreCryptoService,
     private userService: UserService
   ) {}
+
+  private getApplicationQualifiedId(): QualifiedId {
+    this.appQualifiedId ??= this.appProperties.getApplicationQualifiedId()
+    return this.appQualifiedId
+  }
 
   async createOneToOne(withUser: QualifiedId): Promise<QualifiedId> {
     // Return the conversation if it was already created
@@ -175,9 +178,9 @@ export class ConversationService {
     )
   }
 
-  // TODO: (Separate PR later) Introduce SelfApi and move this method there, so it will be usable from different services.
+  // TODO: Update this method (or remove completely) in order to use from the return of existing Self (WireUser) that will be done in WPB-27980
   private async getSelfTeamId(): Promise<TeamId> {
-    const selfUser = await this.userService.getUser(new QualifiedId(this.wireUserId, this.wireUserDomain))
+    const selfUser = await this.userService.getUser(this.getApplicationQualifiedId())
     if (!selfUser.teamId) {
       throw new InvalidParameterError('App user does not belong to a team.')
     }
@@ -306,7 +309,7 @@ export class ConversationService {
       return // TODO: Baris: We should throw an exception here instead of just logging and returning.
     }
 
-    await this.conversationsApiClient.leaveConversation(conversationId)
+    await this.conversationsApiClient.leaveConversation(conversationId, this.getApplicationQualifiedId())
     await this.deleteAllConversationDataFromLocalStorages(conversationId)
 
     this.logger.info(`App user left the conversation. conversationId: ${conversationId}`)
@@ -318,9 +321,10 @@ export class ConversationService {
   }
 
   private async isAppUserMemberOfConversation(conversationId: QualifiedId): Promise<boolean> {
+    const appQualifiedId = this.getApplicationQualifiedId()
     const members = this.getMembersByConversationId(conversationId)
     return members.some(
-      (member) => member.userId.id === this.wireUserId && member.userId.domain === this.wireUserDomain
+      (member) => member.userId.id === appQualifiedId.id && member.userId.domain === appQualifiedId.domain
     )
   }
 
@@ -584,7 +588,8 @@ export class ConversationService {
   }
 
   private containsAppUser(userIds: QualifiedId[]): boolean {
-    return userIds.some((user) => user.id === this.wireUserId && user.domain === this.wireUserDomain)
+    const appQualifiedId = this.getApplicationQualifiedId()
+    return userIds.some((user) => user.id === appQualifiedId.id && user.domain === appQualifiedId.domain)
   }
 
   async establishOrRejoinConversations(): Promise<void> {
@@ -674,17 +679,18 @@ export class ConversationService {
   }
 
   private requireAppIsAdminInConversation(conversationId: QualifiedId): void {
+    const appQualifiedId = this.getApplicationQualifiedId()
     const members = this.getMembersByConversationId(conversationId)
     const isAppAdminInConversation = members.some(
       (member) =>
-        member.userId.id === this.wireUserId &&
-        member.userId.domain === this.wireUserDomain &&
+        member.userId.id === appQualifiedId.id &&
+        member.userId.domain === appQualifiedId.domain &&
         member.role === ConversationRole.ADMIN
     )
 
     if (!isAppAdminInConversation) {
       this.logger.warn(
-        `App user is not an admin in the conversation. conversationId: ${obfuscateId(conversationId.id)}, appUserId: ${obfuscateId(this.wireUserId)}`
+        `App user is not an admin in the conversation. conversationId: ${obfuscateId(conversationId.id)}, appUserId: ${obfuscateId(appQualifiedId.id)}`
       )
       throw ForbiddenError.appIsNotAdminInConversation()
     }

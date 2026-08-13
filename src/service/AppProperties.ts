@@ -20,6 +20,7 @@ import {WIRE_CRYPTOGRAPHY_STORAGE_KEY} from '../utils/DependencyInjectionTokens.
 import {AESUtils} from '../utils/AESUtils.js'
 import {LoggerFactory} from '../utils/logger/LoggerFactory.js'
 import {InvalidParameterError} from '../exception/WireException.js'
+import {QualifiedId} from '../model/QualifiedId.js'
 
 @singleton()
 export class AppProperties {
@@ -28,6 +29,7 @@ export class AppProperties {
   private readonly LAST_NOTIFICATION_ID = 'last_notification_id'
   private readonly BACKEND_COOKIE = 'backend_cookie'
   private readonly DEVICE_ID = 'device_id'
+  private readonly APPLICATION_QUALIFIED_ID = 'application_qualified_id'
 
   constructor(
     private appPropertiesRepository: AppPropertiesRepository,
@@ -92,6 +94,24 @@ export class AppProperties {
 
   hasDeviceId(): boolean {
     return !!this.appPropertiesRepository.getByKey(this.DEVICE_ID)?.value
+  }
+
+  saveApplicationQualifiedId(applicationQualifiedId: QualifiedId) {
+    this.appPropertiesRepository.save(this.APPLICATION_QUALIFIED_ID, QualifiedId.toKey(applicationQualifiedId))
+  }
+
+  hasApplicationQualifiedId(): boolean {
+    return !!this.appPropertiesRepository.getByKey(this.APPLICATION_QUALIFIED_ID)?.value
+  }
+
+  getApplicationQualifiedId(): QualifiedId {
+    const applicationQualifiedId = this.appPropertiesRepository.getByKey(this.APPLICATION_QUALIFIED_ID)?.value
+
+    if (!applicationQualifiedId) {
+      throw new InvalidParameterError('No Application QualifiedId found')
+    }
+
+    return QualifiedId.fromKey(applicationQualifiedId)
   }
 
   private booleanToDatabaseValue = (value: boolean): string => (value ? '1' : '0')

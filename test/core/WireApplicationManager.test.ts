@@ -14,13 +14,104 @@
  * along with this program. If not, see http://www.gnu.org/licenses/.
  */
 
-import {describe, expect, it, vi} from 'vitest'
+import {afterEach, describe, expect, it, vi} from 'vitest'
 import {WireApplicationManager} from '../../src/core/WireApplicationManager.js'
 import {QualifiedId} from '../../src/model/QualifiedId.js'
 import type {WireUser} from '../../src/model/WireUser.js'
+import {Ping, TextMessage} from '../../src/model/WireMessage.js'
+import {ProtobufSerializer} from '../../src/mappers/protobuf/ProtobufSerializer.js'
 
 describe('WireApplicationManager', () => {
   const conversationId = new QualifiedId('conversation-id', 'wire.com')
+  const appQualifiedId = new QualifiedId('app-id', 'wire.com')
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  const createManager = ({
+    coreCryptoService = {},
+    conversationService = {},
+    mlsService = {},
+    assetsTransferService = {},
+    userService = {},
+    appProperties = {}
+  }: {
+    coreCryptoService?: any
+    conversationService?: any
+    mlsService?: any
+    assetsTransferService?: any
+    userService?: any
+    appProperties?: any
+  } = {}) =>
+    new WireApplicationManager(
+      coreCryptoService as any,
+      conversationService as any,
+      mlsService as any,
+      assetsTransferService as any,
+      userService as any,
+      appProperties as any
+    )
+
+  describe('sendMessage', () => {
+    const makeSendDependencies = () => ({
+      coreCryptoService: {
+        encryptMls: vi.fn().mockResolvedValue(new Uint8Array([4, 5, 6]))
+      },
+      conversationService: {
+        getConversationMLSGroupId: vi.fn().mockResolvedValue('mls-group-id')
+      },
+      mlsService: {
+        sendMessage: vi.fn().mockResolvedValue(undefined)
+      },
+      appProperties: {
+        getApplicationQualifiedId: vi.fn().mockReturnValue(appQualifiedId)
+      }
+    })
+
+    it('adds the app qualified id as sender before serializing outgoing messages', async () => {
+      const dependencies = makeSendDependencies()
+      const manager = createManager(dependencies)
+      const serializerSpy = vi
+        .spyOn(ProtobufSerializer, 'toGenericMessageByteArray')
+        .mockReturnValue(new Uint8Array([1, 2, 3]))
+      const message = TextMessage.create({conversationId, text: 'hello'})
+
+      await manager.sendMessage(message)
+
+      expect(serializerSpy).toHaveBeenCalledWith(expect.objectContaining({sender: appQualifiedId}))
+      expect(dependencies.appProperties.getApplicationQualifiedId).toHaveBeenCalledOnce()
+    })
+
+    it('keeps an explicitly provided sender', async () => {
+      const dependencies = makeSendDependencies()
+      const manager = createManager(dependencies)
+      const serializerSpy = vi
+        .spyOn(ProtobufSerializer, 'toGenericMessageByteArray')
+        .mockReturnValue(new Uint8Array([1, 2, 3]))
+      const explicitSender = new QualifiedId('sender-id', 'wire.com')
+      const message = TextMessage.create({conversationId, text: 'hello', senderId: explicitSender})
+
+      await manager.sendMessage(message)
+
+      expect(serializerSpy).toHaveBeenCalledWith(expect.objectContaining({sender: explicitSender}))
+      expect(dependencies.appProperties.getApplicationQualifiedId).not.toHaveBeenCalled()
+    })
+
+    it('adds the app qualified id as sender for message types that omit sender in the model layer', async () => {
+      const dependencies = makeSendDependencies()
+      const manager = createManager(dependencies)
+      const serializerSpy = vi
+        .spyOn(ProtobufSerializer, 'toGenericMessageByteArray')
+        .mockReturnValue(new Uint8Array([1, 2, 3]))
+      const message = Ping.create({conversationId})
+
+      await manager.sendMessage(message)
+
+      expect(serializerSpy).toHaveBeenCalledWith(expect.objectContaining({sender: appQualifiedId}))
+      expect(dependencies.appProperties.getApplicationQualifiedId).toHaveBeenCalledOnce()
+    })
+  })
 
   it('passes asset expiration to the sent asset message', async () => {
     const remoteData = {
@@ -33,7 +124,7 @@ describe('WireApplicationManager', () => {
     const assetsTransferService = {
       uploadAssetForSending: vi.fn().mockResolvedValue(remoteData)
     }
-    const manager = new WireApplicationManager({} as any, {} as any, {} as any, assetsTransferService as any, {} as any)
+    const manager = createManager({assetsTransferService})
     const sendMessage = vi.spyOn(manager, 'sendMessage').mockResolvedValue('sent-message-id')
 
     const result = await manager.sendAsset(
@@ -69,7 +160,7 @@ describe('WireApplicationManager', () => {
       const userService = {
         searchUsers: vi.fn().mockResolvedValue(mockUsers)
       }
-      const manager = new WireApplicationManager({} as any, {} as any, {} as any, {} as any, userService as any)
+      const manager = createManager({userService})
 
       const result = await manager.searchUsers('ali', 'wire.com', 10)
 
@@ -81,7 +172,7 @@ describe('WireApplicationManager', () => {
       const userService = {
         searchUsers: vi.fn().mockResolvedValue([])
       }
-      const manager = new WireApplicationManager({} as any, {} as any, {} as any, {} as any, userService as any)
+      const manager = createManager({userService})
 
       await manager.searchUsers('ali', 'wire.com')
 
@@ -92,7 +183,7 @@ describe('WireApplicationManager', () => {
       const userService = {
         searchUsers: vi.fn().mockResolvedValue([])
       }
-      const manager = new WireApplicationManager({} as any, {} as any, {} as any, {} as any, userService as any)
+      const manager = createManager({userService})
 
       const result = await manager.searchUsers('nonexistent', 'wire.com', 5)
 
@@ -107,7 +198,7 @@ describe('WireApplicationManager', () => {
       const conversationService = {
         createGroup: vi.fn().mockResolvedValue(createdConversationId)
       }
-      const manager = new WireApplicationManager({} as any, conversationService as any, {} as any, {} as any, {} as any)
+      const manager = createManager({conversationService})
 
       const result = await manager.createGroupConversation('Test Group', userIds)
 
@@ -119,7 +210,7 @@ describe('WireApplicationManager', () => {
       const conversationService = {
         createGroup: vi.fn().mockRejectedValue(new Error('create-group-failed'))
       }
-      const manager = new WireApplicationManager({} as any, conversationService as any, {} as any, {} as any, {} as any)
+      const manager = createManager({conversationService})
 
       await expect(manager.createGroupConversation('Test Group', [])).rejects.toThrow('create-group-failed')
     })
@@ -132,7 +223,7 @@ describe('WireApplicationManager', () => {
       const conversationService = {
         createChannel: vi.fn().mockResolvedValue(createdConversationId)
       }
-      const manager = new WireApplicationManager({} as any, conversationService as any, {} as any, {} as any, {} as any)
+      const manager = createManager({conversationService})
 
       const result = await manager.createChannelConversation('Test Channel', userIds)
 
@@ -144,7 +235,7 @@ describe('WireApplicationManager', () => {
       const conversationService = {
         createChannel: vi.fn().mockRejectedValue(new Error('create-channel-failed'))
       }
-      const manager = new WireApplicationManager({} as any, conversationService as any, {} as any, {} as any, {} as any)
+      const manager = createManager({conversationService})
 
       await expect(manager.createChannelConversation('Test Channel', [])).rejects.toThrow('create-channel-failed')
     })
