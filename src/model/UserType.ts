@@ -17,5 +17,5 @@
 export enum UserType {
   REGULAR = 'regular',
   APP = 'app',
-  BOT = 'bot' // TODO: Do we need this one?
+  BOT = 'bot'
 }

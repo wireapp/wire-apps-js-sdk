@@ -126,11 +126,11 @@ describe('UserService', () => {
         },
         {
           qualified_id: userId2,
-          name: 'Bot',
-          handle: 'bot_handle',
+          name: 'App',
+          handle: 'app_handle',
           supported_protocols: [CryptoProtocol.PROTEUS],
           deleted: false,
-          type: UserType.BOT
+          type: UserType.APP
         }
       ]
     }
@@ -154,8 +154,8 @@ describe('UserService', () => {
       expect(result[0]!.name).toBe('Alice')
       expect(result[0]!.type).toBe(UserType.REGULAR)
       expect(result[1]).toBeInstanceOf(WireUser)
-      expect(result[1]!.name).toBe('Bot')
-      expect(result[1]!.type).toBe(UserType.BOT)
+      expect(result[1]!.name).toBe('App')
+      expect(result[1]!.type).toBe(UserType.APP)
     })
 
     it('should map type as null when response returns null', async () => {
