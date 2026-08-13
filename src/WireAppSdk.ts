@@ -37,7 +37,6 @@ import {CRYPTOGRAPHY_STORAGE_PATH, STORAGE_PATH} from './utils/StoragePaths.js'
 import type {BackendConnectionListener} from './core/BackendConnectionListener.js'
 import {InvalidParameterError, UnknownError} from './exception/WireException.js'
 import {SelfService} from './api/SelfService.js'
-import {setWireMessageAppQualifiedId} from './model/WireMessage.js'
 
 export class WireAppSdk {
   private readonly CRYPTOGRAPHY_STORAGE_KEY_BYTES = 32
@@ -92,7 +91,6 @@ export class WireAppSdk {
 
   private async init() {
     this.prepareStorage()
-    setWireMessageAppQualifiedId(undefined)
     this.configureDependencyTokens()
 
     // Save cookie from constructor parameter only at first application start.
@@ -126,8 +124,7 @@ export class WireAppSdk {
 
   private async configureApplicationCredentials() {
     const selfService = container.resolve(SelfService)
-    const applicationQualifiedId = await selfService.fetchAndSaveSelfCredentials()
-    setWireMessageAppQualifiedId(applicationQualifiedId)
+    await selfService.fetchAndSaveSelfCredentials()
   }
 
   private async initCryptoClient() {
@@ -180,7 +177,6 @@ export class WireAppSdk {
 
     // Clear container to prevent memory leaks
     container.clearInstances()
-    setWireMessageAppQualifiedId(undefined)
   }
 
   /**

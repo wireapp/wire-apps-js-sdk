@@ -21,7 +21,7 @@ import {AssetMessage} from '../model/WireMessage.js'
 import {CoreCryptoService} from './CoreCryptoService.js'
 import {ConversationService} from '../api/ConversationService.js'
 import {singleton} from 'tsyringe'
-import type {QualifiedId} from '../model/QualifiedId.js'
+import {QualifiedId} from '../model/QualifiedId.js'
 import {LoggerFactory} from '../utils/logger/LoggerFactory.js'
 import {obfuscateId} from '../utils/ObfuscateUtil.js'
 import {AssetsTransferService} from '../api/AssetsTransferService.js'
@@ -33,28 +33,45 @@ import type {ConversationMember} from '../model/conversation/ConversationMember.
 import type {RemoveMembersFromConversationResult} from '../api/model/RemoveMembersFromConversationResult.js'
 import type {AddMembersToConversationResult} from '../api/model/AddMembersToConversationResult.js'
 import type {WireUser} from '../model/WireUser.js'
+import {AppProperties} from '../service/AppProperties.js'
 
 @singleton()
 export class WireApplicationManager {
   private logger = LoggerFactory.getLogger(this.constructor.name)
+  private appQualifiedId?: QualifiedId
 
   constructor(
     private coreCryptoService: CoreCryptoService,
     private conversationService: ConversationService,
     private mlsService: MlsService,
     private assetsTransferService: AssetsTransferService,
-    private userService: UserService
+    private userService: UserService,
+    private appProperties: AppProperties
   ) {}
 
   async sendMessage(message: WireMessage): Promise<string> {
     const mlsGroupId = await this.conversationService.getConversationMLSGroupId(message.conversationId)
 
-    const protobufMessage = ProtobufSerializer.toGenericMessageByteArray(message)
+    const messageToSend = this.addAppSenderIfNeeded(message)
+    const protobufMessage = ProtobufSerializer.toGenericMessageByteArray(messageToSend)
     const encryptedMessage = await this.coreCryptoService.encryptMls(mlsGroupId, protobufMessage)
 
     await this.mlsService.sendMessage(encryptedMessage)
 
     return message.id
+  }
+
+  private getApplicationQualifiedId(): QualifiedId {
+    this.appQualifiedId ??= this.appProperties.getApplicationQualifiedId()
+    return this.appQualifiedId
+  }
+
+  private addAppSenderIfNeeded(message: WireMessage): WireMessage {
+    if (message.sender) {
+      return message
+    }
+
+    return {...message, sender: this.getApplicationQualifiedId()} as WireMessage
   }
 
   async downloadAsset(assetRemoteData: AssetRemoteData): Promise<Uint8Array> {
