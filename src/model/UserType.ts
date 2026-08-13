@@ -1,6 +1,6 @@
 /*
  * Wire
- * Copyright (C) 2025 Wire Swiss GmbH
+ * Copyright (C) 2026 Wire Swiss GmbH
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,17 +14,8 @@
  * along with this program. If not, see http://www.gnu.org/licenses/.
  */
 
-import type {CryptoProtocol} from '../../model/CryptoProtocol.js'
-import type {QualifiedId} from '../../model/QualifiedId.js'
-import type {UserType} from '../../model/UserType.js'
-
-export interface UserResponse {
-  qualified_id: QualifiedId
-  team?: string
-  email?: string
-  name: string
-  handle?: string
-  supported_protocols: CryptoProtocol[]
-  deleted: boolean
-  type?: UserType | null
+export enum UserType {
+  REGULAR = 'regular',
+  APP = 'app',
+  BOT = 'bot' // TODO: Do we need this one?
 }
