@@ -16,6 +16,7 @@
 
 import type {QualifiedId} from './QualifiedId.js'
 import type {TeamId} from './TeamId.js'
+import type {UserType} from './UserType.js'
 
 export class WireUser {
   constructor(
@@ -24,6 +25,7 @@ export class WireUser {
     readonly deleted: boolean,
     readonly email?: string,
     readonly handle?: string,
-    readonly teamId?: TeamId
+    readonly teamId?: TeamId,
+    readonly type?: UserType | null
   ) {}
 }

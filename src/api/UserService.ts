@@ -39,6 +39,12 @@ export class UserService {
     return this.mapUserResponseToWireUser(response)
   }
 
+  async getUsers(userIds: QualifiedId[]): Promise<WireUser[]> {
+    this.logger.info(`Fetching ${userIds.length} users by qualified IDs`)
+    const response = await this.usersApiClient.listUsers(userIds)
+    return response.found.map((user) => this.mapUserResponseToWireUser(user))
+  }
+
   /**
    * Searches for users matching the given query on the specified domain.
    *
@@ -63,7 +69,8 @@ export class UserService {
       userResponse.deleted,
       userResponse.email,
       userResponse.handle,
-      userResponse.team ? new TeamId(userResponse.team) : undefined
+      userResponse.team ? new TeamId(userResponse.team) : undefined,
+      userResponse.type
     )
   }
 
