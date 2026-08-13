@@ -52,7 +52,7 @@ import {ForbiddenError, InvalidParameterError, UnknownError} from '../exception/
 @singleton()
 export class ConversationService {
   private logger = LoggerFactory.getLogger(this.constructor.name)
-  private appQualifiedId: QualifiedId
+  private appQualifiedId?: QualifiedId
 
   constructor(
     private teamsApiClient: TeamsApiClient,
@@ -63,8 +63,11 @@ export class ConversationService {
     private appProperties: AppProperties,
     private coreCryptoService: CoreCryptoService,
     private userService: UserService
-  ) {
-    this.appQualifiedId = this.appProperties.getApplicationQualifiedId()
+  ) {}
+
+  private getApplicationQualifiedId(): QualifiedId {
+    this.appQualifiedId ??= this.appProperties.getApplicationQualifiedId()
+    return this.appQualifiedId
   }
 
   async createOneToOne(withUser: QualifiedId): Promise<QualifiedId> {
@@ -177,7 +180,7 @@ export class ConversationService {
 
   // TODO: Update this method (or remove completely) in order to use from the return of existing Self (WireUser) that will be done in WPB-27980
   private async getSelfTeamId(): Promise<TeamId> {
-    const selfUser = await this.userService.getUser(new QualifiedId(this.appQualifiedId.id, this.appQualifiedId.domain))
+    const selfUser = await this.userService.getUser(this.getApplicationQualifiedId())
     if (!selfUser.teamId) {
       throw new InvalidParameterError('App user does not belong to a team.')
     }
@@ -306,7 +309,7 @@ export class ConversationService {
       return // TODO: Baris: We should throw an exception here instead of just logging and returning.
     }
 
-    await this.conversationsApiClient.leaveConversation(conversationId, this.appQualifiedId)
+    await this.conversationsApiClient.leaveConversation(conversationId, this.getApplicationQualifiedId())
     await this.deleteAllConversationDataFromLocalStorages(conversationId)
 
     this.logger.info(`App user left the conversation. conversationId: ${conversationId}`)
@@ -318,9 +321,10 @@ export class ConversationService {
   }
 
   private async isAppUserMemberOfConversation(conversationId: QualifiedId): Promise<boolean> {
+    const appQualifiedId = this.getApplicationQualifiedId()
     const members = this.getMembersByConversationId(conversationId)
     return members.some(
-      (member) => member.userId.id === this.appQualifiedId.id && member.userId.domain === this.appQualifiedId.domain
+      (member) => member.userId.id === appQualifiedId.id && member.userId.domain === appQualifiedId.domain
     )
   }
 
@@ -584,7 +588,8 @@ export class ConversationService {
   }
 
   private containsAppUser(userIds: QualifiedId[]): boolean {
-    return userIds.some((user) => user.id === this.appQualifiedId.id && user.domain === this.appQualifiedId.domain)
+    const appQualifiedId = this.getApplicationQualifiedId()
+    return userIds.some((user) => user.id === appQualifiedId.id && user.domain === appQualifiedId.domain)
   }
 
   async establishOrRejoinConversations(): Promise<void> {
@@ -674,17 +679,18 @@ export class ConversationService {
   }
 
   private requireAppIsAdminInConversation(conversationId: QualifiedId): void {
+    const appQualifiedId = this.getApplicationQualifiedId()
     const members = this.getMembersByConversationId(conversationId)
     const isAppAdminInConversation = members.some(
       (member) =>
-        member.userId.id === this.appQualifiedId.id &&
-        member.userId.domain === this.appQualifiedId.domain &&
+        member.userId.id === appQualifiedId.id &&
+        member.userId.domain === appQualifiedId.domain &&
         member.role === ConversationRole.ADMIN
     )
 
     if (!isAppAdminInConversation) {
       this.logger.warn(
-        `App user is not an admin in the conversation. conversationId: ${obfuscateId(conversationId.id)}, appUserId: ${obfuscateId(this.appQualifiedId.id)}`
+        `App user is not an admin in the conversation. conversationId: ${obfuscateId(conversationId.id)}, appUserId: ${obfuscateId(appQualifiedId.id)}`
       )
       throw ForbiddenError.appIsNotAdminInConversation()
     }

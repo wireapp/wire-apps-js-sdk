@@ -107,6 +107,8 @@ describe('ConversationService Integration', () => {
       mockUserService
     )
 
+    expect(mockAppProperties.getApplicationQualifiedId).not.toHaveBeenCalled()
+
     // TODO: Can remove/replace this once we have implemented a proper logger lib
     // Suppress console.info for cleaner test output
     console.info = () => {}

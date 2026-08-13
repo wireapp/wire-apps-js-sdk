@@ -43,7 +43,7 @@ export class CoreCryptoService {
   private coreCryptoClient: CoreCryptoClient | undefined
   private logger = LoggerFactory.getLogger(this.constructor.name)
   private defaultCiphersuiteCode: number | undefined
-  private appQualifiedId: QualifiedId
+  private appQualifiedId?: QualifiedId
 
   constructor(
     @inject(WIRE_CRYPTOGRAPHY_STORAGE_KEY) private cryptographyStorageKey: Uint8Array,
@@ -52,8 +52,11 @@ export class CoreCryptoService {
     private mlsService: MlsService,
     private mlsTransport: CoreCryptoMlsTransport,
     private appProperties: AppProperties
-  ) {
-    this.appQualifiedId = this.appProperties.getApplicationQualifiedId()
+  ) {}
+
+  private getApplicationQualifiedId(): QualifiedId {
+    this.appQualifiedId ??= this.appProperties.getApplicationQualifiedId()
+    return this.appQualifiedId
   }
 
   /**
@@ -62,10 +65,11 @@ export class CoreCryptoService {
    * Must be called before anything else.
    */
   async initCoreCryptoClient(): Promise<void> {
+    const appQualifiedId = this.getApplicationQualifiedId()
     this.defaultCiphersuiteCode = await this.featureConfigsService.getDefaultCipherSuite()
 
     this.coreCryptoClient = await CoreCryptoClient.create(
-      this.appQualifiedId.id,
+      appQualifiedId.id,
       this.defaultCiphersuiteCode,
       this.cryptographyStorageKey,
       this.mlsTransport
@@ -84,16 +88,18 @@ export class CoreCryptoService {
       throw new CryptographicSystemError('CoreCryptoClient is not initialized.')
     }
 
+    const appQualifiedId = this.getApplicationQualifiedId()
     if (this.appProperties.hasDeviceId()) {
       const storedDeviceId = this.appProperties.getDeviceId()
       this.logger.info(`Loading MLS Client for deviceId: ${obfuscateClientId(storedDeviceId)}`)
-      const cryptoClientId = CryptoClientId.create(this.appQualifiedId.id, storedDeviceId, this.appQualifiedId.domain)
+
+      const cryptoClientId = CryptoClientId.create(appQualifiedId.id, storedDeviceId, appQualifiedId.domain)
 
       await this.coreCryptoClient.initMlsClient(cryptoClientId)
       this.appProperties.setShouldRejoinConversations(false)
     } else {
       this.logger.info("App doesn't have a client. Creating one.")
-      this.logger.info(`Initializing Proteus Client. appId: ${obfuscateId(this.appQualifiedId.id)}`)
+      this.logger.info(`Initializing Proteus Client. appId: ${obfuscateId(appQualifiedId.id)}`)
       await this.coreCryptoClient.initProteusClient()
 
       const proteusPreKeys = await this.coreCryptoClient.generateProteusPreKeys()
@@ -108,14 +114,10 @@ export class CoreCryptoService {
 
       this.appProperties.setDeviceId(registeredDeviceId)
 
-      const cryptoClientId = CryptoClientId.create(
-        this.appQualifiedId.id,
-        registeredDeviceId,
-        this.appQualifiedId.domain
-      )
+      const cryptoClientId = CryptoClientId.create(appQualifiedId.id, registeredDeviceId, appQualifiedId.domain)
 
       this.logger.info(
-        `Initializing MLS Client. userId: ${obfuscateId(this.appQualifiedId.id)}, deviceId: ${obfuscateClientId(registeredDeviceId)}`
+        `Initializing MLS Client. userId: ${obfuscateId(appQualifiedId.id)}, deviceId: ${obfuscateClientId(registeredDeviceId)}`
       )
 
       await this.coreCryptoClient.initMlsClient(cryptoClientId)

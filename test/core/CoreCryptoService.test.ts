@@ -150,6 +150,8 @@ describe('CoreCryptoService', () => {
       mockMlsTransport,
       mockAppProperties
     )
+
+    expect(mockAppProperties.getApplicationQualifiedId).not.toHaveBeenCalled()
   })
 
   const initService = async () => {
@@ -162,6 +164,7 @@ describe('CoreCryptoService', () => {
       await initService()
 
       // then
+      expect(mockAppProperties.getApplicationQualifiedId).toHaveBeenCalled()
       expect(mockFeatureConfigsService.getDefaultCipherSuite).toHaveBeenCalled()
       expect(CoreCryptoClient.create).toHaveBeenCalledWith(
         WIRE_USER_ID,

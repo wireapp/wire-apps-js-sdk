@@ -112,6 +112,8 @@ describe('ConversationService', () => {
       mockUserService
     )
 
+    expect(mockAppProperties.getApplicationQualifiedId).not.toHaveBeenCalled()
+
     vi.spyOn(console, 'info').mockImplementation(() => {})
   })
 

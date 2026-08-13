@@ -14,9 +14,8 @@
  * along with this program. If not, see http://www.gnu.org/licenses/.
  */
 
+import type {QualifiedId} from '../../model/QualifiedId.js'
+
 export interface SelfResponse {
-  qualified_id?: {
-    id?: string
-    domain?: string
-  }
+  qualified_id: QualifiedId
 }
