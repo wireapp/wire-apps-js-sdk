@@ -151,6 +151,45 @@ describe('WireApplicationManager', () => {
     })
   })
 
+  describe('getUsers', () => {
+    it('delegates to userService.getUsers and returns results', async () => {
+      const userIds = [new QualifiedId('user-1', 'wire.com'), new QualifiedId('user-2', 'wire.com')]
+      const mockUsers: WireUser[] = [
+        {id: userIds[0]!, name: 'Alice', handle: 'alice', deleted: false},
+        {id: userIds[1]!, name: 'Bob', handle: 'bob', deleted: false}
+      ]
+      const userService = {
+        getUsers: vi.fn().mockResolvedValue(mockUsers)
+      }
+      const manager = createManager({userService})
+
+      const result = await manager.getUsers(userIds)
+
+      expect(result).toEqual(mockUsers)
+      expect(userService.getUsers).toHaveBeenCalledWith(userIds)
+    })
+
+    it('returns an empty array when no users are found', async () => {
+      const userService = {
+        getUsers: vi.fn().mockResolvedValue([])
+      }
+      const manager = createManager({userService})
+
+      const result = await manager.getUsers([new QualifiedId('user-1', 'wire.com')])
+
+      expect(result).toEqual([])
+    })
+
+    it('propagates errors from userService.getUsers', async () => {
+      const userService = {
+        getUsers: vi.fn().mockRejectedValue(new Error('fetch-failed'))
+      }
+      const manager = createManager({userService})
+
+      await expect(manager.getUsers([new QualifiedId('user-1', 'wire.com')])).rejects.toThrow('fetch-failed')
+    })
+  })
+
   describe('searchUsers', () => {
     it('delegates to userService and returns results', async () => {
       const mockUsers: WireUser[] = [

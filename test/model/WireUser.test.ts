@@ -18,6 +18,7 @@ import {describe, expect, it} from 'vitest'
 import {WireUser} from '../../src/model/WireUser.js'
 import {QualifiedId} from '../../src/model/QualifiedId.js'
 import {TeamId} from '../../src/model/TeamId.js'
+import {UserType} from '../../src/model/UserType.js'
 
 describe('WireUser', () => {
   const qualifiedId = new QualifiedId('user-123', 'example.com')
@@ -44,6 +45,7 @@ describe('WireUser', () => {
       expect(user.email).toBeUndefined()
       expect(user.handle).toBeUndefined()
       expect(user.teamId).toBeUndefined()
+      expect(user.type).toBeUndefined()
     })
 
     it('should store deleted as true when user is deleted', () => {
@@ -68,6 +70,24 @@ describe('WireUser', () => {
       const user = new WireUser(qualifiedId, 'John Doe', false, undefined, undefined, teamId)
 
       expect(user.teamId?.value).toBe('team-456')
+    })
+
+    it('should store the provided UserType', () => {
+      const user = new WireUser(qualifiedId, 'John Doe', false, undefined, undefined, undefined, UserType.REGULAR)
+
+      expect(user.type).toBe(UserType.REGULAR)
+    })
+
+    it('should allow type to be null', () => {
+      const user = new WireUser(qualifiedId, 'John Doe', false, undefined, undefined, undefined, null)
+
+      expect(user.type).toBeNull()
+    })
+
+    it('should store type as undefined when not provided', () => {
+      const user = new WireUser(qualifiedId, 'John Doe', false)
+
+      expect(user.type).toBeUndefined()
     })
   })
 })

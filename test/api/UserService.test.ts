@@ -20,6 +20,7 @@ import {CryptoProtocol} from '../../src/model/CryptoProtocol.js'
 import {QualifiedId} from '../../src/model/QualifiedId.js'
 import {WireUser} from '../../src/model/WireUser.js'
 import {TeamId} from '../../src/model/TeamId.js'
+import {UserType} from '../../src/model/UserType.js'
 
 describe('UserService', () => {
   let mockUsersApiClient: any
@@ -28,7 +29,8 @@ describe('UserService', () => {
 
   beforeEach(() => {
     mockUsersApiClient = {
-      getUser: vi.fn()
+      getUser: vi.fn(),
+      listUsers: vi.fn()
     }
 
     // Initialize the search client mock
@@ -51,7 +53,8 @@ describe('UserService', () => {
     email: 'john@example.com',
     team: 'team-1',
     supported_protocols: [CryptoProtocol.PROTEUS],
-    deleted: false
+    deleted: false,
+    type: UserType.REGULAR
   }
 
   describe('getUser', () => {
@@ -75,6 +78,7 @@ describe('UserService', () => {
       expect(result.handle).toBe('johndoe')
       expect(result.teamId).toEqual(new TeamId('team-1'))
       expect(result.deleted).toBe(false)
+      expect(result.type).toBe(UserType.REGULAR)
     })
 
     it('should map undefined optional fields when not present in API response', async () => {
@@ -94,12 +98,97 @@ describe('UserService', () => {
       expect(result.email).toBeUndefined()
       expect(result.handle).toBeUndefined()
       expect(result.teamId).toBeUndefined()
+      expect(result.type).toBeUndefined()
     })
 
     it('should propagate errors from usersApiClient.getUser', async () => {
       vi.mocked(mockUsersApiClient.getUser).mockRejectedValue(new Error('network-failure'))
 
       await expect(service.getUser(qualifiedId)).rejects.toThrow('network-failure')
+    })
+  })
+
+  describe('getUsers', () => {
+    const userId1: QualifiedId = {id: 'user-1', domain: 'example.com'}
+    const userId2: QualifiedId = {id: 'user-2', domain: 'example.com'}
+
+    const mockListUsersResponse = {
+      found: [
+        {
+          qualified_id: userId1,
+          name: 'Alice',
+          handle: 'alice',
+          email: 'alice@example.com',
+          team: 'team-1',
+          supported_protocols: [CryptoProtocol.PROTEUS],
+          deleted: false,
+          type: UserType.REGULAR
+        },
+        {
+          qualified_id: userId2,
+          name: 'Bot',
+          handle: 'bot_handle',
+          supported_protocols: [CryptoProtocol.PROTEUS],
+          deleted: false,
+          type: UserType.BOT
+        }
+      ]
+    }
+
+    it('should call usersApiClient.listUsers with the given user IDs', async () => {
+      vi.mocked(mockUsersApiClient.listUsers).mockResolvedValue(mockListUsersResponse)
+
+      await service.getUsers([userId1, userId2])
+
+      expect(mockUsersApiClient.listUsers).toHaveBeenCalledWith([userId1, userId2])
+    })
+
+    it('should return WireUser objects mapped from the found list', async () => {
+      vi.mocked(mockUsersApiClient.listUsers).mockResolvedValue(mockListUsersResponse)
+
+      const result = await service.getUsers([userId1, userId2])
+
+      expect(result).toHaveLength(2)
+      expect(result[0]).toBeInstanceOf(WireUser)
+      expect(result[0]!.id).toEqual(new QualifiedId('user-1', 'example.com'))
+      expect(result[0]!.name).toBe('Alice')
+      expect(result[0]!.type).toBe(UserType.REGULAR)
+      expect(result[1]).toBeInstanceOf(WireUser)
+      expect(result[1]!.name).toBe('Bot')
+      expect(result[1]!.type).toBe(UserType.BOT)
+    })
+
+    it('should map type as null when response returns null', async () => {
+      vi.mocked(mockUsersApiClient.listUsers).mockResolvedValue({
+        found: [{...mockListUsersResponse.found[0]!, type: null}]
+      })
+
+      const result = await service.getUsers([userId1])
+
+      expect(result[0]!.type).toBeNull()
+    })
+
+    it('should map type as undefined when not present in response', async () => {
+      const {type: _, ...userWithoutType} = mockListUsersResponse.found[0]!
+      vi.mocked(mockUsersApiClient.listUsers).mockResolvedValue({found: [userWithoutType]})
+
+      const result = await service.getUsers([userId1])
+
+      expect(result[0]!.type).toBeUndefined()
+    })
+
+    it('should return an empty array when found list is empty', async () => {
+      vi.mocked(mockUsersApiClient.listUsers).mockResolvedValue({found: []})
+
+      const result = await service.getUsers([userId1])
+
+      expect(result).toEqual([])
+    })
+
+    it('should propagate errors from usersApiClient.listUsers', async () => {
+      vi.mocked(mockUsersApiClient.listUsers).mockRejectedValue(new Error('network-failure'))
+
+      await expect(service.getUsers([userId1])).rejects.toThrow('network-failure')
     })
   })
 
