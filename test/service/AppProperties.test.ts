@@ -19,6 +19,7 @@ import {AppProperties} from '../../src/service/AppProperties.js'
 import {AppPropertiesRepository} from '../../src/db/AppPropertiesRepository.js'
 import {container} from 'tsyringe'
 import {AESUtils} from '../../src/utils/AESUtils.js'
+import {QualifiedId} from '../../src/model/QualifiedId.js'
 
 const CRYPTO_STORAGE_KEY = new Uint8Array(32).fill(1)
 
@@ -201,6 +202,56 @@ describe('AppProperties', () => {
       const result = appProperties.hasDeviceId()
 
       expect(mockAppPropertiesRepository.getByKey).toHaveBeenCalledWith('device_id')
+      expect(result).toBe(false)
+    })
+  })
+
+  describe('application qualified ID', () => {
+    const APPLICATION_QUALIFIED_ID = new QualifiedId('app-id', 'wire.com')
+
+    it('should save the application qualified ID as a database key', () => {
+      appProperties.saveApplicationQualifiedId(APPLICATION_QUALIFIED_ID)
+
+      expect(mockAppPropertiesRepository.save).toHaveBeenCalledWith('application_qualified_id', 'app-id@wire.com')
+    })
+
+    it('should return the stored application qualified ID', () => {
+      vi.mocked(mockAppPropertiesRepository.getByKey).mockReturnValue({
+        key: 'application_qualified_id',
+        value: 'app-id@wire.com'
+      })
+
+      const result = appProperties.getApplicationQualifiedId()
+
+      expect(mockAppPropertiesRepository.getByKey).toHaveBeenCalledWith('application_qualified_id')
+      expect(result).toEqual(APPLICATION_QUALIFIED_ID)
+    })
+
+    it('should throw when application qualified ID is not stored', () => {
+      vi.mocked(mockAppPropertiesRepository.getByKey).mockReturnValue(undefined)
+
+      expect(() => appProperties.getApplicationQualifiedId()).toThrow('No Application QualifiedId found')
+      expect(mockAppPropertiesRepository.getByKey).toHaveBeenCalledWith('application_qualified_id')
+    })
+
+    it('should return true when application qualified ID is stored', () => {
+      vi.mocked(mockAppPropertiesRepository.getByKey).mockReturnValue({
+        key: 'application_qualified_id',
+        value: 'app-id@wire.com'
+      })
+
+      const result = appProperties.hasApplicationQualifiedId()
+
+      expect(mockAppPropertiesRepository.getByKey).toHaveBeenCalledWith('application_qualified_id')
+      expect(result).toBe(true)
+    })
+
+    it('should return false when application qualified ID is not stored', () => {
+      vi.mocked(mockAppPropertiesRepository.getByKey).mockReturnValue(undefined)
+
+      const result = appProperties.hasApplicationQualifiedId()
+
+      expect(mockAppPropertiesRepository.getByKey).toHaveBeenCalledWith('application_qualified_id')
       expect(result).toBe(false)
     })
   })

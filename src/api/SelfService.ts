@@ -19,6 +19,7 @@ import {SelfApiClient} from './SelfApiClient.js'
 import {AppProperties} from '../service/AppProperties.js'
 import {QualifiedId} from '../model/QualifiedId.js'
 import {LoggerFactory} from '../utils/logger/LoggerFactory.js'
+import {UnknownError} from '../exception/WireException.js'
 
 @singleton()
 export class SelfService {
@@ -33,9 +34,20 @@ export class SelfService {
     this.logger.info('Fetching self credentials')
     const applicationQualifiedId = await this.selfApiClient.getSelfQualifiedId()
 
-    this.logger.info(`Saving self credentials for App: ${applicationQualifiedId}`)
-    this.appProperties.saveApplicationQualifiedId(applicationQualifiedId)
+    if (!this.appProperties.hasApplicationQualifiedId()) {
+      this.logger.info(`Saving self credentials for App: ${applicationQualifiedId}`)
+      this.appProperties.saveApplicationQualifiedId(applicationQualifiedId)
+      return applicationQualifiedId
+    }
 
+    const storedApplicationQualifiedId = this.appProperties.getApplicationQualifiedId()
+    if (QualifiedId.toKey(storedApplicationQualifiedId) !== QualifiedId.toKey(applicationQualifiedId)) {
+      throw new UnknownError(
+        `Stored App ${storedApplicationQualifiedId} does not match fetched self ${applicationQualifiedId}. Clear SDK storage before using a token for another app.`
+      )
+    }
+
+    this.logger.info(`Self credentials already stored for App: ${storedApplicationQualifiedId}`)
     return applicationQualifiedId
   }
 }

@@ -100,6 +100,10 @@ export class AppProperties {
     this.appPropertiesRepository.save(this.APPLICATION_QUALIFIED_ID, QualifiedId.toKey(applicationQualifiedId))
   }
 
+  hasApplicationQualifiedId(): boolean {
+    return !!this.appPropertiesRepository.getByKey(this.APPLICATION_QUALIFIED_ID)?.value
+  }
+
   getApplicationQualifiedId(): QualifiedId {
     const applicationQualifiedId = this.appPropertiesRepository.getByKey(this.APPLICATION_QUALIFIED_ID)?.value
 
