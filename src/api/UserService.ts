@@ -23,6 +23,7 @@ import {LoggerFactory} from '../utils/logger/LoggerFactory.js'
 import {CryptoClientId} from '../model/CryptoClientId.js'
 import {WireUser} from '../model/WireUser.js'
 import {TeamId} from '../model/TeamId.js'
+import {obfuscateId} from '../utils/ObfuscateUtil.js'
 import type {ContactDocument} from './response/SearchContactsResponse.js'
 
 @singleton()
@@ -42,6 +43,9 @@ export class UserService {
   async getUsers(userIds: QualifiedId[]): Promise<WireUser[]> {
     this.logger.info(`Fetching ${userIds.length} users by qualified IDs`)
     const response = await this.usersApiClient.listUsers(userIds)
+    if (response.failed?.length) {
+      response.failed.forEach((id) => this.logger.warn(`Failed to fetch user: ${obfuscateId(id.id)}@${id.domain}`))
+    }
     return response.found.map((user) => this.mapUserResponseToWireUser(user))
   }
 
