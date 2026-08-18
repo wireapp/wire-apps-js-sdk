@@ -20,6 +20,7 @@ import {QualifiedId} from '../../src/model/QualifiedId.js'
 import type {WireUser} from '../../src/model/WireUser.js'
 import {Ping, TextMessage} from '../../src/model/WireMessage.js'
 import {ProtobufSerializer} from '../../src/mappers/protobuf/ProtobufSerializer.js'
+import {InvalidParameterError} from '../../src/index.js'
 
 describe('WireApplicationManager', () => {
   const conversationId = new QualifiedId('conversation-id', 'wire.com')
@@ -59,7 +60,16 @@ describe('WireApplicationManager', () => {
         encryptMls: vi.fn().mockResolvedValue(new Uint8Array([4, 5, 6]))
       },
       conversationService: {
-        getConversationMLSGroupId: vi.fn().mockResolvedValue('mls-group-id')
+        getConversationById: vi.fn().mockResolvedValue({
+          id: 'conversation-id',
+          domain: 'wire.com',
+          name: null,
+          teamId: null,
+          mlsGroupId: 'mls-group-id',
+          creationDate: null,
+          type: 0,
+          messageTimer: null
+        })
       },
       mlsService: {
         sendMessage: vi.fn().mockResolvedValue(undefined)
@@ -110,6 +120,88 @@ describe('WireApplicationManager', () => {
 
       expect(serializerSpy).toHaveBeenCalledWith(expect.objectContaining({sender: appQualifiedId}))
       expect(dependencies.appProperties.getApplicationQualifiedId).toHaveBeenCalledOnce()
+    })
+
+    it('sends the message unchanged when the conversation has no message timer', async () => {
+      const dependencies = makeSendDependencies() // messageTimer: null
+      const manager = createManager(dependencies)
+      const serializerSpy = vi
+        .spyOn(ProtobufSerializer, 'toGenericMessageByteArray')
+        .mockReturnValue(new Uint8Array([1, 2, 3]))
+      const message = TextMessage.create({conversationId, text: 'hello'})
+
+      await manager.sendMessage(message)
+
+      expect(serializerSpy).toHaveBeenCalledWith(expect.objectContaining({expiresAfterMillis: null}))
+    })
+
+    it('overrides expiresAfterMillis with the conversation message timer for an ephemeral type', async () => {
+      const dependencies = makeSendDependencies()
+      dependencies.conversationService.getConversationById = vi.fn().mockResolvedValue({
+        id: 'conversation-id',
+        domain: 'wire.com',
+        name: null,
+        teamId: null,
+        mlsGroupId: 'mls-group-id',
+        creationDate: null,
+        type: 0,
+        messageTimer: 30000
+      })
+      const manager = createManager(dependencies)
+      const serializerSpy = vi
+        .spyOn(ProtobufSerializer, 'toGenericMessageByteArray')
+        .mockReturnValue(new Uint8Array([1, 2, 3]))
+      const message = TextMessage.create({conversationId, text: 'hello', expiresAfterMillis: 5000})
+
+      await manager.sendMessage(message)
+
+      expect(serializerSpy).toHaveBeenCalledWith(expect.objectContaining({expiresAfterMillis: 30000}))
+    })
+
+    it('overrides expiresAfterMillis for Ping, an ephemeral type with no timer of its own', async () => {
+      const dependencies = makeSendDependencies()
+      dependencies.conversationService.getConversationById = vi.fn().mockResolvedValue({
+        id: 'conversation-id',
+        domain: 'wire.com',
+        name: null,
+        teamId: null,
+        mlsGroupId: 'mls-group-id',
+        creationDate: null,
+        type: 0,
+        messageTimer: 15000
+      })
+      const manager = createManager(dependencies)
+      const serializerSpy = vi
+        .spyOn(ProtobufSerializer, 'toGenericMessageByteArray')
+        .mockReturnValue(new Uint8Array([1, 2, 3]))
+      const message = Ping.create({conversationId})
+
+      await manager.sendMessage(message)
+
+      expect(serializerSpy).toHaveBeenCalledWith(expect.objectContaining({expiresAfterMillis: 15000}))
+    })
+
+    it('throws InvalidParameterError and does not send when the type is not ephemeral but a timer is set', async () => {
+      const dependencies = makeSendDependencies()
+      dependencies.conversationService.getConversationById = vi.fn().mockResolvedValue({
+        id: 'conversation-id',
+        domain: 'wire.com',
+        name: null,
+        teamId: null,
+        mlsGroupId: 'mls-group-id',
+        creationDate: null,
+        type: 0,
+        messageTimer: 30000
+      })
+      const manager = createManager(dependencies)
+      const serializerSpy = vi.spyOn(ProtobufSerializer, 'toGenericMessageByteArray')
+      // Replace with your SDK's actual non-ephemeral message type/factory (e.g. Knock/Edit/Delete/Reaction)
+      const message = {...TextMessage.create({conversationId, text: 'hi'}), type: 'non-ephemeral-type'} as any
+
+      await expect(manager.sendMessage(message)).rejects.toThrow(InvalidParameterError.messageIsNotEphemeral())
+
+      expect(dependencies.mlsService.sendMessage).not.toHaveBeenCalled()
+      expect(serializerSpy).not.toHaveBeenCalled()
     })
   })
 
