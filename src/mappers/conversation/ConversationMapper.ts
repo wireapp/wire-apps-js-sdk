@@ -24,7 +24,8 @@ export class ConversationMapper {
       domain: conversationEntity.domain,
       name: conversationEntity.name,
       type: conversationEntity.type,
-      teamId: conversationEntity.teamId
+      teamId: conversationEntity.teamId,
+      messageTimer: conversationEntity.messageTimer ?? null
     }
   }
 }

@@ -58,7 +58,8 @@ export class ConversationRepository {
         name: sql.placeholder('name'),
         teamId: sql.placeholder('teamId'),
         mlsGroupId: sql.placeholder('mlsGroupId'),
-        type: sql.placeholder('type')
+        type: sql.placeholder('type'),
+        messageTimer: sql.placeholder('messageTimer')
       })
       .onConflictDoUpdate({
         target: [conversation.id, conversation.domain],
@@ -66,7 +67,8 @@ export class ConversationRepository {
           name: sql.raw(`excluded.${conversation.name.name}`),
           teamId: sql.raw(`excluded.${conversation.teamId.name}`),
           mlsGroupId: sql.raw(`excluded.${conversation.mlsGroupId.name}`),
-          type: sql.raw(`excluded.${conversation.type.name}`)
+          type: sql.raw(`excluded.${conversation.type.name}`),
+          messageTimer: sql.raw(`excluded.${conversation.messageTimer.name}`)
         }
       })
       .prepare()
@@ -106,8 +108,21 @@ export class ConversationRepository {
       name: conv.name,
       teamId: conv.teamId,
       mlsGroupId: conv.mlsGroupId,
-      type: conv.type
+      type: conv.type,
+      messageTimer: conv.messageTimer ?? null
     })
+  }
+
+  /**
+   * Update the message timer value of the conversation record.
+   * This is important for ephemeral (self-deleting) messages.
+   */
+  updateMessageTimer(id: string, domain: string, messageTimer: number | null): void {
+    this.databaseService.db
+      .update(conversation)
+      .set({messageTimer})
+      .where(and(eq(conversation.id, id), eq(conversation.domain, domain)))
+      .run()
   }
 
   delete(id: string, domain: string): void {

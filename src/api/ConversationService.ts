@@ -219,7 +219,8 @@ export class ConversationService {
       teamId: conversation.team,
       mlsGroupId: conversation.group_id,
       creationDate: null,
-      type: conversation.type
+      type: conversation.type,
+      messageTimer: conversation.message_timer ?? null
     }
 
     this.conversationRepository.save(conversationEntity)
@@ -282,6 +283,11 @@ export class ConversationService {
     const conversation = await this.getConversationById(conversationId)
 
     return conversation.mlsGroupId
+  }
+
+  async updateMessageTimer(conversationId: QualifiedId, messageTimer: number | null): Promise<void> {
+    const conversation = await this.getConversationById(conversationId)
+    this.conversationRepository.updateMessageTimer(conversation.id, conversation.domain, messageTimer)
   }
 
   async getConversationGroupInfo(conversationId: QualifiedId): Promise<Uint8Array> {
