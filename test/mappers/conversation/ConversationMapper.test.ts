@@ -42,7 +42,8 @@ describe('Conversation Mapping', () => {
       domain: conversationEntity.domain,
       name: conversationEntity.name,
       type: ConversationType.GROUP,
-      teamId: conversationTeamId
+      teamId: conversationTeamId,
+      messageTimer: null
     }
 
     const result = ConversationMapper.fromEntity(conversationEntity)

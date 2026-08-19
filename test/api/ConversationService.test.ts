@@ -150,7 +150,8 @@ describe('ConversationService', () => {
         teamId: TEAM_ID,
         mlsGroupId: MLS_GROUP_ID,
         creationDate: null,
-        type: ConversationType.ONE_TO_ONE
+        type: ConversationType.ONE_TO_ONE,
+        messageTimer: null
       })
 
       expect(mockConversationMemberRepository.saveMany).toHaveBeenCalledWith([
@@ -764,7 +765,8 @@ describe('ConversationService', () => {
         teamId: TEAM_ID,
         mlsGroupId: MLS_GROUP_ID,
         creationDate: null,
-        type: ConversationType.GROUP
+        type: ConversationType.GROUP,
+        messageTimer: null
       })
       expect(mockConversationMemberRepository.saveMany).toHaveBeenCalledWith([
         {
@@ -1543,14 +1545,16 @@ describe('ConversationService', () => {
         domain: 'wire.com',
         name: 'Group Conversation',
         type: ConversationType.GROUP,
-        teamId: TEAM_ID
+        teamId: TEAM_ID,
+        messageTimer: null
       })
       expect(result[1]).toEqual({
         id: 'conv-3',
         domain: 'wire.com',
         name: 'One To One Conversation',
         type: ConversationType.ONE_TO_ONE,
-        teamId: TEAM_ID
+        teamId: TEAM_ID,
+        messageTimer: null
       })
     })
 
@@ -1920,7 +1924,8 @@ describe('ConversationService', () => {
         teamId: TEAM_ID,
         mlsGroupId: MLS_GROUP_ID,
         creationDate: null,
-        type: ConversationType.GROUP
+        type: ConversationType.GROUP,
+        messageTimer: null
       })
 
       expect(mockConversationMemberRepository.saveMany).toHaveBeenCalledWith([
@@ -2061,7 +2066,8 @@ describe('ConversationService', () => {
         teamId: TEAM_ID,
         mlsGroupId: MLS_GROUP_ID,
         creationDate: null,
-        type: ConversationType.GROUP
+        type: ConversationType.GROUP,
+        messageTimer: null
       })
 
       expect(mockConversationMemberRepository.saveMany).toHaveBeenCalledWith([

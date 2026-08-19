@@ -110,6 +110,18 @@ interface MlsConversationResetData {
   new_group_id: string
 }
 
+export interface MessageTimerUpdateDTO {
+  type: string
+  time: Date
+  data: MessageTimerUpdateEventData
+  qualified_conversation: QualifiedId
+  qualified_from: QualifiedId
+}
+
+interface MessageTimerUpdateEventData {
+  message_timer: number | null
+}
+
 export type EventContentDTO =
   | MLSWelcomeDTO
   | NewMLSMessageDTO
@@ -120,3 +132,4 @@ export type EventContentDTO =
   | MemberLeaveDTO
   | MemberUpdateDTO
   | MlsResetDTO
+  | MessageTimerUpdateDTO

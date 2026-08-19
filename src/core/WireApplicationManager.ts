@@ -34,6 +34,7 @@ import type {RemoveMembersFromConversationResult} from '../api/model/RemoveMembe
 import type {AddMembersToConversationResult} from '../api/model/AddMembersToConversationResult.js'
 import type {WireUser} from '../model/WireUser.js'
 import {AppProperties} from '../service/AppProperties.js'
+import type {ConversationEntity} from '../db/model/ConversationEntity.js'
 
 @singleton()
 export class WireApplicationManager {
@@ -49,16 +50,31 @@ export class WireApplicationManager {
     private appProperties: AppProperties
   ) {}
 
+  // TODO: (Another PR to refactor) Move this flow into ConversationService. Keep this method simple like recently added methods
   async sendMessage(message: WireMessage): Promise<string> {
-    const mlsGroupId = await this.conversationService.getConversationMLSGroupId(message.conversationId)
+    const conversation = await this.conversationService.getConversationById(message.conversationId)
+    const preparedMessage = this.prepareMessageForSending(conversation, message)
 
-    const messageToSend = this.addAppSenderIfNeeded(message)
+    const messageToSend = this.addAppSenderIfNeeded(preparedMessage)
     const protobufMessage = ProtobufSerializer.toGenericMessageByteArray(messageToSend)
-    const encryptedMessage = await this.coreCryptoService.encryptMls(mlsGroupId, protobufMessage)
+    const encryptedMessage = await this.coreCryptoService.encryptMls(conversation.mlsGroupId, protobufMessage)
 
     await this.mlsService.sendMessage(encryptedMessage)
 
-    return message.id
+    return preparedMessage.id
+  }
+
+  private prepareMessageForSending(conversation: ConversationEntity, originalMessage: WireMessage): WireMessage {
+    // If the conversation has a message timer set, we override the ephemeral type message's expiration duration to match it.
+    if (conversation.messageTimer == null || !('expiresAfterMillis' in originalMessage)) {
+      return originalMessage
+    }
+
+    this.logger.info(
+      `Setting (overriding) expiration duration of the message ` +
+        `${originalMessage.id} in conversation ${obfuscateId(conversation.id)} to ${conversation.messageTimer} ms`
+    )
+    return {...originalMessage, expiresAfterMillis: conversation.messageTimer} as unknown as WireMessage
   }
 
   private getApplicationQualifiedId(): QualifiedId {

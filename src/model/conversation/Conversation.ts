@@ -22,4 +22,5 @@ export interface Conversation {
   name: string | null
   type: ConversationType
   teamId: string | null
+  messageTimer?: number | null
 }

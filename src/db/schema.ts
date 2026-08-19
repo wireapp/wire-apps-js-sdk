@@ -20,7 +20,8 @@ export const conversation = sqliteTable(
     creationDate: text('creation_date')
       .default(sql`(CURRENT_TIMESTAMP)`)
       .notNull(),
-    type: integer().notNull()
+    type: integer().notNull(),
+    messageTimer: integer('message_timer')
   },
   (table) => [primaryKey({columns: [table.id, table.domain], name: 'conversation_id_domain_pk'})]
 )

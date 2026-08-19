@@ -511,7 +511,8 @@ describe('ConversationService Integration', () => {
         domain: CONVERSATION_ID.domain,
         name: CONVERSATION_NAME,
         type: ConversationType.GROUP,
-        teamId: TEAM_ID
+        teamId: TEAM_ID,
+        messageTimer: null
       })
     })
 

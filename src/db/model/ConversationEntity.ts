@@ -24,4 +24,5 @@ export interface ConversationEntity {
   mlsGroupId: string
   creationDate: string | null
   type: ConversationType
+  messageTimer?: number | null
 }

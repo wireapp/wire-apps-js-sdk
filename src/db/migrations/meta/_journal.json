@@ -15,6 +15,13 @@
       "when": 1777028823981,
       "tag": "0001_steady_selene",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1787066607611,
+      "tag": "0002_perfect_karnak",
+      "breakpoints": true
     }
   ]
 }
