@@ -17,7 +17,7 @@
 import {MlsService} from '../api/MlsService.js'
 import {ProtobufSerializer} from '../mappers/protobuf/ProtobufSerializer.js'
 import type {AssetRemoteData, WireMessage} from '../model/WireMessage.js'
-import {AssetMessage, WireMessageType} from '../model/WireMessage.js'
+import {AssetMessage} from '../model/WireMessage.js'
 import {CoreCryptoService} from './CoreCryptoService.js'
 import {ConversationService} from '../api/ConversationService.js'
 import {singleton} from 'tsyringe'
@@ -35,7 +35,6 @@ import type {AddMembersToConversationResult} from '../api/model/AddMembersToConv
 import type {WireUser} from '../model/WireUser.js'
 import {AppProperties} from '../service/AppProperties.js'
 import type {ConversationEntity} from '../db/model/ConversationEntity.js'
-import {InvalidParameterError} from '../exception/WireException.js'
 
 @singleton()
 export class WireApplicationManager {
@@ -70,28 +69,11 @@ export class WireApplicationManager {
       return originalMessage
     }
 
-    if (!this.isEphemeralType(originalMessage)) {
-      this.logger.warn(
-        `Message ${originalMessage.id} is not ephemeral type but the conversation ` +
-          `${conversation.id} has a message timer set. The message can not be sent.`
-      )
-      throw InvalidParameterError.messageIsNotEphemeral()
-    }
-
     this.logger.info(
       `Setting (overriding) expiration duration of the message ` +
         `${originalMessage.id} in conversation ${conversation.id} to ${conversation.messageTimer} ms`
     )
     return {...originalMessage, expiresAfterMillis: conversation.messageTimer} as unknown as WireMessage
-  }
-
-  private isEphemeralType(message: WireMessage): boolean {
-    return (
-      message.type === WireMessageType.TEXT ||
-      message.type === WireMessageType.ASSET ||
-      message.type === WireMessageType.LOCATION ||
-      message.type === WireMessageType.PING
-    )
   }
 
   private getApplicationQualifiedId(): QualifiedId {
