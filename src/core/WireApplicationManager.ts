@@ -50,7 +50,7 @@ export class WireApplicationManager {
     private appProperties: AppProperties
   ) {}
 
-  // TODO: (Later) Move this flow into ConversationService. Keep this method simple like recently added methods
+  // TODO: (Another PR to refactor) Move this flow into ConversationService. Keep this method simple like recently added methods
   async sendMessage(message: WireMessage): Promise<string> {
     const conversation = await this.conversationService.getConversationById(message.conversationId)
     const preparedMessage = this.prepareMessageForSending(conversation, message)
@@ -65,13 +65,14 @@ export class WireApplicationManager {
   }
 
   private prepareMessageForSending(conversation: ConversationEntity, originalMessage: WireMessage): WireMessage {
-    if (conversation.messageTimer == null) {
+    // If the conversation has a message timer set, we override the ephemeral type message's expiration duration to match it.
+    if (conversation.messageTimer == null || !('expiresAfterMillis' in originalMessage)) {
       return originalMessage
     }
 
     this.logger.info(
       `Setting (overriding) expiration duration of the message ` +
-        `${originalMessage.id} in conversation ${conversation.id} to ${conversation.messageTimer} ms`
+        `${originalMessage.id} in conversation ${obfuscateId(conversation.id)} to ${conversation.messageTimer} ms`
     )
     return {...originalMessage, expiresAfterMillis: conversation.messageTimer} as unknown as WireMessage
   }
