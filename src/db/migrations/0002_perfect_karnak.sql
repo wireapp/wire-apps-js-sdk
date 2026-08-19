@@ -1,1 +1,1 @@
-ALTER TABLE `conversation` ADD `message_timer` integer;
+ALTER TABLE `conversation` ADD `message_timer` integer DEFAULT NULL;
