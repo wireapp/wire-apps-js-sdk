@@ -34,6 +34,8 @@ import {CryptoProtocol} from '../../src/model/CryptoProtocol.js'
 import type {OneToOneConversationsApiClient} from '../../src/api/OneToOneConversationsApiClient.js'
 import {TeamId} from '../../src/model/TeamId.js'
 import type {ConversationMemberOtherResponse} from '../../src/api/model/ConversationMemberOtherResponse.js'
+import {AppPropertiesRepository} from '../../src/db/AppPropertiesRepository.js'
+import {InvalidParameterError} from '../../src/exception/WireException.js'
 
 describe('ConversationService Integration', () => {
   let testDbService: TestDatabaseService
@@ -682,6 +684,28 @@ describe('ConversationService Integration', () => {
       expect(result).toEqual(OTHER_CONVERSATION_ID)
       const savedConversation = await conversationService.getConversationById(OTHER_CONVERSATION_ID)
       expect(savedConversation.name).toBe(OTHER_CONVERSATION_NAME)
+    })
+
+    it('should propagate InvalidParameterError from real app properties when creating a group without a stored team', async () => {
+      const realAppProperties = new AppProperties(
+        new AppPropertiesRepository(testDbService),
+        new Uint8Array(32).fill(1)
+      )
+      const service = new ConversationService(
+        mockTeamsApiClient,
+        mockConversationsApiClient,
+        mockOneToOneConversationsApiClient,
+        conversationRepository,
+        conversationMemberRepository,
+        realAppProperties,
+        mockCoreCryptoService,
+        mockUserService
+      )
+
+      await expect(service.createGroup(OTHER_CONVERSATION_NAME, [USER_3_ID])).rejects.toThrow(InvalidParameterError)
+
+      expect((mockConversationsApiClient as any).createGroupConversation).not.toHaveBeenCalled()
+      expect(mockCoreCryptoService.establishMlsConversation).not.toHaveBeenCalled()
     })
   })
 

@@ -34,6 +34,7 @@ import {UserService} from '../../src/api/UserService.js'
 import {CryptoClientId} from '../../src/model/CryptoClientId.js'
 import type {OneToOneConversationsApiClient} from '../../src/api/OneToOneConversationsApiClient.js'
 import type {OneToOneConversationResponse} from '../../src/api/response/OneToOneConversationResponse.js'
+import {InvalidParameterError} from '../../src/exception/WireException.js'
 
 describe('ConversationService', () => {
   let conversationService: ConversationService
@@ -1950,12 +1951,10 @@ describe('ConversationService', () => {
 
     it('should throw when app user does not belong to a team', async () => {
       vi.mocked(mockAppProperties.getApplicationTeamId).mockImplementation(() => {
-        throw new Error('No Application TeamId found')
+        throw new InvalidParameterError('No Application TeamId found')
       })
 
-      await expect(conversationService.createGroup(GROUP_NAME, [USER_ID])).rejects.toThrow(
-        'No Application TeamId found'
-      )
+      await expect(conversationService.createGroup(GROUP_NAME, [USER_ID])).rejects.toThrow(InvalidParameterError)
 
       expect((mockConversationsApiClient as any).createGroupConversation).not.toHaveBeenCalled()
       expect((mockCoreCryptoService as any).establishMlsConversation).not.toHaveBeenCalled()
@@ -2089,12 +2088,10 @@ describe('ConversationService', () => {
 
     it('should throw when app user does not belong to a team', async () => {
       vi.mocked(mockAppProperties.getApplicationTeamId).mockImplementation(() => {
-        throw new Error('No Application TeamId found')
+        throw new InvalidParameterError('No Application TeamId found')
       })
 
-      await expect(conversationService.createChannel(CHANNEL_NAME, [USER_ID])).rejects.toThrow(
-        'No Application TeamId found'
-      )
+      await expect(conversationService.createChannel(CHANNEL_NAME, [USER_ID])).rejects.toThrow(InvalidParameterError)
 
       expect((mockConversationsApiClient as any).createGroupConversation).not.toHaveBeenCalled()
       expect((mockCoreCryptoService as any).establishMlsConversation).not.toHaveBeenCalled()

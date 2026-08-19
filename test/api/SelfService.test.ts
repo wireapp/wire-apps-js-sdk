@@ -20,10 +20,11 @@ import type {SelfApiClient} from '../../src/api/SelfApiClient.js'
 import type {AppProperties} from '../../src/service/AppProperties.js'
 import {QualifiedId} from '../../src/model/QualifiedId.js'
 import {TeamId} from '../../src/model/TeamId.js'
+import {InvalidParameterError} from '../../src/exception/WireException.js'
 
 describe('SelfService', () => {
   const SELF_RESPONSE = {
-    qualified_id: new QualifiedId('app-id', 'wire.com'),
+    qualified_id: {id: 'app-id', domain: 'wire.com'},
     team: 'team-id'
   }
   const APP_QUALIFIED_ID = new QualifiedId('app-id', 'wire.com')
@@ -64,7 +65,7 @@ describe('SelfService', () => {
     it('should fetch, save, and return the current app qualified id when none is stored', async () => {
       vi.mocked(mockSelfApiClient.getSelf).mockResolvedValue(SELF_RESPONSE)
 
-      const result = await selfService.fetchAndSaveApplicationData()
+      await selfService.fetchAndSaveApplicationData()
 
       expect(mockSelfApiClient.getSelf).toHaveBeenCalled()
       expect(mockAppProperties.hasApplicationQualifiedId).toHaveBeenCalled()
@@ -73,7 +74,6 @@ describe('SelfService', () => {
       expect(mockAppProperties.hasApplicationTeamId).toHaveBeenCalled()
       expect(mockAppProperties.getApplicationTeamId).not.toHaveBeenCalled()
       expect(mockAppProperties.saveApplicationTeamId).toHaveBeenCalledWith(SELF_RESPONSE.team)
-      expect(result).toEqual(APP_QUALIFIED_ID)
     })
 
     it('should not save when the stored application data matches fetched self', async () => {
@@ -83,13 +83,12 @@ describe('SelfService', () => {
       vi.mocked(mockAppProperties.hasApplicationTeamId).mockReturnValue(true)
       vi.mocked(mockAppProperties.getApplicationTeamId).mockReturnValue(APP_TEAM_ID)
 
-      const result = await selfService.fetchAndSaveApplicationData()
+      await selfService.fetchAndSaveApplicationData()
 
       expect(mockAppProperties.getApplicationQualifiedId).toHaveBeenCalled()
       expect(mockAppProperties.saveApplicationQualifiedId).not.toHaveBeenCalled()
       expect(mockAppProperties.getApplicationTeamId).toHaveBeenCalled()
       expect(mockAppProperties.saveApplicationTeamId).not.toHaveBeenCalled()
-      expect(result).toEqual(APP_QUALIFIED_ID)
     })
 
     it('should throw when the stored app qualified id differs from fetched self', async () => {
@@ -119,6 +118,31 @@ describe('SelfService', () => {
       vi.mocked(mockSelfApiClient.getSelf).mockRejectedValue(new Error('network-failure'))
 
       await expect(selfService.fetchAndSaveApplicationData()).rejects.toThrow('network-failure')
+
+      expect(mockAppProperties.hasApplicationQualifiedId).not.toHaveBeenCalled()
+      expect(mockAppProperties.saveApplicationQualifiedId).not.toHaveBeenCalled()
+      expect(mockAppProperties.hasApplicationTeamId).not.toHaveBeenCalled()
+      expect(mockAppProperties.saveApplicationTeamId).not.toHaveBeenCalled()
+    })
+
+    it('should throw when fetched self has no team', async () => {
+      const selfResponseWithoutTeam = {qualified_id: SELF_RESPONSE.qualified_id}
+      vi.mocked(mockSelfApiClient.getSelf).mockResolvedValue(selfResponseWithoutTeam)
+
+      await expect(selfService.fetchAndSaveApplicationData()).rejects.toThrow(InvalidParameterError)
+      await expect(selfService.fetchAndSaveApplicationData()).rejects.toThrow(
+        'The Application does not belong to a team'
+      )
+
+      expect(mockAppProperties.saveApplicationQualifiedId).toHaveBeenCalledWith(APP_QUALIFIED_ID)
+      expect(mockAppProperties.hasApplicationTeamId).not.toHaveBeenCalled()
+      expect(mockAppProperties.saveApplicationTeamId).not.toHaveBeenCalled()
+    })
+
+    it('should throw when fetched self has no qualified id', async () => {
+      vi.mocked(mockSelfApiClient.getSelf).mockResolvedValue({...SELF_RESPONSE, qualified_id: undefined} as any)
+
+      await expect(selfService.fetchAndSaveApplicationData()).rejects.toThrow()
 
       expect(mockAppProperties.hasApplicationQualifiedId).not.toHaveBeenCalled()
       expect(mockAppProperties.saveApplicationQualifiedId).not.toHaveBeenCalled()

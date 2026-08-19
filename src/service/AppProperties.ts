@@ -116,11 +116,7 @@ export class AppProperties {
     return QualifiedId.fromKey(applicationQualifiedId)
   }
 
-  saveApplicationTeamId(applicationTeamId?: string) {
-    if (!applicationTeamId) {
-      throw new InvalidParameterError('The Application does not belong to a team')
-    }
-
+  saveApplicationTeamId(applicationTeamId: string) {
     this.appPropertiesRepository.save(this.APPLICATION_TEAM_ID, applicationTeamId)
   }
 

@@ -19,7 +19,8 @@ import {SelfApiClient} from './SelfApiClient.js'
 import {AppProperties} from '../service/AppProperties.js'
 import {QualifiedId} from '../model/QualifiedId.js'
 import {LoggerFactory} from '../utils/logger/LoggerFactory.js'
-import {UnknownError} from '../exception/WireException.js'
+import {InvalidParameterError, UnknownError} from '../exception/WireException.js'
+import {TeamId} from '../model/TeamId.js'
 
 @singleton()
 export class SelfService {
@@ -30,14 +31,12 @@ export class SelfService {
     private appProperties: AppProperties
   ) {}
 
-  async fetchAndSaveApplicationData(): Promise<QualifiedId> {
+  async fetchAndSaveApplicationData(): Promise<void> {
     const response = await this.selfApiClient.getSelf()
     const appUserId = new QualifiedId(response.qualified_id.id, response.qualified_id.domain)
 
     this.saveApplicationQualifiedId(appUserId)
     this.saveApplicationTeamId(response.team)
-
-    return appUserId
   }
 
   private saveApplicationQualifiedId(appUserId: QualifiedId): void {
@@ -48,7 +47,7 @@ export class SelfService {
     }
 
     const storedApplicationQualifiedId = this.appProperties.getApplicationQualifiedId()
-    if (QualifiedId.toKey(storedApplicationQualifiedId) !== QualifiedId.toKey(appUserId)) {
+    if (!QualifiedId.equals(storedApplicationQualifiedId, appUserId)) {
       throw new UnknownError(
         `Stored application QualifiedId ${storedApplicationQualifiedId} does not match fetched self QualifiedId ${appUserId}. Clear SDK storage before using a token for another app.`
       )
@@ -58,19 +57,25 @@ export class SelfService {
   }
 
   private saveApplicationTeamId(teamId?: string): void {
+    if (!teamId) {
+      throw new InvalidParameterError('The Application does not belong to a team')
+    }
+
+    const applicationTeamId = new TeamId(teamId)
+
     if (!this.appProperties.hasApplicationTeamId()) {
-      this.logger.info(`Saving application TeamId: ${teamId}`)
-      this.appProperties.saveApplicationTeamId(teamId)
+      this.logger.info(`Saving application TeamId: ${applicationTeamId}`)
+      this.appProperties.saveApplicationTeamId(applicationTeamId.value)
       return
     }
 
     const storedApplicationTeamId = this.appProperties.getApplicationTeamId()
-    if (storedApplicationTeamId.value !== teamId) {
+    if (storedApplicationTeamId.value !== applicationTeamId.value) {
       throw new UnknownError(
-        `Stored application TeamId ${storedApplicationTeamId} does not match fetched self TeamId ${teamId}. Clear SDK storage before using a token for another app.`
+        `Stored application TeamId ${storedApplicationTeamId} does not match fetched self TeamId ${applicationTeamId}. Clear SDK storage before using a token for another app.`
       )
     }
 
-    this.logger.info(`Application TeamId already stored: ${teamId}`)
+    this.logger.info(`Application TeamId already stored: ${applicationTeamId}`)
   }
 }
