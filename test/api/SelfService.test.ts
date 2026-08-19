@@ -19,71 +19,111 @@ import {SelfService} from '../../src/api/SelfService.js'
 import type {SelfApiClient} from '../../src/api/SelfApiClient.js'
 import type {AppProperties} from '../../src/service/AppProperties.js'
 import {QualifiedId} from '../../src/model/QualifiedId.js'
+import {TeamId} from '../../src/model/TeamId.js'
 
 describe('SelfService', () => {
+  const SELF_RESPONSE = {
+    qualified_id: new QualifiedId('app-id', 'wire.com'),
+    team: 'team-id'
+  }
   const APP_QUALIFIED_ID = new QualifiedId('app-id', 'wire.com')
   const OTHER_APP_QUALIFIED_ID = new QualifiedId('other-app-id', 'wire.com')
+  const APP_TEAM_ID = new TeamId('team-id')
+  const OTHER_APP_TEAM_ID = new TeamId('other-team-id')
 
-  let mockSelfApiClient: SelfApiClient
-  let mockAppProperties: AppProperties
+  let mockSelfApiClient: Pick<SelfApiClient, 'getSelf'>
+  let mockAppProperties: Pick<
+    AppProperties,
+    | 'hasApplicationQualifiedId'
+    | 'getApplicationQualifiedId'
+    | 'saveApplicationQualifiedId'
+    | 'hasApplicationTeamId'
+    | 'getApplicationTeamId'
+    | 'saveApplicationTeamId'
+  >
   let selfService: SelfService
 
   beforeEach(() => {
     mockSelfApiClient = {
-      getSelfQualifiedId: vi.fn()
-    } as any
+      getSelf: vi.fn()
+    }
 
     mockAppProperties = {
       hasApplicationQualifiedId: vi.fn().mockReturnValue(false),
       getApplicationQualifiedId: vi.fn(),
-      saveApplicationQualifiedId: vi.fn()
-    } as any
+      saveApplicationQualifiedId: vi.fn(),
+      hasApplicationTeamId: vi.fn().mockReturnValue(false),
+      getApplicationTeamId: vi.fn(),
+      saveApplicationTeamId: vi.fn()
+    }
 
-    selfService = new SelfService(mockSelfApiClient, mockAppProperties)
+    selfService = new SelfService(mockSelfApiClient as SelfApiClient, mockAppProperties as AppProperties)
   })
 
-  describe('fetchAndSaveApplicationQualifiedId', () => {
+  describe('fetchAndSaveApplicationData', () => {
     it('should fetch, save, and return the current app qualified id when none is stored', async () => {
-      vi.mocked(mockSelfApiClient.getSelfQualifiedId).mockResolvedValue(APP_QUALIFIED_ID)
+      vi.mocked(mockSelfApiClient.getSelf).mockResolvedValue(SELF_RESPONSE)
 
-      const result = await selfService.fetchAndSaveApplicationQualifiedId()
+      const result = await selfService.fetchAndSaveApplicationData()
 
-      expect(mockSelfApiClient.getSelfQualifiedId).toHaveBeenCalled()
+      expect(mockSelfApiClient.getSelf).toHaveBeenCalled()
       expect(mockAppProperties.hasApplicationQualifiedId).toHaveBeenCalled()
       expect(mockAppProperties.getApplicationQualifiedId).not.toHaveBeenCalled()
       expect(mockAppProperties.saveApplicationQualifiedId).toHaveBeenCalledWith(APP_QUALIFIED_ID)
+      expect(mockAppProperties.hasApplicationTeamId).toHaveBeenCalled()
+      expect(mockAppProperties.getApplicationTeamId).not.toHaveBeenCalled()
+      expect(mockAppProperties.saveApplicationTeamId).toHaveBeenCalledWith(SELF_RESPONSE.team)
       expect(result).toEqual(APP_QUALIFIED_ID)
     })
 
-    it('should not save when the stored app qualified id matches fetched self', async () => {
-      vi.mocked(mockSelfApiClient.getSelfQualifiedId).mockResolvedValue(APP_QUALIFIED_ID)
+    it('should not save when the stored application data matches fetched self', async () => {
+      vi.mocked(mockSelfApiClient.getSelf).mockResolvedValue(SELF_RESPONSE)
       vi.mocked(mockAppProperties.hasApplicationQualifiedId).mockReturnValue(true)
       vi.mocked(mockAppProperties.getApplicationQualifiedId).mockReturnValue(APP_QUALIFIED_ID)
+      vi.mocked(mockAppProperties.hasApplicationTeamId).mockReturnValue(true)
+      vi.mocked(mockAppProperties.getApplicationTeamId).mockReturnValue(APP_TEAM_ID)
 
-      const result = await selfService.fetchAndSaveApplicationQualifiedId()
+      const result = await selfService.fetchAndSaveApplicationData()
 
       expect(mockAppProperties.getApplicationQualifiedId).toHaveBeenCalled()
       expect(mockAppProperties.saveApplicationQualifiedId).not.toHaveBeenCalled()
+      expect(mockAppProperties.getApplicationTeamId).toHaveBeenCalled()
+      expect(mockAppProperties.saveApplicationTeamId).not.toHaveBeenCalled()
       expect(result).toEqual(APP_QUALIFIED_ID)
     })
 
     it('should throw when the stored app qualified id differs from fetched self', async () => {
-      vi.mocked(mockSelfApiClient.getSelfQualifiedId).mockResolvedValue(APP_QUALIFIED_ID)
+      vi.mocked(mockSelfApiClient.getSelf).mockResolvedValue(SELF_RESPONSE)
       vi.mocked(mockAppProperties.hasApplicationQualifiedId).mockReturnValue(true)
       vi.mocked(mockAppProperties.getApplicationQualifiedId).mockReturnValue(OTHER_APP_QUALIFIED_ID)
 
-      await expect(selfService.fetchAndSaveApplicationQualifiedId()).rejects.toThrow('Stored application QualifiedId')
+      await expect(selfService.fetchAndSaveApplicationData()).rejects.toThrow('Stored application QualifiedId')
 
       expect(mockAppProperties.saveApplicationQualifiedId).not.toHaveBeenCalled()
     })
 
-    it('should not save when fetching application qualified id fails', async () => {
-      vi.mocked(mockSelfApiClient.getSelfQualifiedId).mockRejectedValue(new Error('network-failure'))
+    it('should throw when the stored team id differs from fetched self', async () => {
+      vi.mocked(mockSelfApiClient.getSelf).mockResolvedValue(SELF_RESPONSE)
+      vi.mocked(mockAppProperties.hasApplicationQualifiedId).mockReturnValue(true)
+      vi.mocked(mockAppProperties.getApplicationQualifiedId).mockReturnValue(APP_QUALIFIED_ID)
+      vi.mocked(mockAppProperties.hasApplicationTeamId).mockReturnValue(true)
+      vi.mocked(mockAppProperties.getApplicationTeamId).mockReturnValue(OTHER_APP_TEAM_ID)
 
-      await expect(selfService.fetchAndSaveApplicationQualifiedId()).rejects.toThrow('network-failure')
+      await expect(selfService.fetchAndSaveApplicationData()).rejects.toThrow('Stored application TeamId')
+
+      expect(mockAppProperties.saveApplicationQualifiedId).not.toHaveBeenCalled()
+      expect(mockAppProperties.saveApplicationTeamId).not.toHaveBeenCalled()
+    })
+
+    it('should not save when fetching application qualified id fails', async () => {
+      vi.mocked(mockSelfApiClient.getSelf).mockRejectedValue(new Error('network-failure'))
+
+      await expect(selfService.fetchAndSaveApplicationData()).rejects.toThrow('network-failure')
 
       expect(mockAppProperties.hasApplicationQualifiedId).not.toHaveBeenCalled()
       expect(mockAppProperties.saveApplicationQualifiedId).not.toHaveBeenCalled()
+      expect(mockAppProperties.hasApplicationTeamId).not.toHaveBeenCalled()
+      expect(mockAppProperties.saveApplicationTeamId).not.toHaveBeenCalled()
     })
   })
 })

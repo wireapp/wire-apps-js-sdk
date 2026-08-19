@@ -80,7 +80,8 @@ describe('ConversationService Integration', () => {
     mockAppProperties = {
       getShouldRejoinConversations: vi.fn(),
       setShouldRejoinConversations: vi.fn(),
-      getApplicationQualifiedId: vi.fn().mockReturnValue(SELF_USER_ID)
+      getApplicationQualifiedId: vi.fn().mockReturnValue(SELF_USER_ID),
+      getApplicationTeamId: vi.fn().mockReturnValue(new TeamId(TEAM_ID))
     } as any
 
     mockCoreCryptoService = {

@@ -123,7 +123,7 @@ export class ConversationService {
     usersToAdd: QualifiedId[],
     groupConversationType: GroupConversationType
   ): Promise<QualifiedId> {
-    const teamId = await this.getSelfTeamId()
+    const teamId = this.appProperties.getApplicationTeamId()
 
     let apiRequest: CreateConversationRequest
     switch (groupConversationType) {
@@ -176,15 +176,6 @@ export class ConversationService {
       conversationResponseWithUpdatedMembers.qualified_id,
       conversationResponseWithUpdatedMembers
     )
-  }
-
-  // TODO: Update this method (or remove completely) in order to use from the return of existing Self (WireUser) that will be done in WPB-27980
-  private async getSelfTeamId(): Promise<TeamId> {
-    const selfUser = await this.userService.getUser(this.getApplicationQualifiedId())
-    if (!selfUser.teamId) {
-      throw new InvalidParameterError('App user does not belong to a team.')
-    }
-    return selfUser.teamId
   }
 
   getAllConversations(): Conversation[] {

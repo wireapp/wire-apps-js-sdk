@@ -21,6 +21,7 @@ import {AESUtils} from '../utils/AESUtils.js'
 import {LoggerFactory} from '../utils/logger/LoggerFactory.js'
 import {InvalidParameterError} from '../exception/WireException.js'
 import {QualifiedId} from '../model/QualifiedId.js'
+import {TeamId} from '../model/TeamId.js'
 
 @singleton()
 export class AppProperties {
@@ -30,6 +31,7 @@ export class AppProperties {
   private readonly BACKEND_COOKIE = 'backend_cookie'
   private readonly DEVICE_ID = 'device_id'
   private readonly APPLICATION_QUALIFIED_ID = 'application_qualified_id'
+  private readonly APPLICATION_TEAM_ID = 'application_team_id'
 
   constructor(
     private appPropertiesRepository: AppPropertiesRepository,
@@ -112,6 +114,28 @@ export class AppProperties {
     }
 
     return QualifiedId.fromKey(applicationQualifiedId)
+  }
+
+  saveApplicationTeamId(applicationTeamId?: string) {
+    if (!applicationTeamId) {
+      throw new InvalidParameterError('The Application does not belong to a team')
+    }
+
+    this.appPropertiesRepository.save(this.APPLICATION_TEAM_ID, applicationTeamId)
+  }
+
+  hasApplicationTeamId(): boolean {
+    return !!this.appPropertiesRepository.getByKey(this.APPLICATION_TEAM_ID)?.value
+  }
+
+  getApplicationTeamId(): TeamId {
+    const applicationTeamId = this.appPropertiesRepository.getByKey(this.APPLICATION_TEAM_ID)?.value
+
+    if (!applicationTeamId) {
+      throw new InvalidParameterError('No Application TeamId found')
+    }
+
+    return new TeamId(applicationTeamId)
   }
 
   private booleanToDatabaseValue = (value: boolean): string => (value ? '1' : '0')

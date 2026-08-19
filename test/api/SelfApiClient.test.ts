@@ -17,10 +17,12 @@
 import {beforeEach, describe, expect, it, vi} from 'vitest'
 import {SelfApiClient} from '../../src/api/SelfApiClient.js'
 import type {HttpClient} from '../../src/core/HttpClient.js'
-import {QualifiedId} from '../../src/model/QualifiedId.js'
 
 describe('SelfApiClient', () => {
-  const APP_QUALIFIED_ID = new QualifiedId('app-id', 'wire.com')
+  const SELF_RESPONSE = {
+    qualified_id: {id: 'app-id', domain: 'wire.com'},
+    team: 'team-id'
+  }
 
   let mockHttpClient: HttpClient
   let selfApiClient: SelfApiClient
@@ -33,35 +35,20 @@ describe('SelfApiClient', () => {
     selfApiClient = new SelfApiClient(mockHttpClient)
   })
 
-  describe('getSelfQualifiedId', () => {
-    it('should get the current app qualified id from /self', async () => {
-      vi.mocked(mockHttpClient.getRequest).mockResolvedValue({
-        qualified_id: {id: APP_QUALIFIED_ID.id, domain: APP_QUALIFIED_ID.domain}
-      })
+  describe('getSelf', () => {
+    it('should get the current app self response from /self', async () => {
+      vi.mocked(mockHttpClient.getRequest).mockResolvedValue(SELF_RESPONSE)
 
-      const result = await selfApiClient.getSelfQualifiedId()
+      const result = await selfApiClient.getSelf()
 
       expect(mockHttpClient.getRequest).toHaveBeenCalledWith('self')
-      expect(result).toBeInstanceOf(QualifiedId)
-      expect(result).toEqual(APP_QUALIFIED_ID)
+      expect(result).toEqual(SELF_RESPONSE)
     })
 
     it('should propagate errors from getRequest', async () => {
       vi.mocked(mockHttpClient.getRequest).mockRejectedValue(new Error('network-failure'))
 
-      await expect(selfApiClient.getSelfQualifiedId()).rejects.toThrow('network-failure')
-    })
-
-    it('should throw when /self does not include qualified_id', async () => {
-      vi.mocked(mockHttpClient.getRequest).mockResolvedValue({})
-
-      await expect(selfApiClient.getSelfQualifiedId()).rejects.toThrow('Invalid /self response: missing qualified_id.')
-    })
-
-    it('should throw when /self qualified_id is incomplete', async () => {
-      vi.mocked(mockHttpClient.getRequest).mockResolvedValue({qualified_id: {id: APP_QUALIFIED_ID.id}})
-
-      await expect(selfApiClient.getSelfQualifiedId()).rejects.toThrow('Invalid /self response: missing qualified_id.')
+      await expect(selfApiClient.getSelf()).rejects.toThrow('network-failure')
     })
   })
 })

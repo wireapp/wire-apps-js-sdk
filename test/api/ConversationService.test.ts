@@ -84,7 +84,8 @@ describe('ConversationService', () => {
     mockAppProperties = {
       getShouldRejoinConversations: vi.fn(),
       setShouldRejoinConversations: vi.fn(),
-      getApplicationQualifiedId: vi.fn().mockReturnValue(SELF_USER_ID)
+      getApplicationQualifiedId: vi.fn().mockReturnValue(SELF_USER_ID),
+      getApplicationTeamId: vi.fn().mockReturnValue(new TeamId(TEAM_ID))
     } as any
 
     mockCoreCryptoService = {
@@ -1885,8 +1886,6 @@ describe('ConversationService', () => {
     })
 
     it('should create group conversation, establish MLS group, and save conversation with members', async () => {
-      vi.mocked((mockUserService as any).getUser).mockResolvedValue({teamId: new TeamId(TEAM_ID)} as any)
-
       const conversationResponse: ConversationResponse = {
         qualified_id: CONVERSATION_ID,
         type: ConversationType.GROUP,
@@ -1910,9 +1909,8 @@ describe('ConversationService', () => {
 
       const result = await conversationService.createGroup(GROUP_NAME, [USER_ID])
 
-      expect((mockUserService as any).getUser).toHaveBeenCalledWith(
-        new QualifiedId(SELF_USER_ID.id, SELF_USER_ID.domain)
-      )
+      expect(mockAppProperties.getApplicationTeamId).toHaveBeenCalled()
+      expect((mockUserService as any).getUser).not.toHaveBeenCalled()
       expect((mockConversationsApiClient as any).createGroupConversation).toHaveBeenCalled()
       expect((mockCoreCryptoService as any).establishMlsConversation).toHaveBeenCalledWith(MLS_GROUP_ID)
       expect((mockCoreCryptoService as any).addClientsToMlsConversation).toHaveBeenCalledWith(MLS_GROUP_ID, [USER_ID])
@@ -1951,10 +1949,12 @@ describe('ConversationService', () => {
     })
 
     it('should throw when app user does not belong to a team', async () => {
-      vi.mocked((mockUserService as any).getUser).mockResolvedValue({teamId: null} as any)
+      vi.mocked(mockAppProperties.getApplicationTeamId).mockImplementation(() => {
+        throw new Error('No Application TeamId found')
+      })
 
       await expect(conversationService.createGroup(GROUP_NAME, [USER_ID])).rejects.toThrow(
-        'App user does not belong to a team.'
+        'No Application TeamId found'
       )
 
       expect((mockConversationsApiClient as any).createGroupConversation).not.toHaveBeenCalled()
@@ -1962,8 +1962,6 @@ describe('ConversationService', () => {
     })
 
     it('should only save members successfully claimed by CoreCrypto, not all usersToAdd', async () => {
-      vi.mocked((mockUserService as any).getUser).mockResolvedValue({teamId: new TeamId(TEAM_ID)} as any)
-
       const anotherUserId: QualifiedId = {id: 'another-user-id', domain: 'wire.com'}
 
       const conversationResponse: ConversationResponse = {
@@ -2027,8 +2025,6 @@ describe('ConversationService', () => {
     })
 
     it('should create channel conversation, establish MLS group, and save conversation with members', async () => {
-      vi.mocked((mockUserService as any).getUser).mockResolvedValue({teamId: new TeamId(TEAM_ID)} as any)
-
       const conversationResponse: ConversationResponse = {
         qualified_id: CONVERSATION_ID,
         type: ConversationType.GROUP,
@@ -2052,9 +2048,8 @@ describe('ConversationService', () => {
 
       const result = await conversationService.createChannel(CHANNEL_NAME, [USER_ID])
 
-      expect((mockUserService as any).getUser).toHaveBeenCalledWith(
-        new QualifiedId(SELF_USER_ID.id, SELF_USER_ID.domain)
-      )
+      expect(mockAppProperties.getApplicationTeamId).toHaveBeenCalled()
+      expect((mockUserService as any).getUser).not.toHaveBeenCalled()
       expect((mockConversationsApiClient as any).createGroupConversation).toHaveBeenCalled()
       expect((mockCoreCryptoService as any).establishMlsConversation).toHaveBeenCalledWith(MLS_GROUP_ID)
       expect((mockCoreCryptoService as any).addClientsToMlsConversation).toHaveBeenCalledWith(MLS_GROUP_ID, [USER_ID])
@@ -2093,10 +2088,12 @@ describe('ConversationService', () => {
     })
 
     it('should throw when app user does not belong to a team', async () => {
-      vi.mocked((mockUserService as any).getUser).mockResolvedValue({teamId: null} as any)
+      vi.mocked(mockAppProperties.getApplicationTeamId).mockImplementation(() => {
+        throw new Error('No Application TeamId found')
+      })
 
       await expect(conversationService.createChannel(CHANNEL_NAME, [USER_ID])).rejects.toThrow(
-        'App user does not belong to a team.'
+        'No Application TeamId found'
       )
 
       expect((mockConversationsApiClient as any).createGroupConversation).not.toHaveBeenCalled()

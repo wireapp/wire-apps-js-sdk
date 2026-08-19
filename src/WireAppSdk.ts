@@ -124,7 +124,7 @@ export class WireAppSdk {
 
   private async configureApplicationIdentity() {
     const selfService = container.resolve(SelfService)
-    await selfService.fetchAndSaveApplicationQualifiedId()
+    await selfService.fetchAndSaveApplicationData()
   }
 
   private async initCryptoClient() {
