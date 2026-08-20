@@ -35,6 +35,7 @@ import type {AddMembersToConversationResult} from '../api/model/AddMembersToConv
 import type {WireUser} from '../model/WireUser.js'
 import {AppProperties} from '../service/AppProperties.js'
 import type {ConversationEntity} from '../db/model/ConversationEntity.js'
+import type {TeamId} from '../model/TeamId.js'
 
 @singleton()
 export class WireApplicationManager {
@@ -77,9 +78,13 @@ export class WireApplicationManager {
     return {...originalMessage, expiresAfterMillis: conversation.messageTimer} as unknown as WireMessage
   }
 
-  private getApplicationQualifiedId(): QualifiedId {
+  getApplicationQualifiedId(): QualifiedId {
     this.appQualifiedId ??= this.appProperties.getApplicationQualifiedId()
     return this.appQualifiedId
+  }
+
+  getApplicationTeamId(): TeamId {
+    return this.appProperties.getApplicationTeamId()
   }
 
   private addAppSenderIfNeeded(message: WireMessage): WireMessage {

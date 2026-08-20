@@ -20,6 +20,8 @@ import {AppPropertiesRepository} from '../../src/db/AppPropertiesRepository.js'
 import {container} from 'tsyringe'
 import {AESUtils} from '../../src/utils/AESUtils.js'
 import {QualifiedId} from '../../src/model/QualifiedId.js'
+import {InvalidParameterError} from '../../src/exception/WireException.js'
+import {TeamId} from '../../src/model/TeamId.js'
 
 const CRYPTO_STORAGE_KEY = new Uint8Array(32).fill(1)
 
@@ -252,6 +254,57 @@ describe('AppProperties', () => {
       const result = appProperties.hasApplicationQualifiedId()
 
       expect(mockAppPropertiesRepository.getByKey).toHaveBeenCalledWith('application_qualified_id')
+      expect(result).toBe(false)
+    })
+  })
+
+  describe('application team ID', () => {
+    const APPLICATION_TEAM_ID = new TeamId('team-id')
+
+    it('should save the application team ID', () => {
+      appProperties.saveApplicationTeamId(APPLICATION_TEAM_ID.value)
+
+      expect(mockAppPropertiesRepository.save).toHaveBeenCalledWith('application_team_id', 'team-id')
+    })
+
+    it('should return the stored application team ID', () => {
+      vi.mocked(mockAppPropertiesRepository.getByKey).mockReturnValue({
+        key: 'application_team_id',
+        value: 'team-id'
+      })
+
+      const result = appProperties.getApplicationTeamId()
+
+      expect(mockAppPropertiesRepository.getByKey).toHaveBeenCalledWith('application_team_id')
+      expect(result).toEqual(APPLICATION_TEAM_ID)
+    })
+
+    it('should throw when application team ID is not stored', () => {
+      vi.mocked(mockAppPropertiesRepository.getByKey).mockReturnValue(undefined)
+
+      expect(() => appProperties.getApplicationTeamId()).toThrow(InvalidParameterError)
+      expect(() => appProperties.getApplicationTeamId()).toThrow('No Application TeamId found')
+      expect(mockAppPropertiesRepository.getByKey).toHaveBeenCalledWith('application_team_id')
+    })
+
+    it('should return true when application team ID is stored', () => {
+      vi.mocked(mockAppPropertiesRepository.getByKey).mockReturnValue({
+        key: 'application_team_id',
+        value: 'team-id'
+      })
+
+      const result = appProperties.hasApplicationTeamId()
+
+      expect(mockAppPropertiesRepository.getByKey).toHaveBeenCalledWith('application_team_id')
+      expect(result).toBe(true)
+    })
+
+    it('should return false when application team ID is not stored', () => {
+      vi.mocked(mockAppPropertiesRepository.getByKey).mockReturnValue(undefined)
+
+      const result = appProperties.hasApplicationTeamId()
+
+      expect(mockAppPropertiesRepository.getByKey).toHaveBeenCalledWith('application_team_id')
       expect(result).toBe(false)
     })
   })

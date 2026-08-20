@@ -18,4 +18,5 @@ import type {QualifiedId} from '../../model/QualifiedId.js'
 
 export interface SelfResponse {
   qualified_id: QualifiedId
+  team?: string
 }

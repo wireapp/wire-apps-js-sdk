@@ -20,6 +20,7 @@ import {QualifiedId} from '../../src/model/QualifiedId.js'
 import type {WireUser} from '../../src/model/WireUser.js'
 import {Ping, TextMessage} from '../../src/model/WireMessage.js'
 import {ProtobufSerializer} from '../../src/mappers/protobuf/ProtobufSerializer.js'
+import {TeamId} from '../../src/model/TeamId.js'
 
 describe('WireApplicationManager', () => {
   const conversationId = new QualifiedId('conversation-id', 'wire.com')
@@ -52,6 +53,30 @@ describe('WireApplicationManager', () => {
       userService as any,
       appProperties as any
     )
+
+  describe('application identity', () => {
+    it('returns and caches the stored application qualified id', () => {
+      const appProperties = {
+        getApplicationQualifiedId: vi.fn().mockReturnValue(appQualifiedId)
+      }
+      const manager = createManager({appProperties})
+
+      expect(manager.getApplicationQualifiedId()).toEqual(appQualifiedId)
+      expect(manager.getApplicationQualifiedId()).toEqual(appQualifiedId)
+      expect(appProperties.getApplicationQualifiedId).toHaveBeenCalledOnce()
+    })
+
+    it('returns the stored application team id', () => {
+      const appTeamId = new TeamId('team-id')
+      const appProperties = {
+        getApplicationTeamId: vi.fn().mockReturnValue(appTeamId)
+      }
+      const manager = createManager({appProperties})
+
+      expect(manager.getApplicationTeamId()).toEqual(appTeamId)
+      expect(appProperties.getApplicationTeamId).toHaveBeenCalledOnce()
+    })
+  })
 
   describe('sendMessage', () => {
     const makeSendDependencies = () => ({

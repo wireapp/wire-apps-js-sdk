@@ -42,4 +42,11 @@ export class QualifiedId {
     const [id, domain] = key.split('@')
     return new QualifiedId(id!, domain!)
   }
+
+  /**
+   * Verifies is otherQualifiedId is equals (in keys) to current QualifiedId
+   */
+  static equals(qualifiedId: QualifiedId, otherQualifiedId: QualifiedId): boolean {
+    return QualifiedId.toKey(qualifiedId) === QualifiedId.toKey(otherQualifiedId)
+  }
 }
