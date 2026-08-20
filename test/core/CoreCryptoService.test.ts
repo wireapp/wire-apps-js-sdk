@@ -30,6 +30,7 @@ import {QualifiedId} from '../../src/model/QualifiedId.js'
 vi.mock('../../src/core/CoreCryptoClient.js', () => ({
   CoreCryptoClient: {
     create: vi.fn(),
+    deleteClientStorage: vi.fn(),
     getMlsCiphersuiteName: vi.fn()
   }
 }))
@@ -65,9 +66,11 @@ vi.mock('../../src/model/CryptoClientId.js', () => ({
   }
 }))
 
+const loggerMock = vi.hoisted(() => ({debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn()}))
+
 vi.mock('../../src/utils/logger/LoggerFactory.js', () => ({
   LoggerFactory: {
-    getLogger: vi.fn(() => ({debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn()}))
+    getLogger: vi.fn(() => loggerMock)
   }
 }))
 
@@ -140,6 +143,7 @@ describe('CoreCryptoService', () => {
     }
 
     vi.mocked(CoreCryptoClient.create).mockResolvedValue(mockCoreCryptoClientInstance)
+    vi.mocked(CoreCryptoClient.deleteClientStorage).mockReturnValue(undefined)
     vi.mocked(CoreCryptoClient.getMlsCiphersuiteName).mockReturnValue('mock-ciphersuite' as any)
 
     service = new CoreCryptoService(
@@ -172,6 +176,56 @@ describe('CoreCryptoService', () => {
         STORAGE_KEY,
         mockMlsTransport
       )
+    })
+
+    it('should delete stale client storage before opening CoreCrypto when no device id is stored', async () => {
+      // given
+      vi.mocked(mockAppProperties.hasDeviceId).mockReturnValue(false)
+
+      // when
+      await initService()
+
+      // then
+      expect(CoreCryptoClient.deleteClientStorage).toHaveBeenCalledWith(WIRE_USER_ID)
+      expect(vi.mocked(CoreCryptoClient.deleteClientStorage).mock.invocationCallOrder[0]).toBeLessThan(
+        vi.mocked(CoreCryptoClient.create).mock.invocationCallOrder[0]!
+      )
+    })
+
+    it('should log before deleting stale client storage', async () => {
+      // given
+      vi.mocked(mockAppProperties.hasDeviceId).mockReturnValue(false)
+
+      // when
+      await initService()
+
+      // then
+      expect(loggerMock.warn).toHaveBeenCalledWith(
+        'No stored deviceId found. Wiping cryptographic storage. userId: obfuscated(wire-user-id)'
+      )
+    })
+
+    it('should wrap stale client storage deletion failures', async () => {
+      // given
+      vi.mocked(mockAppProperties.hasDeviceId).mockReturnValue(false)
+      vi.mocked(CoreCryptoClient.deleteClientStorage).mockImplementationOnce(() => {
+        throw new Error('storage busy')
+      })
+
+      // when / then
+      await expect(initService()).rejects.toThrow('Error when deleting stale cryptographic storage')
+      expect(CoreCryptoClient.create).not.toHaveBeenCalled()
+    })
+
+    it('should keep client storage when a device id is stored', async () => {
+      // given
+      vi.mocked(mockAppProperties.hasDeviceId).mockReturnValue(true)
+
+      // when
+      await initService()
+
+      // then
+      expect(CoreCryptoClient.deleteClientStorage).not.toHaveBeenCalled()
     })
 
     it('should wire subsequent calls to the created CoreCryptoClient instance', async () => {

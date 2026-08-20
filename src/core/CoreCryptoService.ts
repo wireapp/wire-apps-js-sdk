@@ -68,6 +68,17 @@ export class CoreCryptoService {
     const appQualifiedId = this.getApplicationQualifiedId()
     this.defaultCiphersuiteCode = await this.featureConfigsService.getDefaultCipherSuite()
 
+    if (!this.appProperties.hasDeviceId()) {
+      this.logger.warn(
+        `No stored deviceId found. Wiping cryptographic storage. userId: ${obfuscateId(appQualifiedId.id)}`
+      )
+      try {
+        CoreCryptoClient.deleteClientStorage(appQualifiedId.id)
+      } catch (exception) {
+        throw new CryptographicSystemError('Error when deleting stale cryptographic storage', exception as Error)
+      }
+    }
+
     this.coreCryptoClient = await CoreCryptoClient.create(
       appQualifiedId.id,
       this.defaultCiphersuiteCode,

@@ -18,6 +18,10 @@ import {beforeEach, describe, expect, it, vi} from 'vitest'
 import {join} from 'node:path'
 import {PreKeyCrypto} from '../../src/model/PreKeyCrypto.js'
 
+vi.mock('node:fs', () => ({
+  rmSync: vi.fn()
+}))
+
 // ---------------------------------------------------------------------------
 // Mock the native CoreCrypto module. CoreCryptoClient imports this directly
 // (it isn't injected), so we replace the module rather than passing mocks
@@ -135,6 +139,7 @@ vi.mock('../../src/utils/StoragePaths.js', () => ({
 import {CoreCryptoClient} from '../../src/core/CoreCryptoClient.js'
 import {CipherSuite, CoreCrypto, Credential, Database, ExternalSender} from '@wireapp/core-crypto/native'
 import {Decoder} from 'bazinga64'
+import {rmSync} from 'node:fs'
 
 describe('CoreCryptoClient', () => {
   const USER_ID = 'test-user-id'
@@ -195,6 +200,10 @@ describe('CoreCryptoClient', () => {
   }
 
   describe('create', () => {
+    it('should resolve the client storage path', () => {
+      expect(CoreCryptoClient.clientStoragePath(USER_ID)).toBe(join('/test/storage/path', USER_ID))
+    })
+
     it('should open the database at the correct path with the storage key', async () => {
       // given / when
       await createClient(1)
@@ -224,6 +233,21 @@ describe('CoreCryptoClient', () => {
 
       // then
       expect(client).toBeInstanceOf(CoreCryptoClient)
+    })
+
+    it('should delete the client storage path', () => {
+      CoreCryptoClient.deleteClientStorage(USER_ID)
+
+      expect(rmSync).toHaveBeenCalledWith(join('/test/storage/path', USER_ID), {recursive: true, force: true})
+      expect(rmSync).toHaveBeenCalledWith(`${join('/test/storage/path', USER_ID)}-wal`, {
+        recursive: true,
+        force: true
+      })
+      expect(rmSync).toHaveBeenCalledWith(`${join('/test/storage/path', USER_ID)}-shm`, {
+        recursive: true,
+        force: true
+      })
+      expect(rmSync).toHaveBeenCalledTimes(3)
     })
   })
 

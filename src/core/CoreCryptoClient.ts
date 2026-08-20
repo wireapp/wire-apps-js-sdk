@@ -41,6 +41,7 @@ import {obfuscateId} from '../utils/ObfuscateUtil.js'
 import {join} from 'node:path'
 import {CRYPTOGRAPHY_STORAGE_PATH} from '../utils/StoragePaths.js'
 import {CryptographicSystemError} from '../exception/WireException.js'
+import {rmSync} from 'node:fs'
 
 // TODO: Baris: If we can find a way to make this class only reachable from CoreCryptoService, that will be awesome.
 
@@ -64,12 +65,23 @@ export class CoreCryptoClient {
     cryptographyStorageKey: Uint8Array,
     mlsTransport: CoreCryptoMlsTransport
   ): Promise<CoreCryptoClient> {
-    const db = await Database.open(join(CRYPTOGRAPHY_STORAGE_PATH, userId), new DatabaseKey(cryptographyStorageKey))
+    const db = await Database.open(this.clientStoragePath(userId), new DatabaseKey(cryptographyStorageKey))
     const coreCrypto = CoreCrypto.new(db)
 
     const coreCryptoClient = new CoreCryptoClient(this.getMlsCiphersuiteName(ciphersuiteCode), mlsTransport, coreCrypto)
 
     return coreCryptoClient
+  }
+
+  static clientStoragePath(userId: string): string {
+    return join(CRYPTOGRAPHY_STORAGE_PATH, userId)
+  }
+
+  static deleteClientStorage(userId: string): void {
+    const storagePath = this.clientStoragePath(userId)
+    for (const suffix of ['', '-wal', '-shm']) {
+      rmSync(`${storagePath}${suffix}`, {recursive: true, force: true})
+    }
   }
 
   static getMlsCiphersuiteName(ciphersuiteCode: number): CipherSuite {
