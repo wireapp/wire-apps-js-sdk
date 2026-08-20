@@ -78,7 +78,10 @@ export class CoreCryptoClient {
   }
 
   static deleteClientStorage(userId: string): void {
-    rmSync(this.clientStoragePath(userId), {recursive: true, force: true})
+    const storagePath = this.clientStoragePath(userId)
+    for (const suffix of ['', '-wal', '-shm']) {
+      rmSync(`${storagePath}${suffix}`, {recursive: true, force: true})
+    }
   }
 
   static getMlsCiphersuiteName(ciphersuiteCode: number): CipherSuite {

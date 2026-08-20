@@ -239,6 +239,15 @@ describe('CoreCryptoClient', () => {
       CoreCryptoClient.deleteClientStorage(USER_ID)
 
       expect(rmSync).toHaveBeenCalledWith(join('/test/storage/path', USER_ID), {recursive: true, force: true})
+      expect(rmSync).toHaveBeenCalledWith(`${join('/test/storage/path', USER_ID)}-wal`, {
+        recursive: true,
+        force: true
+      })
+      expect(rmSync).toHaveBeenCalledWith(`${join('/test/storage/path', USER_ID)}-shm`, {
+        recursive: true,
+        force: true
+      })
+      expect(rmSync).toHaveBeenCalledTimes(3)
     })
   })
 
