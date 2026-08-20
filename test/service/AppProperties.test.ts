@@ -34,7 +34,8 @@ describe('AppProperties', () => {
 
     mockAppPropertiesRepository = {
       getByKey: vi.fn(),
-      save: vi.fn()
+      save: vi.fn(),
+      delete: vi.fn()
     } as any
 
     appProperties = new AppProperties(mockAppPropertiesRepository, CRYPTO_STORAGE_KEY)
@@ -205,6 +206,12 @@ describe('AppProperties', () => {
 
       expect(mockAppPropertiesRepository.getByKey).toHaveBeenCalledWith('device_id')
       expect(result).toBe(false)
+    })
+
+    it('should delete the stored device ID', () => {
+      appProperties.deleteDeviceId()
+
+      expect(mockAppPropertiesRepository.delete).toHaveBeenCalledWith('device_id')
     })
   })
 

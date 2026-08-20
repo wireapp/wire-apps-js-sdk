@@ -85,6 +85,10 @@ export class AppProperties {
     this.appPropertiesRepository.save(this.DEVICE_ID, deviceId)
   }
 
+  deleteDeviceId() {
+    this.appPropertiesRepository.delete(this.DEVICE_ID)
+  }
+
   getDeviceId(): string {
     const deviceId = this.appPropertiesRepository.getByKey(this.DEVICE_ID)?.value
     if (!deviceId) {

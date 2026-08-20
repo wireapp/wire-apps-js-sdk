@@ -68,6 +68,10 @@ export class CoreCryptoService {
     const appQualifiedId = this.getApplicationQualifiedId()
     this.defaultCiphersuiteCode = await this.featureConfigsService.getDefaultCipherSuite()
 
+    if (!this.appProperties.hasDeviceId()) {
+      CoreCryptoClient.deleteClientStorage(appQualifiedId.id)
+    }
+
     this.coreCryptoClient = await CoreCryptoClient.create(
       appQualifiedId.id,
       this.defaultCiphersuiteCode,

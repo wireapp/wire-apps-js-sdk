@@ -96,6 +96,7 @@ describe('HttpClient', () => {
         storedCookie = cookie
       }),
       deleteBackendCookie: vi.fn(),
+      deleteDeviceId: vi.fn(),
       getDeviceId: vi.fn(() => {
         if (!storedDeviceId) {
           throw new Error('No stored deviceId found')
@@ -409,7 +410,7 @@ describe('HttpClient', () => {
         expect(tokenRefreshCount).toBe(HTTP_RETRY_POLICY.maxAttempts)
       })
 
-      it('should not retry invalid credentials and should delete the backend cookie', async () => {
+      it('should not retry invalid credentials and should delete the backend cookie and device id', async () => {
         // given
         storedCookie = 'test-expired-cookie'
         let tokenRefreshCount = 0
@@ -436,6 +437,7 @@ describe('HttpClient', () => {
         )
         expect(tokenRefreshCount).toBe(1)
         expect(mockAppProperties.deleteBackendCookie).toHaveBeenCalled()
+        expect(mockAppProperties.deleteDeviceId).toHaveBeenCalled()
       })
 
       it('should share one retry sequence for concurrent access token refreshes', async () => {
@@ -501,6 +503,7 @@ describe('HttpClient', () => {
       // when & then
       await expect(httpClient.refreshAccessToken()).rejects.toThrow()
       expect(mockAppProperties.deleteBackendCookie).toHaveBeenCalled()
+      expect(mockAppProperties.deleteDeviceId).toHaveBeenCalled()
     })
   })
 })
