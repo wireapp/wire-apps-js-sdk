@@ -528,18 +528,22 @@ export class ConversationService {
     )
   }
 
-  async syncMembersAdded(members: ConversationMember[], conversationId: QualifiedId): Promise<void> {
+  /**
+   * Persists the given members if the conversation exists in the database.
+   *
+   * @returns `true` if the members are saved, `false` if the conversation does not exist locally yet
+   *   and the event was skipped.
+   */
+  async syncMembersAdded(members: ConversationMember[], conversationId: QualifiedId): Promise<boolean> {
     this.logger.info(
       `Adding members to conversation. conversationId: ${conversationId}, members length: ${members.length}`
     )
 
-    // TODO: Baris: In such cases we should throw custom exceptions and handle them in the upper layers instead of just logging and skipping the events.
-    //  For example for this scenario, the Router class should not call the callback method if we didn't add the members to the conversation
     if (this.conversationRepository.findByIdAndDomain(conversationId.id, conversationId.domain) == null) {
       this.logger.warn(
         `Conversation does not exist locally. Skipping MemberJoin event for conversationId: ${conversationId}`
       )
-      return
+      return false
     }
 
     const membersToSave: ConversationMemberEntity[] = members.map((member) => {
@@ -557,9 +561,16 @@ export class ConversationService {
     this.logger.info(
       `Added members to conversation. conversationId: ${conversationId}, members length: ${members.length}`
     )
+    return true
   }
 
-  async syncMembersRemoved(userIds: QualifiedId[], conversationId: QualifiedId): Promise<void> {
+  /**
+   * Removes the given members if the conversation exists in the database.
+   *
+   * @returns `true` if the members are removed successfully, `false` if the conversation does not exist locally and
+   *   the event was skipped.
+   */
+  async syncMembersRemoved(userIds: QualifiedId[], conversationId: QualifiedId): Promise<boolean> {
     this.logger.info(
       `Removing members from conversation. conversationId: ${conversationId}, userIds length: ${userIds.length}`
     )
@@ -568,7 +579,7 @@ export class ConversationService {
       this.logger.warn(
         `Conversation does not exist locally. Skipping MemberLeave event for conversationId: ${conversationId}`
       )
-      return
+      return false
     }
 
     if (this.containsAppUser(userIds)) {
@@ -582,6 +593,7 @@ export class ConversationService {
     this.logger.info(
       `Removed members from conversation. conversationId: ${conversationId}, userIds length: ${userIds.length}`
     )
+    return true
   }
 
   private containsAppUser(userIds: QualifiedId[]): boolean {

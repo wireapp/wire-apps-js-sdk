@@ -38,8 +38,15 @@ export class MemberLeaveEventProcessor implements EventProcessor<MemberLeaveDTO>
     const conversationId = new QualifiedId(event.qualified_conversation.id, event.qualified_conversation.domain)
     this.logger.info(`Processing MemberLeave event for conversationId: ${conversationId}`)
 
-    await this.conversationService.syncMembersRemoved(event.data.qualified_user_ids, conversationId)
-    await this.wireEventsHandler.onUserLeftConversation(conversationId, event.data.qualified_user_ids)
+    const membersRemoved = await this.conversationService.syncMembersRemoved(
+      event.data.qualified_user_ids,
+      conversationId
+    )
+
+    // Trigger the callback only if the removal was actually applied successfully (meaning the conversation is already in the database)
+    if (membersRemoved) {
+      await this.wireEventsHandler.onUserLeftConversation(conversationId, event.data.qualified_user_ids)
+    }
 
     this.logger.info(`Processed MemberLeave event for conversationId: ${conversationId}`)
   }
