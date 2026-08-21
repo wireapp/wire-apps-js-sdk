@@ -47,7 +47,7 @@ beforeEach(() => {
   vi.clearAllMocks()
 
   conversationService = {
-    syncMembersAdded: vi.fn().mockResolvedValue(undefined)
+    syncMembersAdded: vi.fn().mockResolvedValue(true)
   } as any
 
   wireEventsHandler = {
@@ -109,6 +109,7 @@ describe('MemberJoinEventProcessor', () => {
 
       vi.mocked(conversationService.syncMembersAdded).mockImplementation(async () => {
         callOrder.push('addMembers')
+        return true
       })
       vi.mocked(wireEventsHandler.onUserJoinedConversation).mockImplementation(async () => {
         callOrder.push('onUserJoinedConversation')
@@ -123,6 +124,14 @@ describe('MemberJoinEventProcessor', () => {
       vi.mocked(conversationService.syncMembersAdded).mockRejectedValue(new Error('addMembers failed'))
 
       await expect(processor.process(makeEvent())).rejects.toThrow('addMembers failed')
+      expect(wireEventsHandler.onUserJoinedConversation).not.toHaveBeenCalled()
+    })
+
+    it('should not call onUserJoinedConversation when the members were not applied (conversation unknown locally)', async () => {
+      vi.mocked(conversationService.syncMembersAdded).mockResolvedValue(false)
+
+      await processor.process(makeEvent())
+
       expect(wireEventsHandler.onUserJoinedConversation).not.toHaveBeenCalled()
     })
 

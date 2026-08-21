@@ -45,8 +45,12 @@ export class MemberJoinEventProcessor implements EventProcessor<MemberJoinDTO> {
     }))
 
     this.logger.info(`New members to be added: ${members.map((member) => member.userId).join()}`)
-    await this.conversationService.syncMembersAdded(members, conversationId)
-    await this.wireEventsHandler.onUserJoinedConversation(conversationId, members)
+    const membersAdded = await this.conversationService.syncMembersAdded(members, conversationId)
+
+    // Trigger the callback only if the members added to the database successfully
+    if (membersAdded) {
+      await this.wireEventsHandler.onUserJoinedConversation(conversationId, members)
+    }
 
     this.logger.info(`Processed MemberJoin event for conversationId: ${conversationId}`)
   }

@@ -46,7 +46,7 @@ beforeEach(() => {
   vi.clearAllMocks()
 
   conversationService = {
-    syncMembersRemoved: vi.fn().mockResolvedValue(undefined)
+    syncMembersRemoved: vi.fn().mockResolvedValue(true)
   } as any
 
   wireEventsHandler = {
@@ -94,6 +94,7 @@ describe('MemberLeaveEventProcessor', () => {
 
       vi.mocked(conversationService.syncMembersRemoved).mockImplementation(async () => {
         callOrder.push('removeMembers')
+        return true
       })
       vi.mocked(wireEventsHandler.onUserLeftConversation).mockImplementation(async () => {
         callOrder.push('onUserLeftConversation')
@@ -108,6 +109,14 @@ describe('MemberLeaveEventProcessor', () => {
       vi.mocked(conversationService.syncMembersRemoved).mockRejectedValue(new Error('removeMembers failed'))
 
       await expect(processor.process(makeEvent())).rejects.toThrow('removeMembers failed')
+      expect(wireEventsHandler.onUserLeftConversation).not.toHaveBeenCalled()
+    })
+
+    it('should not call onUserLeftConversation when the removal was not applied (conversation unknown locally)', async () => {
+      vi.mocked(conversationService.syncMembersRemoved).mockResolvedValue(false)
+
+      await processor.process(makeEvent())
+
       expect(wireEventsHandler.onUserLeftConversation).not.toHaveBeenCalled()
     })
 
