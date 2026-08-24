@@ -68,7 +68,7 @@ export default [
     rules: {
       'no-magic-numbers': 'off',
       'id-length': 'off',
-      '@typescript-eslint/no-explicit-any': 'warn'
+      '@typescript-eslint/no-explicit-any': 'off'
     }
   }
 ]
