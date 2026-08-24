@@ -23,6 +23,7 @@ import {
   CredentialRef,
   Database,
   DatabaseKey,
+  DecryptedMessage,
   DeviceId,
   ExternalSender,
   GroupInfo,
@@ -211,7 +212,11 @@ export class CoreCryptoClient {
       return await context.decryptMessage(mlsGroupId, encryptedMessageBytes)
     })
 
-    return decryptedMessage.message
+    if (DecryptedMessage.Text.instanceOf(decryptedMessage)) {
+      return decryptedMessage.inner.plaintext
+    }
+
+    return undefined
   }
 
   async processWelcomeMessage(welcomeMessageBytes: Uint8Array) {
