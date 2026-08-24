@@ -93,6 +93,17 @@ vi.mock('@wireapp/core-crypto/native', () => {
   }
 
   const proteusLastResortPrekeyId = vi.fn(() => 65535)
+  const DecryptedMessage = {
+    Text: {
+      instanceOf: vi.fn((message: any) => message.tag === 'Text')
+    },
+    Commit: {
+      instanceOf: vi.fn((message: any) => message.tag === 'Commit')
+    },
+    Proposal: {
+      instanceOf: vi.fn((message: any) => message.tag === 'Proposal')
+    }
+  }
 
   return {
     CipherSuite,
@@ -103,6 +114,7 @@ vi.mock('@wireapp/core-crypto/native', () => {
     CredentialRef: class {},
     Database,
     DatabaseKey,
+    DecryptedMessage,
     DeviceId,
     ExternalSender,
     GroupInfo: class {},
