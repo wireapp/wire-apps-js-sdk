@@ -106,7 +106,7 @@
   "dependencies": {
     "@ubjs/core": "^0.31.0-3",
     "@ubjs/node": "^0.31.0-3",
-    "@wireapp/core-crypto": "^10.0.0",
+    "@wireapp/core-crypto": "^10.3.0",
     "bazinga64": "^6.5.13",
     "better-sqlite3": "^13.0.2",
     "drizzle-orm": "^0.45.1",

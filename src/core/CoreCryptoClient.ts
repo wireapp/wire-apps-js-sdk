@@ -211,7 +211,7 @@ export class CoreCryptoClient {
       return await context.decryptMessage(mlsGroupId, encryptedMessageBytes)
     })
 
-    return decryptedMessage.message
+    return 'plaintext' in decryptedMessage.inner ? decryptedMessage.inner.plaintext : undefined
   }
 
   async processWelcomeMessage(welcomeMessageBytes: Uint8Array) {

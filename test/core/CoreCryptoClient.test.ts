@@ -529,7 +529,7 @@ describe('CoreCryptoClient', () => {
       const groupId = {} as any
       const encryptedBytes = new Uint8Array([1, 2])
       const decrypted = new Uint8Array([3, 4])
-      vi.mocked(mockContext.decryptMessage).mockResolvedValue({message: decrypted})
+      vi.mocked(mockContext.decryptMessage).mockResolvedValue({tag: 'Text', inner: {plaintext: decrypted}})
 
       // when
       const result = await client.decryptMls(groupId, encryptedBytes)
@@ -539,10 +539,10 @@ describe('CoreCryptoClient', () => {
       expect(result).toBe(decrypted)
     })
 
-    it('should return undefined when there is no decrypted message', async () => {
+    it('should return undefined when the decrypted message has no payload', async () => {
       // given
       const client = await createClient(1)
-      vi.mocked(mockContext.decryptMessage).mockResolvedValue({message: undefined})
+      vi.mocked(mockContext.decryptMessage).mockResolvedValue({tag: 'Commit', inner: {isActive: true}})
 
       // when
       const result = await client.decryptMls({} as any, new Uint8Array())
