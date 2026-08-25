@@ -37,6 +37,7 @@ import {CRYPTOGRAPHY_STORAGE_PATH, STORAGE_PATH} from './utils/StoragePaths.js'
 import type {BackendConnectionListener} from './core/BackendConnectionListener.js'
 import {InvalidParameterError, UnknownError} from './exception/WireException.js'
 import {SelfService} from './api/SelfService.js'
+import {WireApplicationManager} from './core/WireApplicationManager.js'
 
 export class WireAppSdk {
   private readonly CRYPTOGRAPHY_STORAGE_KEY_BYTES = 32
@@ -50,6 +51,7 @@ export class WireAppSdk {
   private webSocketClient?: WebSocketClient
   private conversationService?: ConversationService
   private appProperties?: AppProperties
+  private applicationManager?: WireApplicationManager
 
   private wireEventsHandler: WireEventsHandler
   private logger: Logger
@@ -185,6 +187,17 @@ export class WireAppSdk {
    */
   setBackendConnectionListener(listener: BackendConnectionListener): void {
     this.webSocketClient?.setBackendConnectionListener(listener)
+  }
+
+  /**
+   * Returns the WireApplicationManager instance for interacting with the Wire backend.
+   *
+   * This method can be called at any time after SDK initialization, even before
+   * startListening is called. Some operations may require an active WebSocket connection.
+   */
+  getApplicationManager(): WireApplicationManager {
+    this.applicationManager ??= container.resolve(WireApplicationManager)
+    return this.applicationManager
   }
 
   private registerExitHandlers(): void {
