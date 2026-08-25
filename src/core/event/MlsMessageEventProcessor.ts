@@ -78,7 +78,7 @@ export class MlsMessageEventProcessor implements EventProcessor<NewMLSMessageDTO
         await this.wireEventsHandler.onTextMessageReceived(wireMessage)
         break
       case WireMessageType.TEXT_EDITED:
-        await this.wireEventsHandler.onTextEditedMessageReceived(wireMessage)
+        await this.wireEventsHandler.onTextMessageEdited(wireMessage)
         break
       case WireMessageType.ASSET:
         await this.wireEventsHandler.onAssetMessageReceived(wireMessage)

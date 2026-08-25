@@ -72,7 +72,7 @@ class SampleEventsHandler extends WireEventsHandler {
     }
   }
 
-  public override async onTextEditedMessageReceived(wireMessage: TextEditedMessage): Promise<void> {
+  public override async onTextMessageEdited(wireMessage: TextEditedMessage): Promise<void> {
     this.appLogger?.info(`[Sample App] Received a Text Edit, notifying conversation that it happen`)
 
     const textMessage = TextMessage.create({

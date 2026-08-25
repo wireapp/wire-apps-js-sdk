@@ -57,8 +57,8 @@ export abstract class WireEventsHandler {
     this.logger.info(`Received onTextMessageReceived, ID: ${wireMessage.id}`)
   }
 
-  public async onTextEditedMessageReceived(wireMessage: TextEditedMessage): Promise<void> {
-    this.logger.info(`Received onTextEditedMessageReceived, ID: ${wireMessage.id}`)
+  public async onTextMessageEdited(wireMessage: TextEditedMessage): Promise<void> {
+    this.logger.info(`Received onTextMessageEdited, ID: ${wireMessage.id}`)
   }
 
   public async onAssetMessageReceived(wireMessage: AssetMessage): Promise<void> {
