@@ -99,7 +99,7 @@ export class MlsMessageEventProcessor implements EventProcessor<NewMLSMessageDTO
         await this.wireEventsHandler.onPingReceived(wireMessage)
         break
       case WireMessageType.LOCATION:
-        await this.wireEventsHandler.onLocationReceived(wireMessage)
+        await this.wireEventsHandler.onLocationMessageReceived(wireMessage)
         break
       case WireMessageType.DELETED:
         await this.wireEventsHandler.onMessageDeleted(wireMessage)

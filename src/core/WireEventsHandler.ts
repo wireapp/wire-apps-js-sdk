@@ -73,8 +73,8 @@ export abstract class WireEventsHandler {
     this.logger.info(`Received onPingReceived, ID: ${wireMessage.id}`)
   }
 
-  public async onLocationReceived(wireMessage: Location): Promise<void> {
-    this.logger.info(`Received onLocationReceived, ID: ${wireMessage.id}`)
+  public async onLocationMessageReceived(wireMessage: Location): Promise<void> {
+    this.logger.info(`Received onLocationMessageReceived, ID: ${wireMessage.id}`)
   }
 
   public async onMessageDeleted(wireMessage: DeletedMessage): Promise<void> {

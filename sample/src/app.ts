@@ -93,7 +93,7 @@ class SampleEventsHandler extends WireEventsHandler {
     await this.manager.sendMessage(ping)
   }
 
-  public override async onLocationReceived(wireMessage: Location): Promise<void> {
+  public override async onLocationMessageReceived(wireMessage: Location): Promise<void> {
     this.appLogger?.info(`[Sample App] Received a Location, sending back the details`)
 
     let locationDetails = `Received Location:`
