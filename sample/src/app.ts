@@ -72,7 +72,7 @@ class SampleEventsHandler extends WireEventsHandler {
     }
   }
 
-  public override async onTextEditedMessageReceived(wireMessage: TextEditedMessage): Promise<void> {
+  public override async onTextMessageEdited(wireMessage: TextEditedMessage): Promise<void> {
     this.appLogger?.info(`[Sample App] Received a Text Edit, notifying conversation that it happen`)
 
     const textMessage = TextMessage.create({
@@ -93,7 +93,7 @@ class SampleEventsHandler extends WireEventsHandler {
     await this.manager.sendMessage(ping)
   }
 
-  public override async onLocationReceived(wireMessage: Location): Promise<void> {
+  public override async onLocationMessageReceived(wireMessage: Location): Promise<void> {
     this.appLogger?.info(`[Sample App] Received a Location, sending back the details`)
 
     let locationDetails = `Received Location:`

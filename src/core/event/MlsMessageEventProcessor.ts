@@ -78,7 +78,7 @@ export class MlsMessageEventProcessor implements EventProcessor<NewMLSMessageDTO
         await this.wireEventsHandler.onTextMessageReceived(wireMessage)
         break
       case WireMessageType.TEXT_EDITED:
-        await this.wireEventsHandler.onTextEditedMessageReceived(wireMessage)
+        await this.wireEventsHandler.onTextMessageEdited(wireMessage)
         break
       case WireMessageType.ASSET:
         await this.wireEventsHandler.onAssetMessageReceived(wireMessage)
@@ -99,7 +99,7 @@ export class MlsMessageEventProcessor implements EventProcessor<NewMLSMessageDTO
         await this.wireEventsHandler.onPingReceived(wireMessage)
         break
       case WireMessageType.LOCATION:
-        await this.wireEventsHandler.onLocationReceived(wireMessage)
+        await this.wireEventsHandler.onLocationMessageReceived(wireMessage)
         break
       case WireMessageType.DELETED:
         await this.wireEventsHandler.onMessageDeleted(wireMessage)

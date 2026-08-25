@@ -77,7 +77,7 @@ beforeEach(() => {
     onTextMessageReceived: vi.fn().mockResolvedValue(undefined),
     onAssetMessageReceived: vi.fn().mockResolvedValue(undefined),
     onPingReceived: vi.fn().mockResolvedValue(undefined),
-    onLocationReceived: vi.fn().mockResolvedValue(undefined),
+    onLocationMessageReceived: vi.fn().mockResolvedValue(undefined),
     onMessageDeleted: vi.fn().mockResolvedValue(undefined),
     onMessageDelivered: vi.fn().mockResolvedValue(undefined),
     onMessageReactionReceived: vi.fn().mockResolvedValue(undefined)
@@ -157,14 +157,14 @@ describe('MlsMessageEventProcessor', () => {
         expect(wireEventsHandler.onAssetMessageReceived).not.toHaveBeenCalled()
       })
 
-      it('should call onLocationReceived for location messages', async () => {
+      it('should call onLocationMessageReceived for location messages', async () => {
         const locationMessage = makeLocationMessage()
         vi.mocked(ProtobufDeserializer.toWireMessage).mockReturnValue(locationMessage)
 
         await processor.process(makeEvent())
 
-        expect(wireEventsHandler.onLocationReceived).toHaveBeenCalledTimes(1)
-        expect(wireEventsHandler.onLocationReceived).toHaveBeenCalledWith(locationMessage)
+        expect(wireEventsHandler.onLocationMessageReceived).toHaveBeenCalledTimes(1)
+        expect(wireEventsHandler.onLocationMessageReceived).toHaveBeenCalledWith(locationMessage)
         expect(wireEventsHandler.onTextMessageReceived).not.toHaveBeenCalled()
         expect(wireEventsHandler.onAssetMessageReceived).not.toHaveBeenCalled()
         expect(wireEventsHandler.onPingReceived).not.toHaveBeenCalled()
@@ -181,7 +181,7 @@ describe('MlsMessageEventProcessor', () => {
         expect(wireEventsHandler.onTextMessageReceived).not.toHaveBeenCalled()
         expect(wireEventsHandler.onAssetMessageReceived).not.toHaveBeenCalled()
         expect(wireEventsHandler.onPingReceived).not.toHaveBeenCalled()
-        expect(wireEventsHandler.onLocationReceived).not.toHaveBeenCalled()
+        expect(wireEventsHandler.onLocationMessageReceived).not.toHaveBeenCalled()
       })
 
       it('should call onMessageDelivered for receipt messages', async () => {
@@ -195,7 +195,7 @@ describe('MlsMessageEventProcessor', () => {
         expect(wireEventsHandler.onTextMessageReceived).not.toHaveBeenCalled()
         expect(wireEventsHandler.onAssetMessageReceived).not.toHaveBeenCalled()
         expect(wireEventsHandler.onPingReceived).not.toHaveBeenCalled()
-        expect(wireEventsHandler.onLocationReceived).not.toHaveBeenCalled()
+        expect(wireEventsHandler.onLocationMessageReceived).not.toHaveBeenCalled()
         expect(wireEventsHandler.onMessageDeleted).not.toHaveBeenCalled()
       })
 
@@ -210,7 +210,7 @@ describe('MlsMessageEventProcessor', () => {
         expect(wireEventsHandler.onTextMessageReceived).not.toHaveBeenCalled()
         expect(wireEventsHandler.onAssetMessageReceived).not.toHaveBeenCalled()
         expect(wireEventsHandler.onPingReceived).not.toHaveBeenCalled()
-        expect(wireEventsHandler.onLocationReceived).not.toHaveBeenCalled()
+        expect(wireEventsHandler.onLocationMessageReceived).not.toHaveBeenCalled()
         expect(wireEventsHandler.onMessageDeleted).not.toHaveBeenCalled()
         expect(wireEventsHandler.onMessageDelivered).not.toHaveBeenCalled()
       })
@@ -223,7 +223,7 @@ describe('MlsMessageEventProcessor', () => {
         expect(wireEventsHandler.onTextMessageReceived).not.toHaveBeenCalled()
         expect(wireEventsHandler.onAssetMessageReceived).not.toHaveBeenCalled()
         expect(wireEventsHandler.onPingReceived).not.toHaveBeenCalled()
-        expect(wireEventsHandler.onLocationReceived).not.toHaveBeenCalled()
+        expect(wireEventsHandler.onLocationMessageReceived).not.toHaveBeenCalled()
         expect(wireEventsHandler.onMessageDeleted).not.toHaveBeenCalled()
         expect(wireEventsHandler.onMessageDelivered).not.toHaveBeenCalled()
         expect(wireEventsHandler.onMessageReactionReceived).not.toHaveBeenCalled()
