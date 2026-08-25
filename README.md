@@ -78,6 +78,13 @@ import {WireAppSdk, WireEventsHandler, TextMessage} from '@wireapp/wire-apps-js-
 
 CommonJS `require()` is not the supported integration path for this alpha release.
 
+After `WireAppSdk.create()` resolves, access backend operations through the application manager:
+
+```ts
+const sdk = await WireAppSdk.create(apiToken, apiHost, cryptographyStorageKey, eventsHandler)
+const manager = sdk.getApplicationManager()
+```
+
 ## Environment Variables
 
 Environment Variables can be checked from: `.env.example` file

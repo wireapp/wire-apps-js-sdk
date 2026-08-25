@@ -37,6 +37,7 @@ import {CRYPTOGRAPHY_STORAGE_PATH, STORAGE_PATH} from './utils/StoragePaths.js'
 import type {BackendConnectionListener} from './core/BackendConnectionListener.js'
 import {InvalidParameterError, UnknownError} from './exception/WireException.js'
 import {SelfService} from './api/SelfService.js'
+import {WireApplicationManager} from './core/WireApplicationManager.js'
 
 export class WireAppSdk {
   private readonly CRYPTOGRAPHY_STORAGE_KEY_BYTES = 32
@@ -185,6 +186,17 @@ export class WireAppSdk {
    */
   setBackendConnectionListener(listener: BackendConnectionListener): void {
     this.webSocketClient?.setBackendConnectionListener(listener)
+  }
+
+  /**
+   * Returns the WireApplicationManager used to interact with the Wire backend.
+   *
+   * Available as soon as create() resolves. Operations on MLS conversations require the app
+   * to have joined those conversations, which happens during startListening().
+   * Do not use the returned instance after close().
+   */
+  getApplicationManager(): WireApplicationManager {
+    return container.resolve(WireApplicationManager)
   }
 
   private registerExitHandlers(): void {

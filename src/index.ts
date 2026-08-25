@@ -23,6 +23,7 @@ export {WireAppSdk} from './WireAppSdk.js'
 // Core Components
 // ============================================
 export {WireEventsHandler} from './core/WireEventsHandler.js'
+export {WireApplicationManager} from './core/WireApplicationManager.js'
 export type {BackendConnectionListener} from './core/BackendConnectionListener.js'
 
 // ============================================
