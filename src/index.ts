@@ -54,6 +54,7 @@ export {
   Reaction,
   Ignored,
   Unknown,
+  type Mention,
   type LinkPreview,
   type Audio,
   type Image,
