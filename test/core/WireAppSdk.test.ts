@@ -16,7 +16,7 @@
 
 import {afterEach, describe, expect, it} from 'vitest'
 import {container} from 'tsyringe'
-import {WireAppSdk} from '../../src/WireAppSdk.js'
+import {WireAppSdk, WireApplicationManager as ExportedWireApplicationManager} from '../../src/index.js'
 import {WireApplicationManager} from '../../src/core/WireApplicationManager.js'
 import {WireEventsHandler} from '../../src/core/WireEventsHandler.js'
 
@@ -25,17 +25,7 @@ describe('WireAppSdk', () => {
     container.clearInstances()
   })
 
-  const createSdk = () =>
-    new (
-      WireAppSdk as unknown as {
-        new (
-          apiToken: string,
-          apiHost: string,
-          cryptographyStorageKey: Uint8Array,
-          wireEventsHandler: WireEventsHandler
-        ): WireAppSdk
-      }
-    )('api-token', 'https://wire.example', new Uint8Array(32), new (class extends WireEventsHandler {})())
+  const createSdk = () => Object.create(WireAppSdk.prototype) as WireAppSdk
 
   it('exposes the WireApplicationManager instance', () => {
     const applicationManager = {} as WireApplicationManager
@@ -45,12 +35,17 @@ describe('WireAppSdk', () => {
     expect(sdk.getApplicationManager()).toBe(applicationManager)
   })
 
-  it('returns the same WireApplicationManager instance on subsequent calls', () => {
+  it('returns the same WireApplicationManager instance as WireEventsHandler.manager', () => {
     const applicationManager = {} as WireApplicationManager
     container.registerInstance(WireApplicationManager, applicationManager)
     const sdk = createSdk()
+    const eventsHandler = new (class extends WireEventsHandler {})()
 
     expect(sdk.getApplicationManager()).toBe(applicationManager)
-    expect(sdk.getApplicationManager()).toBe(applicationManager)
+    expect(eventsHandler.manager).toBe(applicationManager)
+  })
+
+  it('exports WireApplicationManager from the package root', () => {
+    expect(ExportedWireApplicationManager).toBe(WireApplicationManager)
   })
 })

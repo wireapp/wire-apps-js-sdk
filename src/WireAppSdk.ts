@@ -51,7 +51,6 @@ export class WireAppSdk {
   private webSocketClient?: WebSocketClient
   private conversationService?: ConversationService
   private appProperties?: AppProperties
-  private applicationManager?: WireApplicationManager
 
   private wireEventsHandler: WireEventsHandler
   private logger: Logger
@@ -190,14 +189,14 @@ export class WireAppSdk {
   }
 
   /**
-   * Returns the WireApplicationManager instance for interacting with the Wire backend.
+   * Returns the WireApplicationManager used to interact with the Wire backend.
    *
-   * This method can be called at any time after SDK initialization, even before
-   * startListening is called. Some operations may require an active WebSocket connection.
+   * Available as soon as create() resolves. Operations on MLS conversations require the app
+   * to have joined those conversations, which happens during startListening().
+   * Do not use the returned instance after close().
    */
   getApplicationManager(): WireApplicationManager {
-    this.applicationManager ??= container.resolve(WireApplicationManager)
-    return this.applicationManager
+    return container.resolve(WireApplicationManager)
   }
 
   private registerExitHandlers(): void {

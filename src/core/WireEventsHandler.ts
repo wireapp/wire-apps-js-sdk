@@ -38,7 +38,6 @@ import type {QualifiedId} from '../model/QualifiedId.js'
  */
 export abstract class WireEventsHandler {
   private logger = LoggerFactory.getLogger(this.constructor.name)
-  private _manager?: WireApplicationManager
 
   /**
    * The WireApplicationManager is used to manage the Wire application lifecycle and
@@ -47,10 +46,7 @@ export abstract class WireEventsHandler {
    * Use it only inside the event handling methods.
    */
   public get manager(): WireApplicationManager {
-    if (!this._manager) {
-      this._manager = container.resolve(WireApplicationManager)
-    }
-    return this._manager
+    return container.resolve(WireApplicationManager)
   }
 
   public async onTextMessageReceived(wireMessage: TextMessage): Promise<void> {
