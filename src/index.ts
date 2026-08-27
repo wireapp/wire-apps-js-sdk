@@ -62,6 +62,7 @@ export {
 } from './model/WireMessage.js'
 
 export type {Conversation} from './model/conversation/Conversation.js'
+export type {ConversationType} from './model/conversation/ConversationType.js'
 export type {ConversationMember} from './model/conversation/ConversationMember.js'
 export {ConversationRole} from './model/conversation/ConversationRole.js'
 export type {RemoveMembersFromConversationResult} from './api/model/RemoveMembersFromConversationResult.js'
