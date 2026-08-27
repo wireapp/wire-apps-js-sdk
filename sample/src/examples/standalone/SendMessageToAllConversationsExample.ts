@@ -22,7 +22,7 @@ import {NoOpWireEventsHandler} from './NoOpWireEventsHandler.js'
 
 /**
  * This example demonstrates how to send a broadcast announcement message to all stored conversations
- * every 5 seconds, for a total of 10 times.
+ * every 5 seconds, for a total of 2 times.
  */
 class SendMessageToAllConversationsExample {
   private static readonly ANNOUNCEMENT_COUNT = 2
@@ -54,7 +54,7 @@ class SendMessageToAllConversationsExample {
 
   /**
    * This method sends a broadcast announcement message
-   * to all stored conversations every 5 seconds, for a total of 10 times.
+   * to all stored conversations every 5 seconds, for a total of 2 times.
    */
   private async broadcastToAllConversations(): Promise<void> {
     const announcementText =

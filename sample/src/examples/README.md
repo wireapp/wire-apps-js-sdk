@@ -84,7 +84,7 @@ Both scripts build the sample first and then run the compiled example from `samp
 | Example                                | What it does                                                                               |
 | -------------------------------------- | ------------------------------------------------------------------------------------------ |
 | `CreateGroupConversationExample`       | Collects all users from the app's conversations and creates a group conversation with them |
-| `SendMessageToAllConversationsExample` | Broadcasts an announcement to all stored conversations every 5 seconds, 10 times           |
+| `SendMessageToAllConversationsExample` | Broadcasts an announcement to all stored conversations every 5 seconds, 2 times            |
 
 ---
 

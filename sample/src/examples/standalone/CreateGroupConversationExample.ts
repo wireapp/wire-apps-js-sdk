@@ -42,9 +42,11 @@ class CreateGroupConversationExample {
     await sdk.startListening()
     this.manager = sdk.getApplicationManager()
 
-    await this.createGroupWithAll()
-
-    await sdk.close()
+    try {
+      await this.createGroupWithAll()
+    } finally {
+      await sdk.close()
+    }
   }
 
   /**

@@ -18,7 +18,7 @@
 
 import {mkdir, writeFile} from 'node:fs/promises'
 import path from 'node:path'
-import {type AssetMessage, TextMessage, WireEventsHandler} from '@wireapp/wire-apps-js-sdk'
+import {type AssetMessage, type QualifiedId, TextMessage, WireEventsHandler} from '@wireapp/wire-apps-js-sdk'
 import {exampleLogger} from '../ExampleLogger.js'
 
 /**
@@ -32,33 +32,63 @@ export class DownloadOnAssetReceivedExample extends WireEventsHandler {
   public override async onAssetMessageReceived(wireMessage: AssetMessage): Promise<void> {
     exampleLogger.info(`Received Asset Message. conversationId: ${wireMessage.conversationId}`)
 
-    await this.saveAsset(wireMessage)
-    await this.informConversationAfterDownload(wireMessage)
+    const savedFilePath = await this.saveAsset(wireMessage)
+
+    // Only confirm the download if the asset really ended up on the file system
+    if (savedFilePath) {
+      await this.informConversationAfterDownload(path.basename(savedFilePath), wireMessage.conversationId)
+    }
   }
 
-  private async saveAsset(wireMessage: AssetMessage): Promise<void> {
+  /**
+   * Downloads the asset and saves it in the output directory.
+   *
+   * @returns the path of the saved file, or `undefined` if the asset could not be saved
+   */
+  private async saveAsset(wireMessage: AssetMessage): Promise<string | undefined> {
     const remoteData = wireMessage.remoteData
     if (!remoteData) {
-      return
+      exampleLogger.warn(`Asset message has no remote data. conversationId: ${wireMessage.conversationId}`)
+      return undefined
+    }
+
+    const filePath = this.resolveFilePath(wireMessage.name)
+    if (!filePath) {
+      return undefined
     }
 
     const asset = await this.manager.downloadAsset(remoteData)
-    const fileName = wireMessage.name?.trim() ? wireMessage.name.trim() : `unknown-${crypto.randomUUID()}`
-    const filePath = path.join(DownloadOnAssetReceivedExample.OUTPUT_DIR, fileName)
 
     try {
-      await mkdir(DownloadOnAssetReceivedExample.OUTPUT_DIR, {recursive: true})
+      await mkdir(path.dirname(filePath), {recursive: true})
       await writeFile(filePath, asset)
-      exampleLogger.info(`Downloaded asset with size: ${asset.length} bytes, saved to: ${filePath}`)
     } catch (error) {
       exampleLogger.error('Failed to write asset file', error)
+      return undefined
     }
+
+    exampleLogger.info(`Downloaded asset with size: ${asset.length} bytes, saved to: ${filePath}`)
+    return filePath
   }
 
-  private async informConversationAfterDownload(wireMessage: AssetMessage): Promise<void> {
+  private resolveFilePath(assetName: string | null | undefined): string | undefined {
+    const outputDir = path.resolve(DownloadOnAssetReceivedExample.OUTPUT_DIR)
+    const trimmedName = assetName?.trim()
+    const fileName = trimmedName ? path.basename(trimmedName) : `unknown-${crypto.randomUUID()}`
+    const filePath = path.resolve(outputDir, fileName)
+
+    if (!filePath.startsWith(outputDir + path.sep)) {
+      exampleLogger.warn(`Refusing to save an asset outside of ${outputDir}. Asset name: '${assetName}'`)
+      return undefined
+    }
+
+    return filePath
+  }
+
+  private async informConversationAfterDownload(fileName: string, conversationId: QualifiedId): Promise<void> {
     const infoMessage = TextMessage.create({
-      conversationId: wireMessage.conversationId,
-      text: `ℹ️ I've downloaded the asset you sent. The file name is '${wireMessage.name}'.`
+      conversationId: conversationId,
+      text: `ℹ️ I've downloaded the asset you sent. The file name is '${fileName}'.`
     })
 
     await this.manager.sendMessage(infoMessage)
