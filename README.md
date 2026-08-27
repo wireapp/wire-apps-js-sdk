@@ -112,6 +112,20 @@ npm run sample
 
 The `sample` script builds the sample workspace and starts it. It expects the environment variables listed above to be available from the repository `.env` file.
 
+## Ready to use examples
+
+Beside the sample app, [`sample/src/examples`](./sample/src/examples) contains small, focused examples covering common
+usage patterns: event handling via callbacks (greeting new joiners, replying, reacting, sending pings, ephemeral,
+location messages, downloading assets) and self-contained programs (creating a group conversation, broadcasting to all
+conversations).
+
+```shell
+npm run -w sample example:callback -- ReplyMessageExample
+npm run -w sample example:create-group-conversation
+```
+
+See the [examples README](./sample/src/examples/README.md) for the full list and details.
+
 ## Troubleshooting
 
 If the SDK fails to start because a native module cannot be loaded, check that Node was installed for the same CPU architecture as the native dependencies. On Apple Silicon, mixing an x64 Node binary with arm64 native libraries, or the reverse, can cause `dlopen` architecture errors. Reinstalling dependencies with the intended Node binary usually fixes this.

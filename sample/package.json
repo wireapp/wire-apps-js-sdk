@@ -9,7 +9,10 @@
   "scripts": {
     "build": "tsc",
     "start": "node --trace-warnings build/app.js",
-    "dev": "npm run build && npm run start"
+    "dev": "npm run build && npm run start",
+    "example:callback": "npm run build && node --trace-warnings build/examples/RunCallbackExample.js",
+    "example:create-group-conversation": "npm run build && node --trace-warnings build/examples/standalone/CreateGroupConversationExample.js",
+    "example:broadcast-to-all-conversations": "npm run build && node --trace-warnings build/examples/standalone/SendMessageToAllConversationsExample.js"
   },
   "dependencies": {
     "@wireapp/wire-apps-js-sdk": "file:..",
