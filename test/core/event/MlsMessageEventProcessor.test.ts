@@ -22,24 +22,34 @@ import type {WireEventsHandler} from '../../../src/core/WireEventsHandler.js'
 import {CoreCryptoService} from '../../../src/core/CoreCryptoService.js'
 import {MlsFallbackStrategy} from '../../../src/service/MlsFallbackStrategy.js'
 import {ProtobufDeserializer} from '../../../src/mappers/protobuf/ProtobufDeserializer.js'
+import {QualifiedId} from '../../../src/model/QualifiedId.js'
+
+const loggerMock = vi.hoisted(() => ({debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn()}))
 
 vi.mock('../../../src/api/ConversationService.js')
 vi.mock('../../../src/core/CoreCryptoService.js')
 vi.mock('../../../src/service/MlsFallbackStrategy.js')
 vi.mock('../../../src/mappers/protobuf/ProtobufDeserializer.js')
+vi.mock('../../../src/utils/logger/LoggerFactory.js', () => ({
+  LoggerFactory: {
+    getLogger: vi.fn(() => loggerMock)
+  }
+}))
 
-const qualifiedConversation = {id: 'conv-123', domain: 'example.com'}
+const qualifiedConversation = new QualifiedId('conv-123', 'example.com')
 const mlsGroupId = 'mls-group-id'
-const decryptedMessage = new Uint8Array([1, 2, 3])
-const qualifiedFrom = {id: 'user-from', domain: 'example.com'}
+const decryptedPlaintext = new Uint8Array([1, 2, 3])
+const decryptedSender = new QualifiedId('decrypted-sender', 'example.com')
+const decryptedMessage = {plaintext: decryptedPlaintext, sender: decryptedSender}
+const qualifiedFrom = {id: 'decrypted-sender', domain: 'example.com'}
 const eventDate = new Date()
 
-const makeEvent = (): NewMLSMessageDTO => ({
+const makeEvent = (from = qualifiedFrom): NewMLSMessageDTO => ({
   type: 'conversation.mls-message-add',
   time: eventDate,
   data: 'base64encodeddata',
   qualified_conversation: qualifiedConversation,
-  qualified_from: qualifiedFrom
+  qualified_from: from
 })
 
 const makeTextMessage = () => ({type: 'text' as const, text: 'hello'}) as any
@@ -66,7 +76,7 @@ beforeEach(() => {
   } as any
 
   coreCryptoService = {
-    decryptMls: vi.fn().mockResolvedValue(decryptedMessage)
+    decryptMlsMessage: vi.fn().mockResolvedValue(decryptedMessage)
   } as any
 
   mlsFallbackStrategy = {
@@ -108,12 +118,12 @@ describe('MlsMessageEventProcessor', () => {
 
       await processor.process(event)
 
-      expect(coreCryptoService.decryptMls).toHaveBeenCalledTimes(1)
-      expect(coreCryptoService.decryptMls).toHaveBeenCalledWith(mlsGroupId, event.data)
+      expect(coreCryptoService.decryptMlsMessage).toHaveBeenCalledTimes(1)
+      expect(coreCryptoService.decryptMlsMessage).toHaveBeenCalledWith(mlsGroupId, event.data)
     })
 
     it('should return early without forwarding if decryption returns null', async () => {
-      vi.mocked(coreCryptoService.decryptMls).mockResolvedValue(undefined)
+      vi.mocked(coreCryptoService.decryptMlsMessage).mockResolvedValue(undefined)
 
       await processor.process(makeEvent())
 
@@ -229,15 +239,35 @@ describe('MlsMessageEventProcessor', () => {
         expect(wireEventsHandler.onMessageReactionReceived).not.toHaveBeenCalled()
       })
 
-      it('should deserialize the message with the decrypted bytes and qualified conversation', async () => {
+      it('should deserialize the message with the decrypted bytes, qualified conversation and decrypted sender', async () => {
         vi.mocked(ProtobufDeserializer.toWireMessage).mockReturnValue(makeTextMessage())
 
         await processor.process(makeEvent())
 
         expect(ProtobufDeserializer.toWireMessage).toHaveBeenCalledWith(
-          decryptedMessage,
+          decryptedPlaintext,
           qualifiedConversation,
-          qualifiedFrom,
+          decryptedSender,
+          eventDate
+        )
+      })
+
+      it('should log an error when the decrypted sender differs from the backend event sender', async () => {
+        vi.mocked(ProtobufDeserializer.toWireMessage).mockReturnValue(makeTextMessage())
+
+        await processor.process(makeEvent({id: 'backend-sender', domain: 'example.com'}))
+
+        expect(loggerMock.error).toHaveBeenCalledWith(
+          'MLS message sender mismatch between decrypted message and backend event.',
+          expect.objectContaining({
+            decryptedSender: decryptedSender.toString(),
+            eventSender: new QualifiedId('backend-sender', 'example.com').toString()
+          })
+        )
+        expect(ProtobufDeserializer.toWireMessage).toHaveBeenCalledWith(
+          decryptedPlaintext,
+          qualifiedConversation,
+          decryptedSender,
           eventDate
         )
       })
@@ -246,7 +276,7 @@ describe('MlsMessageEventProcessor', () => {
     describe('exception handling', () => {
       it('should call verifyConversationOutOfSync for MlsException and not rethrow', async () => {
         const mlsError = Object.assign(new Error('mls error'), {name: 'MlsException'})
-        vi.mocked(coreCryptoService.decryptMls).mockRejectedValue(mlsError)
+        vi.mocked(coreCryptoService.decryptMlsMessage).mockRejectedValue(mlsError)
 
         await expect(processor.process(makeEvent())).resolves.toBeUndefined()
 
@@ -256,7 +286,7 @@ describe('MlsMessageEventProcessor', () => {
 
       it('should call verifyConversationOutOfSync for CoreCryptoMlsException and not rethrow', async () => {
         const coreCryptoError = Object.assign(new Error('core crypto error'), {name: 'CoreCryptoMlsException'})
-        vi.mocked(coreCryptoService.decryptMls).mockRejectedValue(coreCryptoError)
+        vi.mocked(coreCryptoService.decryptMlsMessage).mockRejectedValue(coreCryptoError)
 
         await expect(processor.process(makeEvent())).resolves.toBeUndefined()
 
@@ -266,7 +296,7 @@ describe('MlsMessageEventProcessor', () => {
 
       it('should rethrow unknown exceptions', async () => {
         const unknownError = new Error('unexpected error')
-        vi.mocked(coreCryptoService.decryptMls).mockRejectedValue(unknownError)
+        vi.mocked(coreCryptoService.decryptMlsMessage).mockRejectedValue(unknownError)
 
         await expect(processor.process(makeEvent())).rejects.toThrow('unexpected error')
 

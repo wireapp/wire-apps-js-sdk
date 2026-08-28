@@ -130,8 +130,8 @@ describe('CoreCryptoService', () => {
       mlsGenerateKeyPackages: vi.fn(),
       processWelcomeMessage: vi.fn(),
       hasTooFewKeyPackageCount: vi.fn(),
-      encryptMls: vi.fn(),
-      decryptMls: vi.fn(),
+      encryptMlsMessage: vi.fn(),
+      decryptMlsMessage: vi.fn(),
       wipeConversation: vi.fn(),
       conversationExists: vi.fn(),
       conversationEpoch: vi.fn(),
@@ -439,20 +439,20 @@ describe('CoreCryptoService', () => {
     })
   })
 
-  describe('encryptMls', () => {
+  describe('encryptMlsMessage', () => {
     it('should decode the group id and encrypt via the CoreCryptoClient', async () => {
       // given
       await initService()
       const message = new Uint8Array([9])
       const encrypted = new Uint8Array([10])
-      vi.mocked(mockCoreCryptoClientInstance.encryptMls).mockResolvedValue(encrypted)
+      vi.mocked(mockCoreCryptoClientInstance.encryptMlsMessage).mockResolvedValue(encrypted)
 
       // when
-      const result = await service.encryptMls('group-id', message)
+      const result = await service.encryptMlsMessage('group-id', message)
 
       // then
       expect(Decoder.fromBase64).toHaveBeenCalledWith('group-id')
-      expect(mockCoreCryptoClientInstance.encryptMls).toHaveBeenCalledWith(
+      expect(mockCoreCryptoClientInstance.encryptMlsMessage).toHaveBeenCalledWith(
         expect.objectContaining({bytes: new TextEncoder().encode('group-id')}),
         message
       )
@@ -460,20 +460,23 @@ describe('CoreCryptoService', () => {
     })
   })
 
-  describe('decryptMls', () => {
+  describe('decryptMlsMessage', () => {
     it('should decode both the group id and the message and decrypt via the CoreCryptoClient', async () => {
       // given
       await initService()
-      const decrypted = new Uint8Array([11])
-      vi.mocked(mockCoreCryptoClientInstance.decryptMls).mockResolvedValue(decrypted)
+      const decrypted = {
+        plaintext: new Uint8Array([11]),
+        sender: new QualifiedId('sender-user-id', 'wire.com')
+      }
+      vi.mocked(mockCoreCryptoClientInstance.decryptMlsMessage).mockResolvedValue(decrypted)
 
       // when
-      const result = await service.decryptMls('group-id', 'encrypted-message')
+      const result = await service.decryptMlsMessage('group-id', 'encrypted-message')
 
       // then
       expect(Decoder.fromBase64).toHaveBeenCalledWith('group-id')
       expect(Decoder.fromBase64).toHaveBeenCalledWith('encrypted-message')
-      expect(mockCoreCryptoClientInstance.decryptMls).toHaveBeenCalledWith(
+      expect(mockCoreCryptoClientInstance.decryptMlsMessage).toHaveBeenCalledWith(
         expect.objectContaining({bytes: new TextEncoder().encode('group-id')}),
         new TextEncoder().encode('encrypted-message')
       )

@@ -17,6 +17,7 @@
 import {beforeEach, describe, expect, it, vi} from 'vitest'
 import {join} from 'node:path'
 import {PreKeyCrypto} from '../../src/model/PreKeyCrypto.js'
+import {QualifiedId} from '../../src/model/QualifiedId.js'
 
 vi.mock('node:fs', () => ({
   rmSync: vi.fn()
@@ -62,6 +63,10 @@ vi.mock('@wireapp/core-crypto/native', () => {
 
   class Uuid {
     constructor(public value: string) {}
+
+    toString() {
+      return this.value
+    }
   }
 
   class Welcome {
@@ -149,7 +154,15 @@ vi.mock('../../src/utils/StoragePaths.js', () => ({
 }))
 
 import {CoreCryptoClient} from '../../src/core/CoreCryptoClient.js'
-import {CipherSuite, CoreCrypto, Credential, Database, ExternalSender} from '@wireapp/core-crypto/native'
+import {
+  CipherSuite,
+  CoreCrypto,
+  Credential,
+  Database,
+  DeviceId,
+  ExternalSender,
+  Uuid
+} from '@wireapp/core-crypto/native'
 import {Decoder} from 'bazinga64'
 import {rmSync} from 'node:fs'
 
@@ -516,7 +529,7 @@ describe('CoreCryptoClient', () => {
     })
   })
 
-  describe('encryptMls', () => {
+  describe('encryptMlsMessage', () => {
     it('should encrypt the message via the transaction context', async () => {
       // given
       const client = await createClient(1)
@@ -526,7 +539,7 @@ describe('CoreCryptoClient', () => {
       vi.mocked(mockContext.encryptMessage).mockResolvedValue(encrypted)
 
       // when
-      const result = await client.encryptMls(groupId, message)
+      const result = await client.encryptMlsMessage(groupId, message)
 
       // then
       expect(mockContext.encryptMessage).toHaveBeenCalledWith(groupId, message)
@@ -534,21 +547,35 @@ describe('CoreCryptoClient', () => {
     })
   })
 
-  describe('decryptMls', () => {
+  describe('decryptMlsMessage', () => {
     it('should return the decrypted message payload', async () => {
       // given
       const client = await createClient(1)
       const groupId = {} as any
       const encryptedBytes = new Uint8Array([1, 2])
       const decrypted = new Uint8Array([3, 4])
-      vi.mocked(mockContext.decryptMessage).mockResolvedValue({tag: 'Text', inner: {plaintext: decrypted}})
+      const senderClientId = {
+        deserialize: vi.fn(() => ({
+          userId: new Uuid('sender-user-id'),
+          deviceId: DeviceId.fromHexString('aabbccdd'),
+          domain: 'wire.com'
+        }))
+      }
+      vi.mocked(mockContext.decryptMessage).mockResolvedValue({
+        tag: 'Text',
+        inner: {plaintext: decrypted, senderClientId}
+      })
 
       // when
-      const result = await client.decryptMls(groupId, encryptedBytes)
+      const result = await client.decryptMlsMessage(groupId, encryptedBytes)
 
       // then
       expect(mockContext.decryptMessage).toHaveBeenCalledWith(groupId, encryptedBytes)
-      expect(result).toBe(decrypted)
+      expect(senderClientId.deserialize).toHaveBeenCalledTimes(1)
+      expect(result).toStrictEqual({
+        plaintext: decrypted,
+        sender: new QualifiedId('sender-user-id', 'wire.com')
+      })
     })
 
     it('should return undefined when the decrypted message has no payload', async () => {
@@ -557,7 +584,7 @@ describe('CoreCryptoClient', () => {
       vi.mocked(mockContext.decryptMessage).mockResolvedValue({tag: 'Commit', inner: {isActive: true}})
 
       // when
-      const result = await client.decryptMls({} as any, new Uint8Array())
+      const result = await client.decryptMlsMessage({} as any, new Uint8Array())
 
       // then
       expect(result).toBeUndefined()

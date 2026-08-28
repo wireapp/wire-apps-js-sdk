@@ -31,6 +31,7 @@ import type {AddMembersToConversationResult} from '../api/model/AddMembersToConv
 import {obfuscateClientId, obfuscateId} from '../utils/ObfuscateUtil.js'
 import {type MlsPublicKeysResponse} from '../api/response/MlsPublicKeysResponse.js'
 import {CryptographicSystemError, InvalidParameterError, MissingParameterError} from '../exception/WireException.js'
+import type {DecryptedMlsMessage} from '../model/DecryptedMlsMessage.js'
 
 /**
  * Service that handles initialization of CoreCrypto and provides a high-level API for:
@@ -175,16 +176,16 @@ export class CoreCryptoService {
     return await this.coreCryptoClient!.mlsGenerateKeyPackages()
   }
 
-  async encryptMls(mlsGroupId: string, message: Uint8Array): Promise<Uint8Array> {
+  async encryptMlsMessage(mlsGroupId: string, message: Uint8Array): Promise<Uint8Array> {
     const mlsGroupIdBytes = Decoder.fromBase64(mlsGroupId).asBytes
-    return await this.coreCryptoClient!.encryptMls(new ConversationId(mlsGroupIdBytes), message)
+    return await this.coreCryptoClient!.encryptMlsMessage(new ConversationId(mlsGroupIdBytes), message)
   }
 
-  async decryptMls(mlsGroupId: string, encryptedMessage: string): Promise<Uint8Array | undefined> {
+  async decryptMlsMessage(mlsGroupId: string, encryptedMessage: string): Promise<DecryptedMlsMessage | undefined> {
     const mlsGroupIdBytes = Decoder.fromBase64(mlsGroupId).asBytes
     const encryptedMessageBytes = Decoder.fromBase64(encryptedMessage).asBytes
 
-    return await this.coreCryptoClient!.decryptMls(new ConversationId(mlsGroupIdBytes), encryptedMessageBytes)
+    return await this.coreCryptoClient!.decryptMlsMessage(new ConversationId(mlsGroupIdBytes), encryptedMessageBytes)
   }
 
   async wipeConversation(mlsGroupId: string) {
