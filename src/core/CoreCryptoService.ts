@@ -19,7 +19,7 @@ import {ClientsService} from '../api/ClientsService.js'
 import {CryptoClientId} from '../model/CryptoClientId.js'
 import {WIRE_CRYPTOGRAPHY_STORAGE_KEY} from '../utils/DependencyInjectionTokens.js'
 import {MlsService} from '../api/MlsService.js'
-import {CoreCryptoClient} from './CoreCryptoClient.js'
+import {CoreCryptoClient, type DecryptedMlsMessage} from './CoreCryptoClient.js'
 import {CoreCryptoMlsTransport} from './CoreCryptoMlsTransport.js'
 import {FeatureConfigsService} from '../api/FeatureConfigsService.js'
 import {Decoder} from 'bazinga64'
@@ -180,7 +180,7 @@ export class CoreCryptoService {
     return await this.coreCryptoClient!.encryptMls(new ConversationId(mlsGroupIdBytes), message)
   }
 
-  async decryptMls(mlsGroupId: string, encryptedMessage: string): Promise<Uint8Array | undefined> {
+  async decryptMls(mlsGroupId: string, encryptedMessage: string): Promise<DecryptedMlsMessage | undefined> {
     const mlsGroupIdBytes = Decoder.fromBase64(mlsGroupId).asBytes
     const encryptedMessageBytes = Decoder.fromBase64(encryptedMessage).asBytes
 

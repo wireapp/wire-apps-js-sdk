@@ -43,8 +43,14 @@ import {join} from 'node:path'
 import {CRYPTOGRAPHY_STORAGE_PATH} from '../utils/StoragePaths.js'
 import {CryptographicSystemError} from '../exception/WireException.js'
 import {rmSync} from 'node:fs'
+import {QualifiedId} from '../model/QualifiedId.js'
 
 // TODO: Baris: If we can find a way to make this class only reachable from CoreCryptoService, that will be awesome.
+
+export interface DecryptedMlsMessage {
+  plaintext: Uint8Array
+  sender: QualifiedId
+}
 
 export class CoreCryptoClient {
   private logger = LoggerFactory.getLogger(this.constructor.name)
@@ -207,13 +213,20 @@ export class CoreCryptoClient {
     })
   }
 
-  async decryptMls(mlsGroupId: ConversationId, encryptedMessageBytes: Uint8Array): Promise<Uint8Array | undefined> {
+  async decryptMls(
+    mlsGroupId: ConversationId,
+    encryptedMessageBytes: Uint8Array
+  ): Promise<DecryptedMlsMessage | undefined> {
     const decryptedMessage = await this.coreCrypto.transaction(async (context) => {
       return await context.decryptMessage(mlsGroupId, encryptedMessageBytes)
     })
 
     if (DecryptedMessage.Text.instanceOf(decryptedMessage)) {
-      return decryptedMessage.inner.plaintext
+      const senderClientId = decryptedMessage.inner.senderClientId.deserialize()
+      return {
+        plaintext: decryptedMessage.inner.plaintext,
+        sender: new QualifiedId(senderClientId.userId.toString(), senderClientId.domain)
+      }
     }
 
     return undefined

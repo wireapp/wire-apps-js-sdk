@@ -464,7 +464,10 @@ describe('CoreCryptoService', () => {
     it('should decode both the group id and the message and decrypt via the CoreCryptoClient', async () => {
       // given
       await initService()
-      const decrypted = new Uint8Array([11])
+      const decrypted = {
+        plaintext: new Uint8Array([11]),
+        sender: new QualifiedId('sender-user-id', 'wire.com')
+      }
       vi.mocked(mockCoreCryptoClientInstance.decryptMls).mockResolvedValue(decrypted)
 
       // when
