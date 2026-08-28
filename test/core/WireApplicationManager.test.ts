@@ -81,7 +81,7 @@ describe('WireApplicationManager', () => {
   describe('sendMessage', () => {
     const makeSendDependencies = () => ({
       coreCryptoService: {
-        encryptMls: vi.fn().mockResolvedValue(new Uint8Array([4, 5, 6]))
+        encryptMlsMessage: vi.fn().mockResolvedValue(new Uint8Array([4, 5, 6]))
       },
       conversationService: {
         getConversationById: vi.fn().mockResolvedValue({

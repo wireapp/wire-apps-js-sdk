@@ -36,7 +36,7 @@ vi.mock('../../../src/utils/logger/LoggerFactory.js', () => ({
   }
 }))
 
-const qualifiedConversation = {id: 'conv-123', domain: 'example.com'}
+const qualifiedConversation = new QualifiedId('conv-123', 'example.com')
 const mlsGroupId = 'mls-group-id'
 const decryptedPlaintext = new Uint8Array([1, 2, 3])
 const decryptedSender = new QualifiedId('decrypted-sender', 'example.com')
@@ -76,7 +76,7 @@ beforeEach(() => {
   } as any
 
   coreCryptoService = {
-    decryptMls: vi.fn().mockResolvedValue(decryptedMessage)
+    decryptMlsMessage: vi.fn().mockResolvedValue(decryptedMessage)
   } as any
 
   mlsFallbackStrategy = {
@@ -118,12 +118,12 @@ describe('MlsMessageEventProcessor', () => {
 
       await processor.process(event)
 
-      expect(coreCryptoService.decryptMls).toHaveBeenCalledTimes(1)
-      expect(coreCryptoService.decryptMls).toHaveBeenCalledWith(mlsGroupId, event.data)
+      expect(coreCryptoService.decryptMlsMessage).toHaveBeenCalledTimes(1)
+      expect(coreCryptoService.decryptMlsMessage).toHaveBeenCalledWith(mlsGroupId, event.data)
     })
 
     it('should return early without forwarding if decryption returns null', async () => {
-      vi.mocked(coreCryptoService.decryptMls).mockResolvedValue(undefined)
+      vi.mocked(coreCryptoService.decryptMlsMessage).mockResolvedValue(undefined)
 
       await processor.process(makeEvent())
 
@@ -276,7 +276,7 @@ describe('MlsMessageEventProcessor', () => {
     describe('exception handling', () => {
       it('should call verifyConversationOutOfSync for MlsException and not rethrow', async () => {
         const mlsError = Object.assign(new Error('mls error'), {name: 'MlsException'})
-        vi.mocked(coreCryptoService.decryptMls).mockRejectedValue(mlsError)
+        vi.mocked(coreCryptoService.decryptMlsMessage).mockRejectedValue(mlsError)
 
         await expect(processor.process(makeEvent())).resolves.toBeUndefined()
 
@@ -286,7 +286,7 @@ describe('MlsMessageEventProcessor', () => {
 
       it('should call verifyConversationOutOfSync for CoreCryptoMlsException and not rethrow', async () => {
         const coreCryptoError = Object.assign(new Error('core crypto error'), {name: 'CoreCryptoMlsException'})
-        vi.mocked(coreCryptoService.decryptMls).mockRejectedValue(coreCryptoError)
+        vi.mocked(coreCryptoService.decryptMlsMessage).mockRejectedValue(coreCryptoError)
 
         await expect(processor.process(makeEvent())).resolves.toBeUndefined()
 
@@ -296,7 +296,7 @@ describe('MlsMessageEventProcessor', () => {
 
       it('should rethrow unknown exceptions', async () => {
         const unknownError = new Error('unexpected error')
-        vi.mocked(coreCryptoService.decryptMls).mockRejectedValue(unknownError)
+        vi.mocked(coreCryptoService.decryptMlsMessage).mockRejectedValue(unknownError)
 
         await expect(processor.process(makeEvent())).rejects.toThrow('unexpected error')
 

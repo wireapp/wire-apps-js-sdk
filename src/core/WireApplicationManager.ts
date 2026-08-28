@@ -58,7 +58,7 @@ export class WireApplicationManager {
 
     const messageToSend = this.addAppSenderIfNeeded(preparedMessage)
     const protobufMessage = ProtobufSerializer.toGenericMessageByteArray(messageToSend)
-    const encryptedMessage = await this.coreCryptoService.encryptMls(conversation.mlsGroupId, protobufMessage)
+    const encryptedMessage = await this.coreCryptoService.encryptMlsMessage(conversation.mlsGroupId, protobufMessage)
 
     await this.mlsService.sendMessage(encryptedMessage)
 

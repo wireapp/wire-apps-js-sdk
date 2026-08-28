@@ -529,7 +529,7 @@ describe('CoreCryptoClient', () => {
     })
   })
 
-  describe('encryptMls', () => {
+  describe('encryptMlsMessage', () => {
     it('should encrypt the message via the transaction context', async () => {
       // given
       const client = await createClient(1)
@@ -539,7 +539,7 @@ describe('CoreCryptoClient', () => {
       vi.mocked(mockContext.encryptMessage).mockResolvedValue(encrypted)
 
       // when
-      const result = await client.encryptMls(groupId, message)
+      const result = await client.encryptMlsMessage(groupId, message)
 
       // then
       expect(mockContext.encryptMessage).toHaveBeenCalledWith(groupId, message)
@@ -547,7 +547,7 @@ describe('CoreCryptoClient', () => {
     })
   })
 
-  describe('decryptMls', () => {
+  describe('decryptMlsMessage', () => {
     it('should return the decrypted message payload', async () => {
       // given
       const client = await createClient(1)
@@ -567,7 +567,7 @@ describe('CoreCryptoClient', () => {
       })
 
       // when
-      const result = await client.decryptMls(groupId, encryptedBytes)
+      const result = await client.decryptMlsMessage(groupId, encryptedBytes)
 
       // then
       expect(mockContext.decryptMessage).toHaveBeenCalledWith(groupId, encryptedBytes)
@@ -584,7 +584,7 @@ describe('CoreCryptoClient', () => {
       vi.mocked(mockContext.decryptMessage).mockResolvedValue({tag: 'Commit', inner: {isActive: true}})
 
       // when
-      const result = await client.decryptMls({} as any, new Uint8Array())
+      const result = await client.decryptMlsMessage({} as any, new Uint8Array())
 
       // then
       expect(result).toBeUndefined()

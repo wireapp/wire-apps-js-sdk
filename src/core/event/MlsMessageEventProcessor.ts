@@ -28,7 +28,7 @@ import {LoggerFactory} from '../../utils/logger/LoggerFactory.js'
 import {MlsFallbackStrategy} from '../../service/MlsFallbackStrategy.js'
 import {QualifiedId} from '../../model/QualifiedId.js'
 import {WireMessageType} from '../../model/WireMessage.js'
-import type {DecryptedMlsMessage} from '../CoreCryptoClient.js'
+import type {DecryptedMlsMessage} from '../../model/DecryptedMlsMessage.js'
 
 @injectable({token: EVENT_PROCESSOR})
 export class MlsMessageEventProcessor implements EventProcessor<NewMLSMessageDTO> {
@@ -48,7 +48,7 @@ export class MlsMessageEventProcessor implements EventProcessor<NewMLSMessageDTO
     const mlsGroupId = await this.conversationService.getConversationMLSGroupId(conversationId)
 
     try {
-      const decryptedMessage = await this.coreCryptoService.decryptMls(mlsGroupId, event.data)
+      const decryptedMessage = await this.coreCryptoService.decryptMlsMessage(mlsGroupId, event.data)
 
       if (decryptedMessage == null) {
         this.logger.debug('Decryption success but no message, probably epoch update')
@@ -63,7 +63,7 @@ export class MlsMessageEventProcessor implements EventProcessor<NewMLSMessageDTO
         })
       }
 
-      await this.forwardMessage(decryptedMessage, event)
+      await this.forwardMessage(decryptedMessage, conversationId, event.time)
     } catch (exception) {
       if (isMlsException(exception)) {
         this.logger.warn('Message decryption failed, exception:', exception)
@@ -77,14 +77,16 @@ export class MlsMessageEventProcessor implements EventProcessor<NewMLSMessageDTO
     }
   }
 
-  private async forwardMessage(decryptedMessage: DecryptedMlsMessage, event: NewMLSMessageDTO): Promise<void> {
-    const conversationId = new QualifiedId(event.qualified_conversation.id, event.qualified_conversation.domain)
-
+  private async forwardMessage(
+    decryptedMessage: DecryptedMlsMessage,
+    conversationId: QualifiedId,
+    eventTime: Date
+  ): Promise<void> {
     const wireMessage = ProtobufDeserializer.toWireMessage(
       decryptedMessage.plaintext,
       conversationId,
       decryptedMessage.sender,
-      event.time
+      eventTime
     )
 
     switch (wireMessage.type) {
