@@ -1,6 +1,6 @@
 {
   "name": "@wireapp/wire-apps-js-sdk",
-  "version": "0.0.1-alpha",
+  "version": "0.0.2-alpha",
   "description": "SDK for Wire third-party applications written in Typescript.",
   "license": "GPL-3.0",
   "keywords": [
