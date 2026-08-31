@@ -104,8 +104,8 @@
     "vitest": "^4.1.10"
   },
   "dependencies": {
-    "@ubjs/core": "^0.31.0-3",
-    "@ubjs/node": "^0.31.0-3",
+    "@ubjs/core": "0.31.0-3",
+    "@ubjs/node": "0.31.0-3",
     "@wireapp/core-crypto": "^10.3.0",
     "bazinga64": "^6.5.13",
     "better-sqlite3": "^13.0.2",
