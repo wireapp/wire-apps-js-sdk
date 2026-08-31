@@ -31,5 +31,10 @@ jobs:
       - name: Release check
         run: npm run release:check
 
+      - name: Use npm with trusted publishing support
+        run: |
+          npm install -g npm@^11.5.1
+          npm --version
+
       - name: Publish to npm
         run: npm publish --provenance --access public --tag latest
