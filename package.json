@@ -67,7 +67,7 @@
   ],
   "type": "module",
   "engines": {
-    "node": "~22"
+    "node": "22.22.1"
   },
   "repository": {
     "type": "git",
