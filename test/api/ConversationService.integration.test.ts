@@ -95,7 +95,6 @@ describe('ConversationService Integration', () => {
     } as any
 
     mockUserService = {
-      getUser: vi.fn(),
       getUsersClientIds: vi.fn()
     } as any
 
@@ -627,7 +626,6 @@ describe('ConversationService Integration', () => {
   describe('createGroup / createChannel (addUsersInCoreCryptoAndSaveInLocalDB)', () => {
     beforeEach(() => {
       ;(mockConversationsApiClient as any).createGroupConversation = vi.fn()
-      vi.mocked(mockUserService.getUser).mockResolvedValue({teamId: new TeamId(TEAM_ID)} as any)
     })
 
     it('should establish the MLS group and save only the members CoreCrypto confirmed', async () => {

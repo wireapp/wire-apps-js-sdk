@@ -188,11 +188,6 @@ export class WireApplicationManager {
     this.logger.debug("Member's role is updated in the conversation with id: " + obfuscateId(conversationId.id))
   }
 
-  async getUser(userQualifiedId: QualifiedId): Promise<WireUser> {
-    this.logger.debug('App requested to get user info: ' + obfuscateId(userQualifiedId.id))
-    return await this.userService.getUser(userQualifiedId)
-  }
-
   async getUsers(userIds: QualifiedId[]): Promise<WireUser[]> {
     this.logger.debug(`App requested to get info for ${userIds.length} users`)
     return await this.userService.getUsers(userIds)

@@ -35,11 +35,6 @@ export class UserService {
     private searchApiClient: SearchApiClient
   ) {}
 
-  async getUser(userQualifiedId: QualifiedId): Promise<WireUser> {
-    const response = await this.usersApiClient.getUser(userQualifiedId.id, userQualifiedId.domain)
-    return this.mapUserResponseToWireUser(response)
-  }
-
   async getUsers(userIds: QualifiedId[]): Promise<WireUser[]> {
     this.logger.info(`Fetching ${userIds.length} users by qualified IDs`)
     const response = await this.usersApiClient.listUsers(userIds)

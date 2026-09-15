@@ -29,7 +29,6 @@ describe('UserService', () => {
 
   beforeEach(() => {
     mockUsersApiClient = {
-      getUser: vi.fn(),
       listUsers: vi.fn()
     }
 
@@ -42,70 +41,6 @@ describe('UserService', () => {
     service = new UserService(mockUsersApiClient, mockSearchApiClient)
 
     vi.spyOn(console, 'info').mockImplementation(() => {})
-  })
-
-  const qualifiedId = {id: 'user-1', domain: 'example.com'}
-
-  const mockUser = {
-    qualified_id: qualifiedId,
-    name: 'John Doe',
-    handle: 'johndoe',
-    email: 'john@example.com',
-    team: 'team-1',
-    supported_protocols: [CryptoProtocol.PROTEUS],
-    deleted: false,
-    type: UserType.REGULAR
-  }
-
-  describe('getUser', () => {
-    it('should call usersApiClient.getUser with id and domain', async () => {
-      vi.mocked(mockUsersApiClient.getUser).mockResolvedValue(mockUser)
-
-      await service.getUser(qualifiedId)
-
-      expect(mockUsersApiClient.getUser).toHaveBeenCalledWith('user-1', 'example.com')
-    })
-
-    it('should return a WireUser mapped from the API response', async () => {
-      vi.mocked(mockUsersApiClient.getUser).mockResolvedValue(mockUser)
-
-      const result = await service.getUser(qualifiedId)
-
-      expect(result).toBeInstanceOf(WireUser)
-      expect(result.id).toEqual(new QualifiedId('user-1', 'example.com'))
-      expect(result.name).toBe('John Doe')
-      expect(result.email).toBe('john@example.com')
-      expect(result.handle).toBe('johndoe')
-      expect(result.teamId).toEqual(new TeamId('team-1'))
-      expect(result.deleted).toBe(false)
-      expect(result.type).toBe(UserType.REGULAR)
-    })
-
-    it('should map undefined optional fields when not present in API response', async () => {
-      const minimalUser = {
-        qualified_id: qualifiedId,
-        name: 'Jane Doe',
-        supported_protocols: [CryptoProtocol.PROTEUS],
-        deleted: false
-      }
-      vi.mocked(mockUsersApiClient.getUser).mockResolvedValue(minimalUser)
-
-      const result = await service.getUser(qualifiedId)
-
-      expect(result).toBeInstanceOf(WireUser)
-      expect(result.name).toBe('Jane Doe')
-      expect(result.deleted).toBe(false)
-      expect(result.email).toBeUndefined()
-      expect(result.handle).toBeUndefined()
-      expect(result.teamId).toBeUndefined()
-      expect(result.type).toBeUndefined()
-    })
-
-    it('should propagate errors from usersApiClient.getUser', async () => {
-      vi.mocked(mockUsersApiClient.getUser).mockRejectedValue(new Error('network-failure'))
-
-      await expect(service.getUser(qualifiedId)).rejects.toThrow('network-failure')
-    })
   })
 
   describe('getUsers', () => {
@@ -156,6 +91,39 @@ describe('UserService', () => {
       expect(result[1]).toBeInstanceOf(WireUser)
       expect(result[1]!.name).toBe('App')
       expect(result[1]!.type).toBe(UserType.APP)
+    })
+
+    it('should map all fields of a found user', async () => {
+      vi.mocked(mockUsersApiClient.listUsers).mockResolvedValue({found: [mockListUsersResponse.found[0]]})
+
+      const result = await service.getUsers([userId1])
+
+      expect(result[0]!.id).toEqual(new QualifiedId('user-1', 'example.com'))
+      expect(result[0]!.name).toBe('Alice')
+      expect(result[0]!.email).toBe('alice@example.com')
+      expect(result[0]!.handle).toBe('alice')
+      expect(result[0]!.teamId).toEqual(new TeamId('team-1'))
+      expect(result[0]!.deleted).toBe(false)
+    })
+
+    it('should map undefined optional fields when not present in API response', async () => {
+      const minimalUser = {
+        qualified_id: userId1,
+        name: 'Jane Doe',
+        supported_protocols: [CryptoProtocol.PROTEUS],
+        deleted: false
+      }
+      vi.mocked(mockUsersApiClient.listUsers).mockResolvedValue({found: [minimalUser]})
+
+      const result = await service.getUsers([userId1])
+
+      expect(result[0]).toBeInstanceOf(WireUser)
+      expect(result[0]!.name).toBe('Jane Doe')
+      expect(result[0]!.deleted).toBe(false)
+      expect(result[0]!.email).toBeUndefined()
+      expect(result[0]!.handle).toBeUndefined()
+      expect(result[0]!.teamId).toBeUndefined()
+      expect(result[0]!.type).toBeUndefined()
     })
 
     it('should map type as null when response returns null', async () => {

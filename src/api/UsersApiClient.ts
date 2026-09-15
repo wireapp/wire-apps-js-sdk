@@ -15,7 +15,6 @@
  */
 
 import {HttpClient} from '../core/HttpClient.js'
-import type {UserResponse} from './model/UserResponse.js'
 import {singleton} from 'tsyringe'
 import type {UserClientResponse} from './model/UserClientResponse.js'
 import {QualifiedId} from '../model/QualifiedId.js'
@@ -27,11 +26,6 @@ export class UsersApiClient {
 
   private readonly basePathUsers = 'users'
   private readonly basePathListUsers = 'list-users'
-
-  async getUser(userId: string, userDomain: string): Promise<UserResponse> {
-    const path = `${this.basePathUsers}/${userDomain}/${userId}`
-    return await this.httpClient.getRequest<UserResponse>(path)
-  }
 
   async getClientsByUserIds(userIds: QualifiedId[]): Promise<Map<string, UserClientResponse[]>> {
     const path = `${this.basePathUsers}/list-clients`
