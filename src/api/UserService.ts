@@ -37,6 +37,8 @@ export class UserService {
 
   async getUsers(userIds: QualifiedId[]): Promise<WireUser[]> {
     this.logger.info(`Fetching ${userIds.length} users by qualified IDs`)
+    if (userIds.length === 0) return []
+
     const response = await this.usersApiClient.listUsers(userIds)
     if (response.failed?.length) {
       response.failed.forEach((id) => this.logger.warn(`Failed to fetch user: ${obfuscateId(id.id)}@${id.domain}`))

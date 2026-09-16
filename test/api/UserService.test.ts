@@ -153,6 +153,13 @@ describe('UserService', () => {
       expect(result).toEqual([])
     })
 
+    it('should return an empty array without calling the API when no users provided', async () => {
+      const result = await service.getUsers([])
+
+      expect(result).toEqual([])
+      expect(mockUsersApiClient.listUsers).not.toHaveBeenCalled()
+    })
+
     it('should propagate errors from usersApiClient.listUsers', async () => {
       vi.mocked(mockUsersApiClient.listUsers).mockRejectedValue(new Error('network-failure'))
 
