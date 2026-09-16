@@ -36,8 +36,9 @@ export class GreetNewJoinerInConversationExample extends WireEventsHandler {
       `User(s) joined conversation. conversationId: ${obfuscateId(conversationId.id)}, membersCount: ${members.length}`
     )
 
-    for (const member of members) {
-      const user = await this.manager.getUser(member.userId)
+    const users = await this.manager.getUsers(members.map((member) => member.userId))
+
+    for (const user of users) {
       await this.welcomeTheNewJoiner(conversationId, user.name)
     }
   }

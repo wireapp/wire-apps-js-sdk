@@ -80,9 +80,6 @@ export class SampleCommandHandler {
       'update-member-role': async (conversationId, command) => {
         await this.processUpdateMemberRole(conversationId, command)
       },
-      'get-user-data': async (conversationId, command) => {
-        await this.processGetUserData(conversationId, command)
-      },
       'get-users': async (conversationId, command) => {
         await this.processGetUsers(conversationId, command)
       },
@@ -281,31 +278,6 @@ export class SampleCommandHandler {
         Team: ${user.teamId?.value ?? 'N/A'}
         Type: ${user.type ?? 'N/A'}
         Deleted: ${user.deleted ?? false}`
-  }
-
-  private async processGetUserData(conversationId: QualifiedId, command?: string): Promise<void> {
-    this.appLogger?.info(`[Sample App] Executing handler for: get-user-data`)
-
-    const parts = command?.trim().split(' ')
-    const userId = parts?.[1]
-    const userDomain = parts?.[2]
-
-    if (!userId || !userDomain) {
-      this.appLogger?.info(`[Sample App] Invalid command format. Expected: get-user-data [USER_ID] [DOMAIN]`)
-      return
-    }
-
-    const userQualifiedId: QualifiedId = new QualifiedId(userId, userDomain)
-
-    await this.manager.sendMessage(TextMessage.create({conversationId, text: `⏳ Processing get-user-data command...`}))
-    const user: WireUser = await this.manager.getUser(userQualifiedId)
-
-    await this.manager.sendMessage(
-      TextMessage.create({
-        conversationId: conversationId,
-        text: this.formatWireUserToMessage(user)
-      })
-    )
   }
 
   private async processGetUsers(conversationId: QualifiedId, command?: string): Promise<void> {

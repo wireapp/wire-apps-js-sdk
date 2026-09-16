@@ -99,7 +99,6 @@ describe('ConversationService', () => {
     } as any
 
     mockUserService = {
-      getUser: vi.fn(),
       getUsersClientIds: vi.fn()
     } as any
 
@@ -1880,7 +1879,6 @@ describe('ConversationService', () => {
     const GROUP_NAME = 'Test Group'
 
     beforeEach(() => {
-      ;(mockUserService as any).getUser = vi.fn()
       ;(mockConversationsApiClient as any).createGroupConversation = vi.fn()
       ;(mockCoreCryptoService as any).establishMlsConversation = vi.fn()
       ;(mockCoreCryptoService as any).addClientsToMlsConversation = vi.fn()
@@ -1911,7 +1909,6 @@ describe('ConversationService', () => {
       const result = await conversationService.createGroup(GROUP_NAME, [USER_ID])
 
       expect(mockAppProperties.getApplicationTeamId).toHaveBeenCalled()
-      expect((mockUserService as any).getUser).not.toHaveBeenCalled()
       expect((mockConversationsApiClient as any).createGroupConversation).toHaveBeenCalled()
       expect((mockCoreCryptoService as any).establishMlsConversation).toHaveBeenCalledWith(MLS_GROUP_ID)
       expect((mockCoreCryptoService as any).addClientsToMlsConversation).toHaveBeenCalledWith(MLS_GROUP_ID, [USER_ID])
@@ -2017,7 +2014,6 @@ describe('ConversationService', () => {
     const CHANNEL_NAME = 'Test Channel'
 
     beforeEach(() => {
-      ;(mockUserService as any).getUser = vi.fn()
       ;(mockConversationsApiClient as any).createGroupConversation = vi.fn()
       ;(mockCoreCryptoService as any).establishMlsConversation = vi.fn()
       ;(mockCoreCryptoService as any).addClientsToMlsConversation = vi.fn()
@@ -2048,7 +2044,6 @@ describe('ConversationService', () => {
       const result = await conversationService.createChannel(CHANNEL_NAME, [USER_ID])
 
       expect(mockAppProperties.getApplicationTeamId).toHaveBeenCalled()
-      expect((mockUserService as any).getUser).not.toHaveBeenCalled()
       expect((mockConversationsApiClient as any).createGroupConversation).toHaveBeenCalled()
       expect((mockCoreCryptoService as any).establishMlsConversation).toHaveBeenCalledWith(MLS_GROUP_ID)
       expect((mockCoreCryptoService as any).addClientsToMlsConversation).toHaveBeenCalledWith(MLS_GROUP_ID, [USER_ID])
