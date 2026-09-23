@@ -29,4 +29,14 @@ export interface WireAppSdkOptions {
    * @default './storage'
    */
   storagePath?: string
+
+  /**
+   * Whether the SDK handles `SIGINT`, `SIGTERM`, `uncaughtException` and `unhandledRejection` by
+   * calling {@link WireAppSdk.close} and exiting the process: with code 0 after a signal, and with
+   * code 1 after an error or a failed close. Set it to `false` when the host application manages the
+   * process lifecycle; it must then call {@link WireAppSdk.close} itself on shutdown.
+   *
+   * @default true
+   */
+  registerExitHandlers?: boolean
 }

@@ -14,17 +14,24 @@
  * along with this program. If not, see http://www.gnu.org/licenses/.
  */
 
+import {EventEmitter} from 'node:events'
 import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest'
 import {container} from 'tsyringe'
 import {existsSync, mkdtempSync, rmSync} from 'node:fs'
 import {tmpdir} from 'node:os'
 import {join, relative, resolve} from 'node:path'
-import {WireAppSdk, WireApplicationManager as ExportedWireApplicationManager} from '../../src/index.js'
+import {
+  WireAppSdk,
+  WireApplicationManager as ExportedWireApplicationManager,
+  type WireAppSdkOptions
+} from '../../src/index.js'
 import {WireApplicationManager} from '../../src/core/WireApplicationManager.js'
 import {WireEventsHandler} from '../../src/core/WireEventsHandler.js'
 import {InvalidParameterError} from '../../src/exception/WireException.js'
 import {WIRE_STORAGE_PATH} from '../../src/utils/DependencyInjectionTokens.js'
 import type {Logger} from '../../src/utils/logger/Logger.js'
+import {AppProperties} from '../../src/service/AppProperties.js'
+import {DatabaseService} from '../../src/db/DatabaseService.js'
 
 describe('WireAppSdk', () => {
   afterEach(() => {
@@ -118,6 +125,171 @@ describe('WireAppSdk', () => {
 
     it.each(['', '   '])('rejects an empty storagePath (%j)', async (emptyStoragePath) => {
       await expect(createSdk({storagePath: emptyStoragePath})).rejects.toThrow(InvalidParameterError)
+    })
+  })
+
+  describe('exit handlers', () => {
+    const EXIT_EVENTS = ['SIGINT', 'SIGTERM', 'uncaughtException', 'unhandledRejection'] as const
+    type ExitEvent = (typeof EXIT_EVENTS)[number]
+    type Listener = (...args: any[]) => unknown
+
+    // process.listeners() has no overload for a union of event names
+    const processEmitter: EventEmitter = process
+    const silentLogger: Logger = {debug: () => {}, info: () => {}, warn: () => {}, error: () => {}}
+
+    let listenersBefore: Record<ExitEvent, Listener[]>
+    let exitSpy: ReturnType<typeof vi.spyOn>
+
+    const snapshotListeners = () =>
+      Object.fromEntries(EXIT_EVENTS.map((event) => [event, processEmitter.listeners(event) as Listener[]])) as Record<
+        ExitEvent,
+        Listener[]
+      >
+
+    // Listeners added since the test started, i.e. the ones registered by the SDK
+    const addedListeners = (event: ExitEvent) =>
+      (processEmitter.listeners(event) as Listener[]).filter((listener) => !listenersBefore[event].includes(listener))
+
+    const createSdkWithStubbedInit = (options?: WireAppSdkOptions) => {
+      // close() clears the container, so register the stubs again for every instance
+      container.registerInstance(AppProperties, {saveBackendCookieIfMissing: vi.fn()} as unknown as AppProperties)
+      container.registerInstance(DatabaseService, {close: vi.fn()} as unknown as DatabaseService)
+
+      return WireAppSdk.create(
+        'api-token',
+        'https://wire.example.com',
+        new Uint8Array(32),
+        new (class extends WireEventsHandler {})(),
+        silentLogger,
+        options
+      )
+    }
+
+    // Lets a pending handleExit() run to completion, so later calls to process.exit() would be seen
+    const flushPromises = () => new Promise((done) => setImmediate(done))
+
+    // Stubs the steps of init() that touch the disk or need a Wire backend
+    beforeEach(() => {
+      vi.spyOn(WireAppSdk.prototype as any, 'prepareStorage').mockImplementation(() => {})
+      vi.spyOn(WireAppSdk.prototype as any, 'configureDependencyTokens').mockImplementation(() => {})
+      vi.spyOn(WireAppSdk.prototype as any, 'configureApplicationIdentity').mockResolvedValue(undefined)
+      vi.spyOn(WireAppSdk.prototype as any, 'resolveRuntimeDependencies').mockImplementation(() => {})
+      vi.spyOn(WireAppSdk.prototype as any, 'initCryptoClient').mockResolvedValue(undefined)
+      exitSpy = vi.spyOn(process, 'exit').mockImplementation((() => undefined) as never)
+
+      listenersBefore = snapshotListeners()
+    })
+
+    afterEach(() => {
+      // Never leave a listener behind that could call process.exit() in another test
+      for (const event of EXIT_EVENTS) {
+        addedListeners(event).forEach((listener) => process.off(event, listener))
+      }
+      vi.restoreAllMocks()
+    })
+
+    it('registers a listener for every exit event by default', async () => {
+      await createSdkWithStubbedInit()
+
+      for (const event of EXIT_EVENTS) {
+        expect(addedListeners(event)).toHaveLength(1)
+      }
+    })
+
+    it('registers no listeners when registerExitHandlers is false', async () => {
+      await createSdkWithStubbedInit({registerExitHandlers: false})
+
+      for (const event of EXIT_EVENTS) {
+        expect(process.listenerCount(event)).toBe(listenersBefore[event].length)
+      }
+    })
+
+    it('removes only its own listeners on close', async () => {
+      const hostListener = () => {}
+      process.on('SIGTERM', hostListener)
+
+      try {
+        const sdk = await createSdkWithStubbedInit()
+        await sdk.close()
+
+        expect(process.listeners('SIGTERM')).toContain(hostListener)
+        expect(process.listenerCount('SIGTERM')).toBe(listenersBefore.SIGTERM.length + 1)
+        for (const event of ['SIGINT', 'uncaughtException', 'unhandledRejection'] as const) {
+          expect(process.listenerCount(event)).toBe(listenersBefore[event].length)
+        }
+      } finally {
+        process.off('SIGTERM', hostListener)
+      }
+    })
+
+    it('removes its listeners when init fails', async () => {
+      vi.spyOn(WireAppSdk.prototype as any, 'initCryptoClient').mockRejectedValue(new Error('init failed'))
+
+      await expect(createSdkWithStubbedInit()).rejects.toThrow('init failed')
+
+      for (const event of EXIT_EVENTS) {
+        expect(process.listenerCount(event)).toBe(listenersBefore[event].length)
+      }
+    })
+
+    it('does not accumulate listeners across repeated create and close', async () => {
+      for (let i = 0; i < 5; i++) {
+        const sdk = await createSdkWithStubbedInit()
+        await sdk.close()
+      }
+
+      for (const event of EXIT_EVENTS) {
+        expect(process.listenerCount(event)).toBe(listenersBefore[event].length)
+      }
+    })
+
+    it.each(['SIGINT', 'SIGTERM'] as const)('closes and exits with code 0 on %s', async (signal) => {
+      const sdk = await createSdkWithStubbedInit()
+      const closeSpy = vi.spyOn(sdk, 'close')
+
+      addedListeners(signal)[0]!(signal)
+
+      await vi.waitFor(() => expect(exitSpy).toHaveBeenCalledWith(0))
+      expect(closeSpy).toHaveBeenCalledOnce()
+      expect(addedListeners(signal)).toHaveLength(0)
+    })
+
+    it('exits with code 1 when close fails after a signal', async () => {
+      const sdk = await createSdkWithStubbedInit()
+      vi.spyOn(sdk, 'close').mockRejectedValue(new Error('close failed'))
+
+      addedListeners('SIGTERM')[0]!('SIGTERM')
+
+      await vi.waitFor(() => expect(exitSpy).toHaveBeenCalledWith(1))
+      expect(exitSpy).not.toHaveBeenCalledWith(0)
+    })
+
+    it.each([
+      ['uncaughtException', new Error('boom')],
+      ['unhandledRejection', 'rejected']
+    ] as const)('closes and exits with code 1 on %s', async (event, error) => {
+      const sdk = await createSdkWithStubbedInit()
+      const closeSpy = vi.spyOn(sdk, 'close')
+
+      addedListeners(event)[0]!(error)
+
+      await vi.waitFor(() => expect(exitSpy).toHaveBeenCalledWith(1))
+      expect(closeSpy).toHaveBeenCalledOnce()
+      expect(exitSpy).not.toHaveBeenCalledWith(0)
+    })
+
+    it('handles only the first exit event', async () => {
+      await createSdkWithStubbedInit()
+      const sigterm = addedListeners('SIGTERM')[0]!
+      const uncaughtException = addedListeners('uncaughtException')[0]!
+
+      sigterm('SIGTERM')
+      uncaughtException(new Error('boom'))
+
+      await vi.waitFor(() => expect(exitSpy).toHaveBeenCalled())
+      await flushPromises()
+      expect(exitSpy).toHaveBeenCalledOnce()
+      expect(exitSpy).toHaveBeenCalledWith(0)
     })
   })
 })
