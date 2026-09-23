@@ -17,7 +17,8 @@
 import {ConversationId, CoreCryptoError, GroupInfo, MlsError} from '@wireapp/core-crypto/native'
 import {ClientsService} from '../api/ClientsService.js'
 import {CryptoClientId} from '../model/CryptoClientId.js'
-import {WIRE_CRYPTOGRAPHY_STORAGE_KEY} from '../utils/DependencyInjectionTokens.js'
+import {WIRE_CRYPTOGRAPHY_STORAGE_KEY, WIRE_STORAGE_PATH} from '../utils/DependencyInjectionTokens.js'
+import {getCryptographyStoragePath} from '../utils/StoragePaths.js'
 import {MlsService} from '../api/MlsService.js'
 import {CoreCryptoClient} from './CoreCryptoClient.js'
 import {CoreCryptoMlsTransport} from './CoreCryptoMlsTransport.js'
@@ -48,6 +49,7 @@ export class CoreCryptoService {
 
   constructor(
     @inject(WIRE_CRYPTOGRAPHY_STORAGE_KEY) private cryptographyStorageKey: Uint8Array,
+    @inject(WIRE_STORAGE_PATH) private storagePath: string,
     private featureConfigsService: FeatureConfigsService,
     private clientsService: ClientsService,
     private mlsService: MlsService,
@@ -74,13 +76,14 @@ export class CoreCryptoService {
         `No stored deviceId found. Wiping cryptographic storage. userId: ${obfuscateId(appQualifiedId.id)}`
       )
       try {
-        CoreCryptoClient.deleteClientStorage(appQualifiedId.id)
+        CoreCryptoClient.deleteClientStorage(getCryptographyStoragePath(this.storagePath), appQualifiedId.id)
       } catch (exception) {
         throw new CryptographicSystemError('Error when deleting stale cryptographic storage', exception as Error)
       }
     }
 
     this.coreCryptoClient = await CoreCryptoClient.create(
+      getCryptographyStoragePath(this.storagePath),
       appQualifiedId.id,
       this.defaultCiphersuiteCode,
       this.cryptographyStorageKey,

@@ -53,12 +53,22 @@ Create an app-specific `WireEventsHandler`, then initialize the SDK with the Wir
 
 ## Runtime storage
 
-The SDK manages its own local storage under `./storage`, relative to the host process working directory.
+The SDK keeps its local state (the app database and the MLS keys and device state) in a storage directory. By default this is `./storage`, relative to the host process working directory.
 
-It creates and uses:
+To pick the location yourself, pass `storagePath` in the options argument of `WireAppSdk.create()`:
+
+```ts
+const sdk = await WireAppSdk.create(apiToken, apiHost, cryptographyStorageKey, eventsHandler, logger, {
+  storagePath: '/var/lib/my-wire-app'
+})
+```
+
+Relative paths are resolved against the working directory once, when the SDK is created. The directory is created if it does not exist. Keep it on persistent storage and include it in your backups: if it is lost, the app registers as a new device on the next start.
+
+The SDK creates and uses:
 
 ```text
-storage/
+<storagePath>/        (default: ./storage)
 ├── apps.db
 └── cryptography
     ├── <App_ID>

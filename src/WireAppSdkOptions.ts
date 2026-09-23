@@ -1,6 +1,6 @@
 /*
  * Wire
- * Copyright (C) 2025 Wire Swiss GmbH
+ * Copyright (C) 2026 Wire Swiss GmbH
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,20 +14,19 @@
  * along with this program. If not, see http://www.gnu.org/licenses/.
  */
 
-import {DatabaseService} from '../../src/db/DatabaseService.js'
-import * as schema from '../../src/db/schema.js'
-
-export class TestDatabaseService extends DatabaseService {
-  constructor() {
-    super('unused-storage-path')
-  }
-
-  protected override getDatabasePath(): string {
-    return ':memory:'
-  }
-
-  clearData() {
-    this.db.delete(schema.conversationMember).run()
-    this.db.delete(schema.conversation).run()
-  }
+/**
+ * Optional settings for {@link WireAppSdk.create}.
+ */
+export interface WireAppSdkOptions {
+  /**
+   * Directory where the SDK keeps its local state: the `apps.db` SQLite database and the
+   * `cryptography` folder with the app's MLS keys and device state.
+   *
+   * Relative paths are resolved against `process.cwd()` once, when the SDK is created.
+   * The directory is created if it does not exist. Each app needs its own directory, and it must
+   * persist across restarts: if it is lost, the app comes back as a new device.
+   *
+   * @default './storage'
+   */
+  storagePath?: string
 }
