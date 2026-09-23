@@ -58,12 +58,12 @@ The SDK keeps its local state (the app database and the MLS keys and device stat
 To pick the location yourself, pass `storagePath` in the options argument of `WireAppSdk.create()`:
 
 ```ts
-const sdk = await WireAppSdk.create(apiToken, apiHost, cryptographyStorageKey, eventsHandler, logger, {
+const sdk = await WireAppSdk.create(apiToken, apiHost, cryptographyStorageKey, eventsHandler, undefined, {
   storagePath: '/var/lib/my-wire-app'
 })
 ```
 
-Relative paths are resolved against the working directory once, when the SDK is created. The directory is created if it does not exist. Keep it on persistent storage and include it in your backups: if it is lost, the app registers as a new device on the next start.
+Pass your logger as the fifth argument if you use one. Relative paths are resolved against the working directory once, when the SDK is created. The directory is created if it does not exist. Keep it on persistent storage and include it in your backups: if it is lost, the app registers as a new device on the next start. The option controls the location, not its permissions; provision the directory with restricted access before starting the SDK.
 
 The SDK creates and uses:
 

@@ -73,6 +73,18 @@ export class WireAppSdk {
       )
     }
 
+    if (
+      logger != null &&
+      (typeof logger.debug !== 'function' ||
+        typeof logger.info !== 'function' ||
+        typeof logger.warn !== 'function' ||
+        typeof logger.error !== 'function')
+    ) {
+      throw new InvalidParameterError(
+        'logger must provide debug, info, warn and error methods; pass undefined as the fifth argument when providing options without a logger'
+      )
+    }
+
     if (options.storagePath !== undefined && options.storagePath.trim() === '') {
       throw new InvalidParameterError('storagePath must not be empty')
     }
