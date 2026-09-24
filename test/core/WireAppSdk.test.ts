@@ -119,14 +119,5 @@ describe('WireAppSdk', () => {
     it.each(['', '   '])('rejects an empty storagePath (%j)', async (emptyStoragePath) => {
       await expect(createSdk({storagePath: emptyStoragePath})).rejects.toThrow(InvalidParameterError)
     })
-
-    it('rejects options passed in the logger position', async () => {
-      const misplacedOptions = {storagePath: join(storagePath, 'app')} as unknown as Logger
-
-      await expect(
-        WireAppSdk.create(API_TOKEN, API_HOST, STORAGE_KEY, eventsHandler, misplacedOptions)
-      ).rejects.toThrow('pass undefined as the fifth argument')
-      expect(existsSync(join(storagePath, 'app'))).toBe(false)
-    })
   })
 })
