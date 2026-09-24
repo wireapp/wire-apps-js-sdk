@@ -14,11 +14,17 @@
  * along with this program. If not, see http://www.gnu.org/licenses/.
  */
 
-import {afterEach, describe, expect, it} from 'vitest'
+import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest'
 import {container} from 'tsyringe'
+import {existsSync, mkdtempSync, rmSync} from 'node:fs'
+import {tmpdir} from 'node:os'
+import {join, relative, resolve} from 'node:path'
 import {WireAppSdk, WireApplicationManager as ExportedWireApplicationManager} from '../../src/index.js'
 import {WireApplicationManager} from '../../src/core/WireApplicationManager.js'
 import {WireEventsHandler} from '../../src/core/WireEventsHandler.js'
+import {InvalidParameterError} from '../../src/exception/WireException.js'
+import {WIRE_STORAGE_PATH} from '../../src/utils/DependencyInjectionTokens.js'
+import type {Logger} from '../../src/utils/logger/Logger.js'
 
 describe('WireAppSdk', () => {
   afterEach(() => {
@@ -47,5 +53,71 @@ describe('WireAppSdk', () => {
 
   it('exports WireApplicationManager from the package root', () => {
     expect(ExportedWireApplicationManager).toBe(WireApplicationManager)
+  })
+
+  describe('storagePath option', () => {
+    const API_TOKEN = 'api-token'
+    const API_HOST = 'https://wire.example.com'
+    const STORAGE_KEY = new Uint8Array(32)
+    const silentLogger: Logger = {debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn()}
+    const eventsHandler = new (class extends WireEventsHandler {})()
+
+    let storagePath: string
+    let sdk: WireAppSdk | undefined
+
+    // The storage and database steps of create() run for real; the steps that need a
+    // Wire backend (identity, CoreCrypto, runtime dependencies) and the process-wide
+    // exit handlers are stubbed out.
+    const createSdk = (options?: {storagePath?: string}) =>
+      WireAppSdk.create(API_TOKEN, API_HOST, STORAGE_KEY, eventsHandler, silentLogger, options)
+
+    beforeEach(() => {
+      storagePath = mkdtempSync(join(tmpdir(), 'wire-apps-sdk-'))
+      const prototype = WireAppSdk.prototype as any
+      vi.spyOn(prototype, 'registerExitHandlers').mockImplementation(() => {})
+      vi.spyOn(prototype, 'configureApplicationIdentity').mockResolvedValue(undefined)
+      vi.spyOn(prototype, 'resolveRuntimeDependencies').mockImplementation(() => {})
+      vi.spyOn(prototype, 'initCryptoClient').mockResolvedValue(undefined)
+    })
+
+    afterEach(async () => {
+      await sdk?.close()
+      sdk = undefined
+      vi.restoreAllMocks()
+      rmSync(storagePath, {recursive: true, force: true})
+    })
+
+    it('creates the database and cryptography storage in the given directory', async () => {
+      const appStoragePath = join(storagePath, 'nested', 'app')
+
+      sdk = await createSdk({storagePath: appStoragePath})
+
+      expect(existsSync(join(appStoragePath, 'apps.db'))).toBe(true)
+      expect(existsSync(join(appStoragePath, 'cryptography'))).toBe(true)
+      expect(container.resolve(WIRE_STORAGE_PATH)).toBe(appStoragePath)
+    })
+
+    it('resolves a relative storagePath against the working directory at creation time', async () => {
+      const relativeStoragePath = relative(process.cwd(), storagePath)
+
+      sdk = await createSdk({storagePath: relativeStoragePath})
+
+      expect(container.resolve(WIRE_STORAGE_PATH)).toBe(resolve(relativeStoragePath))
+      expect(existsSync(join(storagePath, 'apps.db'))).toBe(true)
+    })
+
+    it('defaults to ./storage in the working directory', () => {
+      // Built without create() so that the test does not write to the repository's ./storage.
+      const WireAppSdkConstructor = WireAppSdk as any
+      const defaultSdk = new WireAppSdkConstructor(API_TOKEN, API_HOST, STORAGE_KEY, eventsHandler, silentLogger)
+
+      defaultSdk.configureDependencyTokens()
+
+      expect(container.resolve(WIRE_STORAGE_PATH)).toBe(resolve('./storage'))
+    })
+
+    it.each(['', '   '])('rejects an empty storagePath (%j)', async (emptyStoragePath) => {
+      await expect(createSdk({storagePath: emptyStoragePath})).rejects.toThrow(InvalidParameterError)
+    })
   })
 })

@@ -40,7 +40,6 @@ import {Decoder, Encoder} from 'bazinga64'
 import {LoggerFactory} from '../utils/logger/LoggerFactory.js'
 import {obfuscateId} from '../utils/ObfuscateUtil.js'
 import {join} from 'node:path'
-import {CRYPTOGRAPHY_STORAGE_PATH} from '../utils/StoragePaths.js'
 import {CryptographicSystemError} from '../exception/WireException.js'
 import {rmSync} from 'node:fs'
 import {QualifiedId} from '../model/QualifiedId.js'
@@ -63,12 +62,16 @@ export class CoreCryptoClient {
   }
 
   static async create(
+    cryptographyStoragePath: string,
     userId: string,
     ciphersuiteCode: number,
     cryptographyStorageKey: Uint8Array,
     mlsTransport: CoreCryptoMlsTransport
   ): Promise<CoreCryptoClient> {
-    const db = await Database.open(this.clientStoragePath(userId), new DatabaseKey(cryptographyStorageKey))
+    const db = await Database.open(
+      this.clientStoragePath(cryptographyStoragePath, userId),
+      new DatabaseKey(cryptographyStorageKey)
+    )
     const coreCrypto = CoreCrypto.new(db)
 
     const coreCryptoClient = new CoreCryptoClient(this.getMlsCiphersuiteName(ciphersuiteCode), mlsTransport, coreCrypto)
@@ -76,12 +79,12 @@ export class CoreCryptoClient {
     return coreCryptoClient
   }
 
-  static clientStoragePath(userId: string): string {
-    return join(CRYPTOGRAPHY_STORAGE_PATH, userId)
+  static clientStoragePath(cryptographyStoragePath: string, userId: string): string {
+    return join(cryptographyStoragePath, userId)
   }
 
-  static deleteClientStorage(userId: string): void {
-    const storagePath = this.clientStoragePath(userId)
+  static deleteClientStorage(cryptographyStoragePath: string, userId: string): void {
+    const storagePath = this.clientStoragePath(cryptographyStoragePath, userId)
     for (const suffix of ['', '-wal', '-shm']) {
       rmSync(`${storagePath}${suffix}`, {recursive: true, force: true})
     }
