@@ -95,6 +95,16 @@ const sdk = await WireAppSdk.create(apiToken, apiHost, cryptographyStorageKey, e
 const manager = sdk.getApplicationManager()
 ```
 
+## Process lifecycle
+
+By default the SDK handles `SIGINT`, `SIGTERM`, `uncaughtException` and `unhandledRejection` itself: it closes and exits the process. If your application manages its own process lifecycle, turn this off and call `sdk.close()` on shutdown:
+
+```ts
+const sdk = await WireAppSdk.create(apiToken, apiHost, cryptographyStorageKey, eventsHandler, logger, {
+  registerExitHandlers: false
+})
+```
+
 ## Environment Variables
 
 Environment Variables can be checked from: `.env.example` file

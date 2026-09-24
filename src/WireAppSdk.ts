@@ -50,6 +50,24 @@ export class WireAppSdk {
   private storagePath: string
 
   private isShuttingDown = false
+  private readonly shouldRegisterExitHandlers: boolean
+
+  // SIGINT: Ctrl+C in terminal
+  private readonly onSigint = () => this.handleExit('SIGINT', 0)
+
+  // SIGTERM: Termination signal (e.g., from Docker, Kubernetes)
+  private readonly onSigterm = () => this.handleExit('SIGTERM', 0)
+
+  // Errors always exit with a failure code, so supervisors restart the process
+  private readonly onUncaughtException = (error: Error) => {
+    this.logger.error('Uncaught exception:', error)
+    this.handleExit('uncaughtException', 1)
+  }
+
+  private readonly onUnhandledRejection = (reason: unknown) => {
+    this.logger.error('Unhandled rejection:', reason)
+    this.handleExit('unhandledRejection', 1)
+  }
 
   private isWebSocketRunning: boolean = false
   private webSocketClient?: WebSocketClient
@@ -83,6 +101,7 @@ export class WireAppSdk {
     // Resolve once, so a later process.chdir() cannot move the storage while the SDK is running.
     this.storagePath = resolve(options.storagePath ?? DEFAULT_STORAGE_PATH)
     this.wireEventsHandler = wireEventsHandler
+    this.shouldRegisterExitHandlers = options.registerExitHandlers ?? true
     LoggerFactory.setRootLogger(logger ?? new ConsoleLogger())
     this.logger = LoggerFactory.getLogger(this.constructor.name)
   }
@@ -108,7 +127,12 @@ export class WireAppSdk {
     const wireAppSdk = new WireAppSdk(apiToken, apiHost, cryptographyStorageKey, wireEventsHandler, logger, options)
 
     wireAppSdk.registerExitHandlers()
-    await wireAppSdk.init()
+    try {
+      await wireAppSdk.init()
+    } catch (error) {
+      wireAppSdk.removeExitHandlers()
+      throw error
+    }
     return wireAppSdk
   }
 
@@ -188,6 +212,8 @@ export class WireAppSdk {
   }
 
   async close() {
+    this.removeExitHandlers()
+
     this.logger.debug('Closing Websocket connections.')
     this.stopListening()
 
@@ -223,24 +249,25 @@ export class WireAppSdk {
   }
 
   private registerExitHandlers(): void {
-    // SIGINT: Ctrl+C in terminal
-    process.on('SIGINT', () => this.handleExit('SIGINT'))
+    if (!this.shouldRegisterExitHandlers) {
+      return
+    }
 
-    // SIGTERM: Termination signal (e.g., from Docker, Kubernetes)
-    process.on('SIGTERM', () => this.handleExit('SIGTERM'))
-
-    process.on('uncaughtException', (error) => {
-      this.logger.error('Uncaught exception:', error)
-      this.handleExit('uncaughtException')
-    })
-
-    process.on('unhandledRejection', (reason) => {
-      this.logger.error('Unhandled rejection:', reason)
-      this.handleExit('unhandledRejection')
-    })
+    process.on('SIGINT', this.onSigint)
+    process.on('SIGTERM', this.onSigterm)
+    process.on('uncaughtException', this.onUncaughtException)
+    process.on('unhandledRejection', this.onUnhandledRejection)
   }
 
-  private async handleExit(signal: string): Promise<void> {
+  // Removing a listener that was never added is a no-op, so this is safe to call at any time
+  private removeExitHandlers(): void {
+    process.off('SIGINT', this.onSigint)
+    process.off('SIGTERM', this.onSigterm)
+    process.off('uncaughtException', this.onUncaughtException)
+    process.off('unhandledRejection', this.onUnhandledRejection)
+  }
+
+  private async handleExit(signal: string, exitCode: number): Promise<void> {
     if (this.isShuttingDown) {
       return
     }
@@ -251,7 +278,7 @@ export class WireAppSdk {
     try {
       await this.close()
       this.logger.info('Cleanup completed successfully')
-      process.exit(0)
+      process.exit(exitCode)
     } catch (exception) {
       this.logger.error('Error during cleanup:', exception)
       process.exit(1)
