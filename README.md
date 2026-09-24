@@ -63,7 +63,7 @@ const sdk = await WireAppSdk.create(apiToken, apiHost, cryptographyStorageKey, e
 })
 ```
 
-Relative paths are resolved against the working directory once, when the SDK is created. The directory is created if it does not exist. Keep it on persistent storage and include it in your backups: if it is lost, the app registers as a new device on the next start.
+Keep this directory on persistent storage: if it is lost, the app registers as a new device on the next start.
 
 The SDK creates and uses:
 

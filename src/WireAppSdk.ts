@@ -74,7 +74,7 @@ export class WireAppSdk {
     }
 
     if (options.storagePath !== undefined && options.storagePath.trim() === '') {
-      throw new InvalidParameterError('storagePath must not be empty')
+      throw new InvalidParameterError('storagePath must not be empty; omit it to use the default ./storage')
     }
 
     this.apiToken = apiToken
