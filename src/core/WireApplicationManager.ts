@@ -67,6 +67,7 @@ export class WireApplicationManager {
   }
 
   async sendTypingIndicator(conversationId: QualifiedId, status: TypingStatus): Promise<void> {
+    // The backend checks membership; no local conversation lookup is needed for this event.
     this.logger.debug(`Sending typing status ${status} in conversation ${obfuscateId(conversationId.id)}`)
     await this.conversationService.sendTypingStatus(conversationId, status)
   }

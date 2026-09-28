@@ -200,7 +200,7 @@ export class HttpClient {
 
     if (contentType?.includes('application/json')) {
       const body = await response.text()
-      const data = body.length === 0 ? (undefined as T) : (JSON.parse(body) as T)
+      const data = body.trim().length === 0 ? (undefined as T) : (JSON.parse(body) as T)
       return {data, response}
     }
 
@@ -273,14 +273,14 @@ export class HttpClient {
       headerContentType?: string
       headerAccept?: string
       includeApiVersion?: boolean
-      retry?: boolean
+      retryTransientErrors?: boolean
     }
   ): Promise<T> {
     const {
       headerContentType = this.HEADER_DEFAULT_CONTENT_TYPE,
       headerAccept = this.HEADER_DEFAULT_ACCEPT,
       includeApiVersion = true,
-      retry = true
+      retryTransientErrors = true
     } = options ?? {}
 
     const isBinary = body instanceof Uint8Array || body instanceof ArrayBuffer
@@ -294,7 +294,7 @@ export class HttpClient {
         Accept: headerAccept
       }
     }
-    return (await this.request<T>(path, requestConfig, includeApiVersion, retry, retry)).data
+    return (await this.request<T>(path, requestConfig, includeApiVersion, true, retryTransientErrors)).data
   }
 
   async putRequest<T>(

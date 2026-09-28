@@ -122,7 +122,50 @@ describe('HttpClient', () => {
       )
       const httpClient = createHttpClient(mockAppProperties)
 
-      await expect(httpClient.postRequest('typing', {status: 'started'}, {retry: false})).rejects.toThrow()
+      await expect(
+        httpClient.postRequest('typing', {status: 'started'}, {retryTransientErrors: false})
+      ).rejects.toThrow()
+      expect(requestCount).toBe(1)
+    })
+
+    it('refreshes an expired access token and replays the POST once', async () => {
+      let requestCount = 0
+      let tokenRefreshCount = 0
+      server.use(
+        http.post(`${TEST_API_HOST}/v*/access`, () => {
+          tokenRefreshCount++
+          return HttpResponse.json({access_token: TEST_ACCESS_TOKEN})
+        }),
+        http.post(`${TEST_API_HOST}/v*/typing`, ({request}) => {
+          requestCount++
+          if (request.headers.get('Authorization') !== `Bearer ${TEST_ACCESS_TOKEN}`) {
+            return HttpResponse.json({message: 'expired'}, {status: 401})
+          }
+          return HttpResponse.json({sent: true})
+        })
+      )
+      const httpClient = createHttpClient(mockAppProperties)
+
+      await expect(
+        httpClient.postRequest<{sent: boolean}>('typing', {status: 'started'}, {retryTransientErrors: false})
+      ).resolves.toEqual({sent: true})
+      expect(requestCount).toBe(2)
+      expect(tokenRefreshCount).toBe(1)
+    })
+
+    it('sends only once on a network failure', async () => {
+      let requestCount = 0
+      server.use(
+        http.post(`${TEST_API_HOST}/v*/typing`, () => {
+          requestCount++
+          return HttpResponse.error()
+        })
+      )
+      const httpClient = createHttpClient(mockAppProperties)
+
+      await expect(
+        httpClient.postRequest('typing', {status: 'started'}, {retryTransientErrors: false})
+      ).rejects.toThrow()
       expect(requestCount).toBe(1)
     })
 
@@ -135,7 +178,23 @@ describe('HttpClient', () => {
       )
       const httpClient = createHttpClient(mockAppProperties)
 
-      await expect(httpClient.postRequest<void>('typing', {status: 'started'}, {retry: false})).resolves.toBeUndefined()
+      await expect(
+        httpClient.postRequest<void>('typing', {status: 'started'}, {retryTransientErrors: false})
+      ).resolves.toBeUndefined()
+    })
+
+    it('accepts a whitespace-only success body marked as JSON', async () => {
+      server.use(
+        http.post(
+          `${TEST_API_HOST}/v*/typing`,
+          () => new HttpResponse(' \n', {status: 200, headers: {'content-type': 'application/json'}})
+        )
+      )
+      const httpClient = createHttpClient(mockAppProperties)
+
+      await expect(
+        httpClient.postRequest<void>('typing', {status: 'started'}, {retryTransientErrors: false})
+      ).resolves.toBeUndefined()
     })
   })
 
@@ -270,6 +329,25 @@ describe('HttpClient', () => {
     })
 
     describe('with default retry policy', () => {
+      it('retries a transient POST response by default', async () => {
+        let requestCount = 0
+        server.use(
+          http.post(`${TEST_API_HOST}/v*/typing`, () => {
+            requestCount++
+            if (requestCount === 1) {
+              return HttpResponse.text('temporary failure', {status: 503})
+            }
+            return HttpResponse.json({sent: true})
+          })
+        )
+        const httpClient = createHttpClient(mockAppProperties)
+
+        await expect(httpClient.postRequest<{sent: boolean}>('typing', {status: 'started'})).resolves.toEqual({
+          sent: true
+        })
+        expect(requestCount).toBe(2)
+      })
+
       it('should retry a retryable HTTP status and return the successful response', async () => {
         // given
         const TEST_TRANSIENT_ENDPOINT = 'transient-endpoint'

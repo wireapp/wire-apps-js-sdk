@@ -53,7 +53,7 @@ export class ConversationsApiClient {
     await this.httpClient.postRequest<void>(
       `${this.basePath}/${conversationId.domain}/${conversationId.id}/typing`,
       {status},
-      {retry: false}
+      {retryTransientErrors: false}
     )
   }
 

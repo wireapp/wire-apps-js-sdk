@@ -110,7 +110,7 @@ try {
 }
 ```
 
-Each call sends one typing event; the SDK does not refresh it automatically. For longer operations, resend `STARTED` periodically (for example, every 8 seconds) to keep the indicator visible. Send `STOPPED` when the response is ready or work is cancelled. Typing requests are not retried, so a failed refresh can be followed by the next scheduled one. The backend requires the app to be a member of the conversation and reports an error otherwise.
+Each call sends one typing event; the SDK does not refresh it automatically. For longer operations, resend `STARTED` periodically (for example, every 8 seconds as a conservative interval) to keep the indicator visible. Send `STOPPED` when the response is ready or work is cancelled. Typing requests do not retry transient failures, so a failed refresh can be followed by the next scheduled one. The backend requires the app to be a member of the conversation and reports an error otherwise.
 
 ## Process lifecycle
 
