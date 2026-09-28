@@ -16,8 +16,15 @@
 
 import {join} from 'node:path'
 
-// These paths are intentionally relative to process.cwd(), so host apps get
-// the SDK-managed storage folder in the directory where the process starts.
-export const STORAGE_PATH = './storage'
-export const DATABASE_PATH = join(STORAGE_PATH, 'apps.db')
-export const CRYPTOGRAPHY_STORAGE_PATH = join(STORAGE_PATH, 'cryptography')
+// Relative paths are resolved against process.cwd() when the SDK is created, so
+// by default host apps get the SDK-managed storage folder in the directory where
+// the process starts. Host apps can override it with `WireAppSdkOptions.storagePath`.
+export const DEFAULT_STORAGE_PATH = './storage'
+
+export function getDatabasePath(storagePath: string): string {
+  return join(storagePath, 'apps.db')
+}
+
+export function getCryptographyStoragePath(storagePath: string): string {
+  return join(storagePath, 'cryptography')
+}

@@ -17,12 +17,14 @@
 import 'reflect-metadata'
 import './core/event/processors.index.js'
 import {mkdirSync} from 'node:fs'
+import {resolve} from 'node:path'
 import {CoreCryptoService} from './core/CoreCryptoService.js'
 import {
   WIRE_API_HOST,
   WIRE_CRYPTOGRAPHY_STORAGE_KEY,
   WIRE_EVENTS_HANDLER,
-  WIRE_SDK_API_TOKEN
+  WIRE_SDK_API_TOKEN,
+  WIRE_STORAGE_PATH
 } from './utils/DependencyInjectionTokens.js'
 import {WebSocketClient} from './core/WebSocketClient.js'
 import {WireEventsHandler} from './core/WireEventsHandler.js'
@@ -33,7 +35,8 @@ import {LoggerFactory} from './utils/logger/LoggerFactory.js'
 import {ConsoleLogger} from './utils/logger/ConsoleLogger.js'
 import {ConversationService} from './api/ConversationService.js'
 import {AppProperties} from './service/AppProperties.js'
-import {CRYPTOGRAPHY_STORAGE_PATH, STORAGE_PATH} from './utils/StoragePaths.js'
+import {DEFAULT_STORAGE_PATH, getCryptographyStoragePath} from './utils/StoragePaths.js'
+import type {WireAppSdkOptions} from './WireAppSdkOptions.js'
 import type {BackendConnectionListener} from './core/BackendConnectionListener.js'
 import {InvalidParameterError, UnknownError} from './exception/WireException.js'
 import {SelfService} from './api/SelfService.js'
@@ -44,6 +47,7 @@ export class WireAppSdk {
   private apiToken: string
   private apiHost: string
   private cryptographyStorageKey: Uint8Array
+  private storagePath: string
 
   private isShuttingDown = false
 
@@ -60,7 +64,8 @@ export class WireAppSdk {
     apiHost: string,
     cryptographyStorageKey: Uint8Array,
     wireEventsHandler: WireEventsHandler,
-    logger?: Logger
+    logger?: Logger,
+    options: WireAppSdkOptions = {}
   ) {
     if (cryptographyStorageKey.length !== this.CRYPTOGRAPHY_STORAGE_KEY_BYTES) {
       throw new InvalidParameterError(
@@ -68,22 +73,39 @@ export class WireAppSdk {
       )
     }
 
+    if (options.storagePath !== undefined && options.storagePath.trim() === '') {
+      throw new InvalidParameterError('storagePath must not be empty; omit it to use the default ./storage')
+    }
+
     this.apiToken = apiToken
     this.apiHost = apiHost
     this.cryptographyStorageKey = cryptographyStorageKey
+    // Resolve once, so a later process.chdir() cannot move the storage while the SDK is running.
+    this.storagePath = resolve(options.storagePath ?? DEFAULT_STORAGE_PATH)
     this.wireEventsHandler = wireEventsHandler
     LoggerFactory.setRootLogger(logger ?? new ConsoleLogger())
     this.logger = LoggerFactory.getLogger(this.constructor.name)
   }
 
+  /**
+   * Creates and initializes the SDK.
+   *
+   * @param apiToken API token of the Wire application
+   * @param apiHost Base URL of the Wire backend API
+   * @param cryptographyStorageKey 32-byte key used to encrypt the local cryptographic storage
+   * @param wireEventsHandler Handler receiving the events of the application
+   * @param logger Optional logger, defaults to {@link ConsoleLogger}
+   * @param options Optional settings, see {@link WireAppSdkOptions}
+   */
   static async create(
     apiToken: string,
     apiHost: string,
     cryptographyStorageKey: Uint8Array,
     wireEventsHandler: WireEventsHandler,
-    logger?: Logger
+    logger?: Logger,
+    options?: WireAppSdkOptions
   ): Promise<WireAppSdk> {
-    const wireAppSdk = new WireAppSdk(apiToken, apiHost, cryptographyStorageKey, wireEventsHandler, logger)
+    const wireAppSdk = new WireAppSdk(apiToken, apiHost, cryptographyStorageKey, wireEventsHandler, logger, options)
 
     wireAppSdk.registerExitHandlers()
     await wireAppSdk.init()
@@ -106,14 +128,15 @@ export class WireAppSdk {
   }
 
   private prepareStorage() {
-    mkdirSync(STORAGE_PATH, {recursive: true})
-    mkdirSync(CRYPTOGRAPHY_STORAGE_PATH, {recursive: true})
+    mkdirSync(this.storagePath, {recursive: true})
+    mkdirSync(getCryptographyStoragePath(this.storagePath), {recursive: true})
   }
 
   private configureDependencyTokens() {
     container.registerInstance(WIRE_API_HOST, this.apiHost)
     container.registerInstance(WIRE_SDK_API_TOKEN, this.apiToken)
     container.registerInstance(WIRE_CRYPTOGRAPHY_STORAGE_KEY, this.cryptographyStorageKey)
+    container.registerInstance(WIRE_STORAGE_PATH, this.storagePath)
 
     container.registerInstance(WIRE_EVENTS_HANDLER, this.wireEventsHandler)
   }

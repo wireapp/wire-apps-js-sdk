@@ -21,6 +21,7 @@ import {CoreCryptoError, MlsError} from '@wireapp/core-crypto/native'
 import {Decoder} from 'bazinga64'
 import {CryptoClientId} from '../../src/model/CryptoClientId.js'
 import {QualifiedId} from '../../src/model/QualifiedId.js'
+import {join} from 'node:path'
 
 // ---------------------------------------------------------------------------
 // CoreCryptoService builds its own CoreCryptoClient internally (via the
@@ -83,6 +84,7 @@ describe('CoreCryptoService', () => {
   const WIRE_USER_ID = 'wire-user-id'
   const WIRE_USER_DOMAIN = 'wire.com'
   const STORAGE_KEY = new Uint8Array([1, 2, 3])
+  const STORAGE_PATH = '/app/storage'
   const DEFAULT_CIPHERSUITE_CODE = 1
 
   let mockFeatureConfigsService: any
@@ -148,6 +150,7 @@ describe('CoreCryptoService', () => {
 
     service = new CoreCryptoService(
       STORAGE_KEY,
+      STORAGE_PATH,
       mockFeatureConfigsService,
       mockClientsService,
       mockMlsService,
@@ -171,6 +174,7 @@ describe('CoreCryptoService', () => {
       expect(mockAppProperties.getApplicationQualifiedId).toHaveBeenCalled()
       expect(mockFeatureConfigsService.getDefaultCipherSuite).toHaveBeenCalled()
       expect(CoreCryptoClient.create).toHaveBeenCalledWith(
+        join(STORAGE_PATH, 'cryptography'),
         WIRE_USER_ID,
         DEFAULT_CIPHERSUITE_CODE,
         STORAGE_KEY,
@@ -186,7 +190,10 @@ describe('CoreCryptoService', () => {
       await initService()
 
       // then
-      expect(CoreCryptoClient.deleteClientStorage).toHaveBeenCalledWith(WIRE_USER_ID)
+      expect(CoreCryptoClient.deleteClientStorage).toHaveBeenCalledWith(
+        join(STORAGE_PATH, 'cryptography'),
+        WIRE_USER_ID
+      )
       expect(vi.mocked(CoreCryptoClient.deleteClientStorage).mock.invocationCallOrder[0]).toBeLessThan(
         vi.mocked(CoreCryptoClient.create).mock.invocationCallOrder[0]!
       )

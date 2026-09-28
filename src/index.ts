@@ -18,6 +18,7 @@
 // Main SDK Class
 // ============================================
 export {WireAppSdk} from './WireAppSdk.js'
+export type {WireAppSdkOptions} from './WireAppSdkOptions.js'
 
 // ============================================
 // Core Components

@@ -149,10 +149,6 @@ vi.mock('../../src/utils/ObfuscateUtil.js', () => ({
   obfuscateId: vi.fn((id: string) => `obfuscated(${id})`)
 }))
 
-vi.mock('../../src/utils/StoragePaths.js', () => ({
-  CRYPTOGRAPHY_STORAGE_PATH: '/test/storage/path'
-}))
-
 import {CoreCryptoClient} from '../../src/core/CoreCryptoClient.js'
 import {
   CipherSuite,
@@ -167,6 +163,7 @@ import {Decoder} from 'bazinga64'
 import {rmSync} from 'node:fs'
 
 describe('CoreCryptoClient', () => {
+  const CRYPTOGRAPHY_STORAGE_PATH = '/test/storage/path'
   const USER_ID = 'test-user-id'
   const STORAGE_KEY = new Uint8Array([1, 2, 3])
   let mockMlsTransport: any
@@ -210,7 +207,7 @@ describe('CoreCryptoClient', () => {
   })
 
   const createClient = async (ciphersuiteCode: number = 1) =>
-    CoreCryptoClient.create(USER_ID, ciphersuiteCode, STORAGE_KEY, mockMlsTransport)
+    CoreCryptoClient.create(CRYPTOGRAPHY_STORAGE_PATH, USER_ID, ciphersuiteCode, STORAGE_KEY, mockMlsTransport)
 
   // A credential the mocked Credential.basic() / context.addCredential() will hand back.
   const mockCredential = {signatureScheme: vi.fn(() => 'ed25519-scheme')}
@@ -226,7 +223,9 @@ describe('CoreCryptoClient', () => {
 
   describe('create', () => {
     it('should resolve the client storage path', () => {
-      expect(CoreCryptoClient.clientStoragePath(USER_ID)).toBe(join('/test/storage/path', USER_ID))
+      expect(CoreCryptoClient.clientStoragePath(CRYPTOGRAPHY_STORAGE_PATH, USER_ID)).toBe(
+        join(CRYPTOGRAPHY_STORAGE_PATH, USER_ID)
+      )
     })
 
     it('should open the database at the correct path with the storage key', async () => {
@@ -235,7 +234,7 @@ describe('CoreCryptoClient', () => {
 
       // then
       expect(Database.open).toHaveBeenCalledWith(
-        join('/test/storage/path', USER_ID),
+        join(CRYPTOGRAPHY_STORAGE_PATH, USER_ID),
         expect.objectContaining({key: STORAGE_KEY})
       )
     })
@@ -261,14 +260,14 @@ describe('CoreCryptoClient', () => {
     })
 
     it('should delete the client storage path', () => {
-      CoreCryptoClient.deleteClientStorage(USER_ID)
+      CoreCryptoClient.deleteClientStorage(CRYPTOGRAPHY_STORAGE_PATH, USER_ID)
 
-      expect(rmSync).toHaveBeenCalledWith(join('/test/storage/path', USER_ID), {recursive: true, force: true})
-      expect(rmSync).toHaveBeenCalledWith(`${join('/test/storage/path', USER_ID)}-wal`, {
+      expect(rmSync).toHaveBeenCalledWith(join(CRYPTOGRAPHY_STORAGE_PATH, USER_ID), {recursive: true, force: true})
+      expect(rmSync).toHaveBeenCalledWith(`${join(CRYPTOGRAPHY_STORAGE_PATH, USER_ID)}-wal`, {
         recursive: true,
         force: true
       })
-      expect(rmSync).toHaveBeenCalledWith(`${join('/test/storage/path', USER_ID)}-shm`, {
+      expect(rmSync).toHaveBeenCalledWith(`${join(CRYPTOGRAPHY_STORAGE_PATH, USER_ID)}-shm`, {
         recursive: true,
         force: true
       })

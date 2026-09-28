@@ -15,11 +15,12 @@
  */
 
 import Database, {type Database as DB} from 'better-sqlite3'
-import {singleton} from 'tsyringe'
+import {inject, singleton} from 'tsyringe'
 import {LoggerFactory} from '../utils/logger/LoggerFactory.js'
 import {BetterSQLite3Database, drizzle} from 'drizzle-orm/better-sqlite3'
 import {migrate} from 'drizzle-orm/better-sqlite3/migrator'
-import {DATABASE_PATH} from '../utils/StoragePaths.js'
+import {getDatabasePath} from '../utils/StoragePaths.js'
+import {WIRE_STORAGE_PATH} from '../utils/DependencyInjectionTokens.js'
 import {dirname, join} from 'node:path'
 import {fileURLToPath} from 'node:url'
 import {DatabaseError} from '../exception/WireException.js'
@@ -30,7 +31,7 @@ export class DatabaseService {
   private readonly sqliteClient: DB
   public readonly db: BetterSQLite3Database
 
-  constructor() {
+  constructor(@inject(WIRE_STORAGE_PATH) private readonly storagePath: string) {
     this.logger.info('DatabaseService being created')
     this.sqliteClient = new Database(this.getDatabasePath())
     this.sqliteClient.pragma('foreign_keys = ON')
@@ -40,7 +41,7 @@ export class DatabaseService {
   }
 
   protected getDatabasePath(): string {
-    return DATABASE_PATH
+    return getDatabasePath(this.storagePath)
   }
 
   protected getMigrationsFolder(): string {
