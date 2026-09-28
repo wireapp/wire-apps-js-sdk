@@ -18,6 +18,8 @@ import {beforeEach, describe, expect, it, vi} from 'vitest'
 import {ConversationsApiClient} from '../../src/api/ConversationsApiClient.js'
 import type {QualifiedId} from '../../src/model/QualifiedId.js'
 import {ConversationRole} from '../../src/model/conversation/ConversationRole.js'
+import {TypingStatus} from '../../src/model/conversation/TypingStatus.js'
+import {WireApiException} from '../../src/exception/WireApiException.js'
 
 const CONVERSATION_ID: QualifiedId = {id: 'conv-1', domain: 'example.com'}
 const USER_ID: QualifiedId = {id: 'user-1', domain: 'example.com'}
@@ -56,6 +58,27 @@ describe('ConversationsApiClient', () => {
       vi.mocked(mockHttpClient.getRequest).mockRejectedValue(new Error('network-failure'))
 
       await expect(client.getConversation(CONVERSATION_ID)).rejects.toThrow('network-failure')
+    })
+  })
+
+  describe('sendTypingStatus', () => {
+    it.each([TypingStatus.STARTED, TypingStatus.STOPPED])('posts %s to the qualified conversation', async (status) => {
+      vi.mocked(mockHttpClient.postRequest).mockResolvedValue(undefined)
+
+      await client.sendTypingStatus(CONVERSATION_ID, status)
+
+      expect(mockHttpClient.postRequest).toHaveBeenCalledWith(
+        `conversations/${CONVERSATION_ID.domain}/${CONVERSATION_ID.id}/typing`,
+        {status},
+        {retryTransientErrors: false}
+      )
+    })
+
+    it('propagates the backend error for a missing conversation', async () => {
+      const error = new WireApiException({code: 404, label: 'no-conversation', message: 'Conversation not found'})
+      vi.mocked(mockHttpClient.postRequest).mockRejectedValue(error)
+
+      await expect(client.sendTypingStatus(CONVERSATION_ID, TypingStatus.STARTED)).rejects.toBe(error)
     })
   })
 

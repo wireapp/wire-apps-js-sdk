@@ -129,8 +129,13 @@ export class HttpClient {
     path: string,
     options: RequestInit = {},
     includeApiVersion: boolean = true,
-    shouldRetry: boolean = true
+    shouldRetry: boolean = true,
+    retryTransientErrors: boolean = true
   ): Promise<{data: T; response: Response}> {
+    if (!retryTransientErrors) {
+      return this.requestOnce<T>(path, options, includeApiVersion, shouldRetry, false)
+    }
+
     return this.withRetry(
       (shouldRetryOnStatus) => this.requestOnce<T>(path, options, includeApiVersion, shouldRetry, shouldRetryOnStatus),
       path
@@ -194,7 +199,8 @@ export class HttpClient {
     const contentType = response.headers.get('content-type')
 
     if (contentType?.includes('application/json')) {
-      const data = (await response.json()) as T
+      const body = await response.text()
+      const data = body.trim().length === 0 ? (undefined as T) : (JSON.parse(body) as T)
       return {data, response}
     }
 
@@ -267,12 +273,14 @@ export class HttpClient {
       headerContentType?: string
       headerAccept?: string
       includeApiVersion?: boolean
+      retryTransientErrors?: boolean
     }
   ): Promise<T> {
     const {
       headerContentType = this.HEADER_DEFAULT_CONTENT_TYPE,
       headerAccept = this.HEADER_DEFAULT_ACCEPT,
-      includeApiVersion = true
+      includeApiVersion = true,
+      retryTransientErrors = true
     } = options ?? {}
 
     const isBinary = body instanceof Uint8Array || body instanceof ArrayBuffer
@@ -286,7 +294,7 @@ export class HttpClient {
         Accept: headerAccept
       }
     }
-    return (await this.request<T>(path, requestConfig, includeApiVersion)).data
+    return (await this.request<T>(path, requestConfig, includeApiVersion, true, retryTransientErrors)).data
   }
 
   async putRequest<T>(

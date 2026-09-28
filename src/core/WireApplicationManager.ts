@@ -36,6 +36,7 @@ import type {WireUser} from '../model/WireUser.js'
 import {AppProperties} from '../service/AppProperties.js'
 import type {ConversationEntity} from '../db/model/ConversationEntity.js'
 import type {TeamId} from '../model/TeamId.js'
+import type {TypingStatus} from '../model/conversation/TypingStatus.js'
 
 @singleton()
 export class WireApplicationManager {
@@ -63,6 +64,12 @@ export class WireApplicationManager {
     await this.mlsService.sendMessage(encryptedMessage)
 
     return preparedMessage.id
+  }
+
+  async sendTypingIndicator(conversationId: QualifiedId, status: TypingStatus): Promise<void> {
+    // The backend checks membership; no local conversation lookup is needed for this event.
+    this.logger.debug(`Sending typing status ${status} in conversation ${obfuscateId(conversationId.id)}`)
+    await this.conversationService.sendTypingStatus(conversationId, status)
   }
 
   private prepareMessageForSending(conversation: ConversationEntity, originalMessage: WireMessage): WireMessage {
