@@ -214,6 +214,70 @@ describe('WebSocketClient', () => {
   })
 
   describe('handleEvent', () => {
+    it('converts JSON timestamps before routing events', async () => {
+      const time = '2026-09-28T12:00:00.000Z'
+      const event = {
+        id: NOTIFICATION_ID_1,
+        transient: false,
+        payload: [
+          {
+            type: 'conversation.mls-message-add',
+            time,
+            data: 'encrypted',
+            qualified_conversation: {id: 'conversation-id', domain: 'wire.com'},
+            qualified_from: {id: 'user-id', domain: 'wire.com'}
+          }
+        ]
+      }
+      const client = makeClient()
+      const connectPromise = client.connect()
+      await flushPromises()
+      await mockWebSocket.onopen!()
+      await mockWebSocket.onmessage!(makeMessageEvent(Buffer.from(JSON.stringify(event))))
+      await stopClient(client, connectPromise)
+
+      expect(mockEventRouter.route).toHaveBeenCalledWith({
+        ...event,
+        payload: [{...event.payload[0], time: new Date(time)}]
+      })
+    })
+
+    it('routes events with unparseable timestamps as their original strings', async () => {
+      const client = makeClient()
+      const connectPromise = client.connect()
+      await flushPromises()
+      await mockWebSocket.onopen!()
+
+      const event = {
+        id: NOTIFICATION_ID_1,
+        transient: false,
+        payload: [{type: 'conversation.delete', time: 'invalid'}]
+      }
+      await mockWebSocket.onmessage!(makeMessageEvent(Buffer.from(JSON.stringify(event))))
+
+      expect(mockEventRouter.route).toHaveBeenCalledWith(event)
+      expect(mockAppProperties.setLastNotificationId).toHaveBeenCalledWith(NOTIFICATION_ID_1)
+      await stopClient(client, connectPromise)
+    })
+
+    it.each([null, 123])('does not route or acknowledge non-string timestamps: %s', async (time) => {
+      const client = makeClient()
+      const connectPromise = client.connect()
+      await flushPromises()
+      await mockWebSocket.onopen!()
+      vi.mocked(mockAppProperties.setLastNotificationId).mockClear()
+
+      const event = {id: NOTIFICATION_ID_1, transient: false, payload: [{type: 'conversation.delete', time}]}
+      await mockWebSocket.onmessage!(makeMessageEvent(Buffer.from(JSON.stringify(event))))
+
+      expect(mockEventRouter.route).not.toHaveBeenCalled()
+      expect(mockAppProperties.setLastNotificationId).not.toHaveBeenCalled()
+
+      await mockWebSocket.onmessage!(makeMessageEvent(makeEventBuffer(makeNotification(NOTIFICATION_ID_2))))
+      expect(mockEventRouter.route).toHaveBeenCalledTimes(1)
+      await stopClient(client, connectPromise)
+    })
+
     it('should route a valid non-transient event', async () => {
       const event = makeNotification(NOTIFICATION_ID_1)
 

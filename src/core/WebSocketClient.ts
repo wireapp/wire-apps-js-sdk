@@ -21,6 +21,7 @@ import {EventRouter} from './event/EventRouter.js'
 import {inject, singleton} from 'tsyringe'
 import {LoggerFactory} from '../utils/logger/LoggerFactory.js'
 import type {EventResponse} from '../api/response/EventResponse.js'
+import {apiDateReviver} from '../utils/ApiDateReviver.js'
 import {NotificationsService} from '../service/NotificationsService.js'
 import {AppProperties} from '../service/AppProperties.js'
 import type {BackendConnectionListener} from './BackendConnectionListener.js'
@@ -230,10 +231,9 @@ export class WebSocketClient {
   }
 
   private async handleEvent(data: Buffer) {
-    const jsonString = data.toString('utf-8')
-    const event = JSON.parse(jsonString) as EventResponse
-
     try {
+      const event = JSON.parse(data.toString('utf-8'), apiDateReviver) as EventResponse
+
       if (!event.transient && !this.processedEventIds.has(event.id)) {
         this.processedEventIds.clear()
         await this.eventRouter.route(event)
@@ -242,7 +242,7 @@ export class WebSocketClient {
         // TODO: Send back ACK event (To be done when we have Async notifications again)
       }
     } catch (exception) {
-      this.logger.error(`Error processing event: ${event}`, exception)
+      this.logger.error('Error processing event:', exception)
     }
   }
 

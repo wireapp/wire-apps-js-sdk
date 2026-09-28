@@ -14,6 +14,7 @@
  * along with this program. If not, see http://www.gnu.org/licenses/.
  */
 
+import {apiDateReviver} from '../utils/ApiDateReviver.js'
 import {WIRE_API_HOST} from '../utils/DependencyInjectionTokens.js'
 import type {WireApiError} from '../exception/WireApiError.js'
 import {inject, singleton} from 'tsyringe'
@@ -194,7 +195,7 @@ export class HttpClient {
     const contentType = response.headers.get('content-type')
 
     if (contentType?.includes('application/json')) {
-      const data = (await response.json()) as T
+      const data = JSON.parse(await response.text(), apiDateReviver) as T
       return {data, response}
     }
 
