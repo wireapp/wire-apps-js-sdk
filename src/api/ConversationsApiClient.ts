@@ -26,6 +26,7 @@ import {LoggerFactory} from '../utils/logger/LoggerFactory.js'
 import {obfuscateId} from '../utils/ObfuscateUtil.js'
 import type {ConversationRole} from '../model/conversation/ConversationRole.js'
 import type {CreateConversationRequest} from './request/CreateConversationRequest.js'
+import type {TypingStatus} from '../model/conversation/TypingStatus.js'
 
 @singleton()
 export class ConversationsApiClient {
@@ -45,6 +46,14 @@ export class ConversationsApiClient {
   async getConversation(conversationQualifiedId: QualifiedId): Promise<ConversationResponse> {
     return await this.httpClient.getRequest<ConversationResponse>(
       `${this.basePath}/${conversationQualifiedId.domain}/${conversationQualifiedId.id}`
+    )
+  }
+
+  async sendTypingStatus(conversationId: QualifiedId, status: TypingStatus): Promise<void> {
+    await this.httpClient.postRequest<void>(
+      `${this.basePath}/${conversationId.domain}/${conversationId.id}/typing`,
+      {status},
+      {retry: false}
     )
   }
 

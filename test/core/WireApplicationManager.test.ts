@@ -21,6 +21,7 @@ import type {WireUser} from '../../src/model/WireUser.js'
 import {Ping, TextMessage} from '../../src/model/WireMessage.js'
 import {ProtobufSerializer} from '../../src/mappers/protobuf/ProtobufSerializer.js'
 import {TeamId} from '../../src/model/TeamId.js'
+import {TypingStatus} from '../../src/model/conversation/TypingStatus.js'
 
 describe('WireApplicationManager', () => {
   const conversationId = new QualifiedId('conversation-id', 'wire.com')
@@ -75,6 +76,26 @@ describe('WireApplicationManager', () => {
 
       expect(manager.getApplicationTeamId()).toEqual(appTeamId)
       expect(appProperties.getApplicationTeamId).toHaveBeenCalledOnce()
+    })
+  })
+
+  describe('sendTypingIndicator', () => {
+    it('delegates each status without loading the conversation', async () => {
+      const conversationService = {sendTypingStatus: vi.fn().mockResolvedValue(undefined)}
+      const manager = createManager({conversationService})
+
+      await manager.sendTypingIndicator(conversationId, TypingStatus.STARTED)
+      await manager.sendTypingIndicator(conversationId, TypingStatus.STOPPED)
+
+      expect(conversationService.sendTypingStatus).toHaveBeenNthCalledWith(1, conversationId, TypingStatus.STARTED)
+      expect(conversationService.sendTypingStatus).toHaveBeenNthCalledWith(2, conversationId, TypingStatus.STOPPED)
+    })
+
+    it('propagates send failures', async () => {
+      const error = new Error('send failed')
+      const manager = createManager({conversationService: {sendTypingStatus: vi.fn().mockRejectedValue(error)}})
+
+      await expect(manager.sendTypingIndicator(conversationId, TypingStatus.STARTED)).rejects.toBe(error)
     })
   })
 

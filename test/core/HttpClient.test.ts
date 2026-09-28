@@ -111,6 +111,34 @@ describe('HttpClient', () => {
   afterAll(() => server.close())
   afterEach(() => server.resetHandlers())
 
+  describe('POST without retries', () => {
+    it.each([429, 503])('sends only once when the response is %s', async (status) => {
+      let requestCount = 0
+      server.use(
+        http.post(`${TEST_API_HOST}/v*/typing`, () => {
+          requestCount++
+          return HttpResponse.text('temporary failure', {status})
+        })
+      )
+      const httpClient = createHttpClient(mockAppProperties)
+
+      await expect(httpClient.postRequest('typing', {status: 'started'}, {retry: false})).rejects.toThrow()
+      expect(requestCount).toBe(1)
+    })
+
+    it('accepts an empty success body marked as JSON', async () => {
+      server.use(
+        http.post(
+          `${TEST_API_HOST}/v*/typing`,
+          () => new HttpResponse('', {status: 200, headers: {'content-type': 'application/json'}})
+        )
+      )
+      const httpClient = createHttpClient(mockAppProperties)
+
+      await expect(httpClient.postRequest<void>('typing', {status: 'started'}, {retry: false})).resolves.toBeUndefined()
+    })
+  })
+
   describe('Access token', () => {
     it('should be set after successful response to `/access` endpoint', async () => {
       // given

@@ -35,6 +35,7 @@ import {CryptoClientId} from '../../src/model/CryptoClientId.js'
 import type {OneToOneConversationsApiClient} from '../../src/api/OneToOneConversationsApiClient.js'
 import type {OneToOneConversationResponse} from '../../src/api/response/OneToOneConversationResponse.js'
 import {InvalidParameterError} from '../../src/exception/WireException.js'
+import {TypingStatus} from '../../src/model/conversation/TypingStatus.js'
 
 describe('ConversationService', () => {
   let conversationService: ConversationService
@@ -56,6 +57,7 @@ describe('ConversationService', () => {
 
     mockConversationsApiClient = {
       getConversation: vi.fn(),
+      sendTypingStatus: vi.fn(),
       getConversationGroupInfo: vi.fn(),
       getAllConversationIds: vi.fn(),
       getConversationsById: vi.fn(),
@@ -116,6 +118,14 @@ describe('ConversationService', () => {
     expect(mockAppProperties.getApplicationQualifiedId).not.toHaveBeenCalled()
 
     vi.spyOn(console, 'info').mockImplementation(() => {})
+  })
+
+  describe('sendTypingStatus', () => {
+    it('delegates the conversation and status to the API client', async () => {
+      await conversationService.sendTypingStatus(CONVERSATION_ID, TypingStatus.STARTED)
+
+      expect(mockConversationsApiClient.sendTypingStatus).toHaveBeenCalledWith(CONVERSATION_ID, TypingStatus.STARTED)
+    })
   })
 
   describe('saveConversationWithMembers', () => {
