@@ -122,6 +122,17 @@ interface MessageTimerUpdateEventData {
   message_timer: number | null
 }
 
+export interface TeamMemberJoinDTO {
+  type: string
+  team: string
+  time: Date
+  data: TeamMemberIdData
+}
+
+interface TeamMemberIdData {
+  user: string
+}
+
 export type EventContentDTO =
   | MLSWelcomeDTO
   | NewMLSMessageDTO
@@ -133,3 +144,4 @@ export type EventContentDTO =
   | MemberUpdateDTO
   | MlsResetDTO
   | MessageTimerUpdateDTO
+  | TeamMemberJoinDTO

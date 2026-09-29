@@ -31,6 +31,7 @@ import {
   Reaction,
   Receipt,
   ReceiptType,
+  type TeamId,
   TextEditedMessage,
   TextMessage,
   WireAppSdk,
@@ -163,6 +164,10 @@ class SampleEventsHandler extends WireEventsHandler {
       text: `Goodbye ${members.map((m) => obfuscateId(m.id)).join(', ')}! 👋`
     })
     await this.manager.sendMessage(textMessage)
+  }
+
+  public override async onTeamMemberJoined(userId: QualifiedId, teamId: TeamId): Promise<void> {
+    this.appLogger?.info(`[Sample App] Team member joined: userId=${userId}, teamId=${teamId}`)
   }
 
   public override async onAssetMessageReceived(wireMessage: AssetMessage): Promise<void> {
