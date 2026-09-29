@@ -28,6 +28,7 @@ describe('WireApplicationManager', () => {
   const appQualifiedId = new QualifiedId('app-id', 'wire.com')
 
   afterEach(() => {
+    vi.useRealTimers()
     vi.restoreAllMocks()
   })
 
@@ -79,23 +80,70 @@ describe('WireApplicationManager', () => {
     })
   })
 
-  describe('sendTypingIndicator', () => {
-    it('delegates each status without loading the conversation', async () => {
+  describe('processWithTypingIndicator', () => {
+    it('returns the operation result and sends started then stopped', async () => {
       const conversationService = {sendTypingStatus: vi.fn().mockResolvedValue(undefined)}
       const manager = createManager({conversationService})
 
-      await manager.sendTypingIndicator(conversationId, TypingStatus.STARTED)
-      await manager.sendTypingIndicator(conversationId, TypingStatus.STOPPED)
+      await expect(manager.processWithTypingIndicator(conversationId, async () => 'done')).resolves.toBe('done')
 
       expect(conversationService.sendTypingStatus).toHaveBeenNthCalledWith(1, conversationId, TypingStatus.STARTED)
       expect(conversationService.sendTypingStatus).toHaveBeenNthCalledWith(2, conversationId, TypingStatus.STOPPED)
     })
 
-    it('propagates send failures', async () => {
-      const error = new Error('send failed')
-      const manager = createManager({conversationService: {sendTypingStatus: vi.fn().mockRejectedValue(error)}})
+    it('refreshes started during long operations', async () => {
+      vi.useFakeTimers()
+      const conversationService = {sendTypingStatus: vi.fn().mockResolvedValue(undefined)}
+      const manager = createManager({conversationService})
+      let finish!: (value: string) => void
+      const operation = manager.processWithTypingIndicator(
+        conversationId,
+        () => new Promise<string>((resolve) => (finish = resolve))
+      )
 
-      await expect(manager.sendTypingIndicator(conversationId, TypingStatus.STARTED)).rejects.toBe(error)
+      await vi.advanceTimersByTimeAsync(16_000)
+      finish('done')
+      await expect(operation).resolves.toBe('done')
+
+      expect(conversationService.sendTypingStatus.mock.calls.map(([, status]) => status)).toEqual([
+        TypingStatus.STARTED,
+        TypingStatus.STARTED,
+        TypingStatus.STARTED,
+        TypingStatus.STOPPED
+      ])
+    })
+
+    it('waits for an in-flight refresh before stopped', async () => {
+      vi.useFakeTimers()
+      let finish!: () => void
+      let finishRefresh!: () => void
+      const sendTypingStatus = vi.fn().mockResolvedValueOnce(undefined)
+      sendTypingStatus.mockImplementationOnce(() => new Promise<void>((resolve) => (finishRefresh = resolve)))
+      sendTypingStatus.mockResolvedValue(undefined)
+      const manager = createManager({conversationService: {sendTypingStatus}})
+      const operation = manager.processWithTypingIndicator(conversationId, () => new Promise<void>((r) => (finish = r)))
+
+      await vi.advanceTimersByTimeAsync(8_000)
+      finish()
+      await Promise.resolve()
+      expect(sendTypingStatus).toHaveBeenCalledTimes(2)
+
+      finishRefresh()
+      await operation
+      expect(sendTypingStatus).toHaveBeenNthCalledWith(3, conversationId, TypingStatus.STOPPED)
+    })
+
+    it('preserves an operation failure when stopped fails', async () => {
+      const error = new Error('operation failed')
+      const sendTypingStatus = vi.fn().mockResolvedValueOnce(undefined).mockRejectedValueOnce(new Error('stop failed'))
+      const manager = createManager({conversationService: {sendTypingStatus}})
+
+      await expect(
+        manager.processWithTypingIndicator(conversationId, async () => {
+          throw error
+        })
+      ).rejects.toBe(error)
+      expect(sendTypingStatus).toHaveBeenNthCalledWith(2, conversationId, TypingStatus.STOPPED)
     })
   })
 

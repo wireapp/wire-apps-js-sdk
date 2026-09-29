@@ -95,23 +95,6 @@ const sdk = await WireAppSdk.create(apiToken, apiHost, cryptographyStorageKey, e
 const manager = sdk.getApplicationManager()
 ```
 
-### Typing indicator
-
-Use the application manager to show that your app is preparing a response in a conversation:
-
-```ts
-import {TypingStatus} from '@wireapp/wire-apps-js-sdk'
-
-await manager.sendTypingIndicator(conversationId, TypingStatus.STARTED)
-try {
-  // Prepare and send the response.
-} finally {
-  await manager.sendTypingIndicator(conversationId, TypingStatus.STOPPED)
-}
-```
-
-Each call sends one typing event; the SDK does not refresh it automatically. For longer operations, resend `STARTED` periodically (for example, every 8 seconds as a conservative interval) to keep the indicator visible. Send `STOPPED` when the response is ready or work is cancelled. Typing requests do not retry transient failures, so a failed refresh can be followed by the next scheduled one. The backend requires the app to be a member of the conversation and reports an error otherwise.
-
 ## Process lifecycle
 
 By default the SDK handles `SIGINT`, `SIGTERM`, `uncaughtException` and `unhandledRejection` itself: it closes and exits the process. If your application manages its own process lifecycle, turn this off and call `sdk.close()` on shutdown:

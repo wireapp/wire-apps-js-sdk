@@ -36,7 +36,9 @@ import type {WireUser} from '../model/WireUser.js'
 import {AppProperties} from '../service/AppProperties.js'
 import type {ConversationEntity} from '../db/model/ConversationEntity.js'
 import type {TeamId} from '../model/TeamId.js'
-import type {TypingStatus} from '../model/conversation/TypingStatus.js'
+import {TypingStatus} from '../model/conversation/TypingStatus.js'
+
+const TYPING_REFRESH_INTERVAL_MS = 8_000
 
 @singleton()
 export class WireApplicationManager {
@@ -66,10 +68,44 @@ export class WireApplicationManager {
     return preparedMessage.id
   }
 
-  async sendTypingIndicator(conversationId: QualifiedId, status: TypingStatus): Promise<void> {
-    // The backend checks membership; no local conversation lookup is needed for this event.
-    this.logger.debug(`Sending typing status ${status} in conversation ${obfuscateId(conversationId.id)}`)
-    await this.conversationService.sendTypingStatus(conversationId, status)
+  /** Shows typing while the operation runs and clears it when the operation settles. */
+  async processWithTypingIndicator<T>(conversationId: QualifiedId, process: () => Promise<T>): Promise<T> {
+    let active = true
+    let refreshTimer: ReturnType<typeof setTimeout> | undefined
+    let refreshPromise: Promise<void> = Promise.resolve()
+
+    const sendStatus = async (status: TypingStatus) => {
+      try {
+        // Typing is cosmetic, so delivery failures must not replace the operation's result.
+        await this.conversationService.sendTypingStatus(conversationId, status)
+      } catch (error) {
+        this.logger.warn(
+          `Could not send typing status ${status} in conversation ${obfuscateId(conversationId.id)}`,
+          error
+        )
+      }
+    }
+
+    const scheduleRefresh = () => {
+      refreshTimer = setTimeout(() => {
+        refreshPromise = (async () => {
+          if (!active) return
+          await sendStatus(TypingStatus.STARTED)
+          if (active) scheduleRefresh()
+        })()
+      }, TYPING_REFRESH_INTERVAL_MS)
+    }
+
+    try {
+      await sendStatus(TypingStatus.STARTED)
+      scheduleRefresh()
+      return await process()
+    } finally {
+      active = false
+      clearTimeout(refreshTimer)
+      await refreshPromise
+      await sendStatus(TypingStatus.STOPPED)
+    }
   }
 
   private prepareMessageForSending(conversation: ConversationEntity, originalMessage: WireMessage): WireMessage {

@@ -50,6 +50,7 @@ export class ConversationsApiClient {
   }
 
   async sendTypingStatus(conversationId: QualifiedId, status: TypingStatus): Promise<void> {
+    // A delayed retry could deliver STARTED after STOPPED and show a stale indicator.
     await this.httpClient.postRequest<void>(
       `${this.basePath}/${conversationId.domain}/${conversationId.id}/typing`,
       {status},
