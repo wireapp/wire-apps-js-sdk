@@ -32,6 +32,7 @@ import {obfuscateId} from '../utils/ObfuscateUtil.js'
 import {container} from 'tsyringe'
 import {LoggerFactory} from '../utils/logger/LoggerFactory.js'
 import type {QualifiedId} from '../model/QualifiedId.js'
+import type {TeamId} from '../model/TeamId.js'
 
 /**
  * Abstract class exposed by the SDK to handle events.
@@ -105,5 +106,15 @@ export abstract class WireEventsHandler {
     this.logger.info(
       `Received onUserLeftConversation, ID: ${obfuscateId(conversationId.id)} - length: ${members.length}`
     )
+  }
+
+  /**
+   * A user has joined the team.
+   *
+   * @param userId the user ID of the user who joined
+   * @param teamId the ID of the team
+   */
+  public async onTeamMemberJoined(userId: QualifiedId, teamId: TeamId): Promise<void> {
+    this.logger.info(`Received onTeamMemberJoined, userId: ${userId}, teamId: ${teamId}`)
   }
 }
