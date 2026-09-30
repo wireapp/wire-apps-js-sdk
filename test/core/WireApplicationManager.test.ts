@@ -28,6 +28,7 @@ describe('WireApplicationManager', () => {
   const appQualifiedId = new QualifiedId('app-id', 'wire.com')
 
   afterEach(() => {
+    vi.clearAllTimers()
     vi.useRealTimers()
     vi.restoreAllMocks()
   })
@@ -81,60 +82,28 @@ describe('WireApplicationManager', () => {
   })
 
   describe('processWithTypingIndicator', () => {
-    it('returns the operation result and sends started then stopped', async () => {
-      const conversationService = {sendTypingStatus: vi.fn().mockResolvedValue(undefined)}
-      const manager = createManager({conversationService})
+    it('runs work immediately without waiting for started or cleanup', async () => {
+      vi.useFakeTimers()
+      const sendTypingStatus = vi.fn(() => new Promise<void>(() => {}))
+      const manager = createManager({conversationService: {sendTypingStatus}})
+      const process = vi.fn(async () => 'done')
+      const result = manager.processWithTypingIndicator(conversationId, process)
+
+      expect(process).toHaveBeenCalledOnce()
+      await expect(result).resolves.toBe('done')
+      expect(sendTypingStatus).toHaveBeenCalledWith(conversationId, TypingStatus.STARTED)
+    })
+
+    it('keeps the result when the first started fails', async () => {
+      const sendTypingStatus = vi.fn().mockRejectedValueOnce(new Error('start failed')).mockResolvedValue(undefined)
+      const manager = createManager({conversationService: {sendTypingStatus}})
 
       await expect(manager.processWithTypingIndicator(conversationId, async () => 'done')).resolves.toBe('done')
-
-      expect(conversationService.sendTypingStatus).toHaveBeenNthCalledWith(1, conversationId, TypingStatus.STARTED)
-      expect(conversationService.sendTypingStatus).toHaveBeenNthCalledWith(2, conversationId, TypingStatus.STOPPED)
+      await vi.waitFor(() => expect(sendTypingStatus).toHaveBeenCalledWith(conversationId, TypingStatus.STOPPED))
     })
 
-    it('refreshes started during long operations', async () => {
-      vi.useFakeTimers()
-      const conversationService = {sendTypingStatus: vi.fn().mockResolvedValue(undefined)}
-      const manager = createManager({conversationService})
-      let finish!: (value: string) => void
-      const operation = manager.processWithTypingIndicator(
-        conversationId,
-        () => new Promise<string>((resolve) => (finish = resolve))
-      )
-
-      await vi.advanceTimersByTimeAsync(16_000)
-      finish('done')
-      await expect(operation).resolves.toBe('done')
-
-      expect(conversationService.sendTypingStatus.mock.calls.map(([, status]) => status)).toEqual([
-        TypingStatus.STARTED,
-        TypingStatus.STARTED,
-        TypingStatus.STARTED,
-        TypingStatus.STOPPED
-      ])
-    })
-
-    it('waits for an in-flight refresh before stopped', async () => {
-      vi.useFakeTimers()
-      let finish!: () => void
-      let finishRefresh!: () => void
-      const sendTypingStatus = vi.fn().mockResolvedValueOnce(undefined)
-      sendTypingStatus.mockImplementationOnce(() => new Promise<void>((resolve) => (finishRefresh = resolve)))
-      sendTypingStatus.mockResolvedValue(undefined)
-      const manager = createManager({conversationService: {sendTypingStatus}})
-      const operation = manager.processWithTypingIndicator(conversationId, () => new Promise<void>((r) => (finish = r)))
-
-      await vi.advanceTimersByTimeAsync(8_000)
-      finish()
-      await Promise.resolve()
-      expect(sendTypingStatus).toHaveBeenCalledTimes(2)
-
-      finishRefresh()
-      await operation
-      expect(sendTypingStatus).toHaveBeenNthCalledWith(3, conversationId, TypingStatus.STOPPED)
-    })
-
-    it('preserves an operation failure when stopped fails', async () => {
-      const error = new Error('operation failed')
+    it('preserves work failures when stopped fails', async () => {
+      const error = new Error('work failed')
       const sendTypingStatus = vi.fn().mockResolvedValueOnce(undefined).mockRejectedValueOnce(new Error('stop failed'))
       const manager = createManager({conversationService: {sendTypingStatus}})
 
@@ -143,7 +112,7 @@ describe('WireApplicationManager', () => {
           throw error
         })
       ).rejects.toBe(error)
-      expect(sendTypingStatus).toHaveBeenNthCalledWith(2, conversationId, TypingStatus.STOPPED)
+      await vi.waitFor(() => expect(sendTypingStatus).toHaveBeenCalledWith(conversationId, TypingStatus.STOPPED))
     })
   })
 

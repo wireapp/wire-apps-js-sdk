@@ -36,14 +36,15 @@ import type {WireUser} from '../model/WireUser.js'
 import {AppProperties} from '../service/AppProperties.js'
 import type {ConversationEntity} from '../db/model/ConversationEntity.js'
 import type {TeamId} from '../model/TeamId.js'
-import {TypingStatus} from '../model/conversation/TypingStatus.js'
-
-const TYPING_REFRESH_INTERVAL_MS = 8_000
+import {TypingIndicatorController} from './TypingIndicatorController.js'
 
 @singleton()
 export class WireApplicationManager {
   private logger = LoggerFactory.getLogger(this.constructor.name)
   private appQualifiedId?: QualifiedId
+  private readonly typingIndicator = new TypingIndicatorController((conversationId, status) =>
+    this.conversationService.sendTypingStatus(conversationId, status)
+  )
 
   constructor(
     private coreCryptoService: CoreCryptoService,
@@ -68,43 +69,18 @@ export class WireApplicationManager {
     return preparedMessage.id
   }
 
-  /** Shows typing while the operation runs and clears it when the operation settles. */
+  /**
+   * Runs work immediately while typing is sent in the background. Overlapping work in this
+   * conversation shares one indicator, refreshed every 30 seconds for at most five minutes.
+   * The last operation schedules STOPPED after any pending request. Delivery failures are logged;
+   * typing requests (including cleanup) never delay or replace the operation's result.
+   */
   async processWithTypingIndicator<T>(conversationId: QualifiedId, process: () => Promise<T>): Promise<T> {
-    let active = true
-    let refreshTimer: ReturnType<typeof setTimeout> | undefined
-    let refreshPromise: Promise<void> = Promise.resolve()
-
-    const sendStatus = async (status: TypingStatus) => {
-      try {
-        // Typing is cosmetic, so delivery failures must not replace the operation's result.
-        await this.conversationService.sendTypingStatus(conversationId, status)
-      } catch (error) {
-        this.logger.warn(
-          `Could not send typing status ${status} in conversation ${obfuscateId(conversationId.id)}`,
-          error
-        )
-      }
-    }
-
-    const scheduleRefresh = () => {
-      refreshTimer = setTimeout(() => {
-        refreshPromise = (async () => {
-          if (!active) return
-          await sendStatus(TypingStatus.STARTED)
-          if (active) scheduleRefresh()
-        })()
-      }, TYPING_REFRESH_INTERVAL_MS)
-    }
-
+    const release = this.typingIndicator.acquire(conversationId)
     try {
-      await sendStatus(TypingStatus.STARTED)
-      scheduleRefresh()
       return await process()
     } finally {
-      active = false
-      clearTimeout(refreshTimer)
-      await refreshPromise
-      await sendStatus(TypingStatus.STOPPED)
+      release()
     }
   }
 

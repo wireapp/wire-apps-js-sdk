@@ -49,6 +49,35 @@ export function isRetryableHttpError(exception: unknown): boolean {
   return exception instanceof RetryableHttpStatusError || exception instanceof RetryableNetworkError
 }
 
-export async function waitForHttpRetry(delayMs: number): Promise<void> {
-  await new Promise<void>((resolve) => setTimeout(resolve, delayMs))
+/** Stops waiting when aborted; the operation itself must also observe the signal. */
+export function withAbortSignal<T>(operation: Promise<T>, signal?: AbortSignal | null): Promise<T> {
+  if (!signal) return operation
+  return new Promise<T>((resolve, reject) => {
+    const onAbort = () => {
+      signal.removeEventListener('abort', onAbort)
+      reject(signal.reason)
+    }
+    signal.addEventListener('abort', onAbort, {once: true})
+    operation.then(
+      (value) => {
+        signal.removeEventListener('abort', onAbort)
+        resolve(value)
+      },
+      (error: unknown) => {
+        signal.removeEventListener('abort', onAbort)
+        reject(error)
+      }
+    )
+    if (signal.aborted) onAbort()
+  })
+}
+
+export async function waitForHttpRetry(delayMs: number, signal?: AbortSignal | null): Promise<void> {
+  signal?.throwIfAborted()
+  let timer: ReturnType<typeof setTimeout> | undefined
+  try {
+    await withAbortSignal(new Promise<void>((resolve) => (timer = setTimeout(resolve, delayMs))), signal)
+  } finally {
+    clearTimeout(timer)
+  }
 }

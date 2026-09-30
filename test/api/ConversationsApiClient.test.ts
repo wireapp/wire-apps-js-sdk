@@ -70,7 +70,7 @@ describe('ConversationsApiClient', () => {
       expect(mockHttpClient.postRequest).toHaveBeenCalledWith(
         `conversations/${CONVERSATION_ID.domain}/${CONVERSATION_ID.id}/typing`,
         {status},
-        {retryTransientErrors: false}
+        {signal: expect.any(AbortSignal)}
       )
     })
 

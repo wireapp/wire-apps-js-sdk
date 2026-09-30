@@ -28,7 +28,8 @@ import {
   isRetryableHttpStatus,
   RetryableHttpStatusError,
   RetryableNetworkError,
-  waitForHttpRetry
+  waitForHttpRetry,
+  withAbortSignal
 } from './HttpRetryHelper.js'
 import {AuthenticationError, UnknownError} from '../exception/WireException.js'
 
@@ -129,16 +130,16 @@ export class HttpClient {
     path: string,
     options: RequestInit = {},
     includeApiVersion: boolean = true,
-    shouldRetry: boolean = true,
-    retryTransientErrors: boolean = true
+    shouldRetry: boolean = true
   ): Promise<{data: T; response: Response}> {
-    if (!retryTransientErrors) {
-      return this.requestOnce<T>(path, options, includeApiVersion, shouldRetry, false)
-    }
-
-    return this.withRetry(
-      (shouldRetryOnStatus) => this.requestOnce<T>(path, options, includeApiVersion, shouldRetry, shouldRetryOnStatus),
-      path
+    return withAbortSignal(
+      this.withRetry(
+        (shouldRetryOnStatus) =>
+          this.requestOnce<T>(path, options, includeApiVersion, shouldRetry, shouldRetryOnStatus),
+        path,
+        options.signal
+      ),
+      options.signal
     )
   }
 
@@ -149,6 +150,7 @@ export class HttpClient {
     shouldRetryUnauthorized: boolean,
     shouldRetryOnStatus: boolean
   ): Promise<{data: T; response: Response}> {
+    options.signal?.throwIfAborted()
     const optionsAndHeaders = {
       ...options,
       headers: {
@@ -161,13 +163,17 @@ export class HttpClient {
     try {
       response = await fetch(url, optionsAndHeaders)
     } catch (exception) {
+      options.signal?.throwIfAborted()
       throw new RetryableNetworkError(path, exception)
     }
+    options.signal?.throwIfAborted()
 
     if (!response.ok) {
       if (response.status === 401 && shouldRetryUnauthorized) {
         this.logger.info('Access token not valid, getting a new one.')
-        await this.refreshAccessToken()
+        // The refresh may be shared with other calls. Stop this caller's wait without cancelling
+        // their authentication request; the aborted typing request will never be replayed.
+        await withAbortSignal(this.refreshAccessToken(), options.signal)
         return this.requestOnce(path, options, includeApiVersion, false, shouldRetryOnStatus)
       }
 
@@ -213,16 +219,22 @@ export class HttpClient {
     return {data: undefined as unknown as T, response}
   }
 
-  private async withRetry<T>(operation: (shouldRetryOnStatus: boolean) => Promise<T>, path: string): Promise<T> {
+  private async withRetry<T>(
+    operation: (shouldRetryOnStatus: boolean) => Promise<T>,
+    path: string,
+    signal?: AbortSignal | null
+  ): Promise<T> {
     const retryPolicy = HTTP_RETRY_POLICY
     const maxAttempts = retryPolicy.maxAttempts
 
     for (let attemptIndex = 0; attemptIndex < maxAttempts; attemptIndex++) {
+      signal?.throwIfAborted()
       const shouldRetryOnStatus = attemptIndex < maxAttempts - 1
 
       try {
         return await operation(shouldRetryOnStatus)
       } catch (exception) {
+        signal?.throwIfAborted()
         if (attemptIndex >= maxAttempts - 1 || !isRetryableHttpError(exception)) {
           throw exception
         }
@@ -231,7 +243,7 @@ export class HttpClient {
         this.logger.warn(
           `Retrying HTTP request for ${path} in ${delayMs}ms ` + `(attempt ${attemptIndex + 2}/${maxAttempts})`
         )
-        await waitForHttpRetry(delayMs)
+        await waitForHttpRetry(delayMs, signal)
       }
     }
 
@@ -273,14 +285,14 @@ export class HttpClient {
       headerContentType?: string
       headerAccept?: string
       includeApiVersion?: boolean
-      retryTransientErrors?: boolean
+      signal?: AbortSignal
     }
   ): Promise<T> {
     const {
       headerContentType = this.HEADER_DEFAULT_CONTENT_TYPE,
       headerAccept = this.HEADER_DEFAULT_ACCEPT,
       includeApiVersion = true,
-      retryTransientErrors = true
+      signal
     } = options ?? {}
 
     const isBinary = body instanceof Uint8Array || body instanceof ArrayBuffer
@@ -289,12 +301,13 @@ export class HttpClient {
     const requestConfig = {
       method: 'POST',
       body: requestBody,
+      ...(signal ? {signal} : {}),
       headers: {
         'Content-Type': headerContentType,
         Accept: headerAccept
       }
     }
-    return (await this.request<T>(path, requestConfig, includeApiVersion, true, retryTransientErrors)).data
+    return (await this.request<T>(path, requestConfig, includeApiVersion)).data
   }
 
   async putRequest<T>(

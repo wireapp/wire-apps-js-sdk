@@ -34,6 +34,10 @@ import {container} from 'tsyringe'
 import {ClientsApiClient} from '../../src/api/ClientsApiClient.js'
 import {PreKeyCrypto} from '../../src/model/PreKeyCrypto.js'
 import {HTTP_RETRY_POLICY} from '../../src/core/HttpRetryPolicy.js'
+import {ConversationsApiClient} from '../../src/api/ConversationsApiClient.js'
+import {WireApplicationManager} from '../../src/core/WireApplicationManager.js'
+import {QualifiedId} from '../../src/model/QualifiedId.js'
+import {TypingStatus} from '../../src/model/conversation/TypingStatus.js'
 
 const TEST_API_HOST = 'https://test.api.host'
 const TEST_ACCESS_TOKEN = 'test-access-token'
@@ -111,8 +115,109 @@ describe('HttpClient', () => {
   afterAll(() => server.close())
   afterEach(() => server.resetHandlers())
 
-  describe('POST without retries', () => {
-    it.each([429, 503])('sends only once when the response is %s', async (status) => {
+  describe('POST requests', () => {
+    const id = new QualifiedId('conversation', 'example.com')
+    const managerWithTyping = (httpClient: HttpClient) => {
+      const client = new ConversationsApiClient(httpClient)
+      return new WireApplicationManager(
+        {} as any,
+        {
+          sendTypingStatus: (conversationId: QualifiedId, status: TypingStatus) =>
+            client.sendTypingStatus(conversationId, status)
+        } as any,
+        {} as any,
+        {} as any,
+        {} as any,
+        {} as any
+      )
+    }
+
+    it('refreshes a 401 token through the background typing helper before stopped', async () => {
+      let refreshCount = 0
+      const statuses: string[] = []
+      let onStopped!: () => void
+      const stopped = new Promise<void>((resolve) => (onStopped = resolve))
+      server.use(
+        http.post(`${TEST_API_HOST}/v*/access`, () => {
+          refreshCount++
+          return HttpResponse.json({access_token: TEST_ACCESS_TOKEN})
+        }),
+        http.post(`${TEST_API_HOST}/v*/conversations/${id.domain}/${id.id}/typing`, async ({request}) => {
+          const body = (await request.json()) as {status: string}
+          statuses.push(body.status)
+          if (request.headers.get('Authorization') !== `Bearer ${TEST_ACCESS_TOKEN}`) {
+            return HttpResponse.json({message: 'expired'}, {status: 401})
+          }
+          if (body.status === 'stopped') onStopped()
+          return HttpResponse.json({})
+        })
+      )
+
+      await expect(
+        managerWithTyping(createHttpClient(mockAppProperties)).processWithTypingIndicator(id, async () => 'result')
+      ).resolves.toBe('result')
+      await stopped
+      expect(refreshCount).toBe(1)
+      expect(statuses).toEqual(['started', 'started', 'stopped'])
+    })
+
+    it('aborts hanging typing requests within five seconds without delaying work', async () => {
+      vi.useFakeTimers()
+      const signals: AbortSignal[] = []
+      const fetchMock = vi.spyOn(globalThis, 'fetch').mockImplementation((_url, options) => {
+        const signal = options!.signal!
+        signals.push(signal)
+        return new Promise<Response>((_resolve, reject) => {
+          signal.addEventListener('abort', () => reject(signal.reason), {once: true})
+        })
+      })
+      try {
+        const manager = managerWithTyping(createHttpClient(mockAppProperties))
+        await expect(manager.processWithTypingIndicator(id, async () => 'result')).resolves.toBe('result')
+        expect(signals).toHaveLength(1)
+        await vi.advanceTimersByTimeAsync(5_000)
+        expect(signals[0]!.aborted).toBe(true)
+        expect(signals).toHaveLength(2)
+        await vi.advanceTimersByTimeAsync(30_000)
+        expect(signals[1]!.aborted).toBe(true)
+        expect(fetchMock).toHaveBeenCalledTimes(2)
+      } finally {
+        fetchMock.mockRestore()
+        vi.clearAllTimers()
+        vi.useRealTimers()
+      }
+    })
+
+    it('stops waiting for a shared token refresh at the typing deadline and never replays later', async () => {
+      vi.useFakeTimers()
+      let finishRefresh!: (response: Response) => void
+      const fetchMock = vi.spyOn(globalThis, 'fetch').mockImplementation((url) => {
+        if (String(url).endsWith('/access')) {
+          return new Promise<Response>((resolve) => (finishRefresh = resolve))
+        }
+        return Promise.resolve(new Response('{}', {status: 401, headers: {'content-type': 'application/json'}}))
+      })
+      try {
+        const client = createHttpClient(mockAppProperties)
+        await expect(managerWithTyping(client).processWithTypingIndicator(id, async () => 'done')).resolves.toBe('done')
+        await vi.advanceTimersByTimeAsync(10_000)
+        expect(fetchMock).toHaveBeenCalledTimes(3)
+        finishRefresh(
+          new Response(JSON.stringify({access_token: TEST_ACCESS_TOKEN}), {
+            headers: {'content-type': 'application/json'}
+          })
+        )
+        await vi.advanceTimersByTimeAsync(30_000)
+        expect(client.getCachedAccessToken()).toBe(TEST_ACCESS_TOKEN)
+        expect(fetchMock).toHaveBeenCalledTimes(3)
+      } finally {
+        fetchMock.mockRestore()
+        vi.clearAllTimers()
+        vi.useRealTimers()
+      }
+    })
+
+    it.each([429, 503])('uses normal retries when the response is %s', async (status) => {
       let requestCount = 0
       server.use(
         http.post(`${TEST_API_HOST}/v*/typing`, () => {
@@ -122,10 +227,8 @@ describe('HttpClient', () => {
       )
       const httpClient = createHttpClient(mockAppProperties)
 
-      await expect(
-        httpClient.postRequest('typing', {status: 'started'}, {retryTransientErrors: false})
-      ).rejects.toThrow()
-      expect(requestCount).toBe(1)
+      await expect(httpClient.postRequest('typing', {status: 'started'})).rejects.toThrow()
+      expect(requestCount).toBe(HTTP_RETRY_POLICY.maxAttempts)
     })
 
     it('refreshes an expired access token and replays the POST once', async () => {
@@ -146,14 +249,14 @@ describe('HttpClient', () => {
       )
       const httpClient = createHttpClient(mockAppProperties)
 
-      await expect(
-        httpClient.postRequest<{sent: boolean}>('typing', {status: 'started'}, {retryTransientErrors: false})
-      ).resolves.toEqual({sent: true})
+      await expect(httpClient.postRequest<{sent: boolean}>('typing', {status: 'started'})).resolves.toEqual({
+        sent: true
+      })
       expect(requestCount).toBe(2)
       expect(tokenRefreshCount).toBe(1)
     })
 
-    it('sends only once on a network failure', async () => {
+    it('uses normal retries on a network failure', async () => {
       let requestCount = 0
       server.use(
         http.post(`${TEST_API_HOST}/v*/typing`, () => {
@@ -163,10 +266,8 @@ describe('HttpClient', () => {
       )
       const httpClient = createHttpClient(mockAppProperties)
 
-      await expect(
-        httpClient.postRequest('typing', {status: 'started'}, {retryTransientErrors: false})
-      ).rejects.toThrow()
-      expect(requestCount).toBe(1)
+      await expect(httpClient.postRequest('typing', {status: 'started'})).rejects.toThrow()
+      expect(requestCount).toBe(HTTP_RETRY_POLICY.maxAttempts)
     })
 
     it('accepts an empty success body marked as JSON', async () => {
@@ -178,9 +279,7 @@ describe('HttpClient', () => {
       )
       const httpClient = createHttpClient(mockAppProperties)
 
-      await expect(
-        httpClient.postRequest<void>('typing', {status: 'started'}, {retryTransientErrors: false})
-      ).resolves.toBeUndefined()
+      await expect(httpClient.postRequest<void>('typing', {status: 'started'})).resolves.toBeUndefined()
     })
 
     it('accepts a whitespace-only success body marked as JSON', async () => {
@@ -192,9 +291,7 @@ describe('HttpClient', () => {
       )
       const httpClient = createHttpClient(mockAppProperties)
 
-      await expect(
-        httpClient.postRequest<void>('typing', {status: 'started'}, {retryTransientErrors: false})
-      ).resolves.toBeUndefined()
+      await expect(httpClient.postRequest<void>('typing', {status: 'started'})).resolves.toBeUndefined()
     })
   })
 
