@@ -47,6 +47,7 @@ export class TypingIndicatorController {
       this.enqueue(conversationId, current, TypingStatus.STARTED)
       this.scheduleRefresh(conversationId, current)
       current.maximumTimer = setTimeout(() => this.close(conversationId, current), MAX_DURATION_MS)
+      current.maximumTimer.unref()
     }
     session.references++
     const current = session
@@ -69,6 +70,7 @@ export class TypingIndicatorController {
       this.enqueue(conversationId, session, TypingStatus.STARTED)
       this.scheduleRefresh(conversationId, session)
     }, REFRESH_INTERVAL_MS)
+    session.refreshTimer.unref()
   }
 
   private close(conversationId: QualifiedId, session: TypingSession): void {
