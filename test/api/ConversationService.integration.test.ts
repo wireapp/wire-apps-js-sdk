@@ -414,6 +414,21 @@ describe('ConversationService Integration', () => {
       expect(updatedMember?.role).toBe(ConversationRole.ADMIN)
     })
 
+    it.each(['wire_owner', '', ConversationRole.UNKNOWN])(
+      'should throw InvalidParameterError when role is %j',
+      async (role) => {
+        await expect(
+          conversationService.updateConversationMemberRole(CONVERSATION_ID, USER_ID, role as ConversationRole)
+        ).rejects.toThrow(InvalidParameterError)
+
+        expect((mockConversationsApiClient as any).updateConversationMemberRole).not.toHaveBeenCalled()
+        const member = conversationService
+          .getMembersByConversationId(CONVERSATION_ID)
+          .find((member) => member.userId.id === USER_ID.id)
+        expect(member?.role).toBe(ConversationRole.MEMBER)
+      }
+    )
+
     it('should throw when conversation is not a GROUP', async () => {
       testDbService.clearData()
       await conversationService.saveConversationWithMembers(CONVERSATION_ID, ONE_TO_ONE_CONVERSATION_RESPONSE)

@@ -478,6 +478,7 @@ export class ConversationService {
       `Updating member in conversation. conversationId: ${conversationId}, userId: ${userId}, newRole: ${newRole}`
     )
 
+    this.requireAssignableRole(newRole)
     const conversation = await this.getConversationById(conversationId)
     this.requireConversationIsGroupOrChannel(conversationId, conversation.type)
     this.requireAppIsAdminInConversation(conversationId)
@@ -676,6 +677,15 @@ export class ConversationService {
     await this.deleteAllConversationDataFromLocalStorages(conversationId)
 
     this.logger.info(`Conversation is deleted. teamId: ${teamId}, conversationId: ${conversationId}`)
+  }
+
+  private requireAssignableRole(role: ConversationRole): void {
+    if (role !== ConversationRole.MEMBER && role !== ConversationRole.ADMIN) {
+      this.logger.warn(`Skipping operation, role is not assignable. role: ${role}`)
+      throw new InvalidParameterError(
+        `Invalid conversation role: ${role}. Accepted roles: ${ConversationRole.MEMBER}, ${ConversationRole.ADMIN}`
+      )
+    }
   }
 
   private requireConversationIsGroupOrChannel(conversationId: QualifiedId, conversationType: ConversationType): void {
