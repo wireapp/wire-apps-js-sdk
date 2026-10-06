@@ -166,6 +166,10 @@ describe('CoreCryptoService', () => {
   }
 
   describe('initCoreCryptoClient', () => {
+    it('should reject access to the default ciphersuite before initialization', () => {
+      expect(() => service.getDefaultCiphersuiteCode()).toThrow('CoreCryptoClient is not initialized.')
+    })
+
     it('should fetch the default ciphersuite and create the CoreCryptoClient with it', async () => {
       // when
       await initService()
@@ -180,6 +184,7 @@ describe('CoreCryptoService', () => {
         STORAGE_KEY,
         mockMlsTransport
       )
+      expect(service.getDefaultCiphersuiteCode()).toBe(DEFAULT_CIPHERSUITE_CODE)
     })
 
     it('should delete stale client storage before opening CoreCrypto when no device id is stored', async () => {

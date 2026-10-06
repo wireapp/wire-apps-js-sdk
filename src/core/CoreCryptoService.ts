@@ -184,7 +184,10 @@ export class CoreCryptoService {
   }
 
   getDefaultCiphersuiteCode(): number {
-    return this.defaultCiphersuiteCode!
+    if (this.defaultCiphersuiteCode === undefined) {
+      throw new CryptographicSystemError('CoreCryptoClient is not initialized.')
+    }
+    return this.defaultCiphersuiteCode
   }
 
   async encryptMlsMessage(mlsGroupId: string, message: Uint8Array): Promise<Uint8Array> {

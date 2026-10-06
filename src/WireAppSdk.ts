@@ -75,6 +75,7 @@ export class WireAppSdk {
   private appProperties?: AppProperties
   private keyPackageReplenisher?: KeyPackageReplenisher
   private isWebSocketRunning = false
+  private webSocketLoop: Promise<void> | undefined
 
   private wireEventsHandler: WireEventsHandler
   private logger: Logger
@@ -196,10 +197,20 @@ export class WireAppSdk {
       throw new UnknownError('Wire Apps SDK dependencies are not initialized.')
     }
 
+    await this.webSocketLoop
+    if (this.isWebSocketRunning) return
+
     this.keyPackageReplenisher.start()
     this.isWebSocketRunning = true
 
-    void this.webSocketClient.connect().finally(() => {
+    const webSocketLoop = this.webSocketClient
+      .connect()
+      .catch((exception) => this.logger.error('WebSocket connection loop failed', exception))
+    this.webSocketLoop = webSocketLoop
+    void webSocketLoop.finally(() => {
+      if (this.webSocketLoop !== webSocketLoop) return
+
+      this.webSocketLoop = undefined
       this.keyPackageReplenisher?.stop()
       this.isWebSocketRunning = false
     })
@@ -210,9 +221,9 @@ export class WireAppSdk {
   stopListening() {
     if (!this.isWebSocketRunning) {
       this.logger.info('Wire Apps SDK is not running.')
-      return
+    } else {
+      this.logger.info('Wire Apps SDK shutting down.')
     }
-    this.logger.info('Wire Apps SDK shutting down.')
     this.isWebSocketRunning = false
 
     this.keyPackageReplenisher?.stop()

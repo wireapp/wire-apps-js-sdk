@@ -94,6 +94,20 @@ describe('KeyPackageReplenisher', () => {
     expect(mlsService.getAvailableKeyPackageCount).toHaveBeenCalledTimes(2)
   })
 
+  it('should continue checking after an upload failure', async () => {
+    vi.mocked(mlsService.getAvailableKeyPackageCount).mockResolvedValue(49)
+    vi.mocked(mlsService.uploadMlsKeyPackages)
+      .mockRejectedValueOnce(new Error('backend unavailable'))
+      .mockResolvedValue(undefined)
+
+    replenisher.start()
+    await vi.advanceTimersByTimeAsync(0)
+    await vi.advanceTimersByTimeAsync(DAY_MS)
+
+    expect(mlsService.getAvailableKeyPackageCount).toHaveBeenCalledTimes(2)
+    expect(mlsService.uploadMlsKeyPackages).toHaveBeenCalledTimes(2)
+  })
+
   it('should cancel future checks when stopped', async () => {
     replenisher.start()
     await vi.advanceTimersByTimeAsync(0)

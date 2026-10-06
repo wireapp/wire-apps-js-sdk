@@ -137,6 +137,40 @@ describe('WireAppSdk', () => {
       sdk.stopListening()
       secondConnection.resolve()
     })
+
+    it('waits for the previous connection loop before restarting', async () => {
+      const firstConnection = deferred()
+      const secondConnection = deferred()
+      const {sdk, keyPackageReplenisher, webSocketClient} = arrangeSdk(
+        firstConnection.promise,
+        secondConnection.promise
+      )
+
+      await sdk.startListening()
+      sdk.stopListening()
+      const restart = sdk.startListening()
+
+      expect(webSocketClient.connect).toHaveBeenCalledOnce()
+
+      firstConnection.resolve()
+      await restart
+
+      expect(webSocketClient.connect).toHaveBeenCalledTimes(2)
+      expect(keyPackageReplenisher.start).toHaveBeenCalledTimes(2)
+      expect(sdk.isWebSocketRunning).toBe(true)
+
+      sdk.stopListening()
+      secondConnection.resolve()
+    })
+
+    it('cleans up defensively when already stopped', () => {
+      const {sdk, keyPackageReplenisher, webSocketClient} = arrangeSdk()
+
+      sdk.stopListening()
+
+      expect(keyPackageReplenisher.stop).toHaveBeenCalledOnce()
+      expect(webSocketClient.close).toHaveBeenCalledOnce()
+    })
   })
 
   describe('storagePath option', () => {
