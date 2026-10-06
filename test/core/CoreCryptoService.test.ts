@@ -351,6 +351,18 @@ describe('CoreCryptoService', () => {
         expect(mockMlsService.uploadMlsKeyPackages).toHaveBeenCalledWith([new Uint8Array([1])])
       })
 
+      it('should continue initialization when the initial key package upload fails', async () => {
+        vi.mocked(mockMlsService.uploadMlsKeyPackages).mockRejectedValue(new Error('backend unavailable'))
+
+        await expect(service.initOrRegisterClient()).resolves.toBeUndefined()
+
+        expect(mockAppProperties.setShouldRejoinConversations).toHaveBeenCalledWith(true)
+        expect(loggerMock.error).toHaveBeenCalledWith(
+          'Failed to upload initial MLS key packages; scheduled replenishment will retry',
+          expect.any(Error)
+        )
+      })
+
       it('should mark rejoin conversations as needed', async () => {
         // when
         await service.initOrRegisterClient()
