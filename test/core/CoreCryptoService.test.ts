@@ -166,6 +166,10 @@ describe('CoreCryptoService', () => {
   }
 
   describe('initCoreCryptoClient', () => {
+    it('should reject access to the default ciphersuite before initialization', () => {
+      expect(() => service.getDefaultCiphersuiteCode()).toThrow('CoreCryptoClient is not initialized.')
+    })
+
     it('should fetch the default ciphersuite and create the CoreCryptoClient with it', async () => {
       // when
       await initService()
@@ -180,6 +184,7 @@ describe('CoreCryptoService', () => {
         STORAGE_KEY,
         mockMlsTransport
       )
+      expect(service.getDefaultCiphersuiteCode()).toBe(DEFAULT_CIPHERSUITE_CODE)
     })
 
     it('should delete stale client storage before opening CoreCrypto when no device id is stored', async () => {
@@ -349,6 +354,18 @@ describe('CoreCryptoService', () => {
         expect(mockClientsService.updateClientWithMlsPublicKey).toHaveBeenCalledWith({ed25519: 'key'})
         expect(mockCoreCryptoClientInstance.mlsGenerateKeyPackages).toHaveBeenCalled()
         expect(mockMlsService.uploadMlsKeyPackages).toHaveBeenCalledWith([new Uint8Array([1])])
+      })
+
+      it('should continue initialization when the initial key package upload fails', async () => {
+        vi.mocked(mockMlsService.uploadMlsKeyPackages).mockRejectedValue(new Error('backend unavailable'))
+
+        await expect(service.initOrRegisterClient()).resolves.toBeUndefined()
+
+        expect(mockAppProperties.setShouldRejoinConversations).toHaveBeenCalledWith(true)
+        expect(loggerMock.error).toHaveBeenCalledWith(
+          'Failed to upload initial MLS key packages; scheduled replenishment will retry',
+          expect.any(Error)
+        )
       })
 
       it('should mark rejoin conversations as needed', async () => {

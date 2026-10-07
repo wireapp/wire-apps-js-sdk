@@ -137,7 +137,11 @@ export class CoreCryptoService {
 
       await this.coreCryptoClient.initMlsClient(cryptoClientId)
       await this.uploadClientWithMlsPublicKey()
-      await this.uploadMlsKeyPackages()
+      try {
+        await this.uploadMlsKeyPackages()
+      } catch (exception) {
+        this.logger.error('Failed to upload initial MLS key packages; scheduled replenishment will retry', exception)
+      }
 
       this.appProperties.setShouldRejoinConversations(true)
     }
@@ -177,6 +181,13 @@ export class CoreCryptoService {
 
   async mlsGenerateKeyPackages(): Promise<Uint8Array[]> {
     return await this.coreCryptoClient!.mlsGenerateKeyPackages()
+  }
+
+  getDefaultCiphersuiteCode(): number {
+    if (this.defaultCiphersuiteCode === undefined) {
+      throw new CryptographicSystemError('CoreCryptoClient is not initialized.')
+    }
+    return this.defaultCiphersuiteCode
   }
 
   async encryptMlsMessage(mlsGroupId: string, message: Uint8Array): Promise<Uint8Array> {
