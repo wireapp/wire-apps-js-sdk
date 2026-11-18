@@ -45,8 +45,9 @@ import {rmSync} from 'node:fs'
 import {QualifiedId} from '../model/QualifiedId.js'
 import type {DecryptedMlsMessage} from '../model/DecryptedMlsMessage.js'
 
-// TODO: Baris: If we can find a way to make this class only reachable from CoreCryptoService, that will be awesome.
+export const MLS_DEFAULT_KEY_PACKAGE_COUNT = 100
 
+// TODO: Baris: If we can find a way to make this class only reachable from CoreCryptoService, that will be awesome.
 export class CoreCryptoClient {
   private logger = LoggerFactory.getLogger(this.constructor.name)
 
@@ -133,7 +134,7 @@ export class CoreCryptoClient {
     })
   }
 
-  async mlsGenerateKeyPackages(count: number = this.MLS_DEFAULT_KEYPACKAGE_COUNT): Promise<Uint8Array[]> {
+  async mlsGenerateKeyPackages(count: number = MLS_DEFAULT_KEY_PACKAGE_COUNT): Promise<Uint8Array[]> {
     return await this.coreCrypto.transaction(async (context) => {
       const keyPackages: Uint8Array[] = []
       for (let i = 0; i < count; i++) {
@@ -241,7 +242,7 @@ export class CoreCryptoClient {
     const packageCount = await this.coreCrypto.transaction(async (context) => {
       return (await context.getKeyPackages()).length
     })
-    return packageCount < this.MLS_DEFAULT_KEYPACKAGE_COUNT / 2
+    return packageCount < MLS_DEFAULT_KEY_PACKAGE_COUNT / 2
   }
 
   async wipeConversation(mlsGroupId: ConversationId) {
@@ -336,5 +337,4 @@ export class CoreCryptoClient {
 
   private PROTEUS_PREKEYS_FROM_COUNT: number = 0
   private PROTEUS_PREKEYS_MAX_COUNT: number = 10
-  private MLS_DEFAULT_KEYPACKAGE_COUNT = 100
 }

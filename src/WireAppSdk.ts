@@ -41,6 +41,7 @@ import type {BackendConnectionListener} from './core/BackendConnectionListener.j
 import {InvalidParameterError, UnknownError} from './exception/WireException.js'
 import {SelfService} from './api/SelfService.js'
 import {WireApplicationManager} from './core/WireApplicationManager.js'
+import {KeyPackageReplenisher} from './service/KeyPackageReplenisher.js'
 
 export class WireAppSdk {
   private readonly CRYPTOGRAPHY_STORAGE_KEY_BYTES = 32
@@ -69,10 +70,12 @@ export class WireAppSdk {
     this.handleExit('unhandledRejection', 1)
   }
 
-  private isWebSocketRunning: boolean = false
   private webSocketClient?: WebSocketClient
   private conversationService?: ConversationService
   private appProperties?: AppProperties
+  private keyPackageReplenisher?: KeyPackageReplenisher
+  private isWebSocketRunning = false
+  private webSocketLoop: Promise<void> | undefined
 
   private wireEventsHandler: WireEventsHandler
   private logger: Logger
@@ -168,6 +171,7 @@ export class WireAppSdk {
   private resolveRuntimeDependencies() {
     this.webSocketClient = container.resolve(WebSocketClient)
     this.conversationService = container.resolve(ConversationService)
+    this.keyPackageReplenisher = container.resolve(KeyPackageReplenisher)
   }
 
   private async configureApplicationIdentity() {
@@ -188,13 +192,26 @@ export class WireAppSdk {
       this.logger.info('Wire Apps SDK is already running.')
       return
     }
-    this.isWebSocketRunning = true
 
-    if (!this.webSocketClient || !this.conversationService) {
+    if (!this.webSocketClient || !this.conversationService || !this.keyPackageReplenisher) {
       throw new UnknownError('Wire Apps SDK dependencies are not initialized.')
     }
 
-    this.webSocketClient.connect().finally(() => {
+    await this.webSocketLoop
+    if (this.isWebSocketRunning) return
+
+    this.keyPackageReplenisher.start()
+    this.isWebSocketRunning = true
+
+    const webSocketLoop = this.webSocketClient
+      .connect()
+      .catch((exception) => this.logger.error('WebSocket connection loop failed', exception))
+    this.webSocketLoop = webSocketLoop
+    void webSocketLoop.finally(() => {
+      if (this.webSocketLoop !== webSocketLoop) return
+
+      this.webSocketLoop = undefined
+      this.keyPackageReplenisher?.stop()
       this.isWebSocketRunning = false
     })
 
@@ -204,10 +221,12 @@ export class WireAppSdk {
   stopListening() {
     if (!this.isWebSocketRunning) {
       this.logger.info('Wire Apps SDK is not running.')
+    } else {
+      this.logger.info('Wire Apps SDK shutting down.')
     }
-    this.logger.info('Wire Apps SDK shutting down.')
     this.isWebSocketRunning = false
 
+    this.keyPackageReplenisher?.stop()
     this.webSocketClient?.close()
   }
 

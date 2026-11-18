@@ -21,6 +21,7 @@ import {singleton} from 'tsyringe'
 import type {MlsPublicKeysResponse} from './response/MlsPublicKeysResponse.js'
 import type {ClaimedKeyPackageList} from './response/ClaimedKeyPackageList.js'
 import {AppProperties} from '../service/AppProperties.js'
+import type {MlsKeyPackageCountResponse} from './response/MlsKeyPackageCountResponse.js'
 
 @singleton()
 export class MlsApiClient {
@@ -60,6 +61,11 @@ export class MlsApiClient {
     }
 
     await this.httpClient.postRequest<void>(path, requestPayload)
+  }
+
+  async getAvailableKeyPackageCount(ciphersuite: string): Promise<MlsKeyPackageCountResponse> {
+    const path = `${this.uploadMlsKeyPackagesPath}${this.appProperties.getDeviceId()}/count?${this.CIPHERSUITE_QUERY_PARAM}=${ciphersuite}`
+    return await this.httpClient.getRequest<MlsKeyPackageCountResponse>(path)
   }
 
   async getPublicKeys(): Promise<MlsPublicKeysResponse> {

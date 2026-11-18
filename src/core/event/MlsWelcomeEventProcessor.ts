@@ -25,17 +25,17 @@ import {WireEventsHandler} from './../WireEventsHandler.js'
 import {WIRE_EVENTS_HANDLER, EVENT_PROCESSOR} from '../../utils/DependencyInjectionTokens.js'
 import {ConversationMapper} from '../../mappers/conversation/ConversationMapper.js'
 import {QualifiedId} from '../../model/QualifiedId.js'
-import {AppProperties} from '../../service/AppProperties.js'
+import {LoggerFactory} from '../../utils/logger/LoggerFactory.js'
 
 @injectable({token: EVENT_PROCESSOR})
 export class MlsWelcomeEventProcessor implements EventProcessor<MLSWelcomeDTO> {
   readonly eventType = 'conversation.mls-welcome' as const
+  private logger = LoggerFactory.getLogger(this.constructor.name)
 
   constructor(
     private coreCryptoService: CoreCryptoService,
     private conversationService: ConversationService,
     private mlsService: MlsService,
-    private appProperties: AppProperties,
     @inject(WIRE_EVENTS_HANDLER) private wireEventsHandler: WireEventsHandler
   ) {}
 
@@ -52,10 +52,13 @@ export class MlsWelcomeEventProcessor implements EventProcessor<MLSWelcomeDTO> {
       conversationResponse
     )
 
-    const storedDeviceId = this.appProperties.getDeviceId()
-    if ((await this.coreCryptoService.hasTooFewKeyPackageCount()) && storedDeviceId) {
-      const keyPackages = await this.coreCryptoService.mlsGenerateKeyPackages()
-      await this.mlsService.uploadMlsKeyPackages(keyPackages)
+    try {
+      if (await this.coreCryptoService.hasTooFewKeyPackageCount()) {
+        const keyPackages = await this.coreCryptoService.mlsGenerateKeyPackages()
+        await this.mlsService.uploadMlsKeyPackages(keyPackages)
+      }
+    } catch (exception) {
+      this.logger.error('Failed to replenish MLS key packages after joining conversation', exception)
     }
 
     await this.wireEventsHandler.onAppAddedToConversation(ConversationMapper.fromEntity(conversation), members)

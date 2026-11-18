@@ -43,6 +43,10 @@ export class MlsService {
     await this.mlsApiClient.uploadMlsKeyPackages(mlsKeyPackages)
   }
 
+  async getAvailableKeyPackageCount(ciphersuite: number): Promise<number> {
+    return (await this.mlsApiClient.getAvailableKeyPackageCount(this.toHexString(ciphersuite))).count
+  }
+
   async getRemovalKey(
     cipherSuite: CipherSuite,
     existingPublicKeysResponse?: MlsPublicKeysResponse

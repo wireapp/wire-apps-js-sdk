@@ -62,6 +62,117 @@ describe('WireAppSdk', () => {
     expect(ExportedWireApplicationManager).toBe(WireApplicationManager)
   })
 
+  describe('listening lifecycle', () => {
+    const deferred = () => {
+      let resolve!: () => void
+      const promise = new Promise<void>((done) => {
+        resolve = done
+      })
+      return {promise, resolve}
+    }
+
+    const arrangeSdk = (...connections: Promise<void>[]) => {
+      const sdk = createSdk() as any
+      const webSocketClient = {
+        connect: vi.fn(),
+        close: vi.fn()
+      }
+      connections.forEach((connection) => webSocketClient.connect.mockReturnValueOnce(connection))
+      const conversationService = {establishOrRejoinConversations: vi.fn().mockResolvedValue(undefined)}
+      const keyPackageReplenisher = {
+        start: vi.fn(),
+        stop: vi.fn()
+      }
+      sdk.isWebSocketRunning = false
+      sdk.logger = {debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn()}
+      sdk.webSocketClient = webSocketClient
+      sdk.conversationService = conversationService
+      sdk.keyPackageReplenisher = keyPackageReplenisher
+      return {sdk, webSocketClient, conversationService, keyPackageReplenisher}
+    }
+
+    it('starts one replenishment schedule with the listener and stops it explicitly', async () => {
+      const connection = deferred()
+      const {sdk, keyPackageReplenisher, webSocketClient} = arrangeSdk(connection.promise)
+
+      await sdk.startListening()
+      await sdk.startListening()
+      sdk.stopListening()
+
+      expect(keyPackageReplenisher.start).toHaveBeenCalledOnce()
+      expect(keyPackageReplenisher.stop).toHaveBeenCalledOnce()
+      expect(webSocketClient.close).toHaveBeenCalledOnce()
+      connection.resolve()
+    })
+
+    it('stops the matching replenishment schedule when the connection loop ends', async () => {
+      const connection = deferred()
+      const {sdk, keyPackageReplenisher} = arrangeSdk(connection.promise)
+
+      await sdk.startListening()
+      connection.resolve()
+      await connection.promise
+      await new Promise((done) => setImmediate(done))
+
+      expect(keyPackageReplenisher.stop).toHaveBeenCalledOnce()
+      expect(sdk.isWebSocketRunning).toBe(false)
+    })
+
+    it('restarts the replenishment schedule after listening is stopped', async () => {
+      const firstConnection = deferred()
+      const secondConnection = deferred()
+      const {sdk, keyPackageReplenisher} = arrangeSdk(firstConnection.promise, secondConnection.promise)
+
+      await sdk.startListening()
+      sdk.stopListening()
+      firstConnection.resolve()
+      await firstConnection.promise
+      await new Promise((done) => setImmediate(done))
+
+      await sdk.startListening()
+
+      expect(keyPackageReplenisher.start).toHaveBeenCalledTimes(2)
+      expect(sdk.isWebSocketRunning).toBe(true)
+
+      sdk.stopListening()
+      secondConnection.resolve()
+    })
+
+    it('waits for the previous connection loop before restarting', async () => {
+      const firstConnection = deferred()
+      const secondConnection = deferred()
+      const {sdk, keyPackageReplenisher, webSocketClient} = arrangeSdk(
+        firstConnection.promise,
+        secondConnection.promise
+      )
+
+      await sdk.startListening()
+      sdk.stopListening()
+      const restart = sdk.startListening()
+
+      expect(webSocketClient.connect).toHaveBeenCalledOnce()
+
+      firstConnection.resolve()
+      await restart
+
+      expect(webSocketClient.connect).toHaveBeenCalledTimes(2)
+      expect(keyPackageReplenisher.start).toHaveBeenCalledTimes(2)
+      expect(sdk.isWebSocketRunning).toBe(true)
+
+      sdk.stopListening()
+      secondConnection.resolve()
+    })
+
+    it('cleans up defensively when already stopped', () => {
+      const {sdk, keyPackageReplenisher, webSocketClient} = arrangeSdk()
+
+      sdk.stopListening()
+
+      expect(keyPackageReplenisher.stop).toHaveBeenCalledOnce()
+      expect(webSocketClient.close).toHaveBeenCalledOnce()
+    })
+  })
+
   describe('storagePath option', () => {
     const API_TOKEN = 'api-token'
     const API_HOST = 'https://wire.example.com'

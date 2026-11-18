@@ -1,6 +1,6 @@
 {
   "name": "@wireapp/wire-apps-js-sdk",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "SDK for Wire third-party applications written in Typescript.",
   "license": "GPL-3.0",
   "keywords": [
@@ -89,7 +89,7 @@
     "@types/ws": "^8.18.1",
     "@vitest/coverage-v8": "^4.1.9",
     "cpy-cli": "^7.0.0",
-    "dotenv": "^17.4.2",
+    "dotenv": "^18.0.1",
     "drizzle-kit": "^0.31.9",
     "eslint": "^10.7.0",
     "eslint-config-prettier": "^10.1.8",

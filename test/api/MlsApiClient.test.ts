@@ -100,4 +100,15 @@ describe('MlsApiClient', () => {
       )
     })
   })
+
+  describe('getAvailableKeyPackageCount', () => {
+    it('should get the key package count for the current device and ciphersuite', async () => {
+      vi.mocked(mockHttpClient.getRequest).mockResolvedValue({count: 42})
+
+      const result = await client.getAvailableKeyPackageCount('0x0001')
+
+      expect(mockHttpClient.getRequest).toHaveBeenCalledWith('mls/key-packages/self/device-id/count?ciphersuite=0x0001')
+      expect(result).toEqual({count: 42})
+    })
+  })
 })

@@ -23,7 +23,6 @@ import type {WireEventsHandler} from '../../../src/core/WireEventsHandler.js'
 import {CoreCryptoService} from '../../../src/core/CoreCryptoService.js'
 import {ConversationMapper} from '../../../src/mappers/conversation/ConversationMapper.js'
 import {ConversationRole} from '../../../src/model/conversation/ConversationRole.js'
-import {AppProperties} from '../../../src/service/AppProperties.js'
 
 vi.mock('../../../src/api/ConversationService.js')
 vi.mock('../../../src/api/MlsService.js')
@@ -71,7 +70,6 @@ const makeMembers = () => [{userId: {id: 'user-1', domain: 'example.com'}, role:
 let coreCryptoService: CoreCryptoService
 let conversationService: ConversationService
 let mlsService: MlsService
-let appProperties: AppProperties
 let wireEventsHandler: WireEventsHandler
 let processor: MlsWelcomeEventProcessor
 
@@ -97,23 +95,13 @@ beforeEach(() => {
     uploadMlsKeyPackages: vi.fn().mockResolvedValue(undefined)
   } as any
 
-  appProperties = {
-    getDeviceId: vi.fn().mockReturnValue('device-id')
-  } as any
-
   wireEventsHandler = {
     onAppAddedToConversation: vi.fn().mockResolvedValue(undefined)
   } as any
 
   vi.mocked(ConversationMapper.fromEntity).mockReturnValue(makeConversation() as any)
 
-  processor = new MlsWelcomeEventProcessor(
-    coreCryptoService,
-    conversationService,
-    mlsService,
-    appProperties,
-    wireEventsHandler
-  )
+  processor = new MlsWelcomeEventProcessor(coreCryptoService, conversationService, mlsService, wireEventsHandler)
 })
 
 describe('MlsWelcomeEventProcessor', () => {
@@ -177,17 +165,6 @@ describe('MlsWelcomeEventProcessor', () => {
         expect(mlsService.uploadMlsKeyPackages).not.toHaveBeenCalled()
       })
 
-      it('should reject when device id is not stored', async () => {
-        vi.mocked(coreCryptoService.hasTooFewKeyPackageCount).mockResolvedValue(true)
-        vi.mocked(appProperties.getDeviceId).mockImplementation(() => {
-          throw new Error('No stored deviceId found')
-        })
-
-        await expect(processor.process(makeEvent())).rejects.toThrow('No stored deviceId found')
-
-        expect(mlsService.uploadMlsKeyPackages).not.toHaveBeenCalled()
-      })
-
       it('should generate and upload key packages when count is low and device id is stored', async () => {
         vi.mocked(coreCryptoService.hasTooFewKeyPackageCount).mockResolvedValue(true)
 
@@ -196,6 +173,33 @@ describe('MlsWelcomeEventProcessor', () => {
         expect(coreCryptoService.mlsGenerateKeyPackages).toHaveBeenCalledTimes(1)
         expect(mlsService.uploadMlsKeyPackages).toHaveBeenCalledTimes(1)
         expect(mlsService.uploadMlsKeyPackages).toHaveBeenCalledWith(keyPackages)
+      })
+
+      it.each([
+        [
+          'checking the local count',
+          () => vi.mocked(coreCryptoService.hasTooFewKeyPackageCount).mockRejectedValue(new Error('count failed'))
+        ],
+        [
+          'generating packages',
+          () => {
+            vi.mocked(coreCryptoService.hasTooFewKeyPackageCount).mockResolvedValue(true)
+            vi.mocked(coreCryptoService.mlsGenerateKeyPackages).mockRejectedValue(new Error('generation failed'))
+          }
+        ],
+        [
+          'uploading packages',
+          () => {
+            vi.mocked(coreCryptoService.hasTooFewKeyPackageCount).mockResolvedValue(true)
+            vi.mocked(mlsService.uploadMlsKeyPackages).mockRejectedValue(new Error('upload failed'))
+          }
+        ]
+      ])('should still notify the handler when %s fails', async (_description, arrangeFailure) => {
+        arrangeFailure()
+
+        await expect(processor.process(makeEvent())).resolves.toBeUndefined()
+
+        expect(wireEventsHandler.onAppAddedToConversation).toHaveBeenCalledOnce()
       })
     })
 
