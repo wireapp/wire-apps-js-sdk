@@ -36,11 +36,15 @@ import type {WireUser} from '../model/WireUser.js'
 import {AppProperties} from '../service/AppProperties.js'
 import type {ConversationEntity} from '../db/model/ConversationEntity.js'
 import type {TeamId} from '../model/TeamId.js'
+import {TypingIndicatorController} from './TypingIndicatorController.js'
 
 @singleton()
 export class WireApplicationManager {
   private logger = LoggerFactory.getLogger(this.constructor.name)
   private appQualifiedId?: QualifiedId
+  private readonly typingIndicator = new TypingIndicatorController((conversationId, status) =>
+    this.conversationService.sendTypingStatus(conversationId, status)
+  )
 
   constructor(
     private coreCryptoService: CoreCryptoService,
@@ -63,6 +67,21 @@ export class WireApplicationManager {
     await this.mlsService.sendMessage(encryptedMessage)
 
     return preparedMessage.id
+  }
+
+  /**
+   * Runs work immediately while typing is sent in the background. Overlapping work in this
+   * conversation shares one indicator, refreshed every 30 seconds for at most five minutes.
+   * The last operation schedules STOPPED after any pending request. Delivery failures are logged;
+   * typing requests (including cleanup) never delay or replace the operation's result.
+   */
+  async processWithTypingIndicator<T>(conversationId: QualifiedId, process: () => Promise<T>): Promise<T> {
+    const release = this.typingIndicator.acquire(conversationId)
+    try {
+      return await process()
+    } finally {
+      release()
+    }
   }
 
   private prepareMessageForSending(conversation: ConversationEntity, originalMessage: WireMessage): WireMessage {

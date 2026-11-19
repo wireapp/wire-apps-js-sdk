@@ -36,6 +36,7 @@ import {TeamId} from '../model/TeamId.js'
 import type {AddMembersToConversationResult} from './model/AddMembersToConversationResult.js'
 import type {RemoveMembersFromConversationResult} from './model/RemoveMembersFromConversationResult.js'
 import type {Conversation} from '../model/conversation/Conversation.js'
+import type {TypingStatus} from '../model/conversation/TypingStatus.js'
 import {ConversationMapper} from '../mappers/conversation/ConversationMapper.js'
 import {ConversationMemberMapper} from '../mappers/conversation/ConversationMemberMapper.js'
 import {UserService} from './UserService.js'
@@ -68,6 +69,10 @@ export class ConversationService {
   private getApplicationQualifiedId(): QualifiedId {
     this.appQualifiedId ??= this.appProperties.getApplicationQualifiedId()
     return this.appQualifiedId
+  }
+
+  async sendTypingStatus(conversationId: QualifiedId, status: TypingStatus): Promise<void> {
+    await this.conversationsApiClient.sendTypingStatus(conversationId, status)
   }
 
   async createOneToOne(withUser: QualifiedId): Promise<QualifiedId> {

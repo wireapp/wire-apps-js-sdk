@@ -14,13 +14,14 @@
  * along with this program. If not, see http://www.gnu.org/licenses/.
  */
 
-import {describe, expect, it} from 'vitest'
+import {describe, expect, it, vi} from 'vitest'
 import {HTTP_RETRY_POLICY, type HttpRetryPolicy} from '../../src/core/HttpRetryPolicy.js'
 import {
   calculateHttpRetryDelay,
   isRetryableHttpError,
   RetryableHttpStatusError,
-  RetryableNetworkError
+  RetryableNetworkError,
+  waitForHttpRetry
 } from '../../src/core/HttpRetryHelper.js'
 
 const RETRY_POLICY: HttpRetryPolicy = {
@@ -29,6 +30,19 @@ const RETRY_POLICY: HttpRetryPolicy = {
 }
 
 describe('HttpRetryHelper', () => {
+  it('cancels a pending retry delay when the request is aborted', async () => {
+    vi.useFakeTimers()
+    try {
+      const controller = new AbortController()
+      const waiting = waitForHttpRetry(30_000, controller.signal)
+      const rejection = expect(waiting).rejects.toThrow('deadline')
+      controller.abort(new Error('deadline'))
+      await rejection
+      expect(vi.getTimerCount()).toBe(0)
+    } finally {
+      vi.useRealTimers()
+    }
+  })
   describe('calculateHttpRetryDelay', () => {
     it('should calculate linear delay', () => {
       expect(calculateHttpRetryDelay(RETRY_POLICY, 1)).toBe(200)

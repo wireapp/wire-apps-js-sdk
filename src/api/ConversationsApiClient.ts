@@ -26,6 +26,7 @@ import {LoggerFactory} from '../utils/logger/LoggerFactory.js'
 import {obfuscateId} from '../utils/ObfuscateUtil.js'
 import type {ConversationRole} from '../model/conversation/ConversationRole.js'
 import type {CreateConversationRequest} from './request/CreateConversationRequest.js'
+import type {TypingStatus} from '../model/conversation/TypingStatus.js'
 
 @singleton()
 export class ConversationsApiClient {
@@ -46,6 +47,20 @@ export class ConversationsApiClient {
     return await this.httpClient.getRequest<ConversationResponse>(
       `${this.basePath}/${conversationQualifiedId.domain}/${conversationQualifiedId.id}`
     )
+  }
+
+  async sendTypingStatus(conversationId: QualifiedId, status: TypingStatus): Promise<void> {
+    const controller = new AbortController()
+    const timer = setTimeout(() => controller.abort(new Error('Typing request timed out')), 5_000)
+    try {
+      await this.httpClient.postRequest<void>(
+        `${this.basePath}/${conversationId.domain}/${conversationId.id}/typing`,
+        {status},
+        {signal: controller.signal}
+      )
+    } finally {
+      clearTimeout(timer)
+    }
   }
 
   async getConversationGroupInfo(conversationQualifiedId: QualifiedId): Promise<Uint8Array> {

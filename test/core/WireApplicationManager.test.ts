@@ -21,12 +21,15 @@ import type {WireUser} from '../../src/model/WireUser.js'
 import {Ping, TextMessage} from '../../src/model/WireMessage.js'
 import {ProtobufSerializer} from '../../src/mappers/protobuf/ProtobufSerializer.js'
 import {TeamId} from '../../src/model/TeamId.js'
+import {TypingStatus} from '../../src/model/conversation/TypingStatus.js'
 
 describe('WireApplicationManager', () => {
   const conversationId = new QualifiedId('conversation-id', 'wire.com')
   const appQualifiedId = new QualifiedId('app-id', 'wire.com')
 
   afterEach(() => {
+    vi.clearAllTimers()
+    vi.useRealTimers()
     vi.restoreAllMocks()
   })
 
@@ -75,6 +78,41 @@ describe('WireApplicationManager', () => {
 
       expect(manager.getApplicationTeamId()).toEqual(appTeamId)
       expect(appProperties.getApplicationTeamId).toHaveBeenCalledOnce()
+    })
+  })
+
+  describe('processWithTypingIndicator', () => {
+    it('runs work immediately without waiting for started or cleanup', async () => {
+      vi.useFakeTimers()
+      const sendTypingStatus = vi.fn(() => new Promise<void>(() => {}))
+      const manager = createManager({conversationService: {sendTypingStatus}})
+      const process = vi.fn(async () => 'done')
+      const result = manager.processWithTypingIndicator(conversationId, process)
+
+      expect(process).toHaveBeenCalledOnce()
+      await expect(result).resolves.toBe('done')
+      expect(sendTypingStatus).toHaveBeenCalledWith(conversationId, TypingStatus.STARTED)
+    })
+
+    it('keeps the result when the first started fails', async () => {
+      const sendTypingStatus = vi.fn().mockRejectedValueOnce(new Error('start failed')).mockResolvedValue(undefined)
+      const manager = createManager({conversationService: {sendTypingStatus}})
+
+      await expect(manager.processWithTypingIndicator(conversationId, async () => 'done')).resolves.toBe('done')
+      await vi.waitFor(() => expect(sendTypingStatus).toHaveBeenCalledWith(conversationId, TypingStatus.STOPPED))
+    })
+
+    it('preserves work failures when stopped fails', async () => {
+      const error = new Error('work failed')
+      const sendTypingStatus = vi.fn().mockResolvedValueOnce(undefined).mockRejectedValueOnce(new Error('stop failed'))
+      const manager = createManager({conversationService: {sendTypingStatus}})
+
+      await expect(
+        manager.processWithTypingIndicator(conversationId, async () => {
+          throw error
+        })
+      ).rejects.toBe(error)
+      await vi.waitFor(() => expect(sendTypingStatus).toHaveBeenCalledWith(conversationId, TypingStatus.STOPPED))
     })
   })
 
