@@ -21,6 +21,10 @@ import {EventRouter} from '../../src/core/event/EventRouter.js'
 import {NotificationsService} from '../../src/service/NotificationsService.js'
 import {AppProperties} from '../../src/service/AppProperties.js'
 import type {EventResponse} from '../../src/api/response/EventResponse.js'
+import type {WireEventsHandler} from '../../src/core/WireEventsHandler.js'
+import {TeamMemberJoinEventProcessor} from '../../src/core/event/TeamMemberJoinEventProcessor.js'
+import {QualifiedId} from '../../src/model/QualifiedId.js'
+import {TeamId} from '../../src/model/TeamId.js'
 
 vi.mock('ws', () => {
   const MockWebSocket = vi.fn(function (this: typeof mockWebSocket) {
@@ -81,6 +85,7 @@ beforeEach(() => {
 
   mockAppProperties = {
     getDeviceId: vi.fn().mockReturnValue('device-id'),
+    getApplicationQualifiedId: vi.fn(),
     setLastNotificationId: vi.fn()
   } as any
 
@@ -292,7 +297,7 @@ describe('WebSocketClient', () => {
       expect(mockEventRouter.route).toHaveBeenCalledWith(expect.objectContaining({id: NOTIFICATION_ID_1}))
     })
 
-    it('should skip transient events', async () => {
+    it('should route transient events', async () => {
       const event = makeNotification(NOTIFICATION_ID_1, true)
 
       const client = makeClient()
@@ -303,7 +308,84 @@ describe('WebSocketClient', () => {
       await mockWebSocket.onmessage!(makeMessageEvent(makeEventBuffer(event)))
       await stopClient(client, connectPromise)
 
-      expect(mockEventRouter.route).not.toHaveBeenCalled()
+      expect(mockEventRouter.route).toHaveBeenCalledTimes(1)
+      expect(mockEventRouter.route).toHaveBeenCalledWith(expect.objectContaining({id: NOTIFICATION_ID_1}))
+    })
+
+    it('should not update lastNotificationId after routing a transient event', async () => {
+      const event = makeNotification(NOTIFICATION_ID_1, true)
+
+      const client = makeClient()
+      const connectPromise = client.connect()
+
+      await flushPromises()
+      await mockWebSocket.onopen!()
+      await mockWebSocket.onmessage!(makeMessageEvent(makeEventBuffer(event)))
+      await stopClient(client, connectPromise)
+
+      expect(mockAppProperties.setLastNotificationId).not.toHaveBeenCalled()
+    })
+
+    it('should not affect deduplication of events processed during sync when a transient event is received', async () => {
+      const notification = makeNotification(NOTIFICATION_ID_1)
+      const transientEvent = makeNotification(NOTIFICATION_ID_2, true)
+
+      vi.mocked(mockNotificationsService.getPaginatedNotifications).mockResolvedValueOnce({
+        notifications: [notification],
+        has_more: false,
+        time: new Date()
+      })
+
+      const client = makeClient()
+      const connectPromise = client.connect()
+
+      await flushPromises()
+      await mockWebSocket.onopen!()
+
+      await mockWebSocket.onmessage!(makeMessageEvent(makeEventBuffer(transientEvent)))
+      await mockWebSocket.onmessage!(makeMessageEvent(makeEventBuffer(notification)))
+
+      await stopClient(client, connectPromise)
+
+      expect(mockEventRouter.route).toHaveBeenCalledTimes(2)
+      expect(mockEventRouter.route).toHaveBeenNthCalledWith(1, notification)
+      expect(mockEventRouter.route).toHaveBeenNthCalledWith(2, expect.objectContaining({id: NOTIFICATION_ID_2}))
+    })
+
+    it('should call onTeamMemberJoined when a transient team.member-join event is received', async () => {
+      const wireEventsHandler = {
+        onTeamMemberJoined: vi.fn().mockResolvedValue(undefined)
+      } as unknown as WireEventsHandler
+      vi.mocked(mockAppProperties.getApplicationQualifiedId).mockReturnValue(new QualifiedId('app-id', 'wire.com'))
+      mockEventRouter = new EventRouter([new TeamMemberJoinEventProcessor(mockAppProperties, wireEventsHandler)])
+
+      const event = {
+        id: NOTIFICATION_ID_1,
+        transient: true,
+        payload: [
+          {
+            type: 'team.member-join',
+            team: 'team-id',
+            time: '2026-11-18T14:08:27.000Z',
+            data: {user: 'user-id'}
+          }
+        ]
+      }
+
+      const client = makeClient()
+      const connectPromise = client.connect()
+
+      await flushPromises()
+      await mockWebSocket.onopen!()
+      await mockWebSocket.onmessage!(makeMessageEvent(Buffer.from(JSON.stringify(event))))
+      await stopClient(client, connectPromise)
+
+      expect(wireEventsHandler.onTeamMemberJoined).toHaveBeenCalledTimes(1)
+      expect(wireEventsHandler.onTeamMemberJoined).toHaveBeenCalledWith(
+        new QualifiedId('user-id', 'wire.com'),
+        new TeamId('team-id')
+      )
+      expect(mockAppProperties.setLastNotificationId).not.toHaveBeenCalled()
     })
 
     it('should deduplicate events already processed during sync', async () => {
