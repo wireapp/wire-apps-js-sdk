@@ -43,7 +43,7 @@ export class EventRouter {
       if (processor) {
         await processor.process(event)
       } else {
-        this.logger.info(`Received an unmapped event: ${event.type}`)
+        this.logger.debug(`Received an unmapped event: ${event.type}`)
       }
     }
   }

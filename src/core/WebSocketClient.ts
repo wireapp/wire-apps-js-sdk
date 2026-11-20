@@ -234,7 +234,14 @@ export class WebSocketClient {
     try {
       const event = JSON.parse(data.toString('utf-8'), apiDateReviver) as EventResponse
 
-      if (!event.transient && !this.processedEventIds.has(event.id)) {
+      // Transient events (e.g. team.member-join for apps, typing indicators) are only delivered live and never
+      // stored in the notification stream, so they are routed without touching lastNotificationId or dedup state
+      if (event.transient) {
+        await this.eventRouter.route(event)
+        return
+      }
+
+      if (!this.processedEventIds.has(event.id)) {
         this.processedEventIds.clear()
         await this.eventRouter.route(event)
         this.appProperties.setLastNotificationId(event.id)
